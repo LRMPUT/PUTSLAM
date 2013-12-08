@@ -2,94 +2,121 @@
 cmake_minimum_required(VERSION 2.8)
 SET(CMAKE_CXX_FLAGS "-std=c++0x")
 
+# Build options have to be before PROJECT(...)
+SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
+SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
+
 # Estimator of Hand Configuration
-PROJECT(HandEstimator)
+PROJECT(PUTSLAM)
+
+# Folders
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Settings
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include")
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/dependencies")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 
-# Math
-file(GLOB MATH_SOURCES
-    "${CMAKE_SOURCE_DIR}/src/Core/Math/*.cpp"
-)
-file(GLOB MATH_HEADERS
-    "${CMAKE_SOURCE_DIR}/include/Core/Math/*.h"
-)
+# core libraries
+option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
+option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEFS)
+option(BUILD_PUTSLAM_MATH "Build HandEst Math library" YES)
+mark_as_advanced(BUILD_PUTSLAM_MATH)
+option(BUILD_PUTSLAM_GRABBER "Build HandEst Grabber library" YES)
+mark_as_advanced(BUILD_PUTSLAM_GRABBER)
 
-ADD_LIBRARY(Math STATIC ${MATH_SOURCES} ${MATH_HEADERS})
-#TARGET_LINK_LIBRARIES(Math)
-INSTALL(TARGETS Math RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-INSTALL(FILES ${MATH_HEADERS} DESTINATION include/handest/Core/Math/)
+# demos
+option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
+option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 
-# Grabber interface
-SET(GRABBER_HEADERS ./include/Grabber/grabber.h)
+# Executable output directory
+SET(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_PARENT}/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
+mark_as_advanced(RUNTIME_OUTPUT_DIRECTORY)
 
-# Kinect Grabber
-SET(GRABBERKINECT_SOURCES ./src/Grabber/kinect_grabber.cpp)
-SET(GRABBERKINECT_HEADERS ./include/Grabber/kinect_grabber.h)
-ADD_LIBRARY(GrabberKinect STATIC ${GRABBERKINECT_SOURCES} ${GRABBER_HEADERS} ${GRABBERKINECT_HEADERS})
-#TARGET_LINK_LIBRARIES(GrabberKinect)
-INSTALL(TARGETS GrabberKinect RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-INSTALL(FILES ${GRABBER_HEADERS} DESTINATION include/handest/Grabber/)
+# Dynamic library output directory
+SET(LIBRARY_OUTPUT_DIRECTORY ${PROJECT_PARENT}/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Dynamic library output directory")
+mark_as_advanced(LIBRARY_OUTPUT_DIRECTORY)
 
-# Filter interface
-SET(FILTER_HEADERS ./include/Filter/filter.h)
+# Static library output directory
+SET(ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_PARENT}/lib${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Static library output directory")
+mark_as_advanced(ARCHIVE_OUTPUT_DIRECTORY)
 
-# Filter PCL
-SET(FILTERPCL_SOURCES ./src/Filter/filterPCL.cpp)
-SET(FILTERPCL_HEADERS ./include/Filter/filterPCL.h)
-ADD_LIBRARY(Filter STATIC ${FILTERPCL_SOURCES} ${FILTER_HEADERS} ${FILTERPCL_HEADERS})
-#TARGET_LINK_LIBRARIES(FilterPCL)
-INSTALL(TARGETS Filter RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-INSTALL(FILES ${FILTER_HEADERS} DESTINATION include/handest/Filter/)
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_OUTPUT_DIRECTORY})
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_DIRECTORY})
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ARCHIVE_OUTPUT_DIRECTORY})
+foreach(CONFIGURATION_TYPE ${CMAKE_CONFIGURATION_TYPES})
+	string(TOUPPER ${CONFIGURATION_TYPE} CONFIGURATION_TYPE)
+	SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIGURATION_TYPE} ${RUNTIME_OUTPUT_DIRECTORY})
+	SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIGURATION_TYPE} ${LIBRARY_OUTPUT_DIRECTORY})
+	SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIGURATION_TYPE} ${ARCHIVE_OUTPUT_DIRECTORY})
+endforeach(CONFIGURATION_TYPE CMAKE_CONFIGURATION_TYPES)
 
-# OptimizationFunction interface 
-SET(OPTIMIZATIONFUNCTION_HEADERS ./include/OptimizationFunction/optimizationFunction.h)
+###############################################################################
+#
+# PUTSLAM defs library
+#
+###############################################################################
 
-# OptimizationFunctionGauss
-SET(OPTIMIZATIONFUNCTIONGAUSS_SOURCES ./src/OptimizationFunction/optimizationFunctionGauss.cpp)
-SET(OPTIMIZATIONFUNCTIONGAUSS_HEADERS ./include/OptimizationFunction/optimizationFunctionGauss.h)
-SET(OPTIMIZATIONFUNCTIONPF_SOURCES ./src/OptimizationFunction/optimizationFunctionPF.cpp)
-SET(OPTIMIZATIONFUNCTIONPF_HEADERS ./include/OptimizationFunction/optimizationFunctionPF.h)
-ADD_LIBRARY(OptimizationFunction STATIC ${OPTIMIZATIONFUNCTIONGAUSS_SOURCES} ${OPTIMIZATIONFUNCTION_HEADERS} ${OPTIMIZATIONFUNCTIONGAUSS_HEADERS} ${OPTIMIZATIONFUNCTIONPF_HEADERS} ${OPTIMIZATIONFUNCTIONPF_SOURCES})
-#TARGET_LINK_LIBRARIES(OptimizationFunction)
-INSTALL(TARGETS OptimizationFunction RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
+	file(GLOB DEFS_HEADERS
+	    "${CMAKE_SOURCE_DIR}/include/Defs/putslam_defs.h"
+	)
+	ADD_LIBRARY(HEADER_ONLY_TARGET STATIC ${DEFS_HEADERS})
+	set_target_properties(HEADER_ONLY_TARGET PROPERTIES LINKER_LANGUAGE CXX)
+# 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+	INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
 
-# Visualizer interface
-SET(VISUALIZER_HEADERS ./include/Visualizer/visualizer.h)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
-# OpenGL Visualizer
-SET(VISUALIZERGL_SOURCES ./src/Visualizer/visualizerGL.cpp)
-SET(VISUALIZERGL_HEADERS ./include/Visualizer/visualizerGL.h)
-ADD_LIBRARY(VisualizerGL STATIC ${VISUALIZERGL_SOURCES} ${VISUALIZER_HEADERS} ${VISUALIZERGL_HEADERS})
-#TARGET_LINK_LIBRARIES(VisualizerGL)
-INSTALL(TARGETS VisualizerGL RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-INSTALL(FILES ${VISUALIZER_HEADERS} DESTINATION include/handest/Visualizer/)
+###############################################################################
+#
+# PUTSLAM Math library
+#
+###############################################################################
 
-# Kinematic interface
-SET(KINEMATIC_HEADERS ./include/Kinematic/forward_kinematics.h)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
+	file(GLOB MATH_SOURCES
+	    "${CMAKE_SOURCE_DIR}/src/Core/Math/*.cpp"
+	)
+	file(GLOB MATH_HEADERS
+	    "${CMAKE_SOURCE_DIR}/include/Core/Math/*.h"
+	)
 
-# Forward Kinematics
-#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-#find_package(Eigen3 REQUIRED)
-SET(FK_SOURCES ./src/Kinematic/kinematic_liego.cpp)
-SET(FK_HEADERS ./include/Kinematic/kinematic_liego.h )
-ADD_LIBRARY(ForwardKinematics STATIC ${KINEMATIC_HEADERS} ${FK_SOURCES} ${FK_HEADERS})
-INSTALL(TARGETS ForwardKinematics RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+	ADD_LIBRARY(Math STATIC ${MATH_SOURCES} ${MATH_HEADERS})
+	#TARGET_LINK_LIBRARIES(Math)
+	INSTALL(TARGETS Math RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+	INSTALL(FILES ${MATH_HEADERS} DESTINATION include/handest/Core/Math/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
 
-#Optimization Interface
-SET(OPTIMIZATION_HEADERS ./include/Optimization/optimization.h)
+###############################################################################
+#
+# PUTSLAM Grabber library
+#
+###############################################################################
 
-#Optimization 
-SET(OPTIMIZATION_SOURCES ./src/Optimization/optimizationPSO.cpp)
-SET(OPTIMIZATIONPSO_HEADERS ./include/Optimization/optimizationPSO.h)
-ADD_LIBRARY(Optimization STATIC ${OPTIMIZATION_SOURCES} ${OPTIMIZATION_HEADERS} ${OPTIMIZATIONPSO_HEADERS})
-INSTALL(TARGETS Optimization RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
+	SET(GRABBER_HEADERS ./include/Grabber/grabber.h)
+
+	# Kinect Grabber
+	SET(GRABBERKINECT_SOURCES ./src/Grabber/kinect_grabber.cpp)
+	SET(GRABBERKINECT_HEADERS ./include/Grabber/kinect_grabber.h)
+	ADD_LIBRARY(GrabberKinect STATIC ${GRABBERKINECT_SOURCES} ${GRABBER_HEADERS} ${GRABBERKINECT_HEADERS})
+	#TARGET_LINK_LIBRARIES(GrabberKinect)
+	INSTALL(TARGETS GrabberKinect RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+	INSTALL(FILES ${GRABBER_HEADERS} DESTINATION include/handest/Grabber/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 
 
-# Demo
-SET(DEMO_SOURCES ./main.cpp)
-ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-TARGET_LINK_LIBRARIES(Demo Math GrabberKinect ForwardKinematics Optimization OptimizationFunction Filter VisualizerGL)
-INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
+###############################################################################
+#
+# PUTSLAM DEMO executables
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+	SET(DEMO_SOURCES ./main.cpp)
+	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
+	TARGET_LINK_LIBRARIES(Demo Math GrabberKinect)
+	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
