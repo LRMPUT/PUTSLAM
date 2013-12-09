@@ -2,12 +2,12 @@
 #include <memory>
 #include <stdexcept>
 
-using namespace handest;
+using namespace putslam;
 
 /// A single instance of Kinect grabber
 KinectGrabber::Ptr grabber;
 
-KinectGrabber::KinectGrabber(void) : name("Kinect Grabber") {
+KinectGrabber::KinectGrabber(void) : name("Kinect Grabber"), type(TYPE_PRIMESENSE) {
 
 }
 
@@ -19,6 +19,10 @@ void KinectGrabber::getCloud(Point3D::Cloud& current_cloud) const {
     current_cloud = cloud;
 }
 
+void KinectGrabber::getImage(Image& current_image) const {
+    current_image = image;
+}
+
 void KinectGrabber::grab(void) {
     Point3D point;
     point.colour.r = 255; point.colour.g = 0; point.colour.b = 0; point.colour.a = 255;
@@ -26,7 +30,12 @@ void KinectGrabber::grab(void) {
 	cloud.push_back(point);
 }
 
-handest::Grabber* handest::createGrabberKinect(void) {
+/// run grabber thread
+void KinectGrabber::run(void) {
+
+}
+
+putslam::Grabber* putslam::createGrabberKinect(void) {
 	grabber.reset(new KinectGrabber());
 	return grabber.get();
 }

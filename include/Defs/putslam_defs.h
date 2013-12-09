@@ -1,20 +1,23 @@
-/** @file handest_defs.h
+/** @file putslam_defs.h
 *
 * Handest definitions
 *
 */
 
-#ifndef HANDEST_DEFS_H_INCLUDED
-#define HANDEST_DEFS_H_INCLUDED
+#ifndef PUTSLAM_DEFS_H_INCLUDED
+#define PUTSLAM_DEFS_H_INCLUDED
 
 #include <cstdint>
 #include <vector>
+#include <memory>
+#include <cmath>
+#include "opencv2/core/core.hpp"
 
-/// handest name space
-namespace handest {
+/// putslam name space
+namespace putslam {
 
-	/// handest default floating point
-    typedef double float_t;
+    /// putslam default floating point
+    typedef double float_type;
 
 	/// 3 Element vector class
     class Vec3 {
@@ -22,17 +25,17 @@ namespace handest {
         /// vector components
         union {
             struct {
-                float_t v1, v2, v3;
+                float_type v1, v2, v3;
             };
             struct {
-                float_t x, y, z;
+                float_type x, y, z;
             };
-            float_t v[3];
+            float_type v[3];
         };
 
         /// Default constructor sets the default configuration
         inline Vec3() {
-            v1 = 0; v2=0; v3=0;
+            v1 = 0; v2 = 0; v3 = 0;
         }
     };
 
@@ -42,11 +45,11 @@ namespace handest {
         /// Matrix elements
         union {
             struct {
-                float_t m11, m12, m13;
-                float_t m21, m22, m23;
-                float_t m31, m32, m33;
+                float_type m11, m12, m13;
+                float_type m21, m22, m23;
+                float_type m31, m32, m33;
             };
-            float_t m[3][3];
+            float_type m[3][3];
         };
         /// Default constructor
         inline Mat33() {
@@ -74,10 +77,14 @@ namespace handest {
         public:
             /// Colour representation
             union {
-                struct {
-                    std::uint8_t r, g, b, a;
+                union {
+                    struct {
+                        std::uint8_t r, g, b, a;
+                    };
+                    float rgb;
+                    std::uint8_t rgba_color[4];
                 };
-                std::uint8_t rgba_color[4];
+                uint32_t rgba;
             };
             /// Default constructor
             inline RGBA() {
@@ -101,107 +108,24 @@ namespace handest {
             }
     };
 
-    /// Link representation
-    class Link {
+    /// image representation
+    class Image {
         public:
-            /// Pose
-            Mat34 pose;
-            /// Point cloud
-            Point3D::Cloud surface;
-			/// Length
-			float_t length;
+            /// sequence of images
+            typedef std::vector<Image> Seq;
+
+            /// 2D image
+            cv::Mat data;
+            /// XYZRGBA point cloud
+            Point3D::Cloud depthData;
+            /// timestamp
+            double timestamp;
 
             /// Default constructor
-            inline Link() {
+            inline Image() {
+                timestamp = 0;
             }
-    };
-
-	/// Finger
-    class Finger {
-        public:
-            /// Number of joints
-            static const std::uint8_t JOINTS = 4;
-            /// Number of links
-            static const std::uint8_t LINKS = 3;
-
-            /// Finger configuration
-            class Config {
-                public:
-                    /// Config elements
-                    float_t conf[JOINTS];
-
-                    /// Default constructor
-                    inline Config() {
-                        std::fill(conf, conf + sizeof(conf), float_t(0.0));
-                    }
-            };
-
-            /// Finger configuration + pose
-            class Pose {
-                public:
-
-                    /// 3D pose of the base
-                    Mat34 pose;
-                    /// Configuration
-                    Config config;
-                    /// Shape representation
-                    Link chain[LINKS];
-
-                    /// Default constructor
-                    inline Pose() {
-                    }
-            };
-    };
-
-	/// Hand
-    class Hand {
-        public:
-            /// Number of fingers
-            static const std::uint8_t FINGERS = 5;
-            /// Number of joints per finger
-            static const std::uintptr_t FINGER_JOINTS = Finger::JOINTS;
-            /// Number of joints
-            static const std::uintptr_t JOINTS = FINGERS*FINGER_JOINTS;
-
-            /// Hand configuration
-            class Config {
-                public:
-
-                /// Config elements
-                union {
-                    struct {
-                        float_t thumb[FINGER_JOINTS];
-                        float_t index[FINGER_JOINTS];
-                        float_t middle[FINGER_JOINTS];
-                        float_t ring[FINGER_JOINTS];
-                        float_t pinky[FINGER_JOINTS];
-                    };
-                    float_t conf[JOINTS];
-                };
-                /// Default constructor sets the default configuration
-                inline Config() {
-                    std::fill(conf, conf + sizeof(conf), float_t(0.));
-                }
-            };
-
-            /// Hand configuration + pose
-            class Pose {
-                public:
-
-                    /// Configuration
-                    Config config;
-                    /// 3D pose of the base
-                    Mat34 pose;
-                    /// Palm
-                    Link palm;
-                    /// Fingers
-                    Finger::Pose fingers[FINGERS];
-
-                    /// Default constructor
-                    inline Pose() {
-                    }
-            };
     };
 }
 
-#endif // HANDEST_DEFS_H_INCLUDED
+#endif // PUTSLAM_DEFS_H_INCLUDED

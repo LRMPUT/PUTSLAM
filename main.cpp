@@ -9,7 +9,7 @@ using namespace std;
 int main()
 {
     try {
-        using namespace handest;
+        using namespace putslam;
 
         Grabber* grabber = createGrabberKinect();
         cout << "Current grabber: " << grabber->getName() << endl;
