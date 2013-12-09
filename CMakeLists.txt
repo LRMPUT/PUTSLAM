@@ -30,6 +30,15 @@ option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" 
 option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 
+#additional dependencies
+# Boost
+#FIND_PACKAGE(Boost COMPONENTS system filesystem thread)
+# OpenCV
+FIND_PACKAGE(OpenCV REQUIRED)
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+# PCL
+#FIND_PACKAGE(PCL REQUIRED)
+
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_PARENT}/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
 mark_as_advanced(RUNTIME_OUTPUT_DIRECTORY)
@@ -117,6 +126,6 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 	SET(DEMO_SOURCES ./main.cpp)
 	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-	TARGET_LINK_LIBRARIES(Demo Math GrabberKinect)
+	TARGET_LINK_LIBRARIES(Demo Math GrabberKinect ${OpenCV_LIBS})
 	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
