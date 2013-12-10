@@ -108,7 +108,7 @@ namespace putslam {
             }
     };
 
-    /// image representation
+    /// Image representation
     class Image {
         public:
             /// sequence of images
@@ -124,6 +124,26 @@ namespace putslam {
             /// Default constructor
             inline Image() {
                 timestamp = 0;
+            }
+    };
+
+    /// 2D image feature
+    class ImageFeature {
+        public:
+            /// set of features
+            typedef std::vector<ImageFeature> Seq;
+
+            /// 2D feature location
+            union {
+                struct{
+                    uint16_t u;
+                    uint16_t v;
+                };
+                uint16_t coord[2];
+            };
+            /// Default constructor
+            inline ImageFeature() {
+                u = 0; v = 0;
             }
     };
 }

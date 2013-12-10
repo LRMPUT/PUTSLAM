@@ -15,12 +15,12 @@ const std::string& KinectGrabber::getName() const {
 	return name;
 }
 
-void KinectGrabber::getCloud(Point3D::Cloud& current_cloud) const {
-    current_cloud = cloud;
+const Point3D::Cloud& KinectGrabber::getCloud(void) const {
+    return cloud;
 }
 
-void KinectGrabber::getImage(Image& current_image) const {
-    current_image = image;
+const Image& KinectGrabber::getImage(void) const {
+    return image;
 }
 
 void KinectGrabber::grab(void) {

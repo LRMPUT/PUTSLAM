@@ -32,12 +32,12 @@ namespace putslam {
             virtual const std::string& getName() const = 0;
 
             /// Returns the current point cloud
-            virtual void getCloud(Point3D::Cloud& current_cloud) const = 0;
+            virtual const Point3D::Cloud& getCloud(void) const = 0;
 
-            /// Returns the current point cloud
-            virtual void getImage(Image& current_image) const = 0;
+            /// Returns the current 2D image
+            virtual const Image& getImage(void) const = 0;
 
-            /// Grab point cloud
+            /// Grab image and/or point cloud
             virtual void grab() = 0;
 
             /// run grabber thread

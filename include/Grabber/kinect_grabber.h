@@ -30,19 +30,19 @@ class KinectGrabber : public Grabber {
         /// Name of the grabber
         virtual const std::string& getName() const;
 
-        /// Returns the current point cloud
-        virtual void getCloud(Point3D::Cloud& current_cloud) const;
+        /// Returns current point cloud
+        virtual const Point3D::Cloud& getCloud(void) const;
 
-        /// Returns the current point cloud
-        virtual void getImage(Image& current_image) const;
+        /// Returns the current 2D image
+        virtual const Image& getImage(void) const;
 
-        /// Grab point cloud
+        /// Grab image and/or point cloud
         virtual void grab();
 
         /// run grabber thread
         virtual void run(void);
 
-    protected:
+    private:
         /// Grabber type
         Type type;
 

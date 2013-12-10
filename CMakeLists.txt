@@ -20,10 +20,14 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
-option(BUILD_PUTSLAM_MATH "Build HandEst Math library" YES)
+option(BUILD_PUTSLAM_MATH "Build PUTSLAM Math library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MATH)
-option(BUILD_PUTSLAM_GRABBER "Build HandEst Grabber library" YES)
+option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER)
+option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
+mark_as_advanced(BUILD_PUTSLAM_TRACKER)
+option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
+mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -95,7 +99,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
 	ADD_LIBRARY(Math STATIC ${MATH_SOURCES} ${MATH_HEADERS})
 	#TARGET_LINK_LIBRARIES(Math)
 	INSTALL(TARGETS Math RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-	INSTALL(FILES ${MATH_HEADERS} DESTINATION include/handest/Core/Math/)
+        INSTALL(FILES ${MATH_HEADERS} DESTINATION include/putslam/Core/Math/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
 
 ###############################################################################
@@ -110,12 +114,48 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 	# Kinect Grabber
 	SET(GRABBERKINECT_SOURCES ./src/Grabber/kinect_grabber.cpp)
 	SET(GRABBERKINECT_HEADERS ./include/Grabber/kinect_grabber.h)
-	ADD_LIBRARY(GrabberKinect STATIC ${GRABBERKINECT_SOURCES} ${GRABBER_HEADERS} ${GRABBERKINECT_HEADERS})
-	#TARGET_LINK_LIBRARIES(GrabberKinect)
-	INSTALL(TARGETS GrabberKinect RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-	INSTALL(FILES ${GRABBER_HEADERS} DESTINATION include/handest/Grabber/)
+        ADD_LIBRARY(Grabber STATIC ${GRABBERKINECT_SOURCES} ${GRABBER_HEADERS} ${GRABBERKINECT_HEADERS})
+        INSTALL(TARGETS Grabber RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${GRABBER_HEADERS} GRABBERKINECT_HEADERS DESTINATION include/putslam/Grabber/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 
+###############################################################################
+#
+# PUTSLAM Tracker library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
+        file(GLOB TRACKER_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Tracker/*.cpp"
+        )
+        file(GLOB TRACKER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Tracker/*.h"
+        )
+
+        ADD_LIBRARY(Tracker STATIC ${TRACKER_SOURCES} ${TRACKER_HEADERS})
+        INSTALL(TARGETS Tracker RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${TRACKER_HEADERS} DESTINATION include/putslam/Tracker/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
+
+###############################################################################
+#
+# PUTSLAM Transformation Estimation library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+        file(GLOB TRANSFORM_ESTIMATOR_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/TransformEst/*.cpp"
+        )
+        file(GLOB TRANSFORM_ESTIMATOR_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/TransformEst/*.h"
+        )
+
+        ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+        INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 ###############################################################################
 #
@@ -126,6 +166,6 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 	SET(DEMO_SOURCES ./main.cpp)
 	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-	TARGET_LINK_LIBRARIES(Demo Math GrabberKinect ${OpenCV_LIBS})
+        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS})
 	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

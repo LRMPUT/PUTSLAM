@@ -15,7 +15,7 @@ int main()
         cout << "Current grabber: " << grabber->getName() << endl;
         Point3D::Cloud scene;
         grabber->grab();
-        grabber->getCloud(scene);
+        scene = grabber->getCloud();
 
         CMat44 matrix1;
         matrix1.createTRMatrix(0, M_PI/2, 0, 0.1, 0.2, 0.3);
