@@ -21,42 +21,60 @@ namespace putslam {
 
 	/// 3 Element vector class
     class Vec3 {
-    public:
-        /// vector components
-        union {
-            struct {
-                float_type v1, v2, v3;
+        public:
+            /// vector components
+            union {
+                struct {
+                    float_type v1, v2, v3;
+                };
+                struct {
+                    float_type x, y, z;
+                };
+                float_type v[3];
             };
-            struct {
-                float_type x, y, z;
-            };
-            float_type v[3];
-        };
 
-        /// Default constructor sets the default configuration
-        inline Vec3() {
-            v1 = 0; v2 = 0; v3 = 0;
-        }
+            /// Default constructor sets the default configuration
+            inline Vec3() : v1(0), v2(0), v3(0) {
+            }
     };
 
 	/// Matrix representation of SO(3) group of rotations
     class Mat33 {
         public:
-        /// Matrix elements
-        union {
-            struct {
-                float_type m11, m12, m13;
-                float_type m21, m22, m23;
-                float_type m31, m32, m33;
+            /// Matrix elements
+            union {
+                struct {
+                    float_type m11, m12, m13;
+                    float_type m21, m22, m23;
+                    float_type m31, m32, m33;
+                };
+                float_type m[3][3];
             };
-            float_type m[3][3];
-        };
-        /// Default constructor
-        inline Mat33() {
-            m11 = 0; m12 = 0; m13 = 0;
-            m21 = 0; m22 = 0; m23 = 0;
-            m31 = 0; m32 = 0; m33 = 0;
-        }
+            /// Default constructor
+            inline Mat33() : m11(1), m12(0), m13(0), m21(0), m22(1), m23(0), m31(0), m32(0), m33(1) {
+            }
+    };
+
+    /// Quaternion representation of SO(3) group of rotations
+    class Quaternion {
+        public:
+            ///quaternion vector
+            union{
+                float_type quat[4];
+                struct {
+                    float_type q1, q2, q3, q4;
+                };
+                struct {
+                    float_type sw, sx, sy, sz;
+                };
+                float_type q[4];
+                struct {
+                    float_type w, x, y, z;
+                };
+            };
+            /// Default constructor
+            inline Quaternion() : w(1), x(0), y(0), z(0) {
+            }
     };
 
 	/// Homogeneous representation of SE(3) rigid body transformations
@@ -87,8 +105,7 @@ namespace putslam {
                 uint32_t rgba;
             };
             /// Default constructor
-            inline RGBA() {
-                r = 255; g = 255; b = 255; a = 255;
+            inline RGBA() : r(255), g(255), b(255), a(255) {
             }
     };
 
@@ -122,8 +139,7 @@ namespace putslam {
             double timestamp;
 
             /// Default constructor
-            inline Image() {
-                timestamp = 0;
+            inline Image() : timestamp(0){
             }
     };
 
@@ -135,16 +151,75 @@ namespace putslam {
 
             /// 2D feature location
             union {
-                struct{
+                struct {
                     uint16_t u;
                     uint16_t v;
                 };
                 uint16_t coord[2];
             };
+
+            /// image patch
+            cv::Mat patch;
+
             /// Default constructor
-            inline ImageFeature() {
-                u = 0; v = 0;
+            inline ImageFeature() :  u(0), v(0) {
             }
+    };
+
+    /// 3D feature
+    class DepthFeature {
+        public:
+            /// set of depth features
+            typedef std::vector<DepthFeature> Seq;
+
+            /// 3D feature location
+            union {
+                struct{
+                    float_type x;
+                    float_type y;
+                    float_type z;
+                };
+                float_type coord[3];
+                Vec3 pose;
+            };
+            /// Default constructor
+            inline DepthFeature(){
+            }
+    };
+
+    /// Key Point
+    class KeyPoint {
+        public:
+            /// set of keypoints
+            typedef std::vector<KeyPoint> Seq;
+
+            /// 3D feature
+            DepthFeature depth_feature;
+
+            /// 2D feature
+            ImageFeature image_feature;
+
+            /// Default constructor
+            inline KeyPoint(){
+            }
+    };
+
+    /// Vertex of a graph for a robot pose
+    class Vertex7D {
+        public:
+            /// rotation
+            Quaternion quat;
+            /// position
+            Vec3 pose;
+    };
+
+    /// Edge of a graph
+    class Edge3D {
+        public:
+            ///
+            uint_fast32_t nodes[2];
+            ///
+
     };
 }
 
