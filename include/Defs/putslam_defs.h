@@ -80,6 +80,9 @@ namespace putslam {
 	/// Homogeneous representation of SE(3) rigid body transformations
     class Mat34 {
         public:
+            /// sequence of transformation/poses
+            typedef std::vector<Mat34> Seq;
+
             /// rotation matrix
             Mat33 R;
             /// translation
@@ -87,6 +90,17 @@ namespace putslam {
 
             /// Default constructor sets the default configuration
             inline Mat34() {
+            }
+    };
+
+    /// Homogenous representation of SE(3) rigid body transformations with scale
+    class Mat44 : public Mat34{
+        public:
+            /// rotation
+            float_type scale;
+
+            /// Default constructor sets the default configuration
+            inline Mat44() : scale(1){
             }
     };
 
@@ -152,10 +166,10 @@ namespace putslam {
             /// 2D feature location
             union {
                 struct {
-                    uint16_t u;
-                    uint16_t v;
+                    uint_fast16_t u;
+                    uint_fast16_t v;
                 };
-                uint16_t coord[2];
+                uint_fast16_t coord[2];
             };
 
             /// image patch
@@ -204,22 +218,127 @@ namespace putslam {
             }
     };
 
-    /// Vertex of a graph for a robot pose
-    class Vertex7D {
+    /// Robot pose
+    class RobotPose {
         public:
-            /// rotation
-            Quaternion quat;
-            /// position
-            Vec3 pose;
+            /// set of keypoints
+            typedef std::vector<RobotPose> Seq;
+
+            /// Position
+            Vec3 pos;
+
+            /// Orientation
+            Quaternion rot;
+
+            /// Default constructor
+            inline RobotPose(){
+            }
     };
 
     /// Edge of a graph
-    class Edge3D {
+    class Edge {
         public:
-            ///
-            uint_fast32_t nodes[2];
-            ///
+            /// set of Edges
+            typedef std::vector<Edge> Seq;
+            /// Pointer
+            typedef std::unique_ptr<Edge> Ptr;
 
+            /// Nodes connected by the edge
+            uint_fast32_t nodes[2];
+
+            /// Default constructor
+            inline Edge(){
+            }
+    };
+
+    /// 3D (x,y,z) Edge of a graph
+    class Edge3D : Edge {
+        public:
+            /// set of Edges3D
+            typedef std::vector<Edge3D> Seq;
+
+            /// translation between nodes
+            Vec3 trans;
+
+            /// Default constructor
+            inline Edge3D(){
+            }
+    };
+
+    /// 7D Edge of a graph (x,y,z + quat(4))
+    class Edge7D : Edge {
+        public:
+            /// set of Edges7D
+            typedef std::vector<Edge7D> Seq;
+
+            /// translation between nodes
+            Vec3 trans;
+
+            /// Default constructor
+            inline Edge7D(){
+            }
+    };
+
+    class Vertex {
+        public:
+            /// Set of Vertexes
+            typedef std::vector<Vertex> Seq;
+            /// Pointer
+            typedef std::unique_ptr<Vertex> Ptr;
+
+            /// Vertex type
+            enum Type {
+                    /// Vertex 3D -- feature pose
+                    VERTEX_3D,
+                    /// Vertex 7D -- robot pose
+                    Vertex_7D
+            };
+
+            /// Vertex / node id
+            uint_fast32_t node_id;
+
+            /// Vertex type
+            Type type;
+
+            /// Default constructor
+            inline Vertex() : node_id(0), type(VERTEX_3D){
+            }
+    };
+
+    class Vertex3D : public Vertex {
+        public:
+            /// Set of Vertexes
+            typedef std::vector<Vertex3D> Seq;
+
+            /// Vertex / node
+            KeyPoint node3D;
+
+            /// Default constructor
+            inline Vertex3D(){
+            }
+    };
+
+    class Vertex7D : public Vertex {
+        public:
+            /// Set of Vertexes
+            typedef std::vector<Vertex7D> Seq;
+
+            /// Vertex / node
+            RobotPose node7D;
+
+            /// Default constructor
+            inline Vertex7D(){
+            }
+    };
+
+    /// Pose-based graph
+    class PoseGraph {
+        public:
+            /// Robot poses -- nodes of the graph
+            typedef std::vector<Edge::Ptr> EdgeSet;
+
+            /// Edges of the graph
+            typedef std::vector<Vertex::Ptr> VertexSet;
     };
 }
 

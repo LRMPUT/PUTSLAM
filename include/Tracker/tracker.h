@@ -16,6 +16,9 @@ namespace putslam {
     class Tracker {
         public:
 
+            /// Overloaded constructor
+            Tracker(const std::string _name) : name(_name){}
+
             /// Name of the tracker
             virtual const std::string& getName() const = 0;
 
@@ -30,6 +33,13 @@ namespace putslam {
 
             /// Virtual descrutor
             virtual ~Tracker() {}
+
+        protected:
+            /// A set of 2D features
+            ImageFeature::Seq features;
+
+            /// Tracker name
+            const std::string name;
     };
 };
 

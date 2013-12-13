@@ -43,17 +43,7 @@ class KinectGrabber : public Grabber {
         virtual void run(void);
 
     private:
-        /// Grabber type
-        Type type;
 
-        /// Grabber name
-        const std::string name;
-
-        /// RGBZXYZ Point cloud
-        Point3D::Cloud cloud;
-
-        /// 2D image
-        Image image;
 };
 
 #endif // KINECT_GRABBER_H_INCLUDED

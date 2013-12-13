@@ -28,6 +28,8 @@ option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local SLAM) library" YES)
+mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -159,6 +161,25 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 ###############################################################################
 #
+# PUTSLAM Pose Graph (local SLAM) library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
+        file(GLOB POSE_GRAPH_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/PoseGraph/*.cpp"
+        )
+        file(GLOB POSE_GRAPH_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/PoseGraph/*.h"
+        )
+
+        ADD_LIBRARY(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
+        INSTALL(TARGETS PoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
+
+###############################################################################
+#
 # PUTSLAM DEMO executables
 #
 ###############################################################################
@@ -166,6 +187,6 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 	SET(DEMO_SOURCES ./main.cpp)
 	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS})
+        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph)
 	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

@@ -7,7 +7,7 @@ using namespace putslam;
 /// A single instance of Kanade-Lucas-Tomasi tracker
 TrackerKLT::Ptr tracker;
 
-TrackerKLT::TrackerKLT(void) : name("KLT_Tracker") {
+TrackerKLT::TrackerKLT(void) : Tracker("Lucas-Kanade-Tomasi Tracker"){
 
 }
 

@@ -27,6 +27,9 @@ class TrackerKLT : public Tracker {
         /// Construction
         TrackerKLT(void);
 
+        /// Construction
+        TrackerKLT(const std::string _name) : Tracker(_name){}
+
         /// Name of the tracker
         virtual const std::string& getName() const;
 
@@ -40,11 +43,7 @@ class TrackerKLT : public Tracker {
         virtual void run();
 
     private:
-        /// A set of 2D features
-        ImageFeature::Seq features;
 
-        /// Tracker name
-        const std::string name;
 };
 
 #endif // TRACKERKLT_H_INCLUDED

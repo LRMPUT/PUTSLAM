@@ -7,7 +7,7 @@ using namespace putslam;
 /// A single instance of Kinect grabber
 KinectGrabber::Ptr grabber;
 
-KinectGrabber::KinectGrabber(void) : name("Kinect Grabber"), type(TYPE_PRIMESENSE) {
+KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE) {
 
 }
 

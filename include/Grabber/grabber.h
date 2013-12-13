@@ -18,7 +18,7 @@ namespace putslam {
 
             /// Grabber type
             enum Type {
-                    /// RGB camera */
+                    /// RGB camera
                     TYPE_RGB,
                     /// 2D Depth sensor
                     TYPE_2D_DEPTH,
@@ -27,6 +27,9 @@ namespace putslam {
                     /// PrimeSense-based (Kinect, Asus, PrimeSense)
                     TYPE_PRIMESENSE
             };
+
+            /// overloaded constructor
+            Grabber(const std::string _name, Type _type) : name(_name), type(_type) {};
 
             /// Name of the grabber
             virtual const std::string& getName() const = 0;
@@ -45,6 +48,19 @@ namespace putslam {
 
             /// Virtual descrutor
             virtual ~Grabber() {}
+
+        protected:
+            /// Grabber type
+            Type type;
+
+            /// Grabber name
+            const std::string name;
+
+            /// RGBZXYZ Point cloud
+            Point3D::Cloud cloud;
+
+            /// 2D image
+            Image image;
 	};
 };
 
