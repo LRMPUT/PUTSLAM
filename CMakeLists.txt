@@ -180,6 +180,25 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
 ###############################################################################
 #
+# PUTSLAM Global Graph library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_GRAPH)
+        file(GLOB GLOBAL_GRAPH_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/GlobalGraph/*.cpp"
+        )
+        file(GLOB GLOBAL_GRAPH_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/GlobalGraph/*.h"
+        )
+
+        ADD_LIBRARY(GlobalGraph STATIC ${GLOBAL_GRAPH_SOURCES} ${GLOBAL_GRAPH_HEADERS})
+        INSTALL(TARGETS GlobalGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${GLOBAL_GRAPH_HEADERS} DESTINATION include/putslam/GlobalGraph/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_GRAPH)
+
+###############################################################################
+#
 # PUTSLAM DEMO executables
 #
 ###############################################################################

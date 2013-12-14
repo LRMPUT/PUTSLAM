@@ -243,11 +243,26 @@ namespace putslam {
             /// Pointer
             typedef std::unique_ptr<Edge> Ptr;
 
+            /// Vertex type
+            enum Type {
+                    /// Vertex 3D -- feature pose
+                    EDGE_3D,
+                    /// Vertex 7D -- robot pose
+                    EDGE_7D
+            };
+
+            /// Vertex type
+            Type type;
+
             /// Nodes connected by the edge
             uint_fast32_t nodes[2];
 
             /// Default constructor
             inline Edge(){
+            }
+
+            /// Overloaded constructor
+            inline Edge(Type _type) : type(_type) {
             }
     };
 
@@ -260,8 +275,8 @@ namespace putslam {
             /// translation between nodes
             Vec3 trans;
 
-            /// Default constructor
-            inline Edge3D(){
+            /// Overloaded constructor
+            inline Edge3D() : Edge(EDGE_3D){
             }
     };
 
@@ -274,8 +289,11 @@ namespace putslam {
             /// translation between nodes
             Vec3 trans;
 
+            /// Rotation between nodes
+            Quaternion quat;
+
             /// Default constructor
-            inline Edge7D(){
+            inline Edge7D() : Edge(EDGE_7D){
             }
     };
 
@@ -291,7 +309,7 @@ namespace putslam {
                     /// Vertex 3D -- feature pose
                     VERTEX_3D,
                     /// Vertex 7D -- robot pose
-                    Vertex_7D
+                    VERTEX_7D
             };
 
             /// Vertex / node id
@@ -300,8 +318,15 @@ namespace putslam {
             /// Vertex type
             Type type;
 
+            /// Point cloud
+            Point3D::Cloud cloud;
+
             /// Default constructor
-            inline Vertex() : node_id(0), type(VERTEX_3D){
+            inline Vertex() : node_id(0){
+            }
+
+            /// Overloaded constructor
+            inline Vertex(Type _type) : node_id(0), type(_type){
             }
     };
 
@@ -314,7 +339,7 @@ namespace putslam {
             KeyPoint node3D;
 
             /// Default constructor
-            inline Vertex3D(){
+            inline Vertex3D() : Vertex(VERTEX_3D){
             }
     };
 
@@ -327,7 +352,7 @@ namespace putslam {
             RobotPose node7D;
 
             /// Default constructor
-            inline Vertex7D(){
+            inline Vertex7D() : Vertex{VERTEX_7D}{
             }
     };
 
