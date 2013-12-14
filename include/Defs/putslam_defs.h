@@ -301,8 +301,6 @@ namespace putslam {
         public:
             /// Set of Vertexes
             typedef std::vector<Vertex> Seq;
-            /// Pointer
-            typedef std::unique_ptr<Vertex> Ptr;
 
             /// Vertex type
             enum Type {
@@ -314,6 +312,9 @@ namespace putslam {
 
             /// Vertex / node id
             uint_fast32_t node_id;
+
+            /// Vertex / node id
+            KeyPoint::Seq keypoints;
 
             /// Vertex type
             Type type;
@@ -360,10 +361,10 @@ namespace putslam {
     class PoseGraph {
         public:
             /// Robot poses -- nodes of the graph
-            typedef std::vector<Edge::Ptr> EdgeSet;
+            typedef std::vector<Edge*> EdgeSet;
 
             /// Edges of the graph
-            typedef std::vector<Vertex::Ptr> VertexSet;
+            typedef std::vector<Vertex*> VertexSet;
     };
 }
 

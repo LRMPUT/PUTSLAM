@@ -28,8 +28,10 @@ option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
-option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local SLAM) library" YES)
+option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" YES)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
+option(BUILD_PUTSLAM_GLOBAL_MAP "Build PUTSLAM Global Map library" YES)
+mark_as_advanced(BUILD_PUTSLAM_GLOBAL_MAP)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -180,22 +182,22 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
 ###############################################################################
 #
-# PUTSLAM Global Graph library
+# PUTSLAM Global Map library
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_GRAPH)
-        file(GLOB GLOBAL_GRAPH_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/GlobalGraph/*.cpp"
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_MAP)
+        file(GLOB GLOBAL_MAP_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/GlobalMap/*.cpp"
         )
-        file(GLOB GLOBAL_GRAPH_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/GlobalGraph/*.h"
+        file(GLOB GLOBAL_MAP_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/GlobalMap/*.h"
         )
 
-        ADD_LIBRARY(GlobalGraph STATIC ${GLOBAL_GRAPH_SOURCES} ${GLOBAL_GRAPH_HEADERS})
-        INSTALL(TARGETS GlobalGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${GLOBAL_GRAPH_HEADERS} DESTINATION include/putslam/GlobalGraph/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_GRAPH)
+        ADD_LIBRARY(GlobalMap STATIC ${GLOBAL_MAP_SOURCES} ${GLOBAL_MAP_HEADERS})
+        INSTALL(TARGETS GlobalMap RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${GLOBAL_MAP_HEADERS} DESTINATION include/putslam/GlobalMap/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_MAP)
 
 ###############################################################################
 #
@@ -206,6 +208,6 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_GRAPH)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 	SET(DEMO_SOURCES ./main.cpp)
 	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph)
+        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap)
 	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

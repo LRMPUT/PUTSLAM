@@ -22,12 +22,30 @@ const ImageFeature::Seq& TrackerKLT::getFeatures(void) const {
 
 /// Reset tracking and find new set of features
 void TrackerKLT::reset(){
-
+    frame_id = 0;
 }
 
-/// Run tracking thread
-void TrackerKLT::run(void) {
+/// Run single tracking iteration
+bool TrackerKLT::track(const Image& next_frame) {
+    std::cout << "tracking frame: " << frame_id << std::endl;
+    frame_id++;
+    if (!((frame_id+1)%10)){//check if we should continue tracking
+        reset();
+        return false;
+    }
+    else
+        return true;
+}
 
+/// Compute homogenous transformation
+const RobotPose& TrackerKLT::computeTransform(void) {
+    std::cout << "KLT: compute transformation\n";
+    return transformation;
+}
+
+/// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
+const Vertex7D& TrackerKLT::getVertex(void){
+    return keypoint;
 }
 
 putslam::Tracker* putslam::createTrackerKLT(void) {

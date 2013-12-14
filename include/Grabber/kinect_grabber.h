@@ -43,7 +43,6 @@ class KinectGrabber : public Grabber {
         virtual void run(void);
 
     private:
-
 };
 
 #endif // KINECT_GRABBER_H_INCLUDED

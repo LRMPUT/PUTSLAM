@@ -1,31 +1,31 @@
-/** @file graph_g20.h
+/** @file global_graph.h
  *
- * implementation - g2o graph optimization
+ * implementation - global graph optimization
  *
  */
 
-#ifndef GRAPH_G2O_H_INCLUDED
-#define GRAPH_G2O_H_INCLUDED
+#ifndef GLOBAL_GRAPH_H_INCLUDED
+#define GLOBAL_GRAPH_H_INCLUDED
 
 #include "graph.h"
 #include <iostream>
 #include <memory>
 
 namespace putslam {
-    /// create a single graph (with g2o optimization)
-    Graph* createPoseGraphG2O(void);
+    /// create a single global graph (with loop closure detection)
+    Graph* createGlobalGraph(void);
 };
 
 using namespace putslam;
 
-/// Pose Graph g2o implementation
-class PoseGraphG2O : public Graph {
+/// Global Graph implementation
+class GlobalGraph : public Graph {
     public:
         /// Pointer
-        typedef std::unique_ptr<PoseGraphG2O> Ptr;
+        typedef std::unique_ptr<GlobalGraph> Ptr;
 
         /// Construction
-        PoseGraphG2O(void);
+        GlobalGraph(void);
 
         /// Name of the graph
         const std::string& getName() const;
@@ -67,4 +67,4 @@ class PoseGraphG2O : public Graph {
         virtual void optimize(void);
 };
 
-#endif // GRAPH_G2O_H_INCLUDED
+#endif // GLOBAL_GRAPH_H_INCLUDED

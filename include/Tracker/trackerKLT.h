@@ -39,8 +39,14 @@ class TrackerKLT : public Tracker {
         /// Reset tracking and find new set of features
         virtual void reset();
 
-        /// Run tracking thread
-        virtual void run();
+        /// Run single tracking iteration
+        virtual bool track(const Image& next_frame);
+
+        /// Compute homogenous transformation
+        virtual const RobotPose& computeTransform(void);
+
+        /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
+        virtual const Vertex7D& getVertex(void);
 
     private:
 

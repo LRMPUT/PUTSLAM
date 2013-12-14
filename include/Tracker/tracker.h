@@ -17,7 +17,7 @@ namespace putslam {
         public:
 
             /// Overloaded constructor
-            Tracker(const std::string _name) : name(_name){}
+            Tracker(const std::string _name) : name(_name), frame_id(0){}
 
             /// Name of the tracker
             virtual const std::string& getName() const = 0;
@@ -28,8 +28,14 @@ namespace putslam {
             /// Reset tracking and find new set of features
             virtual void reset() = 0;
 
-            /// Run tracking thread
-            virtual void run() = 0;
+            /// Run single tracking iteration
+            virtual bool track(const Image& next_frame) = 0;
+
+            /// Compute homogenous transformation
+            virtual const RobotPose& computeTransform(void) = 0;
+
+            /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
+            virtual const Vertex7D& getVertex(void) = 0;
 
             /// Virtual descrutor
             virtual ~Tracker() {}
@@ -40,6 +46,15 @@ namespace putslam {
 
             /// Tracker name
             const std::string name;
+
+            /// Frame id
+            uint_fast32_t frame_id;
+
+            /// Computed homogenous transformation
+            RobotPose transformation;
+
+            /// keypoint: robot/sensor pose + point cloud + features
+            Vertex7D keypoint;
     };
 };
 

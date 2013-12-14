@@ -8,6 +8,7 @@
 #define _GRABBER_H_
 
 #include "../Defs/putslam_defs.h"
+#include <iostream>
 #include <string>
 #include <vector>
 
