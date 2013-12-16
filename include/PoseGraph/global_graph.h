@@ -65,6 +65,8 @@ class GlobalGraph : public Graph {
 
         /// Optimize graph
         virtual void optimize(void);
+	private:
+		PoseGraph graph;	
 };
 
 #endif // GLOBAL_GRAPH_H_INCLUDED

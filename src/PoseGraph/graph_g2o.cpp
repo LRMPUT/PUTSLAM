@@ -38,12 +38,12 @@ void PoseGraphG2O::clear(){
 
 /// @returns the map <i>id -> vertex</i> where the vertices are stored
 const PoseGraph::VertexSet& PoseGraphG2O::vertices() const{
-
+	return graph.vertices;
 }
 
 /// @returns the set of edges of the hyper graph
 const PoseGraph::EdgeSet& PoseGraphG2O::edges() const{
-
+	return graph.edges;
 }
 
 /**

@@ -5,6 +5,9 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x")
 # Build options have to be before PROJECT(...)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
 SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
+#if (MSVC)
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+#endif(MSVC)
 
 # Estimator of Hand Configuration
 PROJECT(PUTSLAM)
@@ -48,15 +51,15 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 #FIND_PACKAGE(PCL REQUIRED)
 
 # Executable output directory
-SET(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_PARENT}/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
+SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
 mark_as_advanced(RUNTIME_OUTPUT_DIRECTORY)
 
 # Dynamic library output directory
-SET(LIBRARY_OUTPUT_DIRECTORY ${PROJECT_PARENT}/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Dynamic library output directory")
+SET(LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Dynamic library output directory")
 mark_as_advanced(LIBRARY_OUTPUT_DIRECTORY)
 
 # Static library output directory
-SET(ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_PARENT}/lib${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Static library output directory")
+SET(ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Static library output directory")
 mark_as_advanced(ARCHIVE_OUTPUT_DIRECTORY)
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_OUTPUT_DIRECTORY})

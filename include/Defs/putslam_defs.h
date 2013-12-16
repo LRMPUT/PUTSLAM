@@ -194,7 +194,6 @@ namespace putslam {
                     float_type z;
                 };
                 float_type coord[3];
-                Vec3 pose;
             };
             /// Default constructor
             inline DepthFeature(){
@@ -353,7 +352,7 @@ namespace putslam {
             RobotPose node7D;
 
             /// Default constructor
-            inline Vertex7D() : Vertex{VERTEX_7D}{
+            inline Vertex7D() : Vertex(VERTEX_7D){
             }
     };
 
@@ -365,6 +364,12 @@ namespace putslam {
 
             /// Edges of the graph
             typedef std::vector<Vertex*> VertexSet;
+
+			/// Edges
+			EdgeSet edges;
+
+			/// Vertices
+			VertexSet vertices;
     };
 }
 

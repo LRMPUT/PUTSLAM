@@ -40,12 +40,12 @@ void GlobalGraph::clear(){
 
 /// @returns the map <i>id -> vertex</i> where the vertices are stored
 const PoseGraph::VertexSet& GlobalGraph::vertices() const{
-
+	return graph.vertices;
 }
 
 /// @returns the set of edges of the hyper graph
 const PoseGraph::EdgeSet& GlobalGraph::edges() const{
-
+	return graph.edges;
 }
 
 /**

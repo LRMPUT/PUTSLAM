@@ -65,6 +65,9 @@ class PoseGraphG2O : public Graph {
 
         /// Optimize graph
         virtual void optimize(void);
+
+	private:
+		PoseGraph graph;
 };
 
 #endif // GRAPH_G2O_H_INCLUDED
