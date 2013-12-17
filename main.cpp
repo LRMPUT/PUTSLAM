@@ -47,7 +47,7 @@ int main()
         else if (grabber_type == "MesaImaging")
             grabber = createGrabberKinect();
         else // Default
-            Grabber* grabber = createGrabberKinect();
+            grabber = createGrabberKinect();
 
         cout << "Current grabber: " << grabber->getName() << std::endl;
         Tracker * tracker = createTrackerKLT();

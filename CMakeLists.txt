@@ -5,9 +5,6 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x")
 # Build options have to be before PROJECT(...)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
 SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
-if (MSVC)
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-endif()
 
 # Estimator of Hand Configuration
 PROJECT(PUTSLAM)
@@ -71,6 +68,10 @@ foreach(CONFIGURATION_TYPE ${CMAKE_CONFIGURATION_TYPES})
 	SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIGURATION_TYPE} ${LIBRARY_OUTPUT_DIRECTORY})
 	SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIGURATION_TYPE} ${ARCHIVE_OUTPUT_DIRECTORY})
 endforeach(CONFIGURATION_TYPE CMAKE_CONFIGURATION_TYPES)
+
+if (MSVC)
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
 
 ###############################################################################
 #
