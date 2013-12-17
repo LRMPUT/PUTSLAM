@@ -39,8 +39,8 @@ class KinectGrabber : public Grabber {
         /// Grab image and/or point cloud
         virtual void grab();
 
-        /// run grabber thread
-        virtual void run(void);
+        /// Calibrate sensor
+        virtual void calibrate(void);
 
     private:
 };

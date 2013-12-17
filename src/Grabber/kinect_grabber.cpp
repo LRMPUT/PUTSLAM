@@ -34,7 +34,7 @@ void KinectGrabber::grab(void) {
 }
 
 /// run grabber thread
-void KinectGrabber::run(void) {
+void KinectGrabber::calibrate(void) {
 
 }
 

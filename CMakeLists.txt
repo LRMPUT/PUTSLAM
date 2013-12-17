@@ -5,9 +5,9 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x")
 # Build options have to be before PROJECT(...)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
 SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
-#if (MSVC)
+if (MSVC)
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-#endif(MSVC)
+endif()
 
 # Estimator of Hand Configuration
 PROJECT(PUTSLAM)
@@ -23,8 +23,8 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
-option(BUILD_PUTSLAM_MATH "Build PUTSLAM Math library" YES)
-mark_as_advanced(BUILD_PUTSLAM_MATH)
+option(BUILD_PUTSLAM_CORE "Build PUTSLAM Core Tools library" YES)
+mark_as_advanced(BUILD_PUTSLAM_CORE)
 option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER)
 option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
@@ -91,23 +91,25 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
 ###############################################################################
 #
-# PUTSLAM Math library
+# PUTSLAM Core tools library
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
-	file(GLOB MATH_SOURCES
-	    "${CMAKE_SOURCE_DIR}/src/Core/Math/*.cpp"
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_CORE)
+        file(GLOB CORE_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Core/Math/*.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Core/Tools/*.cpp"
 	)
-	file(GLOB MATH_HEADERS
-	    "${CMAKE_SOURCE_DIR}/include/Core/Math/*.h"
+        file(GLOB CORE_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Core/Math/*.h"
+            "${CMAKE_SOURCE_DIR}/include/Core/Tools/*.h"
 	)
 
-	ADD_LIBRARY(Math STATIC ${MATH_SOURCES} ${MATH_HEADERS})
-	#TARGET_LINK_LIBRARIES(Math)
-	INSTALL(TARGETS Math RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${MATH_HEADERS} DESTINATION include/putslam/Core/Math/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
+        ADD_LIBRARY(Core STATIC ${CORE_SOURCES} ${CORE_HEADERS})
+        #TARGET_LINK_LIBRARIES(Math)
+        INSTALL(TARGETS Core RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${CORE_HEADERS} DESTINATION include/putslam/Core/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_CORE)
 
 ###############################################################################
 #
@@ -116,12 +118,14 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATH)
 ###############################################################################
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
-	SET(GRABBER_HEADERS ./include/Grabber/grabber.h)
+        file(GLOB GRABBER_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Grabber/*.cpp"
+        )
+        file(GLOB GRABBER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Grabber/*.h"
+        )
 
-	# Kinect Grabber
-	SET(GRABBERKINECT_SOURCES ./src/Grabber/kinect_grabber.cpp)
-	SET(GRABBERKINECT_HEADERS ./include/Grabber/kinect_grabber.h)
-        ADD_LIBRARY(Grabber STATIC ${GRABBERKINECT_SOURCES} ${GRABBER_HEADERS} ${GRABBERKINECT_HEADERS})
+        ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
         INSTALL(TARGETS Grabber RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${GRABBER_HEADERS} GRABBERKINECT_HEADERS DESTINATION include/putslam/Grabber/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
@@ -209,8 +213,14 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_MAP)
 ###############################################################################
 
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
 	SET(DEMO_SOURCES ./main.cpp)
-	ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo Math Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap)
-	INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
+        ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap)
+        INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

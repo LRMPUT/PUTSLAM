@@ -146,11 +146,16 @@ namespace putslam {
             typedef std::vector<Image> Seq;
 
             /// 2D image
-            cv::Mat data;
+            cv::Mat image;
+
+            /// 2D image
+            cv::Mat depth;
+
             /// XYZRGBA point cloud
-            Point3D::Cloud depthData;
+            Point3D::Cloud cloud;
+
             /// timestamp
-            double timestamp;
+            float_type timestamp;
 
             /// Default constructor
             inline Image() : timestamp(0){
@@ -172,8 +177,11 @@ namespace putslam {
                 uint_fast16_t coord[2];
             };
 
-            /// image patch
+            /// Image patch
             cv::Mat patch;
+
+            /// Depth
+            float_type depth;
 
             /// Default constructor
             inline ImageFeature() :  u(0), v(0) {
@@ -211,6 +219,9 @@ namespace putslam {
 
             /// 2D feature
             ImageFeature image_feature;
+
+            /// Keypoint id
+            uint_fast32_t keypoint_id;
 
             /// Default constructor
             inline KeyPoint(){

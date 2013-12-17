@@ -8,6 +8,7 @@
 #define _GRABBER_H_
 
 #include "../Defs/putslam_defs.h"
+#include "calibration.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -26,7 +27,9 @@ namespace putslam {
                     /// 3D Depth sensor
                     TYPE_3D_DEPTH,
                     /// PrimeSense-based (Kinect, Asus, PrimeSense)
-                    TYPE_PRIMESENSE
+                    TYPE_PRIMESENSE,
+                    /// Read data from files
+                    TYPE_FILE
             };
 
             /// overloaded constructor
@@ -44,8 +47,8 @@ namespace putslam {
             /// Grab image and/or point cloud
             virtual void grab() = 0;
 
-            /// run grabber thread
-            virtual void run() = 0;
+            /// Calibrate sensor
+            virtual void calibrate() = 0;
 
             /// Virtual descrutor
             virtual ~Grabber() {}
@@ -62,6 +65,9 @@ namespace putslam {
 
             /// 2D image
             Image image;
+
+            /// Calibration methods
+            Calibration calibrator;
 	};
 };
 

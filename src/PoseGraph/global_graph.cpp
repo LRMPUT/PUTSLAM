@@ -16,7 +16,6 @@ putslam::Graph* putslam::createGlobalGraph(void) {
 }
 
 GlobalGraph::GlobalGraph(void) : Graph("Pose Graph g2o") {
-    std::cout << this->name;
 }
 
 const std::string& GlobalGraph::getName() const {

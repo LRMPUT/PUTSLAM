@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opencv_storage> <!-- required for OpenCV XML parser-->
+
+  <!-- Sensor configuration -->
+  <Grabber>
+    <name>Kinect</name>
+    <framerate>30</framerate>
+    <calibration_file>Kinect1.xml</calibration_file>
+  </Grabber>
+
+</opencv_storage>
