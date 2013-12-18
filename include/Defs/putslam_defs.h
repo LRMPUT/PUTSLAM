@@ -139,11 +139,11 @@ namespace putslam {
             }
     };
 
-    /// Image representation
-    class Image {
+    /// Sensor Frame representation
+    class SensorFrame {
         public:
             /// sequence of images
-            typedef std::vector<Image> Seq;
+            typedef std::vector<SensorFrame> Seq;
 
             /// 2D image
             cv::Mat image;
@@ -158,7 +158,7 @@ namespace putslam {
             float_type timestamp;
 
             /// Default constructor
-            inline Image() : timestamp(0){
+            inline SensorFrame() : timestamp(0){
             }
     };
 
@@ -320,24 +320,15 @@ namespace putslam {
                     VERTEX_7D
             };
 
-            /// Vertex / node id
-            uint_fast32_t node_id;
-
-            /// Vertex / node id
-            KeyPoint::Seq keypoints;
-
             /// Vertex type
             Type type;
 
-            /// Point cloud
-            Point3D::Cloud cloud;
-
             /// Default constructor
-            inline Vertex() : node_id(0){
+            inline Vertex(){
             }
 
             /// Overloaded constructor
-            inline Vertex(Type _type) : node_id(0), type(_type){
+            inline Vertex(Type _type) : type(_type){
             }
     };
 
@@ -347,7 +338,7 @@ namespace putslam {
             typedef std::vector<Vertex3D> Seq;
 
             /// Vertex / node
-            KeyPoint node3D;
+            KeyPoint keypoint;
 
             /// Default constructor
             inline Vertex3D() : Vertex(VERTEX_3D){
@@ -361,6 +352,15 @@ namespace putslam {
 
             /// Vertex / node
             RobotPose node7D;
+
+            /// Point cloud
+            Point3D::Cloud cloud;
+
+            /// Vertex / node id
+            uint_fast32_t vertex_id;
+
+            /// Vertex / node id
+            KeyPoint::Seq keypoints;
 
             /// Default constructor
             inline Vertex7D() : Vertex(VERTEX_7D){

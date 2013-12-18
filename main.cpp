@@ -31,7 +31,7 @@ void poseGraphUpdate(Graph* graph, Graph* global_graph, const Vertex7D& transfor
     }
 }
 
-unsigned const max_tracking_duration = 6;
+unsigned const max_tracking_duration = 6;//seconds
 
 int main()
 {
@@ -49,6 +49,7 @@ int main()
         else // Default
             grabber = createGrabberKinect();
 
+        // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
         Tracker * tracker = createTrackerKLT();
         cout << "Current tracker: " << tracker->getName() << std::endl;
@@ -60,7 +61,7 @@ int main()
         auto start = chrono::system_clock::now();
         while (1){ //tracking
             grabber->grab(); // grab frame
-            if (!tracker->track(grabber->getImage())) { //check if tracker should start new tracking
+            if (!tracker->track(grabber->getSensorFrame())) { //check if tracker should start new tracking
                 if (thread_poseGraph) {
                     thread_poseGraph->join(); //wait until pose graph thread is comleted (it should be considered as an error)
                     thread_poseGraph.release(); //release object (is it possible to start thread without 'new'?)

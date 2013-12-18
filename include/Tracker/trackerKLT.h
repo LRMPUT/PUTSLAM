@@ -40,7 +40,7 @@ class TrackerKLT : public Tracker {
         virtual void reset();
 
         /// Run single tracking iteration
-        virtual bool track(const Image& next_frame);
+        virtual bool track(const SensorFrame& next_frame);
 
         /// Compute homogenous transformation
         virtual const RobotPose& computeTransform(void);

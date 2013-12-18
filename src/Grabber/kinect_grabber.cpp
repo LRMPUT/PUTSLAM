@@ -21,8 +21,8 @@ const Point3D::Cloud& KinectGrabber::getCloud(void) const {
     return cloud;
 }
 
-const Image& KinectGrabber::getImage(void) const {
-    return image;
+const SensorFrame& KinectGrabber::getSensorFrame(void) const {
+    return sensor_frame;
 }
 
 void KinectGrabber::grab(void) {

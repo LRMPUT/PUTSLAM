@@ -26,7 +26,7 @@ void TrackerKLT::reset(){
 }
 
 /// Run single tracking iteration
-bool TrackerKLT::track(const Image& next_frame) {
+bool TrackerKLT::track(const SensorFrame& next_frame) {
     std::cout << "tracking frame: " << frame_id << std::endl;
     frame_id++;
     if (!((frame_id+1)%10)){//check if we should continue tracking

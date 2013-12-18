@@ -29,7 +29,7 @@ namespace putslam {
             virtual void reset() = 0;
 
             /// Run single tracking iteration
-            virtual bool track(const Image& next_frame) = 0;
+            virtual bool track(const SensorFrame& next_frame) = 0;
 
             /// Compute homogenous transformation
             virtual const RobotPose& computeTransform(void) = 0;

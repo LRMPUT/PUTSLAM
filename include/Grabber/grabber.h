@@ -42,7 +42,7 @@ namespace putslam {
             virtual const Point3D::Cloud& getCloud(void) const = 0;
 
             /// Returns the current 2D image
-            virtual const Image& getImage(void) const = 0;
+            virtual const SensorFrame& getSensorFrame(void) const = 0;
 
             /// Grab image and/or point cloud
             virtual void grab() = 0;
@@ -64,7 +64,7 @@ namespace putslam {
             Point3D::Cloud cloud;
 
             /// 2D image
-            Image image;
+            SensorFrame sensor_frame;
 
             /// Calibration methods
             Calibration calibrator;
