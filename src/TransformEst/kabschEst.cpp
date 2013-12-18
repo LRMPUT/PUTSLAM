@@ -15,14 +15,13 @@ const std::string& KabschEst::getName() const {
     return name;
 }
 
-/// Returns current transformation
-const Mat34& KabschEst::getTransformation(void) const{
-    return transformation;
+void KabschEst::setInputKeypoints(ImageFeature::Seq& keypointA, ImageFeature::Seq& keypointB){
+
 }
 
 /// compute transformation using two set of keypoints
-void KabschEst::computeTransformation(ImageFeature::Seq& keypointA, ImageFeature::Seq& keypointB){
-
+const Mat34& KabschEst::computeTransformation(void){
+    return transformation;
 }
 
 putslam::TransformEst* putslam::createKapschEstimator(void) {

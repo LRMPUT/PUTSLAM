@@ -1,42 +1,42 @@
-/** @file kabschEst.h
+/** @file ICPEst.h
  *
- * Kabsch algorithm interface (transformation estimation)
+ * Genaralized ICP algorithm interface (transformation estimation)
  *
  */
 
-#ifndef _KABSCHEST_H_
-#define _KABSCHEST_H_
+#ifndef _ICPEST_H_
+#define _ICPEST_H_
 
 #include "transformEst.h"
 #include <iostream>
 #include <memory>
 
 namespace putslam {
-    /// create a single transform estimator (Kabsch)
-    TransformEst* createKapschEstimator(void);
+    /// create a single transform estimator (ICP)
+    TransformEst* createICPEstimator(void);
 };
 
 namespace putslam {
-    /// Kabsch Algorithm interface
-    class KabschEst : public TransformEst {
+    /// ICP Algorithm interface
+    class ICPEst : public TransformEst {
         public:
             /// Pointer
-            typedef std::unique_ptr<KabschEst> Ptr;
+            typedef std::unique_ptr<ICPEst> Ptr;
 
             /// Construction
-            KabschEst(void);
+            ICPEst(void);
 
             /// Name of the Transformation estimator
             virtual const std::string& getName() const;
 
-            /// Set Keypoints used for transformation estimation
-            virtual void setInputKeypoints(ImageFeature::Seq& keypointA, ImageFeature::Seq& keypointB);
+            /// Set point clouds used for transformation estimation
+            virtual void setInputClouds(Point3D::Cloud cloudA, Point3D::Cloud cloudB);
 
             /// compute transformation using two set of keypoints
             virtual const Mat34& computeTransformation(void);
 
             /// Virtual descrutor
-            virtual ~KabschEst() {}
+            virtual ~ICPEst() {}
 
         private:
             /// Estimated transformation
@@ -46,4 +46,4 @@ namespace putslam {
     };
 };
 
-#endif // _KABSCHEST_H_
+#endif // _ICPEST_H_

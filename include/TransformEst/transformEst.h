@@ -19,11 +19,8 @@ namespace putslam {
             /// Name of the estimator
             virtual const std::string& getName() const = 0;
 
-            /// Returns current transformation
-            virtual const Mat34& getTransformation(void) const = 0;
-
             /// Grab image and/or point cloud
-            virtual void computeTransformation(ImageFeature::Seq& keypointA, ImageFeature::Seq& keypointB) = 0;
+            virtual const Mat34& computeTransformation(void) = 0;
 
             /// Virtual descrutor
             virtual ~TransformEst() {}
