@@ -30,7 +30,7 @@ namespace putslam {
             virtual const std::string& getName() const;
 
             /// Set point clouds used for transformation estimation
-            virtual void setInputClouds(Point3D::Cloud cloudA, Point3D::Cloud cloudB);
+            virtual void setInputClouds(PointCloud cloudA, PointCloud cloudB);
 
             /// compute transformation using two set of keypoints
             virtual const Mat34& computeTransformation(void);

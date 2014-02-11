@@ -31,7 +31,7 @@ class KinectGrabber : public Grabber {
         virtual const std::string& getName() const;
 
         /// Returns current point cloud
-        virtual const Point3D::Cloud& getCloud(void) const;
+        virtual const PointCloud& getCloud(void) const;
 
         /// Returns the current 2D image
         virtual const SensorFrame& getSensorFrame(void) const;

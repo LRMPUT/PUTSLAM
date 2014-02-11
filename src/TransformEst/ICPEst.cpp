@@ -16,7 +16,7 @@ const std::string& ICPEst::getName() const {
 }
 
 /// Returns current transformation
-void ICPEst::setInputClouds(Point3D::Cloud cloudA, Point3D::Cloud cloudB){
+void ICPEst::setInputClouds(PointCloud cloudA, PointCloud cloudB){
 
 }
 

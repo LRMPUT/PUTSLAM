@@ -45,7 +45,15 @@ mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 FIND_PACKAGE(OpenCV REQUIRED)
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 # PCL
-#FIND_PACKAGE(PCL REQUIRED)
+FIND_PACKAGE(PCL REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+#Eigen
+add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
 
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
@@ -221,7 +229,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
 	SET(DEMO_SOURCES ./main.cpp)
         ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap)
+        TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
         INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

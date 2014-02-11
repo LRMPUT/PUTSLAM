@@ -39,7 +39,7 @@ namespace putslam {
             virtual const std::string& getName() const = 0;
 
             /// Returns the current point cloud
-            virtual const Point3D::Cloud& getCloud(void) const = 0;
+            virtual const PointCloud& getCloud(void) const = 0;
 
             /// Returns the current 2D image
             virtual const SensorFrame& getSensorFrame(void) const = 0;
@@ -61,7 +61,7 @@ namespace putslam {
             const std::string name;
 
             /// RGBZXYZ Point cloud
-            Point3D::Cloud cloud;
+            PointCloud cloud;
 
             /// 2D image
             SensorFrame sensor_frame;
