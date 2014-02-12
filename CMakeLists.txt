@@ -32,6 +32,8 @@ option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global grap
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_GLOBAL_MAP "Build PUTSLAM Global Map library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GLOBAL_MAP)
+option(BUILD_PUTSLAM_G2O "Build g2o library" YES)
+mark_as_advanced(BUILD_PUTSLAM_G2O)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -87,16 +89,28 @@ endif()
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
-	file(GLOB DEFS_HEADERS
-	    "${CMAKE_SOURCE_DIR}/include/Defs/putslam_defs.h"
-	)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o)
+
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+
+
+###############################################################################
+#
+# PUTSLAM defs library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        file(GLOB DEFS_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Defs/putslam_defs.h"
+        )
         ADD_LIBRARY(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
         set_target_properties(PUTSLAM_DEFS PROPERTIES LINKER_LANGUAGE CXX)
 # 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-	INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
+        INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
 
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
 
 ###############################################################################
 #
@@ -230,6 +244,13 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 	SET(DEMO_SOURCES ./main.cpp)
         ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
         TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND( TARGET Demo POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying g2o libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)

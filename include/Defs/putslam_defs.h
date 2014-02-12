@@ -28,6 +28,9 @@ namespace putslam {
     /// Matrix representation of SO(3) group of rotations
     typedef Eigen::Matrix<float_type,3,3> Mat33;
 
+    /// Information Matrix of SE(3) transformation
+    typedef Eigen::Matrix<float_type,6,6> Mat66;
+
     /// Quaternion representation of SO(3) group of rotations
     typedef Eigen::Quaternion<float_type> Quaternion;
 
@@ -167,7 +170,7 @@ namespace putslam {
 
             /// Vertex type
             enum Type {
-                    /// Vertex 3D -- feature pose
+                    /// Vertex 3D -- feature position
                     EDGE_3D,
                     /// Vertex 7D -- robot pose
                     EDGE_7D
@@ -197,6 +200,9 @@ namespace putslam {
             /// translation between nodes
             Vec3 trans;
 
+            /// Information matrix
+            Mat33 info;
+
             /// Overloaded constructor
             inline Edge3D() : Edge(EDGE_3D){
             }
@@ -214,6 +220,9 @@ namespace putslam {
             /// Rotation between nodes
             Quaternion quat;
 
+            /// Information matrix
+            Mat66 info;
+
             /// Default constructor
             inline Edge7D() : Edge(EDGE_7D){
             }
@@ -226,7 +235,7 @@ namespace putslam {
 
             /// Vertex type
             enum Type {
-                    /// Vertex 3D -- feature pose
+                    /// Vertex 3D -- feature position
                     VERTEX_3D,
                     /// Vertex 7D -- robot pose
                     VERTEX_7D
