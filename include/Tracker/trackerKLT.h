@@ -46,7 +46,7 @@ class TrackerKLT : public Tracker {
         virtual const RobotPose& computeTransform(void);
 
         /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
-        virtual const Vertex7D& getVertex(void);
+        virtual const VertexSE3& getVertex(void);
 
     private:
 

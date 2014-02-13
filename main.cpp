@@ -14,13 +14,13 @@ using namespace std;
 std::unique_ptr<std::thread> thread_poseGraph;
 std::unique_ptr<std::thread> thread_globalGraph;
 
-void globalGraphUpdate(Graph* global_graph, const Vertex7D& transform){
+void globalGraphUpdate(Graph* global_graph, const VertexSE3& transform){
     global_graph->updateGraph(transform); //update graph
     global_graph->optimize(); // loop closure detection
 
 }
 
-void poseGraphUpdate(Graph* graph, Graph* global_graph, const Vertex7D& transform){
+void poseGraphUpdate(Graph* graph, Graph* global_graph, const VertexSE3& transform){
     if(graph->updateGraph(transform)){ //detect previously visited places and update graph (add vertex or node to previously visited vertex)
         if (thread_globalGraph) {
             thread_globalGraph->join(); //wait until global graph thread is comleted (it should be considered as an error)

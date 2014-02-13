@@ -58,10 +58,10 @@ class GlobalGraph : public Graph {
         bool addEdge(Edge& e);
 
         /**
-         * update graph: adds a vertexes and edges to the graph.
+         * update graph: adds vertices and edges to the graph.
          * returns true, on success, or false on failure.
          */
-        virtual bool updateGraph(const Vertex7D& v);
+        virtual bool updateGraph(const VertexSE3& v);
 
         /// Optimize graph
         virtual void optimize(void);

@@ -44,10 +44,10 @@ namespace putslam {
             virtual bool addVertex(Vertex& v) = 0;
 
             /**
-             * update graph: adds a vertexes and edges to the graph.
+             * update graph: adds vertices and edges to the graph.
              * returns true, on success, or false on failure.
              */
-            virtual bool updateGraph(const Vertex7D& v) = 0;
+            virtual bool updateGraph(const VertexSE3& v) = 0;
 
             /**
              * Adds an edge  to the graph. If the edge is already in the graph, it

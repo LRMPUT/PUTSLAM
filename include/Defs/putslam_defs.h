@@ -103,26 +103,6 @@ namespace putslam {
             }
     };
 
-    /// 3D feature
-    class DepthFeature {
-        public:
-            /// set of depth features
-            typedef std::vector<DepthFeature> Seq;
-
-            /// 3D feature location
-            union {
-                struct{
-                    float_type x;
-                    float_type y;
-                    float_type z;
-                };
-                float_type coord[3];
-            };
-            /// Default constructor
-            inline DepthFeature(){
-            }
-    };
-
     /// Key Point
     class KeyPoint {
         public:
@@ -130,16 +110,20 @@ namespace putslam {
             typedef std::vector<KeyPoint> Seq;
 
             /// 3D feature
-            DepthFeature depth_feature;
+            Vec3 depthFeature;
 
             /// 2D feature
-            ImageFeature image_feature;
+            ImageFeature imageFeature;
 
             /// Keypoint id
-            uint_fast32_t keypoint_id;
+            uint_fast32_t keypointId;
 
             /// Default constructor
             inline KeyPoint(){
+            }
+
+            /// Overloaded constructor
+            inline KeyPoint(Vec3& _depth) : depthFeature(_depth){
             }
     };
 
@@ -158,6 +142,10 @@ namespace putslam {
             /// Default constructor
             inline RobotPose(){
             }
+
+            /// Overloaded constructor
+            inline RobotPose(Vec3& _pos, Quaternion& _rot) : pos(_pos), rot(_rot){
+            }
     };
 
     /// Edge of a graph
@@ -172,27 +160,36 @@ namespace putslam {
             enum Type {
                     /// Vertex 3D -- feature position
                     EDGE_3D,
-                    /// Vertex 7D -- robot pose
-                    EDGE_7D
+                    /// Vertex SE(3) -- robot pose
+                    EDGE_SE3
             };
 
             /// Vertex type
             Type type;
 
-            /// Nodes connected by the edge
-            uint_fast32_t nodes[2];
+            /// Node connected by the edge
+            uint_fast32_t toVertexId;
+
+            /// Node connected by the edge
+            uint_fast32_t fromVertexId;
 
             /// Default constructor
             inline Edge(){
             }
 
             /// Overloaded constructor
-            inline Edge(Type _type) : type(_type) {
+            inline Edge(Type _type) : type(_type){
+            }
+
+            /// Overloaded constructor
+            inline Edge(Type _type, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) : type(_type),
+                toVertexId(_toVertexId),
+                fromVertexId(_fromVertexId) {
             }
     };
 
     /// 3D (x,y,z) Edge of a graph
-    class Edge3D : Edge {
+    class Edge3D : public Edge {
         public:
             /// set of Edges3D
             typedef std::vector<Edge3D> Seq;
@@ -203,88 +200,107 @@ namespace putslam {
             /// Information matrix
             Mat33 info;
 
-            /// Overloaded constructor
+            /// Default constructor
             inline Edge3D() : Edge(EDGE_3D){
+            }
+
+            /// Overloaded constructor
+            inline Edge3D(Vec3& _trans, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+                Edge(EDGE_SE3, _fromVertexId, _toVertexId),
+                trans(_trans),
+                info(_info){
             }
     };
 
-    /// 7D Edge of a graph (x,y,z + quat(4))
-    class Edge7D : Edge {
+    /// SE(3) Edge of a graph (x,y,z + quat(4))
+    class EdgeSE3 : public Edge {
         public:
-            /// set of Edges7D
-            typedef std::vector<Edge7D> Seq;
+            /// set of EdgesSE3
+            typedef std::vector<EdgeSE3> Seq;
 
-            /// translation between nodes
-            Vec3 trans;
-
-            /// Rotation between nodes
-            Quaternion quat;
+            /// translation and rotation between nodes
+            RobotPose trans;
 
             /// Information matrix
             Mat66 info;
 
             /// Default constructor
-            inline Edge7D() : Edge(EDGE_7D){
+            inline EdgeSE3() : Edge(EDGE_SE3){
+            }
+
+            /// Overloaded constructor
+            inline EdgeSE3(RobotPose& _trans, Mat66& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+                trans(_trans),
+                Edge(EDGE_SE3, _fromVertexId, _toVertexId),
+                info(_info){
             }
     };
 
     class Vertex {
         public:
-            /// Set of Vertexes
+            /// Set of Vertices
             typedef std::vector<Vertex> Seq;
 
             /// Vertex type
             enum Type {
                     /// Vertex 3D -- feature position
                     VERTEX_3D,
-                    /// Vertex 7D -- robot pose
-                    VERTEX_7D
+                    /// Vertex SE(3) -- robot pose
+                    VERTEX_SE3
             };
 
             /// Vertex type
             Type type;
+
+            /// Vertex / node id
+            uint_fast32_t vertex_id;
 
             /// Default constructor
             inline Vertex(){
             }
 
             /// Overloaded constructor
-            inline Vertex(Type _type) : type(_type){
+            inline Vertex(Type _type, uint_fast32_t _vertex_id) : type(_type), vertex_id(_vertex_id){
             }
     };
 
     class Vertex3D : public Vertex {
         public:
-            /// Set of Vertexes
+            /// Set of Vertices
             typedef std::vector<Vertex3D> Seq;
 
             /// Vertex / node
             KeyPoint keypoint;
 
             /// Default constructor
-            inline Vertex3D() : Vertex(VERTEX_3D){
+            inline Vertex3D(uint_fast32_t _vertex_id, Vec3& _pos) :
+                Vertex(VERTEX_3D, _vertex_id),
+                keypoint(_pos){
             }
     };
 
-    class Vertex7D : public Vertex {
+    class VertexSE3 : public Vertex {
         public:
-            /// Set of Vertexes
-            typedef std::vector<Vertex7D> Seq;
+            /// Set of Vertices
+            typedef std::vector<VertexSE3> Seq;
 
             /// Vertex / node
-            RobotPose node7D;
+            RobotPose nodeSE3;
 
             /// Point cloud
             PointCloud cloud;
 
-            /// Vertex / node id
-            uint_fast32_t vertex_id;
-
-            /// Vertex / node id
+            /// Set of keypoints
             KeyPoint::Seq keypoints;
 
             /// Default constructor
-            inline Vertex7D() : Vertex(VERTEX_7D){
+            inline VertexSE3(void) : Vertex(VERTEX_SE3, 0){
+            }
+
+            /// Overloaded constructor
+            inline VertexSE3(uint_fast32_t _vertex_id, Vec3& _pos, Quaternion& _rot) :
+                Vertex(VERTEX_SE3, _vertex_id),
+                nodeSE3(_pos, _rot) {
             }
     };
 
@@ -292,10 +308,10 @@ namespace putslam {
     class PoseGraph {
         public:
             /// Robot poses -- nodes of the graph
-            typedef std::vector<Edge*> EdgeSet;
+            typedef std::vector<Edge> EdgeSet;
 
             /// Edges of the graph
-            typedef std::vector<Vertex*> VertexSet;
+            typedef std::vector<Vertex> VertexSet;
 
 			/// Edges
 			EdgeSet edges;

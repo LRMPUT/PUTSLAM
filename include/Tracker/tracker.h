@@ -35,7 +35,7 @@ namespace putslam {
             virtual const RobotPose& computeTransform(void) = 0;
 
             /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
-            virtual const Vertex7D& getVertex(void) = 0;
+            virtual const VertexSE3& getVertex(void) = 0;
 
             /// Virtual descrutor
             virtual ~Tracker() {}
@@ -54,7 +54,7 @@ namespace putslam {
             RobotPose transformation;
 
             /// keypoint: robot/sensor pose + point cloud + features
-            Vertex7D keypoint;
+            VertexSE3 keypoint;
     };
 };
 

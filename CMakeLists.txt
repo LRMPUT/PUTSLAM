@@ -39,6 +39,8 @@ mark_as_advanced(BUILD_PUTSLAM_G2O)
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
 option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
+option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_G2O)
 
 #additional dependencies
 # Boost
@@ -254,3 +256,29 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+
+###############################################################################
+#
+# PUTSLAM DEMO g2o graph optimization executables
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+        SET(DEMO_SOURCES ./demo_g2o.cpp)
+        ADD_EXECUTABLE(Demo_g2o ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(Demo_g2o Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND( TARGET Demo_g2o POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying g2o libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        INSTALL(TARGETS Demo_g2o RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)

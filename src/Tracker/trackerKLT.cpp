@@ -44,7 +44,7 @@ const RobotPose& TrackerKLT::computeTransform(void) {
 }
 
 /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
-const Vertex7D& TrackerKLT::getVertex(void){
+const VertexSE3& TrackerKLT::getVertex(void){
     return keypoint;
 }
 

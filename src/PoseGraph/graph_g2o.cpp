@@ -51,7 +51,13 @@ const PoseGraph::EdgeSet& PoseGraphG2O::edges() const{
  * returns true, on success, or false on failure.
  */
 bool PoseGraphG2O::addVertex(Vertex& v){
-    return true;
+    if (graph.vertices.size() > v.vertex_id){
+        return false;
+    }
+    else {
+        graph.vertices.push_back(v);
+        return true;
+    }
 }
 
 /**
@@ -59,14 +65,20 @@ bool PoseGraphG2O::addVertex(Vertex& v){
  * does nothing and returns false. Otherwise it returns true.
  */
 bool PoseGraphG2O::addEdge(Edge& e){
-    return true;
+    if ((graph.vertices.size() < e.toVertexId)||(graph.vertices.size() < e.fromVertexId)){
+        return false;
+    }
+    else {
+        graph.edges.push_back(e);
+        return true;
+    }
 }
 
 /**
- * update graph: adds a vertexes and edges to the graph.
+ * update graph: adds vertices and edges to the graph.
  * returns true, on success, or false on failure.
  */
-bool PoseGraphG2O::updateGraph(const Vertex7D& v){
+bool PoseGraphG2O::updateGraph(const VertexSE3& v){
     std::cout << "update local graph \n";
     return true;
 }
