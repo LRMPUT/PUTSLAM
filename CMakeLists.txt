@@ -18,6 +18,8 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 
 # core libraries
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
+option(BUILD_PUTSLAM_G2O "Build g2o library" YES)
+mark_as_advanced(BUILD_PUTSLAM_G2O)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
 option(BUILD_PUTSLAM_CORE "Build PUTSLAM Core Tools library" YES)
@@ -32,15 +34,13 @@ option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global grap
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_GLOBAL_MAP "Build PUTSLAM Global Map library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GLOBAL_MAP)
-option(BUILD_PUTSLAM_G2O "Build g2o library" YES)
-mark_as_advanced(BUILD_PUTSLAM_G2O)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
-option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
-mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_G2O)
+option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 
 #additional dependencies
 # Boost
@@ -56,8 +56,15 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o/cmake_modules")
+find_package(G2O REQUIRED)
+
 #Eigen
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
+
+#g2o
+link_directories("${CMAKE_SOURCE_DIR}/build/lib")
+link_directories("${CMAKE_SOURCE_DIR}/build/bin")
 
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
@@ -87,23 +94,24 @@ endif()
 
 ###############################################################################
 #
-# PUTSLAM defs library
+# PUTSLAM g2o library
 #
 ###############################################################################
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o)
-
+        ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o)
+        INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/g2o")
+        INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/g2o/EXTERNAL/ceres")
+        INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o/EXTERNAL/csparse")
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
 
-
 ###############################################################################
 #
 # PUTSLAM defs library
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         file(GLOB DEFS_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Defs/putslam_defs.h"
         )
@@ -112,7 +120,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
 # 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
 
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
 ###############################################################################
 #
@@ -208,6 +216,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         )
 
         ADD_LIBRARY(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
+        TARGET_LINK_LIBRARIES(PoseGraph core csparse csparse_extension solver_csparse g2o_csparse_extension g2o_ext_csparse g2o_stuff g2o_core g2o_solver_csparse)
         INSTALL(TARGETS PoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
@@ -243,7 +252,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-	SET(DEMO_SOURCES ./main.cpp)
+        SET(DEMO_SOURCES ./main.cpp)
         ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
         TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
@@ -271,6 +280,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 
         SET(DEMO_SOURCES ./demo_g2o.cpp)
         ADD_EXECUTABLE(Demo_g2o ${DEMO_SOURCES})
+        add_dependencies(Demo_g2o g2o)
         TARGET_LINK_LIBRARIES(Demo_g2o Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo_g2o POST_BUILD

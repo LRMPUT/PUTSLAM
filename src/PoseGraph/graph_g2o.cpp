@@ -55,7 +55,31 @@ bool PoseGraphG2O::addVertex(Vertex& v){
         return false;
     }
     else {
+        // create the linear solver
+        g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+
+        // create the block solver on top of the linear solver
+        g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
+
+        // create the algorithm to carry out the optimization
+        //OptimizationAlgorithmGaussNewton* optimizationAlgorithm = new OptimizationAlgorithmGaussNewton(blockSolver);
+        g2o::OptimizationAlgorithmLevenberg* optimizationAlgorithm = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+
+        // NOTE: We skip to fix a variable here, either this is stored in the file
+        // itself or Levenberg will handle it.
+
+        // create the optimizer to load the data and carry out the optimization
+        g2o::SparseOptimizer optimizer;
+        optimizer.setVerbose(true);
+        optimizer.setAlgorithm(optimizationAlgorithm);
+
         graph.vertices.push_back(v);
+        if (v.type == putslam::Vertex::VERTEX_3D){
+
+        }
+        if (v.type == putslam::Vertex::VERTEX_SE3){
+
+        }
         return true;
     }
 }
@@ -81,6 +105,11 @@ bool PoseGraphG2O::addEdge(Edge& e){
 bool PoseGraphG2O::updateGraph(const VertexSE3& v){
     std::cout << "update local graph \n";
     return true;
+}
+
+/// Save graph to file
+void PoseGraphG2O::save2file(std::string filename){
+
 }
 
 /// Optimize graph

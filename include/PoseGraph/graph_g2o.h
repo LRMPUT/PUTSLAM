@@ -8,6 +8,16 @@
 #define GRAPH_G2O_H_INCLUDED
 
 #include "graph.h"
+#include "../3rdParty/g2o/g2o/core/sparse_optimizer.h"
+#include "../3rdParty/g2o/g2o/core/sparse_optimizer.h"
+#include "g2o/core/block_solver.h"
+#include "g2o/core/optimization_algorithm_gauss_newton.h"
+#include "g2o/core/optimization_algorithm_levenberg.h"
+#include "g2o/solvers/csparse/linear_solver_csparse.h"
+
+#include "g2o/core/factory.h"
+#include "g2o/stuff/command_args.h"
+
 #include <iostream>
 #include <memory>
 
@@ -61,10 +71,13 @@ class PoseGraphG2O : public Graph {
          * update graph: adds vertices and edges to the graph.
          * returns true, on success, or false on failure.
          */
-        virtual bool updateGraph(const VertexSE3& v);
+        bool updateGraph(const VertexSE3& v);
+
+        /// Save graph to file
+        void save2file(std::string filename);
 
         /// Optimize graph
-        virtual void optimize(void);
+        void optimize(void);
 
 	private:
 		PoseGraph graph;

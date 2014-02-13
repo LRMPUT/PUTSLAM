@@ -61,10 +61,13 @@ class GlobalGraph : public Graph {
          * update graph: adds vertices and edges to the graph.
          * returns true, on success, or false on failure.
          */
-        virtual bool updateGraph(const VertexSE3& v);
+        bool updateGraph(const VertexSE3& v);
+
+        /// Save graph to file
+        void save2file(std::string filename);
 
         /// Optimize graph
-        virtual void optimize(void);
+        void optimize(void);
 	private:
 		PoseGraph graph;	
 };

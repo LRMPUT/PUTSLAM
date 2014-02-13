@@ -58,6 +58,9 @@ namespace putslam {
             /// Optimize graph
             virtual void optimize(void) = 0;
 
+            /// Save graph to file
+            virtual void save2file(std::string filename) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

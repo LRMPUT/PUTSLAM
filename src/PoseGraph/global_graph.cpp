@@ -72,6 +72,11 @@ bool GlobalGraph::updateGraph(const VertexSE3& v){
     return true;
 }
 
+/// Save graph to file
+void GlobalGraph::save2file(std::string filename){
+
+}
+
 /// Optimize graph
 void GlobalGraph::optimize(void) {
     std::cout << "start global graph optimization (t = 0s)\n";

@@ -72,7 +72,7 @@ int main()
 
         //add 3D feature
         Vec3 pos8(1.05, 0.0, 0.0);
-        Vertex3D vertex5(4, pos5);
+        Vertex3D vertex5(4, pos8);
         if (!graph->addVertex(vertex5))
             std::cout << "error: vertex exists!\n";
 
@@ -87,6 +87,15 @@ int main()
         Edge3D edge5(pos10,infoMat10, 0,4);
         if (!graph->addEdge(edge5))
             std::cout << "error: vertex doesn't exists!\n";
+
+        // save current graph to file
+        graph->save2file("initGraph.g2o");
+
+        //optimize
+        graph->optimize();
+
+        // save optimal graph to file
+        graph->save2file("optimalGraph.g2o");
 
     }
     catch (const std::exception& ex) {
