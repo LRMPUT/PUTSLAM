@@ -8,8 +8,8 @@
 #define GRAPH_G2O_H_INCLUDED
 
 #include "graph.h"
-#include "../3rdParty/g2o/g2o/core/sparse_optimizer.h"
-#include "../3rdParty/g2o/g2o/core/sparse_optimizer.h"
+#include "g2o/core/sparse_optimizer.h"
+#include "g2o/core/optimizable_graph.h"
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
@@ -37,35 +37,38 @@ class PoseGraphG2O : public Graph {
         /// Construction
         PoseGraphG2O(void);
 
+        /// Destructor
+        ~PoseGraphG2O(void);
+
         /// Name of the graph
         const std::string& getName() const;
-
-        /// Removes a vertex from the graph. Returns true on success
-        bool removeVertex(Vertex* v);
-
-        /// removes an edge from the graph. Returns true on success
-        bool removeEdge(Edge* e);
 
         /// clears the graph and empties all structures.
         void clear();
 
-        /// @returns the map <i>id -> vertex</i> where the vertices are stored
-        const PoseGraph::VertexSet& vertices() const;
-
-        /// @returns the set of edges of the hyper graph
-        const PoseGraph::EdgeSet& edges() const;
-
         /**
-         * adds a vertex to the graph.
+         * adds a vertex to the graph - feature
          * returns true, on success, or false on failure.
          */
-        bool addVertex(Vertex& v);
+        bool addVertexFeature(const Vertex3D& v);
 
         /**
-         * Adds an edge  to the graph. If the edge is already in the graph, it
+         * adds a vertex to the graph - pose
+         * returns true, on success, or false on failure.
+         */
+        bool addVertexPose(const VertexSE3& v);
+
+        /**
+         * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
-        bool addEdge(Edge& e);
+        bool addEdgeSE3(const EdgeSE3& e);
+
+        /**
+         * Adds an 3D edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge3D(const Edge3D& e);
 
         /**
          * update graph: adds vertices and edges to the graph.
@@ -74,13 +77,36 @@ class PoseGraphG2O : public Graph {
         bool updateGraph(const VertexSE3& v);
 
         /// Save graph to file
-        void save2file(std::string filename);
+        void save2file(std::string filename) const;
 
         /// Optimize graph
-        void optimize(void);
+        void optimize(uint_fast32_t maxIterations);
 
 	private:
+        /// Pose graph
 		PoseGraph graph;
+        /// g2o linear solver
+        g2o::BlockSolverX::LinearSolverType * linearSolver;
+        /// the linear solver
+        g2o::BlockSolverX* blockSolver;
+        /// the algorithm to carry out the optimization
+        g2o::OptimizationAlgorithmLevenberg* optimizationAlgorithm;
+        /// the optimizer to load the data and carry out the optimization
+        g2o::SparseOptimizer optimizer;
+        /// g2o factory
+        g2o::Factory* factory;
+
+        /// Removes a vertex from the graph. Returns true on success
+        bool removeVertex(Vertex* v);
+
+        /// removes an edge from the graph. Returns true on success
+        bool removeEdge(Edge* e);
+
+        /// @returns the map <i>id -> vertex</i> where the vertices are stored
+        const PoseGraph::VertexSet& vertices() const;
+
+        /// @returns the set of edges of the hyper graph
+        const PoseGraph::EdgeSet& edges() const;
 };
 
 #endif // GRAPH_G2O_H_INCLUDED

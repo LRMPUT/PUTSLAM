@@ -48,18 +48,34 @@ const PoseGraph::EdgeSet& GlobalGraph::edges() const{
 }
 
 /**
- * adds a vertex to the graph.
+ * adds a vertex to the graph feature
  * returns true, on success, or false on failure.
  */
-bool GlobalGraph::addVertex(Vertex& v){
+bool GlobalGraph::addVertexFeature(const Vertex3D& v){
     return true;
 }
 
 /**
- * Adds an edge  to the graph. If the edge is already in the graph, it
+ * adds a vertex to the graph - pose
+ * returns true, on success, or false on failure.
+ */
+bool GlobalGraph::addVertexPose(const VertexSE3& v){
+    return true;
+}
+
+/**
+ * Adds an SE3 edge to the graph. If the edge is already in the graph, it
  * does nothing and returns false. Otherwise it returns true.
  */
-bool GlobalGraph::addEdge(Edge& e){
+bool GlobalGraph::addEdgeSE3(const EdgeSE3& e){
+    return true;
+}
+
+/**
+ * Adds an 3D edge to the graph. If the edge is already in the graph, it
+ * does nothing and returns false. Otherwise it returns true.
+ */
+bool GlobalGraph::addEdge3D(const Edge3D& e){
     return true;
 }
 
@@ -73,12 +89,12 @@ bool GlobalGraph::updateGraph(const VertexSE3& v){
 }
 
 /// Save graph to file
-void GlobalGraph::save2file(std::string filename){
+void GlobalGraph::save2file(std::string filename) const {
 
 }
 
 /// Optimize graph
-void GlobalGraph::optimize(void) {
+void GlobalGraph::optimize(uint_fast32_t maxIterations) {
     std::cout << "start global graph optimization (t = 0s)\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::cout << "finish global graph optimization (t = 0.2s)\n";

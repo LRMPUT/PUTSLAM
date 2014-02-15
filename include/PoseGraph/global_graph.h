@@ -30,32 +30,41 @@ class GlobalGraph : public Graph {
         /// Name of the graph
         const std::string& getName() const;
 
-        /// Removes a vertex from the graph. Returns true on success
-        bool removeVertex(Vertex* v);
-
-        /// removes an edge from the graph. Returns true on success
-        bool removeEdge(Edge* e);
-
         /// clears the graph and empties all structures.
         void clear();
 
-        /// @returns the map <i>id -> vertex</i> where the vertices are stored
-        const PoseGraph::VertexSet& vertices() const;
-
-        /// @returns the set of edges of the hyper graph
-        const PoseGraph::EdgeSet& edges() const;
-
         /**
-         * adds a vertex to the graph.
+         * adds a vertex to the graph - feature
          * returns true, on success, or false on failure.
          */
-        bool addVertex(Vertex& v);
+        bool addVertexFeature(const Vertex3D& v);
 
         /**
-         * Adds an edge  to the graph. If the edge is already in the graph, it
+         * adds a vertex to the graph pose
+         * returns true, on success, or false on failure.
+         */
+        bool addVertexPose(const VertexSE3& v);
+
+        /**
+         * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
-        bool addEdge(Edge& e);
+        bool addEdgeSE3(const EdgeSE3& e);
+
+        /**
+         * Adds an 3D edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge3D(const Edge3D& e);
+
+        /// Save graph to file
+        void save2file(std::string filename) const;
+
+        /// Optimize graph
+        void optimize(uint_fast32_t maxIterations);
+
+	private:
+		PoseGraph graph;	
 
         /**
          * update graph: adds vertices and edges to the graph.
@@ -63,13 +72,17 @@ class GlobalGraph : public Graph {
          */
         bool updateGraph(const VertexSE3& v);
 
-        /// Save graph to file
-        void save2file(std::string filename);
+        /// Removes a vertex from the graph. Returns true on success
+        bool removeVertex(Vertex* v);
 
-        /// Optimize graph
-        void optimize(void);
-	private:
-		PoseGraph graph;	
+        /// removes an edge from the graph. Returns true on success
+        bool removeEdge(Edge* e);
+
+        /// @returns the map <i>id -> vertex</i> where the vertices are stored
+        const PoseGraph::VertexSet& vertices() const;
+
+        /// @returns the set of edges of the hyper graph
+        const PoseGraph::EdgeSet& edges() const;
 };
 
 #endif // GLOBAL_GRAPH_H_INCLUDED

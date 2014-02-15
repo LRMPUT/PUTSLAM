@@ -22,44 +22,38 @@ namespace putslam {
             /// Name of the graph
             virtual const std::string& getName() const = 0;
 
-            /// Removes a vertex from the graph. Returns true on success
-            virtual bool removeVertex(Vertex* v) = 0;
-
-            /// removes an edge from the graph. Returns true on success
-            virtual bool removeEdge(Edge* e) = 0;
-
             /// clears the graph and empties all structures.
             virtual void clear() = 0;
 
-            /// @returns the map <i>id -> vertex</i> where the vertices are stored
-            virtual const PoseGraph::VertexSet& vertices() const = 0;
-
-            //! @returns the set of edges of the hyper graph
-            virtual const PoseGraph::EdgeSet& edges() const = 0;
-
             /**
-             * adds a vertex to the graph.
+             * adds a vertex to the graph - feature
              * returns true, on success, or false on failure.
              */
-            virtual bool addVertex(Vertex& v) = 0;
+            virtual bool addVertexFeature(const Vertex3D& v) = 0;
 
             /**
-             * update graph: adds vertices and edges to the graph.
+             * adds a vertex to the graph - feature
              * returns true, on success, or false on failure.
              */
-            virtual bool updateGraph(const VertexSE3& v) = 0;
+            virtual bool addVertexPose(const VertexSE3& v) = 0;
 
             /**
-             * Adds an edge  to the graph. If the edge is already in the graph, it
+             * Adds an SE3 edge to the graph. If the edge is already in the graph, it
              * does nothing and returns false. Otherwise it returns true.
              */
-            virtual bool addEdge(Edge& e) = 0;
+            virtual bool addEdgeSE3(const EdgeSE3& e) = 0;
+
+            /**
+             * Adds an 3D edge to the graph. If the edge is already in the graph, it
+             * does nothing and returns false. Otherwise it returns true.
+             */
+            virtual bool addEdge3D(const Edge3D& e) = 0;
 
             /// Optimize graph
-            virtual void optimize(void) = 0;
+            virtual void optimize(uint_fast32_t maxIterations) = 0;
 
             /// Save graph to file
-            virtual void save2file(std::string filename) = 0;
+            virtual void save2file(std::string filename) const = 0;
 
             /// Virtual descrutor
             virtual ~Graph() {}

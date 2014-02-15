@@ -216,7 +216,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         )
 
         ADD_LIBRARY(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
-        TARGET_LINK_LIBRARIES(PoseGraph core csparse csparse_extension solver_csparse g2o_csparse_extension g2o_ext_csparse g2o_stuff g2o_core g2o_solver_csparse)
+        TARGET_LINK_LIBRARIES(PoseGraph core csparse csparse_extension solver_csparse g2o_csparse_extension g2o_types_slam2d g2o_types_slam3d g2o_ext_csparse g2o_stuff g2o_core g2o_solver_csparse)
         INSTALL(TARGETS PoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
