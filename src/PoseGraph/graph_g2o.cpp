@@ -56,7 +56,9 @@ bool PoseGraphG2O::removeEdge(Edge* e){
 
 /// clears the graph and empties all structures.
 void PoseGraphG2O::clear(){
-
+    optimizer.clear();
+    graph.edges.clear();
+    graph.vertices.clear();
 }
 
 /// @returns the map <i>id -> vertex</i> where the vertices are stored
@@ -78,7 +80,7 @@ bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
         return false;
     }
     else {//add vertex
-        graph.vertices.push_back(v);//update putslam structure
+        graph.vertices.push_back(std::unique_ptr<Vertex>(new Vertex3D(v)));//update putslam structure
         g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertex_id));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
@@ -113,7 +115,7 @@ bool PoseGraphG2O::addVertexPose(const VertexSE3& v){
         return false;
     }
     else {//add vertex
-        graph.vertices.push_back(v);//update putslam structure
+        graph.vertices.push_back(std::unique_ptr<Vertex>(new VertexSE3(v)));//update putslam structure
         g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertex_id));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
@@ -147,7 +149,7 @@ bool PoseGraphG2O::addEdgeSE3(const EdgeSE3& e){
         return false;
     }
     else {
-        graph.edges.push_back(e);
+        graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
         elemBitset.flip();
@@ -187,7 +189,7 @@ bool PoseGraphG2O::addEdge3D(const Edge3D& e){
         return false;
     }
     else {
-        graph.edges.push_back(e);
+        graph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
         elemBitset.flip();
@@ -206,9 +208,9 @@ bool PoseGraphG2O::addEdge3D(const Edge3D& e){
                     << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2) << ' ' << 0 << ' ' << 0 << ' ' << 0
                     << ' ' << e.info(1,1) << ' ' << e.info(1,2) << ' ' << 0 << ' ' << 0 << ' ' << 0
                     << ' ' << e.info(2,2) << ' ' << 0 << ' ' << 0 << ' ' << 0
-                    << ' ' << 50 << ' ' << 0 << ' ' << 0
-                    << ' ' << 50 << ' ' << 0
-                    << ' ' << 50;
+                    << ' ' << 0.001 << ' ' << 0 << ' ' << 0
+                    << ' ' << 0.001 << ' ' << 0
+                    << ' ' << 0.001;
         edge->read(currentLine);
         if (!optimizer.addEdge(edge)) {
             cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
@@ -238,6 +240,40 @@ void PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
     auto start = std::chrono::system_clock::now();
     optimizer.initializeOptimization();
     optimizer.optimize(maxIterations);
+
+    //copy optimized graph to putslam dataset
+    set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare> verticesToCopy;
+    for (g2o::HyperGraph::EdgeSet::const_iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
+      g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
+      if (e->level() == 0) {
+        for (vector<g2o::HyperGraph::Vertex*>::const_iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
+          verticesToCopy.insert(static_cast<g2o::OptimizableGraph::Vertex*>(*it));
+        }
+      }
+    }
+
+    int iter = 0;
+    for (set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
+      OptimizableGraph::Vertex* v = *it;
+      std::vector<double> estimate;
+      v->getEstimateData(estimate);
+      if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEX_3D){
+          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.x() = estimate[0];
+          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.y() = estimate[1];
+          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.z() = estimate[2];
+      }
+      else if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEX_SE3){
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.x() = estimate[0];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.y() = estimate[1];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.z() = estimate[2];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.x() = estimate[3];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.y() = estimate[4];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.z() = estimate[5];
+          ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.w() = estimate[6];
+      }
+      iter++;
+    }
+
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
     std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
 }

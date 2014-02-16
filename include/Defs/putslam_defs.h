@@ -273,6 +273,10 @@ namespace putslam {
             KeyPoint keypoint;
 
             /// Default constructor
+            inline Vertex3D(void) : Vertex(VERTEX_3D, 0){
+            }
+
+            /// Overloaded constructor
             inline Vertex3D(uint_fast32_t _vertex_id, Vec3& _pos) :
                 Vertex(VERTEX_3D, _vertex_id),
                 keypoint(_pos){
@@ -308,10 +312,10 @@ namespace putslam {
     class PoseGraph {
         public:
             /// Robot poses -- nodes of the graph
-            typedef std::vector<Edge> EdgeSet;
+            typedef std::vector<std::unique_ptr<Edge>> EdgeSet;
 
             /// Edges of the graph
-            typedef std::vector<Vertex> VertexSet;
+            typedef std::vector<std::unique_ptr<Vertex>> VertexSet;
 
 			/// Edges
 			EdgeSet edges;
