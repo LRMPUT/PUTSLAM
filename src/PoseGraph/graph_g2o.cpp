@@ -76,12 +76,12 @@ const PoseGraph::EdgeSet& PoseGraphG2O::edges() const{
  * returns true, on success, or false on failure.
  */
 bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
-    if (graph.vertices.size() > v.vertex_id){//wrong id
+    if (graph.vertices.size() > v.vertexId){//wrong id
         return false;
     }
     else {//add vertex
         graph.vertices.push_back(std::unique_ptr<Vertex>(new Vertex3D(v)));//update putslam structure
-        g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertex_id));
+        g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertexId));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
         elemBitset.flip();
@@ -97,7 +97,7 @@ bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
         std::stringstream currentLine;
         currentLine << v.keypoint.depthFeature.x() << ' ' << v.keypoint.depthFeature.y() << ' ' << v.keypoint.depthFeature.z() << ' ' << 0 << ' ' << 0 << ' ' << 0 << ' ' << 1;
         vse3->read(currentLine);
-        vse3->setId(v.vertex_id);
+        vse3->setId(v.vertexId);
         if (!optimizer.addVertex(vse3)) {
           std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
         }
@@ -111,12 +111,12 @@ bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
  * returns true, on success, or false on failure.
  */
 bool PoseGraphG2O::addVertexPose(const VertexSE3& v){
-    if (graph.vertices.size() > v.vertex_id){//wrong id
+    if (graph.vertices.size() > v.vertexId){//wrong id
         return false;
     }
     else {//add vertex
         graph.vertices.push_back(std::unique_ptr<Vertex>(new VertexSE3(v)));//update putslam structure
-        g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertex_id));
+        g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(v.vertexId));
         g2o::HyperGraph::GraphElemBitset elemBitset;
         elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
         elemBitset.flip();
@@ -132,7 +132,7 @@ bool PoseGraphG2O::addVertexPose(const VertexSE3& v){
         std::stringstream currentLine;
         currentLine << v.nodeSE3.pos.x() << ' ' << v.nodeSE3.pos.y() << ' ' << v.nodeSE3.pos.z() << ' ' << v.nodeSE3.rot.x() << ' ' << v.nodeSE3.rot.y() << ' ' << v.nodeSE3.rot.z() << ' ' << v.nodeSE3.rot.w();
         vse3->read(currentLine);
-        vse3->setId(v.vertex_id);
+        vse3->setId(v.vertexId);
         if (!optimizer.addVertex(vse3)) {
           std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
         }
@@ -257,12 +257,12 @@ void PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
       OptimizableGraph::Vertex* v = *it;
       std::vector<double> estimate;
       v->getEstimateData(estimate);
-      if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEX_3D){
+      if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEX3D){
           ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.x() = estimate[0];
           ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.y() = estimate[1];
           ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.z() = estimate[2];
       }
-      else if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEX_SE3){
+      else if (((Vertex3D*)graph.vertices[iter].get())->type==Vertex::VERTEXSE3){
           ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.x() = estimate[0];
           ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.y() = estimate[1];
           ((VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.z() = estimate[2];

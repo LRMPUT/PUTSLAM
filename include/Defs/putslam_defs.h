@@ -244,23 +244,23 @@ namespace putslam {
             /// Vertex type
             enum Type {
                     /// Vertex 3D -- feature position
-                    VERTEX_3D,
+                    VERTEX3D,
                     /// Vertex SE(3) -- robot pose
-                    VERTEX_SE3
+                    VERTEXSE3
             };
 
             /// Vertex type
             Type type;
 
             /// Vertex / node id
-            uint_fast32_t vertex_id;
+            uint_fast32_t vertexId;
 
             /// Default constructor
             inline Vertex(){
             }
 
             /// Overloaded constructor
-            inline Vertex(Type _type, uint_fast32_t _vertex_id) : type(_type), vertex_id(_vertex_id){
+            inline Vertex(Type _type, uint_fast32_t _vertexId) : type(_type), vertexId(_vertexId){
             }
     };
 
@@ -273,12 +273,12 @@ namespace putslam {
             KeyPoint keypoint;
 
             /// Default constructor
-            inline Vertex3D(void) : Vertex(VERTEX_3D, 0){
+            inline Vertex3D(void) : Vertex(VERTEX3D, 0){
             }
 
             /// Overloaded constructor
-            inline Vertex3D(uint_fast32_t _vertex_id, Vec3& _pos) :
-                Vertex(VERTEX_3D, _vertex_id),
+            inline Vertex3D(uint_fast32_t _vertexId, Vec3& _pos) :
+                Vertex(VERTEX3D, _vertexId),
                 keypoint(_pos){
             }
     };
@@ -298,12 +298,12 @@ namespace putslam {
             KeyPoint::Seq keypoints;
 
             /// Default constructor
-            inline VertexSE3(void) : Vertex(VERTEX_SE3, 0){
+            inline VertexSE3(void) : Vertex(VERTEXSE3, 0){
             }
 
             /// Overloaded constructor
-            inline VertexSE3(uint_fast32_t _vertex_id, Vec3& _pos, Quaternion& _rot) :
-                Vertex(VERTEX_SE3, _vertex_id),
+            inline VertexSE3(uint_fast32_t _vertexId, Vec3& _pos, Quaternion& _rot) :
+                Vertex(VERTEXSE3, _vertexId),
                 nodeSE3(_pos, _rot) {
             }
     };
