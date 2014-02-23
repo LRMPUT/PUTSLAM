@@ -8,10 +8,46 @@
 #include "Core/Math/CMat44.h"
 #include "Core/Tools/XMLParserCV.h"
 #include <cmath>
+#include <atomic>
 
 using namespace std;
 
+Graph * graph;
 
+// optimization thread
+void optimize(){
+    //optimize
+    graph->optimize(10);
+}
+
+//simulates tracking module
+void tracker()
+{
+    //add vertex or edge
+
+    //add 3D feature
+    for (int i=0;i<5;i++){
+        Vec3 pos11(0.05, 1.0+i*0.05, 0.0);
+        Vertex3D vertex6(5+i, pos11);
+        if (!graph->addVertexFeature(vertex6))
+            std::cout << "error: vertex exists!\n";
+    }
+
+    //add edges of the graph -- measurements
+    Vec3 pos12(-1.05, 0.0, 0.0);
+    Mat33 infoMat12; infoMat12.setIdentity();
+    Edge3D edge6(pos12,infoMat12, 1,5);
+    if (!graph->addEdge3D(edge6))
+        std::cout << "error: vertex doesn't exist!\n";
+
+    for (int i=0;i<5;i++){
+        Vec3 pos13(1.05+i*0.05, 0.0, 0.0);
+        Mat33 infoMat13; infoMat13.setIdentity();
+        Edge3D edge7(pos13,infoMat13, 2,5);
+        if (!graph->addEdge3D(edge7))
+            std::cout << "error: vertex doesn't exist!\n";
+    }
+}
 
 int main()
 {
@@ -20,7 +56,7 @@ int main()
 
         Parser* XMLparser = createXMLParserCV("configGlobal.xml");
 
-        Graph * graph = createPoseGraphG2O();
+        graph = createPoseGraphG2O();
         cout << "Current graph: " << graph->getName() << std::endl;
 
         //add vertices - robot poses
@@ -83,7 +119,17 @@ int main()
         graph->save2file("initGraph.g2o");
 
         //optimize
-        graph->optimize(10);
+        std::thread tOpt(optimize);
+
+        //start tracking thread
+        std::thread tTracker(tracker);
+
+        tOpt.join();
+        tTracker.join();
+
+        //optimize again
+        std::thread tOpt1(optimize);
+        tOpt1.join();
 
         // save optimal graph to file
         // to view run ./g2o_viewer optimalGraph.g2o

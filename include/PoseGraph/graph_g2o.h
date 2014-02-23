@@ -20,6 +20,8 @@
 
 #include <iostream>
 #include <memory>
+#include <thread>
+#include <mutex>
 
 namespace putslam {
     /// create a single graph (with g2o optimization)
@@ -70,12 +72,6 @@ class PoseGraphG2O : public Graph {
          */
         bool addEdge3D(const Edge3D& e);
 
-        /**
-         * update graph: adds vertices and edges to the graph.
-         * returns true, on success, or false on failure.
-         */
-        bool updateGraph(const VertexSE3& v);
-
         /// Save graph to file
         void save2file(std::string filename) const;
 
@@ -85,6 +81,8 @@ class PoseGraphG2O : public Graph {
 	private:
         /// Pose graph
 		PoseGraph graph;
+        /// Pose graph
+        PoseGraph bufferGraph;
         /// g2o linear solver
         g2o::BlockSolverX::LinearSolverType * linearSolver;
         /// the linear solver
@@ -95,12 +93,52 @@ class PoseGraphG2O : public Graph {
         g2o::SparseOptimizer optimizer;
         /// g2o factory
         g2o::Factory* factory;
+        /// mutex for critical section - graph
+        std::recursive_mutex mtxGraph;
+        /// mutex for critical section - buffer graph
+        std::recursive_mutex mtxBuffGraph;
 
         /// Removes a vertex from the graph. Returns true on success
         bool removeVertex(Vertex* v);
 
         /// removes an edge from the graph. Returns true on success
         bool removeEdge(Edge* e);
+
+        /**
+         * update graph: adds vertices and edges to the graph.
+         * returns true, on success, or false on failure.
+         */
+        bool updateGraph(void);
+
+        /// add vertex to g2o interface
+        bool addVertexG2O(uint_fast32_t id, std::stringstream& vertex);
+
+        /// add edge to g2o interface
+        bool addEdgeG2O(uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream);
+
+        /**
+         * adds a vertex to the graph - feature
+         * returns true, on success, or false on failure.
+         */
+        bool addVertex(const Vertex3D& v);
+
+        /**
+         * adds a vertex to the graph - pose
+         * returns true, on success, or false on failure.
+         */
+        bool addVertex(const VertexSE3& v);
+
+        /**
+         * Adds an SE3 edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge(const EdgeSE3& e);
+
+        /**
+         * Adds an 3D edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge(const Edge3D& e);
 
         /// @returns the map <i>id -> vertex</i> where the vertices are stored
         const PoseGraph::VertexSet& vertices() const;

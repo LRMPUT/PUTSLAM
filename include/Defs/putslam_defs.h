@@ -206,7 +206,7 @@ namespace putslam {
 
             /// Overloaded constructor
             inline Edge3D(Vec3& _trans, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
-                Edge(EDGE_SE3, _fromVertexId, _toVertexId),
+                Edge(EDGE_3D, _fromVertexId, _toVertexId),
                 trans(_trans),
                 info(_info){
             }
