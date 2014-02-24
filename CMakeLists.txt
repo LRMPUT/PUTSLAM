@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
 SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
 
-# Estimator of Hand Configuration
+# PUTSLAM Project configuration
 PROJECT(PUTSLAM)
 SET(CMAKE_CXX_FLAGS "-std=c++0x -pthread")
 
@@ -107,6 +107,14 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
 
 ###############################################################################
 #
+# PUTSLAM tinyXML2 library
+#
+###############################################################################
+
+add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.h ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.cpp)
+
+###############################################################################
+#
 # PUTSLAM defs library
 #
 ###############################################################################
@@ -121,28 +129,6 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
 
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
-
-###############################################################################
-#
-# PUTSLAM Core tools library
-#
-###############################################################################
-
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_CORE)
-        file(GLOB CORE_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/Core/Math/*.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Core/Tools/*.cpp"
-	)
-        file(GLOB CORE_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Core/Math/*.h"
-            "${CMAKE_SOURCE_DIR}/include/Core/Tools/*.h"
-	)
-
-        ADD_LIBRARY(Core STATIC ${CORE_SOURCES} ${CORE_HEADERS})
-        #TARGET_LINK_LIBRARIES(Math)
-        INSTALL(TARGETS Core RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${CORE_HEADERS} DESTINATION include/putslam/Core/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_CORE)
 
 ###############################################################################
 #
@@ -254,7 +240,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(DEMO_SOURCES ./main.cpp)
         ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
+        TARGET_LINK_LIBRARIES(Demo tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
@@ -281,7 +267,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
         SET(DEMO_SOURCES ./demo_g2o.cpp)
         ADD_EXECUTABLE(Demo_g2o ${DEMO_SOURCES})
         add_dependencies(Demo_g2o g2o)
-        TARGET_LINK_LIBRARIES(Demo_g2o Core Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
+        TARGET_LINK_LIBRARIES(Demo_g2o tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo_g2o POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"

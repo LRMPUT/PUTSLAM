@@ -5,8 +5,7 @@
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "Tracker/trackerKLT.h"
-#include "Core/Math/CMat44.h"
-#include "Core/Tools/XMLParserCV.h"
+#include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 
 using namespace std;
@@ -38,19 +37,25 @@ int main()
     try {
         using namespace putslam;
 
-        Parser* XMLparser = createXMLParserCV("configGlobal.xml");
+        tinyxml2::XMLDocument config;
+        config.LoadFile("configGlobal.xml");
+        if (config.ErrorID())
+            std::cout << "unable to load config file.\n";
+        std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());
 
-        std::string grabber_type = XMLparser->getAttribute("Grabber", "name");
         Grabber* grabber;
-        if (grabber_type == "Kinect")
+        if (grabberType == "Kinect")
             grabber = createGrabberKinect();
-        else if (grabber_type == "MesaImaging")
+        else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();
         else // Default
             grabber = createGrabberKinect();
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
+        int framerate = 0;
+        config.FirstChildElement( "Grabber" )->FirstChildElement( "framerate" )->QueryIntText(&framerate);
+        cout << "Grabber framerate: " << framerate << std::endl;
         Tracker * tracker = createTrackerKLT();
         cout << "Current tracker: " << tracker->getName() << std::endl;
         Graph * graph = createPoseGraphG2O();

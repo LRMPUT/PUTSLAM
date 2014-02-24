@@ -5,8 +5,7 @@
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "Tracker/trackerKLT.h"
-#include "Core/Math/CMat44.h"
-#include "Core/Tools/XMLParserCV.h"
+#include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <atomic>
 
@@ -58,7 +57,10 @@ int main()
     try {
         using namespace putslam;
 
-        Parser* XMLparser = createXMLParserCV("configGlobal.xml");
+        tinyxml2::XMLDocument config;
+        config.LoadFile("configGlobal.xml");
+        if (config.ErrorID())
+            std::cout << "unable to load config file.\n";
 
         graph = createPoseGraphG2O();
         cout << "Current graph: " << graph->getName() << std::endl;
