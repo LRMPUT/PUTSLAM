@@ -47,6 +47,10 @@ void tracker()
         if (!graph->addEdge3D(edge7))
             std::cout << "error: vertex doesn't exist!\n";
     }
+
+    //optimize
+    std::thread tOpt(optimize);
+    tOpt.join();
 }
 
 int main()
@@ -126,10 +130,6 @@ int main()
 
         tOpt.join();
         tTracker.join();
-
-        //optimize again
-        std::thread tOpt1(optimize);
-        tOpt1.join();
 
         // save optimal graph to file
         // to view run ./g2o_viewer optimalGraph.g2o
