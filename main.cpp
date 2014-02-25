@@ -39,13 +39,7 @@ int main()
 {
     try {
         using namespace putslam;
-        auto begin = std::chrono::high_resolution_clock::now();
-        auto tt = std::chrono::high_resolution_clock::now();
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds> (tt - begin).count();
-auto tt1 = std::chrono::high_resolution_clock::now();
-std::cout << std::chrono::duration_cast<std::chrono::microseconds> (tt1 - begin).count();
-//now_c = std::chrono::system_clock::to_time_t(std::chrono::high_resolution_clock::now());
-//std::cout << std::setprecision (numeric_limits<double>::digits10 + 1) << std::chrono::high_resolution_clock::now().count() << std::endl;
+
         tinyxml2::XMLDocument config;
         config.LoadFile("configGlobal.xml");
         if (config.ErrorID())
