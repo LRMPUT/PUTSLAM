@@ -255,6 +255,9 @@ namespace putslam {
             /// Vertex / node id
             uint_fast32_t vertexId;
 
+            /// timestamp
+            float_type timestamp;
+
             /// Default constructor
             inline Vertex(){
             }

@@ -13,6 +13,8 @@ using namespace std;
 
 Graph * graph;
 
+auto startT = std::chrono::high_resolution_clock::now();
+
 // optimization thread
 void optimize(){
     //optimize
@@ -22,12 +24,14 @@ void optimize(){
 //simulates tracking module
 void tracker()
 {
+    using namespace std::chrono;
     //add vertex or edge
 
     //add 3D feature
     for (int i=0;i<5;i++){
         Vec3 pos11(0.05, 1.0+i*0.05, 0.0);
         Vertex3D vertex6(5+i, pos11);
+        vertex6.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexFeature(vertex6))
             std::cout << "error: vertex exists!\n";
     }
@@ -56,6 +60,7 @@ int main()
 {
     try {
         using namespace putslam;
+        using namespace std::chrono;
 
         tinyxml2::XMLDocument config;
         config.LoadFile("configGlobal.xml");
@@ -68,18 +73,22 @@ int main()
         //add vertices - robot poses
         Vec3 pos1(0.0, 0.0, 0.0);  Quaternion rot1(1, 0, 0, 0);
         VertexSE3 vertex1(0, pos1, rot1);
+        vertex1.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex1))
             std::cout << "error: vertex exists!\n";
         Vec3 pos2(0.0, 2.0, 0.0);  Quaternion rot2(1, 0, 0, 0);
         VertexSE3 vertex2(1, pos2, rot2);
+        vertex2.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex2))
             std::cout << "error: vertex exists!\n";
         Vec3 pos3(-2.0, 2.0, 0.0);  Quaternion rot3(1, 0, 0, 0);
         VertexSE3 vertex3(2, pos3, rot3);
+        vertex3.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex3))
             std::cout << "error: vertex exists!\n";
         Vec3 pos4(-2.0, 0.0, 0.0);  Quaternion rot4(1, 0, 0, 0);
         VertexSE3 vertex4(3, pos4, rot4);
+        vertex4.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex4))
             std::cout << "error: vertex exists!\n";
 
@@ -106,6 +115,7 @@ int main()
         //add 3D feature
         Vec3 pos8(0.05, 1.0, 0.0);
         Vertex3D vertex5(4, pos8);
+        vertex5.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexFeature(vertex5))
             std::cout << "error: vertex exists!\n";
         //add edges of the graph -- measurements
@@ -136,6 +146,9 @@ int main()
         // save optimal graph to file
         // to view run ./g2o_viewer optimalGraph.g2o
         graph->save2file("optimalGraph.g2o");
+
+        // export to RGB-D SLAM format
+        graph->export2RGBDSLAM("output_trajectory.graph");
 
         //clear the graph
         graph->clear();

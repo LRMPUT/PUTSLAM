@@ -75,6 +75,9 @@ class PoseGraphG2O : public Graph {
         /// Save graph to file
         void save2file(std::string filename) const;
 
+        /// Export camera path to file (RGB-D SLAM format)
+        void export2RGBDSLAM(std::string filename) const;
+
         /// Optimize graph
         void optimize(uint_fast32_t maxIterations);
 

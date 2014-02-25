@@ -55,6 +55,9 @@ namespace putslam {
             /// Save graph to file
             virtual void save2file(std::string filename) const = 0;
 
+            /// Export camera path to file (RGB-D SLAM format)
+            virtual void export2RGBDSLAM(std::string filename) const = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

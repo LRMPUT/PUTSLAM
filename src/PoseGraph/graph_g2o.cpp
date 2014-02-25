@@ -302,6 +302,18 @@ void PoseGraphG2O::save2file(std::string filename) const{
     optimizer.save(filename.c_str());
 }
 
+/// Export camera path to file (RGB-D SLAM format)
+void PoseGraphG2O::export2RGBDSLAM(std::string filename) const{
+    ofstream file(filename);
+    float_type timestamp;
+    for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
+        if (it->get()->type==Vertex::VERTEXSE3){
+            file << std::setprecision (numeric_limits<double>::digits10 + 1) << ((VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
+        }
+    }
+    file.close();
+}
+
 /// Optimize graph
 void PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
     mtxGraph.lock();

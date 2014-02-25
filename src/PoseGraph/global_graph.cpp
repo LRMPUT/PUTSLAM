@@ -93,6 +93,11 @@ void GlobalGraph::save2file(std::string filename) const {
 
 }
 
+/// Export camera path to file (RGB-D SLAM format)
+void GlobalGraph::export2RGBDSLAM(std::string filename) const{
+
+}
+
 /// Optimize graph
 void GlobalGraph::optimize(uint_fast32_t maxIterations) {
     std::cout << "start global graph optimization (t = 0s)\n";
