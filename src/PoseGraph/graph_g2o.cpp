@@ -60,6 +60,8 @@ void PoseGraphG2O::clear(){
     optimizer.clear();
     graph.edges.clear();
     graph.vertices.clear();
+    bufferGraph.vertices.clear();
+    bufferGraph.edges.clear();
     mtxGraph.unlock();
 }
 
@@ -79,17 +81,16 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex){
     g2o::HyperGraph::GraphElemBitset elemBitset;
     elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
     elemBitset.flip();
-    if (graph.vertices.size()==0){
-        vert->setFixed(true);
-    }
     g2o::HyperGraph::HyperGraphElement* element = factory->construct("VERTEX_SE3:QUAT", elemBitset);
 //         if (dynamic_cast<g2o::OptimizableGraph::Vertex*>(element)) {
          //std::cout << "// it's a vertex type\n";
 //         }
-     g2o::OptimizableGraph::Vertex* vse3 = static_cast<g2o::OptimizableGraph::Vertex*>(element);
-    //g2o::OptimizableGraph::Vertex* v3d = static_cast<g2o::OptimizableGraph::Vertex*>(element);
+    g2o::OptimizableGraph::Vertex* vse3 = static_cast<g2o::OptimizableGraph::Vertex*>(element);
     vse3->read(vertex);
     vse3->setId(id);
+    if (graph.vertices.size()==1){
+        vse3->setFixed(true);
+    }
     if (!optimizer.addVertex(vse3)) {
       std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
     }
@@ -298,20 +299,59 @@ bool PoseGraphG2O::updateGraph(void){
 }
 
 /// Save graph to file
-void PoseGraphG2O::save2file(std::string filename) const{
+void PoseGraphG2O::save2file(const std::string filename) const{
     optimizer.save(filename.c_str());
 }
 
 /// Export camera path to file (RGB-D SLAM format)
-void PoseGraphG2O::export2RGBDSLAM(std::string filename) const{
+void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     ofstream file(filename);
-    float_type timestamp;
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
-            file << std::setprecision (numeric_limits<double>::digits10 + 1) << ((VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
+            file << std::setprecision (numeric_limits<double>::digits10 + 1) << ((VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((VertexSE3*)it->get())->nodeSE3.pos.z() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
         }
     }
     file.close();
+}
+
+/// Import camera path from file (RGB-D SLAM format)
+bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
+    ifstream file(filename);
+    if (file.is_open()){ // open file
+        string line;
+        clear();
+        uint_fast32_t vertexId = 0;
+        VertexSE3 vertexPrev;
+        while ( getline (file,line) ) { // load each line
+            std::istringstream is(line);
+            float_type timestamp = 0;
+            float_type pos[3], rot[4];
+            is >> timestamp >> pos[0] >> pos[1] >> pos[2] >> rot[1] >> rot[2] >> rot[3] >> rot[0];
+            Vec3 pos1(pos[0], pos[1], pos[2]);  putslam::Quaternion rot1(rot[0], rot[1], rot[2], rot[3]);
+            VertexSE3 vertex(0, pos1, rot1);
+            vertex.timestamp = timestamp; vertex.vertexId = vertexId;
+            if (addVertexPose(vertex)) //add vertex
+                vertexId++;
+            else
+                return false;
+            if (vertexId>1){ // add edge
+                putslam::Mat34 v2 = vertex.nodeSE3.pos * vertex.nodeSE3.rot;
+                putslam::Mat34 v3 = v2.inverse() * vertexPrev.nodeSE3.pos * vertexPrev.nodeSE3.rot;
+                putslam::Quaternion q(v3.rotation());
+                putslam::Vec3 p(v3.translation());
+                RobotPose trans(p, q); Mat66 infoMat; infoMat.setIdentity();
+                EdgeSE3 edge(trans,infoMat,vertexId-2,vertexId-1);
+                if (!addEdgeSE3(edge))
+                    return false;
+            }
+            vertexPrev = vertex;
+        }
+        file.close();
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 /// Optimize graph

@@ -41,7 +41,7 @@ int main()
         using namespace putslam;
 
         tinyxml2::XMLDocument config;
-        config.LoadFile("configGlobal.xml");
+        config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());

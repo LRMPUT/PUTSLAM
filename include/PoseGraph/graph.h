@@ -53,10 +53,13 @@ namespace putslam {
             virtual void optimize(uint_fast32_t maxIterations) = 0;
 
             /// Save graph to file
-            virtual void save2file(std::string filename) const = 0;
+            virtual void save2file(const std::string filename) const = 0;
 
             /// Export camera path to file (RGB-D SLAM format)
-            virtual void export2RGBDSLAM(std::string filename) const = 0;
+            virtual void export2RGBDSLAM(const std::string filename) const = 0;
+
+            /// Import camera path from file (RGB-D SLAM format)
+            virtual bool importRGBDSLAM(const std::string filename) = 0;
 
             /// Virtual descrutor
             virtual ~Graph() {}

@@ -89,13 +89,18 @@ bool GlobalGraph::updateGraph(const VertexSE3& v){
 }
 
 /// Save graph to file
-void GlobalGraph::save2file(std::string filename) const {
+void GlobalGraph::save2file(const std::string filename) const {
 
 }
 
 /// Export camera path to file (RGB-D SLAM format)
-void GlobalGraph::export2RGBDSLAM(std::string filename) const{
+void GlobalGraph::export2RGBDSLAM(const std::string filename) const{
 
+}
+
+/// Import camera path from file (RGB-D SLAM format)
+bool GlobalGraph::importRGBDSLAM(const std::string filename){
+    return false;
 }
 
 /// Optimize graph

@@ -58,10 +58,13 @@ class GlobalGraph : public Graph {
         bool addEdge3D(const Edge3D& e);
 
         /// Save graph to file
-        void save2file(std::string filename) const;
+        void save2file(const std::string filename) const;
 
         /// Export camera path to file (RGB-D SLAM format)
-        void export2RGBDSLAM(std::string filename) const;
+        void export2RGBDSLAM(const std::string filename) const;
+
+        /// Import camera path from file (RGB-D SLAM format)
+        bool importRGBDSLAM(const std::string filename);
 
         /// Optimize graph
         void optimize(uint_fast32_t maxIterations);

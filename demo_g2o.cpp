@@ -63,7 +63,7 @@ int main()
         using namespace std::chrono;
 
         tinyxml2::XMLDocument config;
-        config.LoadFile("configGlobal.xml");
+        config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
 
@@ -143,12 +143,23 @@ int main()
         tOpt.join();
         tTracker.join();
 
+        ///checking export/import methods
+
         // save optimal graph to file
         // to view run ./g2o_viewer optimalGraph.g2o
         graph->save2file("optimalGraph.g2o");
 
         // export to RGB-D SLAM format
         graph->export2RGBDSLAM("output_trajectory.graph");
+
+        // import from RGB-D SLAM
+        graph->importRGBDSLAM("output_trajectory.graph");
+
+        // export to RGB-D SLAM format
+        graph->export2RGBDSLAM("output_trajectory1.graph");
+
+        // save graph to file
+        graph->save2file("optimalGraph1.g2o");
 
         //clear the graph
         graph->clear();
