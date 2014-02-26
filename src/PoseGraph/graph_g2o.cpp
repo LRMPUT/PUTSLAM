@@ -335,11 +335,9 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
             else
                 return false;
             if (vertexId>1){ // add edge
-                putslam::Mat34 v2 = vertex.nodeSE3.pos * vertex.nodeSE3.rot;
-                putslam::Mat34 v3 = v2.inverse() * vertexPrev.nodeSE3.pos * vertexPrev.nodeSE3.rot;
-                putslam::Quaternion q(v3.rotation());
-                putslam::Vec3 p(v3.translation());
-                RobotPose trans(p, q); Mat66 infoMat; infoMat.setIdentity();
+                putslam::Mat34 v3 = (vertex.nodeSE3.pos * vertex.nodeSE3.rot).inverse() * vertexPrev.nodeSE3.pos * vertexPrev.nodeSE3.rot;
+                putslam::Quaternion q(v3.rotation()); putslam::Vec3 p(v3.translation());
+                RobotPose trans(p,q); Mat66 infoMat; infoMat.setIdentity();
                 EdgeSE3 edge(trans,infoMat,vertexId-2,vertexId-1);
                 if (!addEdgeSE3(edge))
                     return false;
