@@ -54,6 +54,10 @@ int main()
         else // Default
             grabber = createGrabberKinect();
 
+        Mat33 cov;
+        ((KinectGrabber*)grabber)->model.computeCov(320,240,500,cov);
+        std::cout << cov;
+
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
         int framerate = 0;
