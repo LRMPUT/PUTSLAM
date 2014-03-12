@@ -22,38 +22,35 @@ using namespace putslam;
 class KinectGrabber : public Grabber {
     class UncertaintyModel {
       public:
-        inline float_type computeDepth(uint_fast16_t disparity){
-            return config.k3 * tan((disparity/config.k2) + config.k1);
-        }
 
-        void getPoint(uint_fast16_t u, uint_fast16_t v, uint_fast16_t disparity, Eigen::Vector3d& point3D){
-            Eigen::Vector3d point(u,v,disparity);
+        void getPoint(uint_fast16_t u, uint_fast16_t v, uint_fast16_t depth, Eigen::Vector3d& point3D){
+            Eigen::Vector3d point(u, v, depth);
             point3D = PHCPModel*point;
         }
 
-        void computeCov(uint_fast16_t u, uint_fast16_t v, uint_fast16_t disparity, Mat33& cov){
-            float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
+        void computeCov(uint_fast16_t u, uint_fast16_t v, uint_fast16_t depth, Mat33& cov){
+            //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
             Mat33 J;
-            J << 0.0017*computeDepth(disparity), 0, dispDer*(0.0017*u-0.549),
-                 0, 0.0017*computeDepth(disparity), dispDer*(0.0017*v-0.443),
-                 0, 0, dispDer;
+            J << 0.0017*depth, 0, (0.0017*u-0.549),
+                 0, 0.0017*depth, (0.0017*v-0.443),
+                 0, 0, 1;
+            Ruvd(2,2) = config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3];
             cov=J*Ruvd*J.transpose();
         }
 
         class Config{
           public:
-            Config() : k1(1.1863),
-                k2(2842.5),
-                k3(0.1236),
+            Config() :
                 focalLength{582.64, 586.97},
                 focalAxis{320.17, 260.0},
-                varU(1.1046), varV(0.64160), varD(1.6028){
+                varU(1.1046), varV(0.64160),
+                distVarCoefs{-8.9997e-06, 3.069e-003, 3.6512e-006, -0.0017512e-3}{
             }
             public:
-                float_type k1, k2, k3; // depth = k3 * tan(disparity/k2 + k1);
                 float_type focalLength[2];
                 float_type focalAxis[2];
-                float_type varU, varV, varD;// variance u,v,disparity
+                float_type varU, varV;// variance u,v
+                float_type distVarCoefs[4];
         };
 
         UncertaintyModel(){
@@ -62,7 +59,7 @@ class KinectGrabber : public Grabber {
                           0,0,1;
             Ruvd << config.varU, 0, 0,
                     0, config.varV, 0,
-                    0, 0, config.varD;
+                    0, 0, 0;
         }
 
         private:

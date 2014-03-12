@@ -55,7 +55,7 @@ int main()
             grabber = createGrabberKinect();
 
         Mat33 cov;
-        ((KinectGrabber*)grabber)->model.computeCov(320,240,500,cov);
+        ((KinectGrabber*)grabber)->model.computeCov(320,240,6.0,cov);
         std::cout << cov;
 
         // create objects and print configuration

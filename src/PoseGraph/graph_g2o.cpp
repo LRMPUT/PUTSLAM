@@ -1,8 +1,6 @@
 #include "../include/PoseGraph/graph_g2o.h"
-#include <memory>
 #include <stdexcept>
 #include <chrono>
-#include <thread>
 
 using namespace putslam;
 using namespace g2o;
