@@ -34,7 +34,7 @@ class KinectGrabber : public Grabber {
             J << 0.0017*depth, 0, (0.0017*u-0.549),
                  0, 0.0017*depth, (0.0017*v-0.443),
                  0, 0, 1;
-            Ruvd(2,2) = config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3];
+            Ruvd(2,2) = (config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3])/3.0;
             cov=J*Ruvd*J.transpose();
         }
 
