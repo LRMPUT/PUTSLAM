@@ -42,3 +42,8 @@ putslam::Grabber* putslam::createGrabberKinect(void) {
 	grabber.reset(new KinectGrabber());
 	return grabber.get();
 }
+
+putslam::Grabber* putslam::createGrabberKinect(std::string configFile) {
+    grabber.reset(new KinectGrabber(configFile));
+    return grabber.get();
+}

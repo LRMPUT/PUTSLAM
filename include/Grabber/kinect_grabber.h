@@ -8,12 +8,14 @@
 #define KINECT_GRABBER_H_INCLUDED
 
 #include "grabber.h"
+#include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>
 
 namespace putslam {
 	/// create a single grabber (Kinect)
 	Grabber* createGrabberKinect(void);
+    Grabber* createGrabberKinect(std::string configFile);
 };
 
 using namespace putslam;
@@ -22,6 +24,19 @@ using namespace putslam;
 class KinectGrabber : public Grabber {
     class UncertaintyModel {
       public:
+        /// Construction
+        UncertaintyModel(){
+            PHCPModel << 1/config.focalLength[0],0,-config.focalAxis[0]/config.focalLength[0],
+                          0,1/config.focalLength[1], -config.focalAxis[1]/config.focalLength[1],
+                          0,0,1;
+            Ruvd << config.varU, 0, 0,
+                    0, config.varV, 0,
+                    0, 0, 0;
+        }
+
+        /// Construction
+        UncertaintyModel(std::string configFile) : config(configFile){
+        }
 
         void getPoint(uint_fast16_t u, uint_fast16_t v, uint_fast16_t depth, Eigen::Vector3d& point3D){
             Eigen::Vector3d point(u, v, depth);
@@ -46,21 +61,30 @@ class KinectGrabber : public Grabber {
                 varU(1.1046), varV(0.64160),
                 distVarCoefs{-8.9997e-06, 3.069e-003, 3.6512e-006, -0.0017512e-3}{
             }
+            Config(std::string configFilename){
+                tinyxml2::XMLDocument config;
+                std::string filename = "../../resources/" + configFilename;
+                config.LoadFile(filename.c_str());
+                if (config.ErrorID())
+                    std::cout << "unable to load Kinect config file.\n";
+                tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
+                model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fx", &focalLength[0]);
+                model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fy", &focalLength[1]);
+                model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cx", &focalAxis[0]);
+                model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cy", &focalAxis[1]);
+                model->FirstChildElement( "variance" )->QueryDoubleAttribute("sigmaU", &varU);
+                model->FirstChildElement( "variance" )->QueryDoubleAttribute("sigmaV", &varV);
+                model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c3", &distVarCoefs[0]);
+                model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
+                model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c1", &distVarCoefs[2]);
+                model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c0", &distVarCoefs[3]);
+            }
             public:
                 float_type focalLength[2];
                 float_type focalAxis[2];
                 float_type varU, varV;// variance u,v
                 float_type distVarCoefs[4];
         };
-
-        UncertaintyModel(){
-            PHCPModel << 1/config.focalLength[0],0,-config.focalAxis[0]/config.focalLength[0],
-                          0,1/config.focalLength[1], -config.focalAxis[1]/config.focalLength[1],
-                          0,0,1;
-            Ruvd << config.varU, 0, 0,
-                    0, config.varV, 0,
-                    0, 0, 0;
-        }
 
         private:
             Config config;
@@ -74,6 +98,10 @@ class KinectGrabber : public Grabber {
 
         /// Construction
         KinectGrabber(void);
+
+        /// Construction
+        KinectGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
+        }
 
         /// Name of the grabber
         virtual const std::string& getName() const;

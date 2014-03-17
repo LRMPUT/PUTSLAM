@@ -47,8 +47,10 @@ int main()
         std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());
 
         Grabber* grabber;
-        if (grabberType == "Kinect")
-            grabber = createGrabberKinect();
+        if (grabberType == "Kinect") {
+            std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+            grabber = createGrabberKinect(configFile);
+        }
         else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();
         else // Default

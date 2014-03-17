@@ -3,5 +3,5 @@
   <Grabber>
     <name>Kinect</name>
     <framerate>30</framerate>
-    <calibration_file>Kinect1.xml</calibration_file>
+    <calibrationFile>KinectModel.xml</calibrationFile>
   </Grabber>
