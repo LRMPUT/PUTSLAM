@@ -57,8 +57,9 @@ int main()
             grabber = createGrabberKinect();
 
         Mat33 cov;
-        ((KinectGrabber*)grabber)->model.computeCov(320,240,6.0,cov);
-        std::cout << cov;
+        ((KinectGrabber*)grabber)->model.computeCov(377.177, 112.906, 6.468, cov);
+        Eigen::Vector3d vec;
+        ((KinectGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;

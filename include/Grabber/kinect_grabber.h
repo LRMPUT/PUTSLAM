@@ -26,6 +26,10 @@ class KinectGrabber : public Grabber {
       public:
         /// Construction
         UncertaintyModel(){
+        }
+
+        /// Construction
+        UncertaintyModel(std::string configFile) : config(configFile){
             PHCPModel << 1/config.focalLength[0],0,-config.focalAxis[0]/config.focalLength[0],
                           0,1/config.focalLength[1], -config.focalAxis[1]/config.focalLength[1],
                           0,0,1;
@@ -34,16 +38,12 @@ class KinectGrabber : public Grabber {
                     0, 0, 0;
         }
 
-        /// Construction
-        UncertaintyModel(std::string configFile) : config(configFile){
+        void getPoint(uint_fast16_t u, uint_fast16_t v, float_type depth, Eigen::Vector3d& point3D){
+            Eigen::Vector3d point(u, v, 1);
+            point3D = depth*PHCPModel*point;
         }
 
-        void getPoint(uint_fast16_t u, uint_fast16_t v, uint_fast16_t depth, Eigen::Vector3d& point3D){
-            Eigen::Vector3d point(u, v, depth);
-            point3D = PHCPModel*point;
-        }
-
-        void computeCov(uint_fast16_t u, uint_fast16_t v, uint_fast16_t depth, Mat33& cov){
+        void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov){
             //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
             Mat33 J;
             J << 0.0017*depth, 0, (0.0017*u-0.549),
