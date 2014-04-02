@@ -37,7 +37,7 @@ void tracker()
     }
 
     //add edges of the graph -- measurements
-    Vec3 pos12(-1.05, 0.0, 0.0);
+    Vec3 pos12(-1.05, 0.22, 0.33);
     Mat33 infoMat12; infoMat12.setIdentity();
     Edge3D edge6(pos12,infoMat12, 1,5);
     if (!graph->addEdge3D(edge6))
@@ -66,8 +66,9 @@ int main()
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
-
-        graph = createPoseGraphG2O();
+        std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+        KinectGrabber::UncertaintyModel sensorModel(configFile);
+        graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
 
         //add vertices - robot poses
@@ -119,13 +120,21 @@ int main()
         if (!graph->addVertexFeature(vertex5))
             std::cout << "error: vertex exists!\n";
         //add edges of the graph -- measurements
-        Vec3 pos9(0.05, 1.0, 0.0);
-        Mat33 infoMat9; infoMat9.setIdentity();
+        Mat33 infoMat9;        Eigen::Vector3d point;    Mat33 covMat9;
+        sensorModel.getPoint(320, 375, 5.1, point);
+        Vec3 pos9(point(0), point(1), point(2));
+        sensorModel.computeCov(320, 375, 5.1, covMat9);
+        std::cout <<  infoMat9.inverse() << std::endl;
+        infoMat9 = covMat9.inverse();
         Edge3D edge4(pos9,infoMat9, 0,4);
         if (!graph->addEdge3D(edge4))
             std::cout << "error: vertex doesn't exist!\n";
-        Vec3 pos10(0.05, -1.0, 0.0);
-        Mat33 infoMat10; infoMat10.setIdentity();
+
+        Mat33 infoMat10; infoMat10.setIdentity();     Mat33 covMat10;
+        sensorModel.getPoint(320, 448, 3.16, point);
+        Vec3 pos10(point(0), point(1), point(2));
+        sensorModel.computeCov(320, 448, 3.16, covMat10);
+        infoMat10 = covMat10.inverse();
         Edge3D edge5(pos10,infoMat10, 1,4);
         if (!graph->addEdge3D(edge5))
             std::cout << "error: vertex doesn't exist!\n";
@@ -138,10 +147,10 @@ int main()
         std::thread tOpt(optimize);
 
         //start tracking thread
-        std::thread tTracker(tracker);
+        //std::thread tTracker(tracker);
 
         tOpt.join();
-        tTracker.join();
+        //tTracker.join();
 
         ///checking export/import methods
 

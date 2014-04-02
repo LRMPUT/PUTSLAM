@@ -2,6 +2,5 @@
   <!-- Sensor configuration -->
   <Grabber>
     <name>Kinect</name>
-    <framerate>30</framerate>
     <calibrationFile>KinectModel.xml</calibrationFile>
   </Grabber>

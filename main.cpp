@@ -57,15 +57,12 @@ int main()
             grabber = createGrabberKinect();
 
         Mat33 cov;
-        ((KinectGrabber*)grabber)->model.computeCov(377.177, 112.906, 6.468, cov);
+        ((KinectGrabber*)grabber)->model.computeCov(80, 360, 0.5837, cov);
         Eigen::Vector3d vec;
         ((KinectGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
-        int framerate = 0;
-        config.FirstChildElement( "Grabber" )->FirstChildElement( "framerate" )->QueryIntText(&framerate);
-        cout << "Grabber framerate: " << framerate << std::endl;
         Tracker * tracker = createTrackerKLT();
         cout << "Current tracker: " << tracker->getName() << std::endl;
         Graph * graph = createPoseGraphG2O();

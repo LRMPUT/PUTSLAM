@@ -22,6 +22,8 @@ using namespace putslam;
 
 /// Grabber implementation
 class KinectGrabber : public Grabber {
+    public:
+
     class UncertaintyModel {
       public:
         /// Construction
@@ -78,21 +80,29 @@ class KinectGrabber : public Grabber {
                 model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
                 model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c1", &distVarCoefs[2]);
                 model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c0", &distVarCoefs[3]);
+                tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
+                float_type query[4];
+                posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
+                Quaternion q(query[0], query[1], query[2], query[3]);
+                posXML->QueryDoubleAttribute("x", &query[0]); posXML->QueryDoubleAttribute("y", &query[1]); posXML->QueryDoubleAttribute("z", &query[2]);
+                Vec3 pos(query[0], query[1], query[2]);
+                pose = q*pos;
             }
             public:
                 float_type focalLength[2];
                 float_type focalAxis[2];
                 float_type varU, varV;// variance u,v
                 float_type distVarCoefs[4];
+                Mat34 pose; // kinect pose in robot's coordination frame
         };
 
+        Config config;
+
         private:
-            Config config;
             Mat33 PHCPModel;//pin-hole camera projection model
             Mat33 Ruvd; //covariance matrix for [u,v,disp]
     };
 
-    public:
         /// Pointer
         typedef std::unique_ptr<KinectGrabber> Ptr;
 

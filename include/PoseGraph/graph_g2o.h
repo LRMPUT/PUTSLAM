@@ -14,6 +14,7 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
+#include "g2o/types/slam3d/parameter_se3_offset.h"
 
 #include "g2o/core/factory.h"
 #include "g2o/stuff/command_args.h"
@@ -26,6 +27,8 @@
 namespace putslam {
     /// create a single graph (with g2o optimization)
     Graph* createPoseGraphG2O(void);
+    /// create a single graph (with g2o optimization) and define camera pose
+    Graph* createPoseGraphG2O(Mat34 cameraPose);
 };
 
 using namespace putslam;
@@ -38,6 +41,9 @@ class PoseGraphG2O : public Graph {
 
         /// Construction
         PoseGraphG2O(void);
+
+        /// Overloaded constructor
+        PoseGraphG2O(Mat34& cameraPose);
 
         /// Destructor
         ~PoseGraphG2O(void);
@@ -103,6 +109,8 @@ class PoseGraphG2O : public Graph {
         std::recursive_mutex mtxGraph;
         /// mutex for critical section - buffer graph
         std::recursive_mutex mtxBuffGraph;
+        /// camera offset
+        g2o:: ParameterSE3Offset* cameraOffset;
 
         /// Removes a vertex from the graph. Returns true on success
         bool removeVertex(Vertex* v);
@@ -117,10 +125,10 @@ class PoseGraphG2O : public Graph {
         bool updateGraph(void);
 
         /// add vertex to g2o interface
-        bool addVertexG2O(uint_fast32_t id, std::stringstream& vertex);
+        bool addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Vertex::Type type);
 
         /// add edge to g2o interface
-        bool addEdgeG2O(uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream);
+        bool addEdgeG2O(uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream, Edge::Type type);
 
         /**
          * adds a vertex to the graph - feature
