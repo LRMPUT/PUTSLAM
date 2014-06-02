@@ -167,6 +167,9 @@ namespace putslam {
             /// Vertex type
             Type type;
 
+            /// Edge id
+            unsigned int id;
+
             /// Node connected by the edge
             uint_fast32_t toVertexId;
 

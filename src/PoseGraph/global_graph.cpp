@@ -109,3 +109,8 @@ void GlobalGraph::optimize(uint_fast32_t maxIterations) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::cout << "finish global graph optimization (t = 0.2s)\n";
 }
+
+/// Removes weak edes (with error bigger than threshold
+bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration){
+
+}

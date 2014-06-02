@@ -18,7 +18,7 @@ auto startT = std::chrono::high_resolution_clock::now();
 // optimization thread
 void optimize(){
     //optimize
-    graph->optimize(10);
+    graph->optimize(70);
 }
 
 //simulates tracking module
@@ -147,10 +147,13 @@ int main()
         std::thread tOpt(optimize);
 
         //start tracking thread
-        //std::thread tTracker(tracker);
+        std::thread tTracker(tracker);
 
         tOpt.join();
-        //tTracker.join();
+        tTracker.join();
+
+        // graph pruning
+        //graph->optimizeAndPrune(0.5, 10);
 
         ///checking export/import methods
 

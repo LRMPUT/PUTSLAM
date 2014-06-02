@@ -276,3 +276,30 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
+
+###############################################################################
+#
+# PUTSLAM DEMO g2o graph pruning and optimization executables
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+        SET(DEMO_SOURCES ./demo_pruning.cpp)
+        ADD_EXECUTABLE(Demo_pruning ${DEMO_SOURCES})
+        add_dependencies(Demo_pruning g2o)
+        TARGET_LINK_LIBRARIES(Demo_pruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph GlobalMap boost_system)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND( TARGET Demo_pruning POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying g2o libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        INSTALL(TARGETS Demo_pruning RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)

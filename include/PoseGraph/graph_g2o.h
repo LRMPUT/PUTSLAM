@@ -90,6 +90,12 @@ class PoseGraphG2O : public Graph {
         /// Optimize graph
         void optimize(uint_fast32_t maxIterations);
 
+        /// Removes weak edes (with error bigger than threshold
+        bool optimizeAndPrune(float_type threshold, unsigned int singleIteration);
+
+        /// Load Graph from g2o file
+        bool loadG2O(const std::string filename);
+
 	private:
         /// Pose graph
 		PoseGraph graph;
@@ -113,10 +119,10 @@ class PoseGraphG2O : public Graph {
         g2o:: ParameterSE3Offset* cameraOffset;
 
         /// Removes a vertex from the graph. Returns true on success
-        bool removeVertex(Vertex* v);
+        bool removeVertex(unsigned int id);
 
         /// removes an edge from the graph. Returns true on success
-        bool removeEdge(Edge* e);
+        bool removeEdge(unsigned int id);
 
         /**
          * update graph: adds vertices and edges to the graph.
@@ -128,7 +134,7 @@ class PoseGraphG2O : public Graph {
         bool addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Vertex::Type type);
 
         /// add edge to g2o interface
-        bool addEdgeG2O(uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream, Edge::Type type);
+        bool addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream, Edge::Type type);
 
         /**
          * adds a vertex to the graph - feature
@@ -146,19 +152,35 @@ class PoseGraphG2O : public Graph {
          * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
-        bool addEdge(const EdgeSE3& e);
+        bool addEdge(EdgeSE3& e);
 
         /**
          * Adds an 3D edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
-        bool addEdge(const Edge3D& e);
+        bool addEdge(Edge3D& e);
 
         /// @returns the map <i>id -> vertex</i> where the vertices are stored
         const PoseGraph::VertexSet& vertices() const;
 
         /// @returns the set of edges of the hyper graph
         const PoseGraph::EdgeSet& edges() const;
+
+        /// Find vertex by id
+        PoseGraph::VertexSet::iterator findVertex(unsigned int id);
+
+        /// Finds edge by id
+        PoseGraph::EdgeSet::iterator findEdge(unsigned int id);
+
+        /// Find all edges which points to the vertex 'toVertexId'
+        std::vector<unsigned int> findIncominEdges(unsigned int toVertexId);
+
+        /// Find outlier using chi2
+        g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges);
+
+        /// copy g2o optimization result to to putslam graph
+        void updateEstimate(void);
+
 };
 
 #endif // GRAPH_G2O_H_INCLUDED

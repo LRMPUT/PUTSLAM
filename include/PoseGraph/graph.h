@@ -61,6 +61,9 @@ namespace putslam {
             /// Import camera path from file (RGB-D SLAM format)
             virtual bool importRGBDSLAM(const std::string filename) = 0;
 
+            /// Removes weak edes (with error bigger than threshold
+            virtual bool optimizeAndPrune(float_type threshold, unsigned int singleIteration) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 
