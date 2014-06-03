@@ -262,7 +262,6 @@ bool PoseGraphG2O::addEdgeSE3(const EdgeSE3& e){
     mtxBuffGraph.lock();
     bufferGraph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
     mtxBuffGraph.unlock();
-    std::cout << "sdw1\n";
     updateGraph();//try to update graph
     return true;
 }
@@ -287,11 +286,9 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
         addVertexPose(putslam::VertexSE3(e.fromVertexId, pos, rot));
         mtxGraph.lock();
     }
-        std::cout << "add 3\n";
     e.id = graph.edges.size();
     graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
     std::stringstream currentLine;
-    std::cout << "add 4\n";
     currentLine << e.trans.pos.x() << ' ' << e.trans.pos.y() << ' ' << e.trans.pos.z()
                 << ' ' << e.trans.rot.x() << ' ' << e.trans.rot.y() << ' ' << e.trans.rot.z() << ' ' << e.trans.rot.w()
                 << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2) << ' ' << e.info(0,3) << ' ' << e.info(0,4) << ' ' << e.info(0,5)
@@ -300,9 +297,7 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
                 << ' ' << e.info(3,3) << ' ' << e.info(3,4) << ' ' << e.info(3,5)
                 << ' ' << e.info(4,4) << ' ' << e.info(4,5)
                 << ' ' << e.info(5,5);
-    std::cout << "add 5\n";
     addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE3);
-    std::cout << "add 6\n";
     mtxGraph.unlock();
     return true;
 }
@@ -357,7 +352,6 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
  */
 bool PoseGraphG2O::updateGraph(void){
     if (mtxGraph.try_lock()){//try to lock graph
-        std::cout << "update graph\n";
         //copy buffer graph
         mtxBuffGraph.lock();
         PoseGraph tmpGraph;
@@ -403,7 +397,6 @@ bool PoseGraphG2O::updateGraph(void){
         //merge buffer and pose graph
         mtxGraph.unlock();
     }
-    std::cout << "update graph finished\n";
     return true;
 }
 
@@ -423,7 +416,6 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
         string line;
         clear();
         while ( getline (file,line) ) { // load each line
-            std::cout << line << "\n";
             std::istringstream is(line);
             std::string lineType;
             float_type pos[3], rot[4];
@@ -454,7 +446,6 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 is >> id >> pos[0] >> pos[1] >> pos[2];
                 Vec3 position(pos[0], pos[1], pos[2]);
                 Vertex3D vertex(id, position);
-                std::cout << "trackxyz\n";
                 if (!addVertexFeature(vertex))
                     std::cout << "error: vertex exists!\n";
             }
@@ -466,19 +457,15 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 Vec3 position(pos[0], pos[1], pos[2]); Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
                 RobotPose trans(position, qrot);
                 Mat66 infoMat;
-                std::cout << "sd\n";
                 infoMat(0,0) = info[0]; infoMat(0,1) = info[1]; infoMat(0,2) = info[2]; infoMat(0,3) = info[3]; infoMat(0,4) = info[4]; infoMat(0,5) = info[5];
                 infoMat(1,0) = info[1]; infoMat(1,1) = info[6]; infoMat(1,2) = info[7]; infoMat(1,3) = info[8]; infoMat(1,4) = info[9]; infoMat(1,5) = info[10];
                 infoMat(2,0) = info[2]; infoMat(2,1) = info[7]; infoMat(2,2) = info[11]; infoMat(2,3) = info[12]; infoMat(2,4) = info[13]; infoMat(2,5) = info[14];
                 infoMat(3,0) = info[3]; infoMat(3,1) = info[8]; infoMat(3,2) = info[12]; infoMat(3,3) = info[15]; infoMat(3,4) = info[16]; infoMat(3,5) = info[17];
                 infoMat(4,0) = info[4]; infoMat(4,1) = info[9]; infoMat(4,2) = info[13]; infoMat(4,3) = info[16]; infoMat(4,4) = info[18]; infoMat(4,5) = info[19];
                 infoMat(5,0) = info[5]; infoMat(5,1) = info[10]; infoMat(5,2) = info[14]; infoMat(5,3) = info[17]; infoMat(5,4) = info[19]; infoMat(5,5) = info[20];
-                std::cout << "sd1\n";
                 EdgeSE3 edge(trans,infoMat,to,from);
-                std::cout << "sd2\n";
                 if (!addEdgeSE3(edge))
                     std::cout << "error: vertex doesn't exist!\n";
-                std::cout << "sd3\n";
             }
             else if (lineType == "EDGE_SE3_TRACKXYZ"){
                 unsigned int to, from, sensorFrame;
@@ -643,8 +630,7 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
         g2o::OptimizableGraph::EdgeContainer activeEdges = optimizer.activeEdges();
         int iter = 0;
         for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
-            std::cout << "sss1\n";
-            std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
+            //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
             if ((*it)->chi2()>threshold){
                 PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
                 std::cout << "to vertex: " << edg->get()->toVertexId << "\n";
@@ -653,8 +639,6 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
                     g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);
                     //g2o::OptimizableGraph::EdgeContainer closeSet = findIncominEdges();
                     opt = true;
-                    if (*it!=*outlierIt)
-                        std::cout << "FD\n";
                     std::cout << "Original edge: " << (*it)->id() << "\n";
                     std::cout << "Remove edge: " << (*outlierIt)->id() << "\n";
                     if (!optimizer.removeEdge(*outlierIt))
@@ -662,7 +646,8 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
                     std::cout << "removed g2o\n";
                     if (!removeEdge((*outlierIt)->id()))
                         std::cout << "putslam: Could not remove the edge.\n";
-                    it+=(*outlierIt)->id() - (*it)->id();
+                    //it+=(*outlierIt)->id() - (*it)->id();
+                    it = activeEdges.erase(outlierIt);
                     std::cout << "removed putslam\n";
                 }
             }
