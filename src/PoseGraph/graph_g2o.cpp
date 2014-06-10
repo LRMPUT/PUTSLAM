@@ -91,19 +91,6 @@ PoseGraph::VertexSet::iterator PoseGraphG2O::findVertex(unsigned int id){
     return graph.vertices.end();
 }
 
-/// Find edge by id
-PoseGraph::EdgeSet::iterator PoseGraphG2O::findEdge(unsigned int id){
-    mtxGraph.lock();
-    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
-        if (it->get()->id == id){
-            mtxGraph.unlock();
-            return it;
-        }
-    }
-    mtxGraph.unlock();
-    return graph.edges.end();
-}
-
 /// removes an edge from the graph. Returns true on success
 bool PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
@@ -658,8 +645,63 @@ g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::ve
             outlierIt = it;
         }
     }
-    std::cout << "maxCi2 " << maxChi2 << "\n";
     return outlierIt;
+}
+
+/// Find outlier using chi2_i/median(chi2)
+g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, float_type threshold){
+    std::vector<float_type> chi2values;
+    float_type maxError = -1e10;
+    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = activeEdges.end();
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
+        std::vector<unsigned int>::iterator itId = std::find(edgeSet.begin(), edgeSet.end(), (*it)->id());
+        if (itId!=edgeSet.end()){
+            chi2values.push_back((*it)->chi2());
+        }
+    }
+    std::sort (chi2values.begin(), chi2values.end(), std::greater<float_type>());
+    float_type median = chi2values[chi2values.size()/2];
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
+        std::vector<unsigned int>::iterator itId = std::find(edgeSet.begin(), edgeSet.end(), (*it)->id());
+        if ((itId!=edgeSet.end())){
+            float_type error = (*it)->chi2()/median;
+            if ((error>maxError)&&(error>threshold)){
+                maxError = error;
+                outlierIt = it;
+            }
+        }
+    }
+    return outlierIt;
+}
+
+/// Find edge by id
+PoseGraph::EdgeSet::iterator PoseGraphG2O::findEdge(unsigned int id){
+    mtxGraph.lock();
+    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
+        if (it->get()->id == id){
+            mtxGraph.unlock();
+            return it;
+        }
+    }
+    mtxGraph.unlock();
+    return graph.edges.end();
+}
+
+/// checks if the edge is the single edge outgoing from the vertex fromVertex
+bool PoseGraphG2O::isSingleOutgoingEdge(unsigned int edgeId){
+    PoseGraph::EdgeSet::iterator edgeIt = findEdge(edgeId);
+    unsigned int counter = 0;
+    mtxGraph.lock();
+    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
+        if ((*edgeIt)->fromVertexId == (*it)->fromVertexId)
+            counter++;
+        if (counter>1) {
+            mtxGraph.unlock();
+            return false;
+        }
+    }
+    mtxGraph.unlock();
+    return true;
 }
 
 /**
@@ -678,26 +720,26 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
         int iter = 0;
         for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
             //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
-            if ((*it)->chi2()>threshold){
+           // if ((*it)->chi2()>threshold){
                 PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
-                std::cout << "to vertex: " << edg->get()->toVertexId << "\n";
                 std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
                 if (closeSet.size()>0){
-                    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);
+                    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold);
                     //g2o::OptimizableGraph::EdgeContainer closeSet = findIncominEdges();
-                    opt = true;
-                    std::cout << "Original edge: " << (*it)->id() << "\n";
-                    std::cout << "Remove edge: " << (*outlierIt)->id() << "\n";
-                    if (!optimizer.removeEdge(*outlierIt))
-                        std::cout << "g2o: Could not remove the edge.\n";
-                    std::cout << "removed g2o\n";
-                    if (!removeEdge((*outlierIt)->id()))
-                        std::cout << "putslam: Could not remove the edge.\n";
-                    //it+=(*outlierIt)->id() - (*it)->id();
-                    it = activeEdges.erase(outlierIt);
-                    std::cout << "removed putslam\n";
+                    if ((outlierIt!=activeEdges.end())&&(!isSingleOutgoingEdge((*outlierIt)->id()))){
+                        opt = true;
+                        std::cout << "Remove edge: " << (*outlierIt)->id() << "\n";
+                        if (!optimizer.removeEdge(*outlierIt))
+                            std::cout << "g2o: Could not remove the edge.\n";
+                        std::cout << "removed g2o\n";
+                        if (!removeEdge((*outlierIt)->id()))
+                            std::cout << "putslam: Could not remove the edge.\n";
+                        //it+=(*outlierIt)->id() - (*it)->id();
+                        it = activeEdges.erase(outlierIt);
+                        std::cout << "removed putslam\n";
+                    }
                 }
-            }
+            //}
             iter++;
         }
     }

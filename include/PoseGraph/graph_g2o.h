@@ -112,8 +112,6 @@ class PoseGraphG2O : public Graph {
         g2o::SparseOptimizer optimizer;
         /// g2o factory
         g2o::Factory* factory;
-        /// mutex for critical section - graph
-        std::recursive_mutex mtxGraph;
         /// mutex for critical section - buffer graph
         std::recursive_mutex mtxBuffGraph;
         /// camera offset
@@ -170,20 +168,26 @@ class PoseGraphG2O : public Graph {
         /// Find vertex by id
         PoseGraph::VertexSet::iterator findVertex(unsigned int id);
 
-        /// Finds edge by id
-        PoseGraph::EdgeSet::iterator findEdge(unsigned int id);
-
         /// Find all edges which points to the vertex 'toVertexId'
         std::vector<unsigned int> findIncominEdges(unsigned int toVertexId);
 
         /// Find outlier using chi2
         g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges);
 
+        /// Find outlier using chi2_i/median(chi2)
+        g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, float_type threshold);
+
         /// copy g2o optimization result to to putslam graph
         void updateEstimate(void);
 
         /// search for sub-graphs which aren't anchored and anchor them
         void anchorVertices(void);
+
+        /// Find edge by id
+        PoseGraph::EdgeSet::iterator findEdge(unsigned int id);
+
+        /// checks if the edge is the single edge outgoing from the vertex fromVertex
+        bool isSingleOutgoingEdge(unsigned int edgeId);
 
 };
 

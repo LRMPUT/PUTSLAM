@@ -10,6 +10,8 @@
 #include "../Defs/putslam_defs.h"
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 namespace putslam {
     /// Graph interface
@@ -72,6 +74,8 @@ namespace putslam {
             PoseGraph graph;
             /// Graph name
             const std::string name;
+            /// mutex for critical section - graph
+            std::recursive_mutex mtxGraph;
     };
 };
 
