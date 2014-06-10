@@ -24,9 +24,11 @@ putslam::Graph* putslam::createPoseGraphG2O(Mat34 cameraPose) {
 
 PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     // create the linear solver
-    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+    //linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+    linearSolver = new g2o::LinearSolverPCG<g2o::BlockSolverX::PoseMatrixType>();
 
     // create the block solver on top of the linear solver
+    //blockSolver = new g2o::BlockSolverX(linearSolver);
     blockSolver = new g2o::BlockSolverX(linearSolver);
 
     // create the algorithm to carry out the optimization
@@ -138,7 +140,7 @@ const PoseGraph::EdgeSet& PoseGraphG2O::edges() const{
 
 /// add vertex to g2o interface
 bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Vertex::Type type){
-    g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id));
+   // g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id));
     g2o::HyperGraph::GraphElemBitset elemBitset;
     elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
     elemBitset.flip();
@@ -272,18 +274,18 @@ bool PoseGraphG2O::addEdgeSE3(const EdgeSE3& e){
  */
 bool PoseGraphG2O::addEdge(EdgeSE3& e){
     mtxGraph.lock();
+    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
+        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+        mtxGraph.unlock();
+        Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
+        addVertexPose(putslam::VertexSE3(e.fromVertexId, pos, rot));
+        mtxGraph.lock();
+    }
     if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
         std::cout << "Warning: vertex does not exist. adding new vertex...\n";
         mtxGraph.unlock();
         Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
         addVertexPose(putslam::VertexSE3(e.toVertexId, pos, rot));
-        mtxGraph.lock();
-    }
-    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
-        mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pos, rot));
         mtxGraph.lock();
     }
     e.id = graph.edges.size();
@@ -418,6 +420,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
         while ( getline (file,line) ) { // load each line
             std::istringstream is(line);
             std::string lineType;
+            std::cout << line << "\n";
             float_type pos[3], rot[4];
             is >> lineType;
             if (lineType == "PARAMS_SE3OFFSET"){
@@ -601,6 +604,49 @@ std::vector<unsigned int> PoseGraphG2O::findIncominEdges(unsigned int toVertexId
     return edgeIds;
 }
 
+/// search for sub-graphs which aren't anchored and anchor them
+void PoseGraphG2O::anchorVertices(void){
+    std::vector<int> vertices;
+    for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end(); it++)
+        vertices.push_back((*it)->vertexId);
+    typedef std::vector< std::vector<int> > GraphOfVertices;
+    GraphOfVertices graphs;
+    for (std::vector<int>::iterator it = vertices.begin(); it!=vertices.end(); it++)
+        graphs.push_back(std::vector<int>(1,*it));
+    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
+        GraphOfVertices::iterator itFrom; GraphOfVertices::iterator itTo;
+        for (GraphOfVertices::iterator itGraph = graphs.begin(); itGraph!=graphs.end(); itGraph++){
+            if (find (itGraph->begin(), itGraph->end(), (*it)->fromVertexId)!=itGraph->end())
+                itFrom = itGraph;
+            if (find (itGraph->begin(), itGraph->end(), (*it)->toVertexId)!=itGraph->end())
+                itTo = itGraph;
+        }
+        if (itTo==itFrom)//do nothing (vertices are in the same graph)
+            continue;
+        else {//join subgraphs
+            for (std::vector<int>::iterator itVert = (*itTo).begin(); itVert!=(*itTo).end();itVert++){ //copy all vertices from the second graph
+                (*itFrom).push_back(*itVert);
+            }
+            graphs.erase(itTo);// erase the second graph;
+        }
+    }
+    //print graphs
+    /*for (GraphOfVertices::iterator itGraph = graphs.begin(); itGraph!=graphs.end(); itGraph++){
+        std::cout << "graph: \n";
+        for (std::vector<int>::iterator itVert = (*itGraph).begin(); itVert!=(*itGraph).end();itVert++){
+            std::cout << *itVert << " ,";
+        }
+        std::cout << "\n";
+    }*/
+    for (GraphOfVertices::iterator itGraph = graphs.begin(); itGraph!=graphs.end(); itGraph++){
+        g2o::OptimizableGraph::Vertex* v = optimizer.vertex((*itGraph->begin()));
+        SparseOptimizer::VertexContainer::const_iterator it = optimizer.findActiveVertex(v);
+        if (it!=optimizer.activeVertices().end()){
+            (*it)->setFixed(true);
+        }
+    }
+}
+
 /// Find outlier using chi2
 g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges){
     float_type maxChi2=-1e10;
@@ -621,6 +667,7 @@ g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::ve
  */
 bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIteration){
     optimizer.initializeOptimization();
+    anchorVertices();
     optimizer.computeInitialGuess();
     bool opt = true;
     while (opt) {

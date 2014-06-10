@@ -14,6 +14,7 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
+#include "g2o/solvers/pcg/linear_solver_pcg.h"
 #include "g2o/types/slam3d/parameter_se3_offset.h"
 
 #include "g2o/core/factory.h"
@@ -180,6 +181,9 @@ class PoseGraphG2O : public Graph {
 
         /// copy g2o optimization result to to putslam graph
         void updateEstimate(void);
+
+        /// search for sub-graphs which aren't anchored and anchor them
+        void anchorVertices(void);
 
 };
 
