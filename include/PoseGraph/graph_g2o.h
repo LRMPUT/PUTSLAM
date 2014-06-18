@@ -94,8 +94,14 @@ class PoseGraphG2O : public Graph {
         /// Removes weak edes (with error bigger than threshold
         bool optimizeAndPrune(float_type threshold, unsigned int singleIteration);
 
+        /// Removes weak edes (with error bigger than threshold chi2/median(chi2)
+        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration);
+
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
+
+        /// Export graph to m-file
+        void plot2file(const std::string filename, const std::string lineProperty, const std::string prunedEdgesProperty, const std::string pointProperty);
 
 	private:
         /// Pose graph

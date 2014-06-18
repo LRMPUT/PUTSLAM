@@ -326,6 +326,9 @@ namespace putslam {
 			/// Edges
 			EdgeSet edges;
 
+            /// Edges
+            EdgeSet prunedEdges;
+
 			/// Vertices
 			VertexSet vertices;
     };

@@ -72,6 +72,9 @@ class GlobalGraph : public Graph {
         /// Removes weak edes (with error bigger than threshold
         bool optimizeAndPrune(float_type threshold, unsigned int singleIteration);
 
+        /// Removes weak edes (with error bigger than threshold
+        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration);
+
 	private:
 		PoseGraph graph;	
 

@@ -66,6 +66,9 @@ namespace putslam {
             /// Removes weak edes (with error bigger than threshold
             virtual bool optimizeAndPrune(float_type threshold, unsigned int singleIteration) = 0;
 
+            /// Removes weak edes (with error bigger than threshold
+            virtual bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

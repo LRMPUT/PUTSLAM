@@ -114,3 +114,8 @@ void GlobalGraph::optimize(uint_fast32_t maxIterations) {
 bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration){
 
 }
+
+/// Removes weak edes (with error bigger than threshold
+bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration){
+
+}

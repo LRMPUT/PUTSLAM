@@ -96,6 +96,7 @@ bool PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
     PoseGraph::EdgeSet::iterator e = findEdge(id);
     if (e != graph.edges.end()) {
+        graph.prunedEdges.push_back(std::move(*e));
         graph.edges.erase(e);
         mtxGraph.unlock();
         return true;
@@ -491,6 +492,34 @@ void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     file.close();
 }
 
+/// Export graph to m-file
+void PoseGraphG2O::plot2file(const std::string filename, const std::string lineProperty, const std::string prunedEdgesProperty, const std::string pointProperty) {
+    ofstream file(filename);
+    file << "close all; clear all;\n";
+    file << "hold on;\n";
+    for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
+        if (it->get()->type==Vertex::VERTEXSE3){
+            file << "plot3("  << std::setprecision (5) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << ", " << pointProperty << ");\n";
+        }
+    }
+    for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
+        if (it->get()->type==Edge::EDGE_SE3){
+            putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
+            putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
+            file << "plot3(["  << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< lineProperty << ");\n";
+        }
+    }
+    for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.prunedEdges.begin(); it!=graph.prunedEdges.end();it++){
+        if (it->get()->type==Edge::EDGE_SE3){
+            putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
+            putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
+            file << "plot3(["  << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< prunedEdgesProperty << ");\n";
+        }
+    }
+    file << "xlabel('x [m]');\n ylabel('y [m]');\n zlabel('z [m]');\n";
+    file.close();
+}
+
 /// Import camera path from file (RGB-D SLAM format)
 bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
     ifstream file(filename);
@@ -720,11 +749,12 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
         int iter = 0;
         for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
             //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
-           // if ((*it)->chi2()>threshold){
+            if ((*it)->chi2()>threshold){
                 PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
                 std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
                 if (closeSet.size()>0){
-                    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold);
+                    //g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
+                    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);//chi2 > threshold
                     //g2o::OptimizableGraph::EdgeContainer closeSet = findIncominEdges();
                     if ((outlierIt!=activeEdges.end())&&(!isSingleOutgoingEdge((*outlierIt)->id()))){
                         opt = true;
@@ -737,6 +767,55 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
                         //it+=(*outlierIt)->id() - (*it)->id();
                         it = activeEdges.erase(outlierIt);
                         std::cout << "removed putslam\n";
+                        if (it==activeEdges.end())
+                            it = activeEdges.begin();
+                    }
+                }
+            }
+            iter++;
+        }
+    }
+    std::cout << "end\n";
+    return true;
+    //g2o::OptimizableGraph::Edge e; e.id();
+}
+
+/**
+ * Optimizes and removes weak edes (with error bigger than threshold)
+ */
+bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIteration){
+    optimizer.initializeOptimization();
+    anchorVertices();
+    optimizer.computeInitialGuess();
+    bool opt = true;
+    while (opt) {
+        opt = false;
+        optimize(singleIteration);
+        optimizer.computeActiveErrors();
+        g2o::OptimizableGraph::EdgeContainer activeEdges = optimizer.activeEdges();
+        int iter = 0;
+        for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
+            //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
+            //if ((*it)->chi2()>threshold){
+                PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
+                std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
+                if (closeSet.size()>0){
+                    g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
+                    //g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);//chi2 > threshold
+                    //g2o::OptimizableGraph::EdgeContainer closeSet = findIncominEdges();
+                    if ((outlierIt!=activeEdges.end())&&(!isSingleOutgoingEdge((*outlierIt)->id()))){
+                        opt = true;
+                        std::cout << "Remove edge: " << (*outlierIt)->id() << "\n";
+                        if (!optimizer.removeEdge(*outlierIt))
+                            std::cout << "g2o: Could not remove the edge.\n";
+                        std::cout << "removed g2o\n";
+                        if (!removeEdge((*outlierIt)->id()))
+                            std::cout << "putslam: Could not remove the edge.\n";
+                        //it+=(*outlierIt)->id() - (*it)->id();
+                        it = activeEdges.erase(outlierIt);
+                        std::cout << "removed putslam\n";
+                        if (it==activeEdges.end())
+                            it = activeEdges.begin();
                     }
                 }
             //}
