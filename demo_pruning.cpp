@@ -116,8 +116,9 @@ int main(int argc, char * argv[])
         //((PoseGraphG2O *)graph)->loadG2O("graphMN/MatchingwithBundleAdjustment/graphFile.g2o");
         //((PoseGraphG2O *)graph)->loadG2O("graphMN/room/TrackingWithBundleAdjustment/graphFile.g2o");
         //((PoseGraphG2O *)graph)->loadG2O("graphMN/room/MatchingWithBundleAdjustment/graphFile.g2o");
+        std::cout << "load g2o\n";
         ((PoseGraphG2O *)graph)->loadG2O(cmd_line.get_arg("-i"));
-
+std::cout << "end load g2o\n";
         //save init graph
         //graph->save2file("graphMN/TrackingOnFeatures/graphFile_test.g2o");
         //graph->save2file("graphMN/Matching/graphFile_test.g2o");
@@ -144,8 +145,8 @@ int main(int argc, char * argv[])
         //graph->save2file("graphMN/room/MatchingWithBundleAdjustment/graphFilePruned.g2o");
         graph->save2file(cmd_line.get_arg("-o"));
 
-        //((PoseGraphG2O *)graph)->plot2file("graphOpt.m", "'g','LineWidth',2", "'--r','LineWidth',2", "'.'");
-        ((PoseGraphG2O *)graph)->plot2file("graphPruned.m", "'g','LineWidth',2", "'--r','LineWidth',2", "'.'");
+        //graph->plot2file("graphOpt.m");
+        graph->plot2file("graphPruned.m");
 
         //clear the graph
         graph->clear();
