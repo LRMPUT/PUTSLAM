@@ -2,6 +2,7 @@
 #include <thread>
 #include "include/Defs/putslam_defs.h"
 #include "Grabber/kinect_grabber.h"
+#include "Grabber/xtion_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "Tracker/trackerKLT.h"
@@ -50,6 +51,10 @@ int main()
         if (grabberType == "Kinect") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberKinect(configFile);
+        }
+        else if (grabberType == "Xtion") {
+            std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+            grabber = createGrabberXtion(configFile);
         }
         else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();

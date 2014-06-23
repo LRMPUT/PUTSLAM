@@ -7,7 +7,7 @@
 using namespace putslam;
 
 /// A single instance of Kinect grabber
-KinectGrabber::Ptr grabber;
+KinectGrabber::Ptr grabberK;
 
 KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE) {
 
@@ -39,11 +39,11 @@ void KinectGrabber::calibrate(void) {
 }
 
 putslam::Grabber* putslam::createGrabberKinect(void) {
-	grabber.reset(new KinectGrabber());
-	return grabber.get();
+    grabberK.reset(new KinectGrabber());
+    return grabberK.get();
 }
 
 putslam::Grabber* putslam::createGrabberKinect(std::string configFile) {
-    grabber.reset(new KinectGrabber(configFile));
-    return grabber.get();
+    grabberK.reset(new KinectGrabber(configFile));
+    return grabberK.get();
 }

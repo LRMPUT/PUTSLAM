@@ -7,7 +7,7 @@
 using namespace putslam;
 
 /// A single instance of Kinect grabber
-XtionGrabber::Ptr grabber;
+XtionGrabber::Ptr grabberX;
 
 XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE) {
 
@@ -39,11 +39,11 @@ void XtionGrabber::calibrate(void) {
 }
 
 putslam::Grabber* putslam::createGrabberXtion(void) {
-    grabber.reset(new XtionGrabber());
-    return grabber.get();
+    grabberX.reset(new XtionGrabber());
+    return grabberX.get();
 }
 
 putslam::Grabber* putslam::createGrabberXtion(std::string configFile) {
-    grabber.reset(new XtionGrabber(configFile));
-    return grabber.get();
+    grabberX.reset(new XtionGrabber(configFile));
+    return grabberX.get();
 }
