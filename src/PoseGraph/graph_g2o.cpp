@@ -78,19 +78,6 @@ bool PoseGraphG2O::removeVertex(unsigned int id){
     return false;
 }
 
-/// Find vertex by id
-PoseGraph::VertexSet::iterator PoseGraphG2O::findVertex(unsigned int id){
-    mtxGraph.lock();
-    for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end(); it++){
-        if (it->get()->vertexId == id){
-            mtxGraph.unlock();
-            return it;
-        }
-    }
-    mtxGraph.unlock();
-    return graph.vertices.end();
-}
-
 /// removes an edge from the graph. Returns true on success
 bool PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
@@ -492,34 +479,6 @@ void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     file.close();
 }
 
-/// Export graph to m-file
-void PoseGraphG2O::plot2file(const std::string filename, const std::string lineProperty, const std::string prunedEdgesProperty, const std::string pointProperty) {
-    ofstream file(filename);
-    file << "close all; clear all;\n";
-    file << "hold on;\n";
-    for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
-        if (it->get()->type==Vertex::VERTEXSE3){
-            file << "plot3("  << std::setprecision (5) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << ", " << pointProperty << ");\n";
-        }
-    }
-    for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
-        if (it->get()->type==Edge::EDGE_SE3){
-            putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
-            putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
-            file << "plot3(["  << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< lineProperty << ");\n";
-        }
-    }
-    for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.prunedEdges.begin(); it!=graph.prunedEdges.end();it++){
-        if (it->get()->type==Edge::EDGE_SE3){
-            putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
-            putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
-            file << "plot3(["  << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< prunedEdgesProperty << ");\n";
-        }
-    }
-    file << "xlabel('x [m]');\n ylabel('y [m]');\n zlabel('z [m]');\n";
-    file.close();
-}
-
 /// Import camera path from file (RGB-D SLAM format)
 bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
     ifstream file(filename);
@@ -703,19 +662,6 @@ g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::ve
     return outlierIt;
 }
 
-/// Find edge by id
-PoseGraph::EdgeSet::iterator PoseGraphG2O::findEdge(unsigned int id){
-    mtxGraph.lock();
-    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
-        if (it->get()->id == id){
-            mtxGraph.unlock();
-            return it;
-        }
-    }
-    mtxGraph.unlock();
-    return graph.edges.end();
-}
-
 /// checks if the edge is the single edge outgoing from the vertex fromVertex
 bool PoseGraphG2O::isSingleOutgoingEdge(unsigned int edgeId){
     PoseGraph::EdgeSet::iterator edgeIt = findEdge(edgeId);
@@ -826,3 +772,5 @@ bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIt
     return true;
     //g2o::OptimizableGraph::Edge e; e.id();
 }
+
+

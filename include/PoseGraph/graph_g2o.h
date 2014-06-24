@@ -100,12 +100,7 @@ class PoseGraphG2O : public Graph {
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
 
-        /// Export graph to m-file
-        void plot2file(const std::string filename, const std::string lineProperty, const std::string prunedEdgesProperty, const std::string pointProperty);
-
-	private:
-        /// Pose graph
-		PoseGraph graph;
+    private:
         /// Pose graph
         PoseGraph bufferGraph;
         /// g2o linear solver
@@ -171,9 +166,6 @@ class PoseGraphG2O : public Graph {
         /// @returns the set of edges of the hyper graph
         const PoseGraph::EdgeSet& edges() const;
 
-        /// Find vertex by id
-        PoseGraph::VertexSet::iterator findVertex(unsigned int id);
-
         /// Find all edges which points to the vertex 'toVertexId'
         std::vector<unsigned int> findIncominEdges(unsigned int toVertexId);
 
@@ -188,9 +180,6 @@ class PoseGraphG2O : public Graph {
 
         /// search for sub-graphs which aren't anchored and anchor them
         void anchorVertices(void);
-
-        /// Find edge by id
-        PoseGraph::EdgeSet::iterator findEdge(unsigned int id);
 
         /// checks if the edge is the single edge outgoing from the vertex fromVertex
         bool isSingleOutgoingEdge(unsigned int edgeId);
