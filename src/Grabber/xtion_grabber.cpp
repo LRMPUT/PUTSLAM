@@ -29,6 +29,17 @@ rc = openni::STATUS_OK;
 initOpenNI();
 }
 
+int XtionGrabber::grabberClose(){
+
+    depth.stop();
+    color.stop();
+    depth.destroy();
+    color.destroy();
+    device.close();
+    openni::OpenNI::shutdown();
+    return 0;
+}
+
 
 const std::string& XtionGrabber::getName() const {
     return name;
@@ -39,6 +50,8 @@ const PointCloud& XtionGrabber::getCloud(void) const {
 }
 
 const SensorFrame& XtionGrabber::getSensorFrame(void) const {
+
+    printf("I'm in get sensor frame. Size of Matrices is: %d, %d, %d, %d\n",sensor_frame.depth.rows,sensor_frame.depth.cols,sensor_frame.image.rows,sensor_frame.image.cols);
     return sensor_frame;
 }
 
@@ -94,15 +107,72 @@ int XtionGrabber::initOpenNI(){
         openni::OpenNI::shutdown();
         return 2;
     }
-    device.setDepthColorSyncEnabled(true);
+
+    rc = device.setDepthColorSyncEnabled(true);
+    if (rc != openni::STATUS_OK) {
+        printf("Couldn't enable depth and color images synchronization\n%s\n",openni::OpenNI::getExtendedError());
+        return 2;
+    }
+}
+
+int XtionGrabber::acquireDepthFrame(cv::Mat &m){
+
+    rc = depth.readFrame(&m_depthFrame);
+    if (rc != openni::STATUS_OK)
+    {
+        printf("Wait failed\n");
+    }
+
+    if (m_depthFrame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && m_depthFrame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
+    {
+        printf("Unexpected frame format\n");
+    }
+
+
+    openni::DepthPixel* pDepth = (openni::DepthPixel*)m_depthFrame.getData();
+    m.create(m_depthFrame.getHeight(),m_depthFrame.getWidth(),CV_16SC1);  //floating point values for depth values
+    memcpy(m.data,pDepth,m_depthFrame.getStrideInBytes() * m_depthFrame.getHeight());
+    return 0;
+
+}
+
+int XtionGrabber::acquireColorFrame(cv::Mat &m){
+
+    rc = color.readFrame(&m_colorFrame);
+    if (rc != openni::STATUS_OK)
+    {
+        printf("Wait failed\n");
+    }
+
+    //TODO
+    //if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
+    //{
+    //    printf("Unexpected frame format\n");
+    //}
+
+    const openni::RGB888Pixel* pImageRow = (const openni::RGB888Pixel*)m_colorFrame.getData();
+    m.create(m_colorFrame.getHeight(),m_colorFrame.getWidth(),CV_8UC3);
+    memcpy(m.data,pImageRow,m_colorFrame.getStrideInBytes() * m_colorFrame.getHeight());
+    cv::cvtColor(m, m, CV_RGB2BGR);
+
+    return 0;
+
+
 }
 
 void XtionGrabber::grab(void) {
-    Point3D point;
-    point.r = 255; point.g = 0; point.b = 0; point.a = 255;
-    point.x = 1.2; point.y = 3.4; point.z = 5.6;
-    cloud.push_back(point);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//    Point3D point;
+//    point.r = 255; point.g = 0; point.b = 0; point.a = 255;
+//    point.x = 1.2; point.y = 3.4; point.z = 5.6;
+//    cloud.push_back(point);
+//    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      printf("I'm in Xtion getSensorFrame\n");
+      cv::Mat a,b;
+      acquireDepthFrame(a);
+      this->sensor_frame.depth = a;
+      acquireColorFrame(b);
+      this->sensor_frame.image = b;
+      printf("I'm quitting Xtion getSensorFrame, Size of Matrices is: %d, %d, %d, %d\n",a.rows,a.cols,b.rows,b.cols);
 }
 
 /// run grabber thread

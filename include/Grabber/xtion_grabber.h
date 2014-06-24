@@ -8,6 +8,8 @@
 
 #include <stddef.h>
 #include <OpenNI.h>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 #include "grabber.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
@@ -138,7 +140,16 @@ class XtionGrabber : public Grabber {
     /// Calibrate sensor
     virtual void calibrate(void);
 
+    //local functions
+
+    ///Sensor initialization
     virtual int initOpenNI ();
+    ///Acquisition of Depth Frame
+    virtual int acquireDepthFrame(cv::Mat &m);
+    ///Acquisition of Color Frame
+    virtual int acquireColorFrame(cv::Mat &m);
+    ///Sensor uninitialize
+    virtual int grabberClose();
 
     UncertaintyModel model;
 
@@ -153,6 +164,8 @@ protected:
     openni::VideoMode colorVideoMode;
     const openni::SensorInfo *depthSensorInfo;
     const openni::SensorInfo *colorSensorInfo;
+
+    SensorFrame sensor_frame;
 
 
 private:

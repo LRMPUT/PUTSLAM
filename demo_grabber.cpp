@@ -18,6 +18,10 @@ int main()
     try {
         using namespace putslam;
 
+        cv::Mat m, depth,color;
+        cv::namedWindow( "Depth View", 1 );
+        cv::namedWindow( "RGB View", 1 );
+
         tinyxml2::XMLDocument config;
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
@@ -47,12 +51,19 @@ int main()
         cout << "Current grabber: " << grabber->getName() << std::endl;
 
         auto start = chrono::system_clock::now();
-        while (1){ //tracking
+        while (cv::waitKey(50) != 27){ //tracking
+            SensorFrame sf;
             grabber->grab(); // grab frame
-            if (chrono::duration_cast<chrono::duration<unsigned> >(chrono::system_clock::now() - start).count()>max_tracking_duration){
+            sf = grabber->getSensorFrame();
+            printf("I'm out of get sensor frame. Size of Matrices is: %d, %d, %d, %d\n",sf.depth.rows,sf.depth.cols,sf.image.rows,sf.image.cols);
+            sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0);
+            cv::imshow("Depth View",depth);
+            cv::imshow( "RGB View", sf.image );
 
-                break;
-            }
+//            if (chrono::duration_cast<chrono::duration<unsigned> >(chrono::system_clock::now() - start).count()>max_tracking_duration){
+
+//                break;
+//            }
         }
 
     }
