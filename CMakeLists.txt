@@ -138,6 +138,8 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 ###############################################################################
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
+        INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Include")
+        LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib")
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/*.cpp"
         )
@@ -146,6 +148,8 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         )
 
         ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
+        TARGET_LINK_LIBRARIES(Grabber OpenNI2)
+        file(INSTALL "${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib/" DESTINATION bin)
         INSTALL(TARGETS Grabber RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${GRABBER_HEADERS} GRABBERKINECT_HEADERS DESTINATION include/putslam/Grabber/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
@@ -318,7 +322,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
         SET(DEMO_FILES
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
-
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
         SET(DEMO_SOURCES ./demo_grabber.cpp)
         ADD_EXECUTABLE(Demo_grabber ${DEMO_SOURCES})
         add_dependencies(Demo_grabber g2o)
@@ -326,7 +330,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo_grabber POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying g2o libs ..."
+                    COMMENT "copying grabber libs ..."
             )
         endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_grabber RUNTIME DESTINATION bin)

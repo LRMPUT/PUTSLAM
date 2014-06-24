@@ -6,10 +6,21 @@
 #ifndef XTION_GRABBER_H
 #define XTION_GRABBER_H
 
+#include <stddef.h>
+#include <OpenNI.h>
 #include "grabber.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>
+
+#define MAX_DEPTH 10000
+
+enum DisplayModes
+{
+    DISPLAY_MODE_OVERLAY,
+    DISPLAY_MODE_DEPTH,
+    DISPLAY_MODE_IMAGE
+};
 
 namespace putslam {
     /// create a single grabber (Xtion)
@@ -110,8 +121,7 @@ class XtionGrabber : public Grabber {
     XtionGrabber(void);
 
     /// Construction
-    XtionGrabber(std::string modelFilename) : Grabber("Xtion Grabber", TYPE_PRIMESENSE), model(modelFilename){
-    }
+    XtionGrabber(std::string modelFilename);
 
     /// Name of the grabber
     virtual const std::string& getName() const;
@@ -128,7 +138,21 @@ class XtionGrabber : public Grabber {
     /// Calibrate sensor
     virtual void calibrate(void);
 
+    virtual int initOpenNI ();
+
     UncertaintyModel model;
+
+protected:
+    openni::Status rc;
+    openni::Device device;
+    openni::VideoStream depth;
+    openni::VideoStream color;
+    openni::VideoFrameRef		m_depthFrame;
+    openni::VideoFrameRef		m_colorFrame;
+    openni::VideoMode depthVideoMode;
+    openni::VideoMode colorVideoMode;
+    const openni::SensorInfo *depthSensorInfo;
+    const openni::SensorInfo *colorSensorInfo;
 
 
 private:

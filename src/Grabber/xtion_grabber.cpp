@@ -1,8 +1,17 @@
+// Undeprecate CRT functions
+#ifndef _CRT_SECURE_NO_DEPRECATE
+    #define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+
 #include "../include/Grabber/xtion_grabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
 #include <thread>
+
+
+#define MIN_NUM_CHUNKS(data_size, chunk_size)	((((data_size)-1) / (chunk_size) + 1))
+#define MIN_CHUNKS_SIZE(data_size, chunk_size)	(MIN_NUM_CHUNKS(data_size, chunk_size) * (chunk_size))
 
 using namespace putslam;
 
@@ -10,8 +19,16 @@ using namespace putslam;
 XtionGrabber::Ptr grabberX;
 
 XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE) {
+    rc = openni::STATUS_OK;
+    initOpenNI();
 
 }
+
+XtionGrabber::XtionGrabber(std::string modelFilename) : Grabber("Xtion Grabber", TYPE_PRIMESENSE), model(modelFilename){
+rc = openni::STATUS_OK;
+initOpenNI();
+}
+
 
 const std::string& XtionGrabber::getName() const {
     return name;
@@ -23,6 +40,61 @@ const PointCloud& XtionGrabber::getCloud(void) const {
 
 const SensorFrame& XtionGrabber::getSensorFrame(void) const {
     return sensor_frame;
+}
+
+int XtionGrabber::initOpenNI(){
+
+    const char* deviceURI = openni::ANY_DEVICE;  //we only have one device any device
+
+    rc = openni::OpenNI::initialize();
+
+    printf("After initialization:\n%s\n", openni::OpenNI::getExtendedError());
+
+    rc = device.open(deviceURI);
+    if (rc != openni::STATUS_OK)
+    {
+        printf("SimpleViewer: Device open failed:\n%s\n", openni::OpenNI::getExtendedError());
+        openni::OpenNI::shutdown();
+        return 1;
+    }
+
+    rc = depth.create(device, openni::SENSOR_DEPTH);
+    if (rc == openni::STATUS_OK)
+    {
+        rc = depth.start();
+        if (rc != openni::STATUS_OK)
+        {
+            printf("SimpleViewer: Couldn't start depth stream:\n%s\n", openni::OpenNI::getExtendedError());
+            depth.destroy();
+        }
+    }
+    else
+    {
+        printf("SimpleViewer: Couldn't find depth stream:\n%s\n", openni::OpenNI::getExtendedError());
+    }
+
+    rc = color.create(device, openni::SENSOR_COLOR);
+    if (rc == openni::STATUS_OK)
+    {
+        rc = color.start();
+        if (rc != openni::STATUS_OK)
+        {
+            printf("SimpleViewer: Couldn't start color stream:\n%s\n", openni::OpenNI::getExtendedError());
+            color.destroy();
+        }
+    }
+    else
+    {
+        printf("SimpleViewer: Couldn't find color stream:\n%s\n", openni::OpenNI::getExtendedError());
+    }
+
+    if (!depth.isValid() || !color.isValid())
+    {
+        printf("SimpleViewer: No valid streams. Exiting\n");
+        openni::OpenNI::shutdown();
+        return 2;
+    }
+    device.setDepthColorSyncEnabled(true);
 }
 
 void XtionGrabber::grab(void) {
