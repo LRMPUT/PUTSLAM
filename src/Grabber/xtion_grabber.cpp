@@ -121,6 +121,7 @@ int XtionGrabber::acquireDepthFrame(cv::Mat &m){
     if (rc != openni::STATUS_OK)
     {
         printf("Wait failed\n");
+        return 1;
     }
 
     if (m_depthFrame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && m_depthFrame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
@@ -142,6 +143,7 @@ int XtionGrabber::acquireColorFrame(cv::Mat &m){
     if (rc != openni::STATUS_OK)
     {
         printf("Wait failed\n");
+        return 1;
     }
 
     //TODO
@@ -167,12 +169,8 @@ void XtionGrabber::grab(void) {
 //    cloud.push_back(point);
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
       printf("I'm in Xtion getSensorFrame\n");
-      cv::Mat a,b;
-      acquireDepthFrame(a);
-      this->sensor_frame.depth = a;
-      acquireColorFrame(b);
-      this->sensor_frame.image = b;
-      printf("I'm quitting Xtion getSensorFrame, Size of Matrices is: %d, %d, %d, %d\n",a.rows,a.cols,b.rows,b.cols);
+      if(acquireDepthFrame(this->sensor_frame.depth)) throw 1;
+      if(acquireColorFrame(this->sensor_frame.image)) throw 2;
 }
 
 /// run grabber thread
