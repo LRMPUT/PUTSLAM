@@ -50,6 +50,9 @@ namespace putslam {
             /// Calibrate sensor
             virtual void calibrate() = 0;
 
+            ///Clossing a device
+            virtual int grabberClose() = 0;
+
             /// Virtual descrutor
             virtual ~Grabber() {}
 

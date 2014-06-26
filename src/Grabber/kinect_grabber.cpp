@@ -38,6 +38,10 @@ void KinectGrabber::calibrate(void) {
 
 }
 
+int KinectGrabber::grabberClose(){
+    return 0;
+}
+
 putslam::Grabber* putslam::createGrabberKinect(void) {
     grabberK.reset(new KinectGrabber());
     return grabberK.get();
@@ -47,3 +51,4 @@ putslam::Grabber* putslam::createGrabberKinect(std::string configFile) {
     grabberK.reset(new KinectGrabber(configFile));
     return grabberK.get();
 }
+

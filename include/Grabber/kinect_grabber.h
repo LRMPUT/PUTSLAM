@@ -128,6 +128,9 @@ class KinectGrabber : public Grabber {
         /// Calibrate sensor
         virtual void calibrate(void);
 
+        ///Sensor uninitialize
+        virtual int grabberClose(void);
+
         UncertaintyModel model;
 
     private:

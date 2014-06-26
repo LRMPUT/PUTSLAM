@@ -65,6 +65,7 @@ int main()
 //                break;
 //            }
         }
+        grabber->grabberClose();
 
     }
     catch (const std::exception& ex) {
