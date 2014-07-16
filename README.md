@@ -3,13 +3,13 @@ PUTSLAM
 
 RGBD-based Simultaneous Localization and Mapping
 
-1. Global requirements:
-- CMake > 2.8
-- GCC > 4.6 (4.7)
-- OpenCV > 2.42 (3.0)
-- PCL > 1.7 (1.7)
+Global requirements:
+  - CMake > 2.8
+  - GCC > 4.6 (4.7)
+  - OpenCV > 2.42 (3.0)
+  - PCL > 1.7 (1.7)
 
-2. Xtion Grabber:
+Xtion Grabber:
 
   Current version compiled on Ubuntu 14.04 x64
 
