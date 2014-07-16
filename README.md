@@ -11,16 +11,16 @@ Global requirements:
 
 Xtion Grabber:
 
-Current version compiled on Ubuntu 14.04 x64
+- Current version compiled on Ubuntu 14.04 x64
 
-Used libraries and compilers:
+- Used libraries and compilers:
 
   - cmake version 2.8.12.2
   - gcc (Ubuntu 4.8.2-19ubuntu1) 4.8.2
   - opencv 2.4.9
   - openNI-Linux-x64-2.2
 
-Known Issues in Ubuntu 12.04.
+- Known Issues in Ubuntu 12.04.
 
   - cmake does not link opencv libraries if not strictly shown in add_library;
   - opencv issue -- when using cvWatiKey the value is not returned properly add to the condition & 0xff;
