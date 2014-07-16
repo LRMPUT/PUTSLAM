@@ -19,7 +19,7 @@ Xtion Grabber:
   - gcc (Ubuntu 4.8.2-19ubuntu1) 4.8.2
   - opencv 2.4.9
   - openNI-Linux-x64-2.2
-- After compiling the grabber coppy all the files and directoried from "3rdParty/OpenNi2/Redist" to the location where your grabber executable is.
+- After compiling the grabber copy all the files and the directory from "3rdParty/OpenNi2/Redist" to the location where your grabber executable is.
 
 - Known Issues in Ubuntu 12.04.
 
