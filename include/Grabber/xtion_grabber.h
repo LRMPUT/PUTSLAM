@@ -81,7 +81,7 @@ class XtionGrabber : public Grabber {
                 std::string filename = "../../resources/" + configFilename;
                 config.LoadFile(filename.c_str());
                 if (config.ErrorID())
-                    std::cout << "unable to load Kinect config file.\n";
+                    std::cout << "unable to load Xtion config file.\n";
                 tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
                 model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fx", &focalLength[0]);
                 model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fy", &focalLength[1]);
@@ -145,10 +145,7 @@ class XtionGrabber : public Grabber {
 
     ///Sensor initialization
     virtual int initOpenNI ();
-    ///Acquisition of Depth Frame
-    virtual int acquireDepthFrame(cv::Mat &m);
-    ///Acquisition of Color Frame
-    virtual int acquireColorFrame(cv::Mat &m);
+
     ///Sensor uninitialize
     virtual int grabberClose();
 
@@ -167,9 +164,21 @@ protected:
     const openni::SensorInfo *colorSensorInfo;
 
     SensorFrame sensor_frame;
+    int depthMode;
+    int colorMode;
+    bool syncDepthColor;
+    ///Acquisition of Depth Frame
+    int acquireDepthFrame(cv::Mat &m);
+    ///Acquisition of Color Frame
+    int acquireColorFrame(cv::Mat &m);
+    ///Lists all the Depth Video Modes available for current sensor
+    int listDepthVideoMode();
+    ///Lists all the Color Video Modes available for current sensor
+    int listColorVideoMode();
 
 
 private:
+
 
 };
 

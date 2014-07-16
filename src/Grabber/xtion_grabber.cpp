@@ -25,6 +25,17 @@ XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE) {
 }
 
 XtionGrabber::XtionGrabber(std::string modelFilename) : Grabber("Xtion Grabber", TYPE_PRIMESENSE), model(modelFilename){
+    tinyxml2::XMLDocument config;
+    std::string filename = "../../resources/" + modelFilename;
+    config.LoadFile(filename.c_str());
+    if (config.ErrorID())
+        std::cout << "unable to load Xtion config file.\n";
+    else{
+        tinyxml2::XMLElement * xtionDevice = config.FirstChildElement( "xtionDevice" );
+        xtionDevice->FirstChildElement( "depthVideoMode" )->QueryIntText(&depthMode);
+        xtionDevice->FirstChildElement( "colorVideoMode" )->QueryIntText(&colorMode);
+        xtionDevice->FirstChildElement("depthColorSyncEnabled")->QueryBoolText(&syncDepthColor);
+    }
 rc = openni::STATUS_OK;
 initOpenNI();
 }
@@ -50,8 +61,6 @@ const PointCloud& XtionGrabber::getCloud(void) const {
 }
 
 const SensorFrame& XtionGrabber::getSensorFrame(void) const {
-
-    printf("I'm in get sensor frame. Size of Matrices is: %d, %d, %d, %d\n",sensor_frame.depth.rows,sensor_frame.depth.cols,sensor_frame.image.rows,sensor_frame.image.cols);
     return sensor_frame;
 }
 
@@ -107,10 +116,25 @@ int XtionGrabber::initOpenNI(){
         openni::OpenNI::shutdown();
         return 2;
     }
-
-    rc = device.setDepthColorSyncEnabled(true);
+    if(syncDepthColor){
+        rc = device.setDepthColorSyncEnabled(true);
+        if (rc != openni::STATUS_OK) {
+            printf("Couldn't enable depth and color images synchronization\n%s\n",openni::OpenNI::getExtendedError());
+            return 2;
+        }
+    }
+    listDepthVideoMode();
+    rc = depth.setVideoMode(depthSensorInfo->getSupportedVideoModes()[depthMode]); //best option 4
     if (rc != openni::STATUS_OK) {
-        printf("Couldn't enable depth and color images synchronization\n%s\n",openni::OpenNI::getExtendedError());
+        printf("Couldn't set proper Depth Video Mode\n%s\n",openni::OpenNI::getExtendedError());
+        return 2;
+    }
+    //Importand otherwise error !!!
+    //required pause for about 1 second to properly set the Video Modes, otherwise core dump error
+    listColorVideoMode(); //this line gives a required pause
+    rc = color.setVideoMode(colorSensorInfo->getSupportedVideoModes()[colorMode]); //best option 9
+    if (rc != openni::STATUS_OK) {
+        printf("Couldn't set proper Color Video Mode\n%s\n",openni::OpenNI::getExtendedError());
         return 2;
     }
 }
@@ -131,7 +155,7 @@ int XtionGrabber::acquireDepthFrame(cv::Mat &m){
 
 
     openni::DepthPixel* pDepth = (openni::DepthPixel*)m_depthFrame.getData();
-    m.create(m_depthFrame.getHeight(),m_depthFrame.getWidth(),CV_16SC1);  //floating point values for depth values
+    m.create(m_depthFrame.getHeight(),m_depthFrame.getWidth(),CV_16UC1);  //floating point values for depth values. Important -- use 16UC1 in order to properly store data in png file.
     memcpy(m.data,pDepth,m_depthFrame.getStrideInBytes() * m_depthFrame.getHeight());
     return 0;
 
@@ -168,10 +192,36 @@ void XtionGrabber::grab(void) {
 //    point.x = 1.2; point.y = 3.4; point.z = 5.6;
 //    cloud.push_back(point);
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      printf("I'm in Xtion getSensorFrame\n");
       if(acquireDepthFrame(this->sensor_frame.depth)) throw 1;
       if(acquireColorFrame(this->sensor_frame.image)) throw 2;
 }
+
+int XtionGrabber::listDepthVideoMode(){
+
+    depthSensorInfo = device.getSensorInfo(openni::SENSOR_DEPTH);
+    for(int i=0;i < depthSensorInfo->getSupportedVideoModes().getSize();i++)
+        {
+            openni::VideoMode videoMode = depthSensorInfo->getSupportedVideoModes()[i];
+
+            std::cout << i<< ". fps: " << videoMode.getFps() << "x: " << videoMode.getResolutionX() << "y " <<  videoMode.getResolutionY() << std::endl;
+        }
+
+    return 0;
+}
+
+int XtionGrabber::listColorVideoMode(){
+
+    colorSensorInfo = device.getSensorInfo(openni::SENSOR_COLOR);
+    for(int i=0;i < colorSensorInfo->getSupportedVideoModes().getSize();i++)
+        {
+            openni::VideoMode videoMode = colorSensorInfo->getSupportedVideoModes()[i];
+
+            std::cout << i<< ". fps: " << videoMode.getFps() << "x: " << videoMode.getResolutionX() << "y " <<  videoMode.getResolutionY() << std::endl;
+        }
+
+    return 0;
+}
+
 
 /// run grabber thread
 void XtionGrabber::calibrate(void) {
@@ -187,3 +237,4 @@ putslam::Grabber* putslam::createGrabberXtion(std::string configFile) {
     grabberX.reset(new XtionGrabber(configFile));
     return grabberX.get();
 }
+

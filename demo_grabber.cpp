@@ -62,7 +62,6 @@ int main()
                 break;
               }
             sf = grabber->getSensorFrame();
-            printf("I'm out of get sensor frame. Size of Matrices is: %d, %d, %d, %d\n",sf.depth.rows,sf.depth.cols,sf.image.rows,sf.image.cols);
             sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0);
             cv::imshow("Depth View",depth);
             cv::imshow( "RGB View", sf.image );
