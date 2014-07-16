@@ -1,40 +1,27 @@
-/** @file xtion_grabber.h
+/** @file kinect_grabber.h
  *
- * implementation - Xtion Grabber
+ * implementation - Kinect Grabber
  *
  */
-#ifndef XTION_GRABBER_H
-#define XTION_GRABBER_H
 
-#include <stddef.h>
-#include <OpenNI.h>
-#include <opencv/cv.h>
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#ifndef KINECT_GRABBER_H_INCLUDED
+#define KINECT_GRABBER_H_INCLUDED
+
 #include "grabber.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>
 
-#define MAX_DEPTH 10000
-
-enum DisplayModes
-{
-    DISPLAY_MODE_OVERLAY,
-    DISPLAY_MODE_DEPTH,
-    DISPLAY_MODE_IMAGE
-};
-
 namespace putslam {
-    /// create a single grabber (Xtion)
-    Grabber* createGrabberXtion(void);
-    Grabber* createGrabberXtion(std::string configFile);
+	/// create a single grabber (Kinect)
+	Grabber* createGrabberKinect(void);
+    Grabber* createGrabberKinect(std::string configFile);
 };
 
 using namespace putslam;
 
-class XtionGrabber : public Grabber {
-
+/// Grabber implementation
+class KinectGrabber : public Grabber {
     public:
 
     class UncertaintyModel {
@@ -81,7 +68,7 @@ class XtionGrabber : public Grabber {
                 std::string filename = "../../resources/" + configFilename;
                 config.LoadFile(filename.c_str());
                 if (config.ErrorID())
-                    std::cout << "unable to load Xtion config file.\n";
+                    std::cout << "unable to load Kinect config file.\n";
                 tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
                 model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fx", &focalLength[0]);
                 model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fy", &focalLength[1]);
@@ -116,71 +103,37 @@ class XtionGrabber : public Grabber {
             Mat33 Ruvd; //covariance matrix for [u,v,disp]
     };
 
+        /// Pointer
+        typedef std::unique_ptr<KinectGrabber> Ptr;
 
-    /// Pointer
-    typedef std::unique_ptr<XtionGrabber> Ptr;
+        /// Construction
+        KinectGrabber(void);
 
-    /// Construction
-    XtionGrabber(void);
+        /// Construction
+        KinectGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
+        }
 
-    /// Construction
-    XtionGrabber(std::string modelFilename);
+        /// Name of the grabber
+        virtual const std::string& getName() const;
 
-    /// Name of the grabber
-    virtual const std::string& getName() const;
+        /// Returns current point cloud
+        virtual const PointCloud& getCloud(void) const;
 
-    /// Returns current point cloud
-    virtual const PointCloud& getCloud(void) const;
+        /// Returns the current 2D image
+        virtual const SensorFrame& getSensorFrame(void) const;
 
-    /// Returns the current 2D image
-    virtual const SensorFrame& getSensorFrame(void) const;
+        /// Grab image and/or point cloud
+        virtual void grab();
 
-    /// Grab image and/or point cloud
-    virtual void grab();
+        /// Calibrate sensor
+        virtual void calibrate(void);
 
-    /// Calibrate sensor
-    virtual void calibrate(void);
+        ///Sensor uninitialize
+        virtual int grabberClose(void);
 
-    //local functions
+        UncertaintyModel model;
 
-    ///Sensor initialization
-    virtual int initOpenNI ();
-
-    ///Sensor uninitialize
-    virtual int grabberClose();
-
-    UncertaintyModel model;
-
-protected:
-    openni::Status rc;
-    openni::Device device;
-    openni::VideoStream depth;
-    openni::VideoStream color;
-    openni::VideoFrameRef		m_depthFrame;
-    openni::VideoFrameRef		m_colorFrame;
-    openni::VideoMode depthVideoMode;
-    openni::VideoMode colorVideoMode;
-    const openni::SensorInfo *depthSensorInfo;
-    const openni::SensorInfo *colorSensorInfo;
-
-    SensorFrame sensor_frame;
-    int depthMode;
-    int colorMode;
-    bool syncDepthColor;
-    ///Acquisition of Depth Frame
-    int acquireDepthFrame(cv::Mat &m);
-    ///Acquisition of Color Frame
-    int acquireColorFrame(cv::Mat &m);
-    ///Lists all the Depth Video Modes available for current sensor
-    int listDepthVideoMode();
-    ///Lists all the Color Video Modes available for current sensor
-    int listColorVideoMode();
-
-
-private:
-
-
+    private:
 };
 
-
-#endif // XTION_GRABBER_H
+#endif // KINECT_GRABBER_H_INCLUDED

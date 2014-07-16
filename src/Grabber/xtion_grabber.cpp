@@ -155,8 +155,10 @@ int XtionGrabber::acquireDepthFrame(cv::Mat &m){
 
 
     openni::DepthPixel* pDepth = (openni::DepthPixel*)m_depthFrame.getData();
+    mtx.lock();
     m.create(m_depthFrame.getHeight(),m_depthFrame.getWidth(),CV_16UC1);  //floating point values for depth values. Important -- use 16UC1 in order to properly store data in png file.
     memcpy(m.data,pDepth,m_depthFrame.getStrideInBytes() * m_depthFrame.getHeight());
+    mtx.unlock();
     return 0;
 
 }
@@ -177,10 +179,12 @@ int XtionGrabber::acquireColorFrame(cv::Mat &m){
     //}
 
     const openni::RGB888Pixel* pImageRow = (const openni::RGB888Pixel*)m_colorFrame.getData();
+
+    mtx.lock();
     m.create(m_colorFrame.getHeight(),m_colorFrame.getWidth(),CV_8UC3);
     memcpy(m.data,pImageRow,m_colorFrame.getStrideInBytes() * m_colorFrame.getHeight());
     cv::cvtColor(m, m, CV_RGB2BGR);
-
+    mtx.unlock();
     return 0;
 
 

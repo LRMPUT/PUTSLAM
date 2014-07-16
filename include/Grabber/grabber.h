@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <mutex>
 
 namespace putslam {
 	/// Grabber interface
@@ -71,6 +72,9 @@ namespace putslam {
 
             /// Calibration methods
             Calibration calibrator;
+
+            /// Mutex
+            std::mutex mtx;
 	};
 };
 

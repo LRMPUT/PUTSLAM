@@ -3,6 +3,7 @@
 #include "include/Defs/putslam_defs.h"
 #include "Grabber/kinect_grabber.h"
 #include "Grabber/xtion_grabber.h"
+#include "Grabber/ptgrey_grabber.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <ctime>
@@ -51,7 +52,7 @@ int main()
         cout << "Current grabber: " << grabber->getName() << std::endl;
 
         auto start = chrono::system_clock::now();
-        while (cv::waitKey(50) != 27){ //tracking
+        while (cv::waitKey(30) != 27){ //tracking
             SensorFrame sf;
             try{
             grabber->grab(); // grab frame
@@ -62,7 +63,7 @@ int main()
                 break;
               }
             sf = grabber->getSensorFrame();
-            sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0);
+            sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0); //conversion to 8-bit format
             cv::imshow("Depth View",depth);
             cv::imshow( "RGB View", sf.image );
 
