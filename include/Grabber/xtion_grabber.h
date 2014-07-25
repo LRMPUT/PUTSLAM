@@ -152,6 +152,8 @@ class XtionGrabber : public Grabber {
     UncertaintyModel model;
 
 protected:
+
+    //Comments on variables
     openni::Status rc;
     openni::Device device;
     openni::VideoStream depth;

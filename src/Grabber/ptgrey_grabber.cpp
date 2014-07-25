@@ -15,6 +15,8 @@ PtgreyGrabber::PtgreyGrabber(void) : Grabber("Ptgrey Grabber", TYPE_PRIMESENSE) 
 
 PtgreyGrabber::PtgreyGrabber(std::string modelFilename) : Grabber("Ptgrey Grabberr", TYPE_PRIMESENSE), model(modelFilename){
 
+    initPtGrey ();
+
 }
 
 const std::string& PtgreyGrabber::getName() const {
@@ -30,11 +32,32 @@ const SensorFrame& PtgreyGrabber::getSensorFrame(void) const {
 }
 
 void PtgreyGrabber::grab(void) {
-    Point3D point;
-    point.r = 255; point.g = 0; point.b = 0; point.a = 255;
-    point.x = 1.2; point.y = 3.4; point.z = 5.6;
-	cloud.push_back(point);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    //RunSingleCamera( guid );
+
+    Image rawImage;
+        // Retrieve an image
+        error = cam.RetrieveBuffer( &rawImage );
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+        }
+
+        printf( "Grabbed image\n");
+
+        // Create a converted image
+        Image convertedImage;
+
+        // Convert the raw image
+        error = rawImage.Convert( PIXEL_FORMAT_BGR, &convertedImage );
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+        }
+
+        this->sensor_frame.image.create(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC3);
+        memcpy(sensor_frame.image.data,convertedImage.GetData(),convertedImage.GetStride() * convertedImage.GetRows());
+
 }
 
 /// run grabber thread
@@ -43,6 +66,122 @@ void PtgreyGrabber::calibrate(void) {
 }
 
 int PtgreyGrabber::grabberClose(){
+
+    // Stop capturing images
+    error = cam.StopCapture();
+    if (error != PGRERROR_OK)
+    {
+        PrintError( error );
+        return -1;
+    }
+
+    // Disconnect the camera
+    error = cam.Disconnect();
+    if (error != PGRERROR_OK)
+    {
+        PrintError( error );
+        return -1;
+    }
+    return 0;
+}
+
+void PtgreyGrabber::PrintError( Error error )
+{
+    error.PrintErrorTrace();
+}
+
+void PtgreyGrabber::PrintCameraInfo( CameraInfo* pCamInfo )
+{
+    printf(
+        "\n*** CAMERA INFORMATION ***\n"
+        "Serial number - %u\n"
+        "Camera model - %s\n"
+        "Camera vendor - %s\n"
+        "Sensor - %s\n"
+        "Resolution - %s\n"
+        "Firmware version - %s\n"
+        "Firmware build time - %s\n\n",
+        pCamInfo->serialNumber,
+        pCamInfo->modelName,
+        pCamInfo->vendorName,
+        pCamInfo->sensorInfo,
+        pCamInfo->sensorResolution,
+        pCamInfo->firmwareVersion,
+        pCamInfo->firmwareBuildTime );
+}
+
+
+
+
+int PtgreyGrabber::initPtGrey (){
+    for(int i = 0; i<5; i++){
+        error = busMgr.GetNumOfCameras(&numCameras);
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+            return -1;
+        }
+
+        printf( "Number of cameras detected: %u\n", numCameras );
+        if(!numCameras){
+         error = busMgr.RescanBus();
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+            return -1;
+        }
+    error = busMgr.RescanBus();
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+            return -1;
+        }
+        }
+        else break;
+    }
+    for (unsigned int i=0; i < numCameras; i++)
+    {
+        error = busMgr.GetCameraFromIndex(i, &guid);
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+            return -1;
+        }
+    }
+    // Connect to a camera
+    error = cam.Connect(&guid);
+    if (error != PGRERROR_OK)
+    {
+        PrintError( error );
+        return -1;
+    }
+
+    // Get the camera information
+    CameraInfo camInfo;
+    error = cam.GetCameraInfo(&camInfo);
+    if (error != PGRERROR_OK)
+    {
+        PrintError( error );
+        return -1;
+    }
+
+    std::chrono::milliseconds timespan(10000); // or whatever
+    std::this_thread::sleep_for(timespan);
+    PrintCameraInfo(&camInfo);
+    // Start capturing images
+    if(cam.IsConnected()){
+    error = cam.StartCapture();
+        if (error != PGRERROR_OK)
+        {
+            PrintError( error );
+            return -1;
+        }
+    }
+    else{
+    printf( "Camera not connected\n");
+     return -1;
+    }
+
     return 0;
 }
 
@@ -55,4 +194,5 @@ putslam::Grabber* putslam::createGrabberPtgrey(std::string configFile) {
     grabberP.reset(new PtgreyGrabber(configFile));
     return grabberP.get();
 }
+
 

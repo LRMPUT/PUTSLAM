@@ -11,6 +11,14 @@
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>
+#include "FlyCapture2.h"
+#include <chrono>
+#include <thread>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
+using namespace FlyCapture2;
+
 
 namespace putslam {
     /// create a single grabber (Ptgrey)
@@ -124,6 +132,9 @@ class PtgreyGrabber : public Grabber {
         /// Grab image and/or point cloud
         virtual void grab();
 
+        ///Sensor initialization
+        virtual int initPtGrey ();
+
         /// Calibrate sensor
         virtual void calibrate(void);
 
@@ -131,8 +142,20 @@ class PtgreyGrabber : public Grabber {
         virtual int grabberClose(void);
 
         UncertaintyModel model;
+    protected:
+        Error error;
+        BusManager busMgr;
+        unsigned int numCameras;
+        PGRGuid guid;
+        Camera cam;
 
     private:
+        ///Prints out error trace
+        void PrintError( Error error );
+        ///Prints out camera info
+        void PrintCameraInfo( CameraInfo* pCamInfo );
+
+
 };
 
 #endif // PTGREY_GRABBER_H_INCLUDED
