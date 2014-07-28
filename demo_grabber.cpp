@@ -38,15 +38,19 @@ int main()
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberXtion(configFile);
         }
+        if (grabberType == "Ptgrey") {
+            std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+            grabber = createGrabberPtgrey(configFile);
+        }
         else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();
         else // Default
             grabber = createGrabberKinect();
 
-        Mat33 cov;
-        ((XtionGrabber*)grabber)->model.computeCov(80, 360, 0.5837, cov);
-        Eigen::Vector3d vec;
-        ((XtionGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
+//        Mat33 cov;
+//        ((XtionGrabber*)grabber)->model.computeCov(80, 360, 0.5837, cov);
+//        Eigen::Vector3d vec;
+//        ((XtionGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
@@ -63,8 +67,8 @@ int main()
                 break;
               }
             sf = grabber->getSensorFrame();
-            sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0); //conversion to 8-bit format
-            cv::imshow("Depth View",depth);
+            //sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0); //conversion to 8-bit format
+            //cv::imshow("Depth View",depth);
             cv::imshow( "RGB View", sf.image );
 
 //            if (chrono::duration_cast<chrono::duration<unsigned> >(chrono::system_clock::now() - start).count()>max_tracking_duration){

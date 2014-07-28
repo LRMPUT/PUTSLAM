@@ -332,6 +332,8 @@ namespace putslam {
 			/// Vertices
 			VertexSet vertices;
     };
+    //exception class goes here
+
 }
 
 #endif // PUTSLAM_DEFS_H_INCLUDED
