@@ -51,9 +51,6 @@ void tracker()
             std::cout << "error: vertex doesn't exist!\n";
     }
 
-    //optimize
-    std::thread tOpt(optimize);
-    tOpt.join();
 }
 
 int main()

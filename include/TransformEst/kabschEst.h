@@ -39,8 +39,6 @@ namespace putslam {
             virtual ~KabschEst() {}
 
         private:
-            /// Estimated transformation
-            Mat34 transformation;
             /// Tracker name
             const std::string name;
     };
