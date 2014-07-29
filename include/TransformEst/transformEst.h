@@ -26,8 +26,8 @@ namespace putslam {
             virtual ~TransformEst() {}
 
         protected:
-            /// Compute uncertainty matrix [6x6] (x,y,z,qx,qy,qz)
-            virtual const Mat66& computeUncertainty(std::vector<Point3D> setA, std::vector<Mat33> setAUncertainty, std::vector<Point3D> setB, std::vector<Mat33> setBUncertainty, Mat34 transformation) {
+            /// Compute uncertainty matrix [6x6] (qx,qy,qz,x,y,z)
+            virtual const Mat66& computeUncertainty(std::vector<Point3D>& setA, std::vector<Mat33>& setAUncertainty, std::vector<Point3D>& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
                 Mat66 dgdTheta;
                 Eigen::Matrix<double,3,1> euler = transformation.rotation().eulerAngles(2, 1, 0);//z-y-x convention
                 double fi = euler(2); double psi = euler(1); double theta = euler(0);
@@ -131,6 +131,37 @@ namespace putslam {
                 }
                 Mat66 dgdThetaInv = dgdTheta.inverse();
                 uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+                uncertainty = ConvertUncertaintyEuler2quat(uncertainty, transformation);
+                return uncertainty;
+            }
+
+            /// convert [fi psi theta x y z] uncertainty matrix to [qx qy qz x y z]
+            virtual const Mat66& ConvertUncertaintyEuler2quat(Mat66& _uncertainty, Mat34& transformation) {
+                Eigen::Matrix<double,3,1> euler = transformation.rotation().eulerAngles(2, 1, 0);//z-y-x convention
+                double fi = euler(2); double psi = euler(1); double theta = euler(0);
+                float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+
+                Mat66 J;
+                J(0,0) = (0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+                J(0,1) = -(0.5)*cos((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
+                J(0,2) = -(0.5)*sin((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
+                J(0,3) = 0; J(0,4) = 0; J(0,5) = 0;
+
+                J(1,0) = (0.5)*cos((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
+                J(1,1) = -(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+                J(1,2) = -(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+                J(1,3) = 0; J(1,4) = 0; J(1,5) = 0;
+
+                J(2,0) = -(0.5)*sin((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
+                J(2,1) = -(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)-(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+                J(2,2) = (0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+                J(2,3) = 0; J(2,4) = 0; J(2,5) = 0;
+
+                J(3,0) = 0; J(3,1) = 0; J(3,2) = 0; J(3,3) = 1; J(3,4) = 0; J(3,5) = 0;
+                J(4,0) = 0; J(4,1) = 0; J(4,2) = 0; J(4,3) = 0; J(4,4) = 1; J(4,5) = 0;
+                J(5,0) = 0; J(5,1) = 0; J(5,2) = 0; J(5,3) = 0; J(5,4) = 0; J(5,5) = 1;
+
+                uncertainty = J*_uncertainty*J.transpose();
                 return uncertainty;
             }
 
