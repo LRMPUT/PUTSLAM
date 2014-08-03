@@ -41,7 +41,8 @@ option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
 option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_GRABBER)
-
+option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_KABSCH)
 
 #additional dependencies
 # Boost
@@ -338,3 +339,30 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
+
+###############################################################################
+#
+# PUTSLAM DEMO Kabsch
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demo_kabsch.cpp)
+        ADD_EXECUTABLE(Demo_kabsch ${DEMO_SOURCES})
+        add_dependencies(Demo_kabsch g2o)
+        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} boost_system)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND( TARGET Demo_kabsch POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying grabber libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        INSTALL(TARGETS Demo_kabsch RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)

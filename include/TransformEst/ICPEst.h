@@ -29,11 +29,8 @@ namespace putslam {
             /// Name of the Transformation estimator
             virtual const std::string& getName() const;
 
-            /// Set point clouds used for transformation estimation
-            virtual void setInputClouds(PointCloud cloudA, PointCloud cloudB);
-
             /// compute transformation using two set of keypoints
-            virtual const Mat34& computeTransformation(void);
+            virtual Mat34& computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB);
 
             /// Virtual descrutor
             virtual ~ICPEst() {}

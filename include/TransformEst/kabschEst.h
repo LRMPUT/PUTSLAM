@@ -13,7 +13,7 @@
 
 namespace putslam {
     /// create a single transform estimator (Kabsch)
-    TransformEst* createKapschEstimator(void);
+    TransformEst* createKabschEstimator(void);
 };
 
 namespace putslam {
@@ -27,13 +27,10 @@ namespace putslam {
             KabschEst(void);
 
             /// Name of the Transformation estimator
-            virtual const std::string& getName() const;
-
-            /// Set Keypoints used for transformation estimation
-            virtual void setInputKeypoints(ImageFeature::Seq& keypointA, ImageFeature::Seq& keypointB);
+            const std::string& getName() const;
 
             /// compute transformation using two set of keypoints
-            virtual const Mat34& computeTransformation(void);
+            Mat34& computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB);
 
             /// Virtual descrutor
             virtual ~KabschEst() {}

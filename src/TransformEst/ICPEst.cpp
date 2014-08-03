@@ -15,13 +15,8 @@ const std::string& ICPEst::getName() const {
     return name;
 }
 
-/// Returns current transformation
-void ICPEst::setInputClouds(PointCloud cloudA, PointCloud cloudB){
-
-}
-
 /// compute transformation using two set of keypoints
-const Mat34& ICPEst::computeTransformation(void){
+Mat34& ICPEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB){
     return transformation;
 }
 
