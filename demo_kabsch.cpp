@@ -11,6 +11,27 @@ using namespace std;
 
 auto startT = std::chrono::high_resolution_clock::now();
 
+/// noise: x, y, z, qx, qy, qz
+float_type noise[6] = {0.1, 0.01, 0.01, 0.0, 0.000, 0.000};
+/// x, y, z, fi, psi, theta
+float_type transformation[6] = {0.0, 0.0, -0.0, 0.0, 0.0, -0.0};
+
+void printUncertainty(Mat66& uncertainty, Mat34& trans, float_type fi, float_type psi, float_type theta){
+    std::cout << "uncertainty: \n" << uncertainty << std::endl;
+    std::cout << "error x: " << fabs(trans.translation()(0)-transformation[0]) << ", 3*sigma = " << 3*uncertainty(3,3);
+    if (3*uncertainty(3,3) < fabs(trans.translation()(0)-transformation[0]) ) std::cout << " alert!\n"; else std::cout << "\n";
+    std::cout << "error y: " << fabs(trans.translation()(1)-transformation[1]) << ", 3*sigma = " << 3*uncertainty(4,4);
+    if (3*uncertainty(4,4) < fabs(trans.translation()(1)-transformation[1]) ) std::cout << " alert!\n"; else std::cout << "\n";
+    std::cout << "error z: " << fabs(trans.translation()(2)-transformation[2]) << ", 3*sigma = " << 3*uncertainty(5,5);
+    if (3*uncertainty(5,5) < fabs(trans.translation()(2)-transformation[2]) ) std::cout << " alert!\n"; else std::cout << "\n";
+    std::cout << "error fi: " << fabs(fi-transformation[3]) << ", 3*sigma = " << 3*uncertainty(0,0);
+    if (3*uncertainty(0,0) < fabs(fi-transformation[3]) ) std::cout << " alert!\n"; else std::cout << "\n";
+    std::cout << "error psi: " << fabs(psi-transformation[4]) << ", 3*sigma = " << 3*uncertainty(1,1);
+    if (3*uncertainty(1,1) < fabs(psi-transformation[4]) ) std::cout << " alert!\n"; else std::cout << "\n";
+    std::cout << "error theta: " << fabs(theta-transformation[5]) << ", 3*sigma = " << 3*uncertainty(2,2);
+    if (3*uncertainty(2,2) < fabs(theta-transformation[5]) ) std::cout << " alert!\n"; else std::cout << "\n";
+}
+
 void save2file(std::string filename, const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB, const Eigen::MatrixXd& setTransformed){
     std::ofstream file(filename);
     file << "close all; clear all;\n";
@@ -31,7 +52,7 @@ void generateSetpoint(Eigen::MatrixXd& setA, size_t numPoints, std::default_rand
     float_type center[3]={0.0,0.0,0.0};
     std::uniform_real_distribution<double> distribution(-1.5,1.5);
     for (size_t i = 0; i<numPoints; i++){
-        setA(i,0) = center[0] + distribution(generator)/10;
+        setA(i,0) = center[0] + distribution(generator);
         setA(i,1) = center[1] + distribution(generator);
         setA(i,2) = center[2] + distribution(generator);
     }
@@ -51,15 +72,12 @@ int main(int argc, char * argv[])
         // create kabsch transform estimator
         TransformEst* transEst = createKabschEstimator();
 
-        size_t numPoints = 20;
+        size_t numPoints = 100;
         Eigen::MatrixXd setA(numPoints, 3);
         Eigen::MatrixXd setB(numPoints, 3);
 
         std::default_random_engine generator((unsigned int)time(0));
         generateSetpoint(setA, numPoints, generator);
-
-        /// x, y, z, fi, psi, theta
-        float_type transformation[6] = {0.0, 0.0, -0.0, 0.0, 0.0, -0.0};
 
         std::cout << "Mean transformation is: x=" << transformation[0] << ", y=" << transformation[1] << ", z=" << transformation[2];
         std::cout << ", fi=" << transformation[3] << ", psi=" << transformation[4] << ", theta=" << transformation[5];
@@ -70,8 +88,6 @@ int main(int argc, char * argv[])
         quat = rotX * rotY * rotZ;
         std::cout << ", qw=" << quat.w() << ", qx=" << quat.x() << ", qy=" << quat.y() << ", qz=" << quat.z() << "\n";
 
-        /// noise: x, y, z, qx, qy, qz
-        float_type noise[6] = {0.01, 0.01, 0.01, 0.0, 0.000, 0.000};
         std::normal_distribution<double> normDistributionX(0.0,noise[0]);
         std::normal_distribution<double> normDistributionY(0.0,noise[1]);
         std::normal_distribution<double> normDistributionZ(0.0,noise[2]);
@@ -110,19 +126,7 @@ int main(int argc, char * argv[])
         std::cout << "euler: " << "fi: " << fi << ", psi: " << psi << ",theta: " << theta <<"\n";
 
         Mat66 uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-        std::cout << "uncertainty: \n" << uncertainty << std::endl;
-        std::cout << "error x: " << fabs(trans.translation()(0)-transformation[0]) << ", 3*sigma = " << 3*uncertainty(3,3);
-        if (3*uncertainty(3,3) < fabs(trans.translation()(0)-transformation[0]) ) std::cout << " alert!\n"; else std::cout << "\n";
-        std::cout << "error y: " << fabs(trans.translation()(1)-transformation[1]) << ", 3*sigma = " << 3*uncertainty(4,4);
-        if (3*uncertainty(4,4) < fabs(trans.translation()(1)-transformation[1]) ) std::cout << " alert!\n"; else std::cout << "\n";
-        std::cout << "error z: " << fabs(trans.translation()(2)-transformation[2]) << ", 3*sigma = " << 3*uncertainty(5,5);
-        if (3*uncertainty(5,5) < fabs(trans.translation()(2)-transformation[2]) ) std::cout << " alert!\n"; else std::cout << "\n";
-        std::cout << "error fi: " << fabs(fi-transformation[3]) << ", 3*sigma = " << 3*uncertainty(0,0);
-        if (3*uncertainty(0,0) < fabs(fi-transformation[3]) ) std::cout << " alert!\n"; else std::cout << "\n";
-        std::cout << "error psi: " << fabs(psi-transformation[4]) << ", 3*sigma = " << 3*uncertainty(1,1);
-        if (3*uncertainty(1,1) < fabs(psi-transformation[4]) ) std::cout << " alert!\n"; else std::cout << "\n";
-        std::cout << "error theta: " << fabs(theta-transformation[5]) << ", 3*sigma = " << 3*uncertainty(2,2);
-        if (3*uncertainty(2,2) < fabs(theta-transformation[5]) ) std::cout << " alert!\n"; else std::cout << "\n";
+        printUncertainty(uncertainty, trans, fi, psi, theta);
 
         Eigen::MatrixXd setTransformed(numPoints, 3);
         for (int i=0;i<setA.rows();i++){

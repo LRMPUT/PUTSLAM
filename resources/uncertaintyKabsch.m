@@ -42,12 +42,12 @@ r33 = Cos(theta)*Cos(psi);
 
 f = (xa-r11*xb-r12*yb-r13*zb-x)^2+(ya-r21*xb-r22*yb-r23*zb-y)^2+(za-r31*xb-r32*yb-r33*zb-z)^2;
 
-g11 = differentiate (f, fi)
-g12 = differentiate (f, psi)
-g13 = differentiate (f, theta)
-g14 = differentiate (f, x)
-g15 = differentiate (f, y)
-g16 = differentiate (f, z)
+g11 = differentiate (f, fi);
+g12 = differentiate (f, psi);
+g13 = differentiate (f, theta);
+g14 = differentiate (f, x);
+g15 = differentiate (f, y);
+g16 = differentiate (f, z);
 
 %dg/dTHETA
 dg11 = differentiate (g11, fi);
@@ -134,7 +134,7 @@ dgZb14 = differentiate (g14, zb);
 dgZb15 = differentiate (g15, zb);
 dgZb16 = differentiate (g16, zb);
 
-%Euler angles to qx qy qz reresentation
+%Euler angles to qx qy qz representation
 
 qx = Sin(fi/2.0)*Cos(psi/2.0)*Cos(theta/2.0)-Cos(fi/2.0)*Sin(psi/2.0)*Sin(theta/2.0);
 qy = Cos(fi/2.0)*Sin(psi/2.0)*Cos(theta/2.0)+Sin(fi/2.0)*Cos(psi/2.0)*Sin(theta/2.0);
