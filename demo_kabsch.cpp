@@ -13,9 +13,9 @@ using namespace std;
 auto startT = std::chrono::high_resolution_clock::now();
 
 /// noise: x, y, z, qx, qy, qz
-float_type noise[6] = {0.1, 0.01, 0.01, 0.0, 0.000, 0.000};
+float_type noise[6] = {0.0, 0.0, 0.0, 0.0, 0.000, 0.000};
 /// x, y, z, fi, psi, theta
-float_type transformation[6] = {0.0, 0.0, -0.0, 0.0, 0.0, -0.0};
+float_type transformation[6] = {0.1, 0.2, -0.3, 0.1, 0.2, -0.3};
 
 Eigen::Quaternion<double> quatFromEuler(float_type fi, float_type psi, float_type theta){
     Eigen::Quaternion<double> quat;
@@ -209,10 +209,10 @@ int main(int argc, char * argv[])
             q.y() += normDistributionQZ(generator);
             q.normalize();*/
 
-            Eigen::Transform< double, 3, Eigen::Affine > transform = q * Eigen::Translation<double,3>(transformation[0],transformation[1],transformation[2]);
+            Eigen::Transform< double, 3, Eigen::Affine > transform = q * Eigen::Translation<double,3>(0,0,0);
             Vec3 point(setA(i,0), setA(i,1), setA(i,2));
             point.vector() = transform*point.vector();
-            setB(i,0) = point.x()+normDistributionX(generator); setB(i,1) = point.y()+normDistributionY(generator); setB(i,2) = point.z()+normDistributionZ(generator);
+            setB(i,0) = point.x()+normDistributionX(generator)+transformation[0]; setB(i,1) = point.y()+normDistributionY(generator)+transformation[1]; setB(i,2) = point.z()+normDistributionZ(generator)+transformation[2];
 
             Mat33 uncertainty; uncertainty.setIdentity();
             uncertainty(0,0) = noise[0]; uncertainty(1,1) = noise[1]; uncertainty(2,2) = noise[2];
@@ -254,27 +254,35 @@ int main(int argc, char * argv[])
         std::vector<int> setAids = getCloud(initPose, sensorModel, room, cloudA, uncertaintyCloudA);
         savePointCloud("../../resources/cloudA.m", cloudA, uncertaintyCloudA);
 
-        float_type moveTab[6] = {0.0,0.0,0.1, 0.1,0.2,0.3};
+        float_type moveTab[6] = {0.0,0.1,0.0, 0.0,0.0,0.0};//motion in global frame
         Eigen::Quaternion<double> quatMove = quatFromEuler(moveTab[3], moveTab[4], moveTab[5]);
-        Mat34 move = quatMove*Eigen::Translation<double,3>(moveTab[0], moveTab[1], moveTab[2]);
+        Mat34 move = quatMove*Eigen::Translation<double,3>(0,0,0);
         PointCloud cloudB; std::vector<Mat33> uncertaintyCloudB;
+        std::cout <<"init pose: \n" << initPose.matrix() << "\n";
         Mat34 nextPose = initPose*move;
+        nextPose(0,3)+=moveTab[0]; nextPose(1,3)+=moveTab[1]; nextPose(2,3)+=moveTab[2];
+        std::cout <<"next pose: \n" << nextPose.matrix() << "\n";
         std::vector<int> setBids = getCloud(nextPose, sensorModel, room, cloudB, uncertaintyCloudB);
         savePointCloud("../../resources/cloudB.m", cloudB, uncertaintyCloudB);
 
         matchClouds(cloudA, setA, uncertaintyCloudA, setAUncertainty, setAids, cloudB, setB, uncertaintyCloudB, setBUncertainty, setBids);
         trans = transEst->computeTransformation(setB, setA);
+        std::cout << "translation in sensor frame: \n" << trans.matrix() << "\n";
+        std::cout << "setAuncertainy: " << setAUncertainty[0](0,0) << ", " << setAUncertainty[0](1,1) << ", " << setAUncertainty[0](2,2) << "\n";
+        uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+
+        Mat66 uncertaintySensor = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+
+        Mat34 translation = sensorModel.config.pose*trans;
+        trans(0,3) = translation(0,3); trans(1,3) = translation(1,3); trans(2,3) = translation(2,3);
         std::cout << "computed transformation: \n" << trans.matrix() << std::endl;
         fi = atan2(trans.matrix()(1,0), trans.matrix()(0,0));
         psi = -asin(trans.matrix()(2,0));
         theta = atan2(trans.matrix()(2,1), trans.matrix()(2,2));
         std::cout << "euler: " << "fi: " << fi << ", psi: " << psi << ",theta: " << theta <<"\n";
-
-        uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
         printUncertainty(uncertainty, trans, moveTab[0], moveTab[1], moveTab[2], moveTab[3], moveTab[4], moveTab[5]);
 
-        uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
-        std::cout << "uncertainty x y z qx qy qz: \n" << uncertainty << std::endl;
+        std::cout << "uncertainty in sensor frame!: x y z qx qy qz: \n" << uncertaintySensor << std::endl;
 
     }
     catch (const std::exception& ex) {
