@@ -45,7 +45,15 @@ class KinectGrabber : public Grabber {
             point3D = depth*PHCPModel*point;
         }
 
-        void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov){
+        Eigen::Vector3d inverseModel(float_type x, float_type y, float_type z) const{
+            Eigen::Vector3d point(config.focalLength[0]*((x/z)+(config.focalAxis[0]/config.focalLength[0])), config.focalLength[1]*((y/z)+(config.focalAxis[1]/config.focalLength[1])), z);
+            if (point(0)<0||point(0)>640||point(1)<0||point(1)>480||z<0.8||z>6.0){
+                point(0) = -1; point(1) = -1; point(2) = -1;
+            }
+            return point;
+        }
+
+        void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov) {
             //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
             Mat33 J;
             J << 0.0017*depth, 0, (0.0017*u-0.549),
@@ -81,12 +89,11 @@ class KinectGrabber : public Grabber {
                 model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c1", &distVarCoefs[2]);
                 model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c0", &distVarCoefs[3]);
                 tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
-                float_type query[4];
+                double query[4];
                 posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
-                Quaternion q(query[0], query[1], query[2], query[3]);
-                posXML->QueryDoubleAttribute("x", &query[0]); posXML->QueryDoubleAttribute("y", &query[1]); posXML->QueryDoubleAttribute("z", &query[2]);
-                Vec3 pos(query[0], query[1], query[2]);
-                pose = q*pos;
+                double queryPos[4];
+                posXML->QueryDoubleAttribute("x", &queryPos[0]); posXML->QueryDoubleAttribute("y", &queryPos[1]); posXML->QueryDoubleAttribute("z", &queryPos[2]);
+                pose = Quaternion (query[0], query[1], query[2], query[3])*Vec3(queryPos[0], queryPos[1], queryPos[2]);
             }
             public:
                 float_type focalLength[2];
