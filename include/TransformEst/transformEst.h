@@ -159,19 +159,19 @@ namespace putslam {
             J(2,0) = 0; J(2,1) = 0; J(2,2) = 0; J(2,3) = 0; J(2,4) = 0; J(2,5) = 1;
 
             J(3,3) = 0; J(3,4) = 0; J(3,5) = 0;
-            J(3,0) = (0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
-            J(3,1) = -(0.5)*cos((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
-            J(3,2) = -(0.5)*sin((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
+            J(3,0) = -(0.5)*sin((0.5)*fi)*cos((0.5)*psi)*sin((0.5)*theta)-(0.5)*sin((0.5)*psi)*cos((0.5)*theta)*cos((0.5)*fi);
+            J(3,1) = -(0.5)*cos((0.5)*theta)*sin((0.5)*fi)*cos((0.5)*psi)-(0.5)*sin((0.5)*psi)*cos((0.5)*fi)*sin((0.5)*theta);
+            J(3,2) = (0.5)*sin((0.5)*psi)*sin((0.5)*fi)*sin((0.5)*theta)+(0.5)*cos((0.5)*theta)*cos((0.5)*psi)*cos((0.5)*fi);
 
+            J(4,0) = (0.5)*cos((0.5)*psi)*cos((0.5)*fi)*sin((0.5)*theta)-(0.5)*sin((0.5)*psi)*cos((0.5)*theta)*sin((0.5)*fi);
+            J(4,1) = -(0.5)*sin((0.5)*psi)*sin((0.5)*fi)*sin((0.5)*theta)+(0.5)*cos((0.5)*theta)*cos((0.5)*psi)*cos((0.5)*fi);
+            J(4,2) = (0.5)*cos((0.5)*theta)*sin((0.5)*fi)*cos((0.5)*psi)-(0.5)*sin((0.5)*psi)*cos((0.5)*fi)*sin((0.5)*theta);
             J(4,3) = 0; J(4,3) = 0; J(4,4) = 0;
-            J(4,0) = (0.5)*cos((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
-            J(4,1) = -(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
-            J(4,2) = -(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
 
             J(5,3) = 0; J(5,4) = 0; J(5,5) = 0;
-            J(5,0) = -(0.5)*sin((0.5)*fi)*sin((0.5)*theta)*cos((0.5)*psi)-(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*cos((0.5)*theta);
-            J(5,1) = -(0.5)*cos((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)-(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
-            J(5,2) = (0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta)+(0.5)*cos((0.5)*fi)*cos((0.5)*theta)*cos((0.5)*psi);
+            J(5,0) = (0.5)*sin((0.5)*psi)*sin((0.5)*fi)*sin((0.5)*theta)+(0.5)*cos((0.5)*theta)*cos((0.5)*psi)*cos((0.5)*fi);
+            J(5,1) = -(0.5)*cos((0.5)*psi)*cos((0.5)*fi)*sin((0.5)*theta)-(0.5)*sin((0.5)*psi)*cos((0.5)*theta)*sin((0.5)*fi);
+            J(5,2) = -(0.5)*sin((0.5)*fi)*cos((0.5)*psi)*sin((0.5)*theta)-(0.5)*sin((0.5)*psi)*cos((0.5)*theta)*cos((0.5)*fi);
 
             uncertainty = J*_uncertainty*J.transpose();
             return uncertainty;

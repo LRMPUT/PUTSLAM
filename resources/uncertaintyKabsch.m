@@ -136,18 +136,18 @@ dgZb16 = differentiate (g16, zb);
 
 %Euler angles to qx qy qz representation
 
-qx = Sin(fi/2.0)*Cos(psi/2.0)*Cos(theta/2.0)-Cos(fi/2.0)*Sin(psi/2.0)*Sin(theta/2.0);
-qy = Cos(fi/2.0)*Sin(psi/2.0)*Cos(theta/2.0)+Sin(fi/2.0)*Cos(psi/2.0)*Sin(theta/2.0);
-qz = Cos(fi/2.0)*Cos(psi/2.0)*Sin(theta/2.0)-Sin(fi/2.0)*Sin(psi/2.0)*Cos(theta/2.0);
+qx = Sin(theta/2.0)*Cos(psi/2.0)*Cos(fi/2.0)-Cos(theta/2.0)*Sin(psi/2.0)*Sin(fi/2.0);
+qy = Cos(theta/2.0)*Sin(psi/2.0)*Cos(fi/2.0)+Sin(theta/2.0)*Cos(psi/2.0)*Sin(fi/2.0);
+qz = Cos(theta/2.0)*Cos(psi/2.0)*Sin(fi/2.0)-Sin(theta/2.0)*Sin(psi/2.0)*Cos(fi/2.0);
 
-dqXdFI = differentiate (qx, fi);
-dqXdPSI = differentiate (qx, psi);
-dqXdTHETA = differentiate (qx, theta);
+dqXdFI = differentiate (qx, fi)
+dqXdPSI = differentiate (qx, psi)
+dqXdTHETA = differentiate (qx, theta)
 
-dqYdFI = differentiate (qy, fi);
-dqYdPSI = differentiate (qy, psi);
-dqYdTHETA = differentiate (qy, theta);
+dqYdFI = differentiate (qy, fi)
+dqYdPSI = differentiate (qy, psi)
+dqYdTHETA = differentiate (qy, theta)
 
-dqZdFI = differentiate (qz, fi);
-dqZdPSI = differentiate (qz, psi);
-dqZdTHETA = differentiate (qz, theta);
+dqZdFI = differentiate (qz, fi)
+dqZdPSI = differentiate (qz, psi)
+dqZdTHETA = differentiate (qz, theta)
