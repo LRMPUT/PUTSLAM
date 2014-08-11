@@ -355,7 +355,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
         SET(DEMO_SOURCES ./demo_kabsch.cpp)
         ADD_EXECUTABLE(Demo_kabsch ${DEMO_SOURCES})
         add_dependencies(Demo_kabsch g2o)
-        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo_kabsch POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"

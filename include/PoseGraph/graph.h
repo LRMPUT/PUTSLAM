@@ -69,6 +69,9 @@ namespace putslam {
             /// Removes weak edes (with error bigger than threshold
             virtual bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration) = 0;
 
+            /// Return trajectory (set of SE3 poses)
+            virtual std::vector<Mat34> getTrajectory(void) const = 0;
+
             /// Export graph to m-file
             void plot2file(const std::string filename, const std::string pointPropertySE3 = "'o'", const std::string pointProperty3D = "'.'", const std::string linePropertySE3 = "'g','LineWidth',1", const std::string lineProperty3D = "'g','LineWidth',1", const std::string prunedEdgesPropertySE3 = "'--r','LineWidth',2", const std::string prunedEdgesProperty3D = "'--r','LineWidth',1"){
                 std::ofstream file(filename);

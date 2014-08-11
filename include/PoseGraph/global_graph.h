@@ -75,6 +75,9 @@ class GlobalGraph : public Graph {
         /// Removes weak edes (with error bigger than threshold
         bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration);
 
+        /// Return trajectory (set of SE3 poses)
+        std::vector<Mat34> getTrajectory(void) const;
+
 	private:
 		PoseGraph graph;	
 

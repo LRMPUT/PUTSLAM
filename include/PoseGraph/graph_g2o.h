@@ -100,6 +100,9 @@ class PoseGraphG2O : public Graph {
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
 
+        /// Return trajectory (set of SE3 poses)
+        std::vector<Mat34> getTrajectory(void) const;
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;

@@ -468,6 +468,18 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
     }
 }
 
+/// Return trajectory (set of SE3 poses)
+std::vector<Mat34> PoseGraphG2O::getTrajectory(void) const{
+    std::vector<Mat34> vertices;
+    for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
+        if (it->get()->type==Vertex::VERTEXSE3){
+            Mat34 pose = ((putslam::VertexSE3*)it->get())->nodeSE3.pos * ((putslam::VertexSE3*)it->get())->nodeSE3.rot;
+            vertices.push_back(pose);
+        }
+    }
+    return vertices;
+}
+
 /// Export camera path to file (RGB-D SLAM format)
 void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     ofstream file(filename);

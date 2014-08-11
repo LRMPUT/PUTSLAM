@@ -88,6 +88,11 @@ bool GlobalGraph::updateGraph(const VertexSE3& v){
     return true;
 }
 
+/// Return trajectory (set of SE3 poses)
+std::vector<Mat34> GlobalGraph::getTrajectory(void) const{
+
+}
+
 /// Save graph to file
 void GlobalGraph::save2file(const std::string filename) const {
 

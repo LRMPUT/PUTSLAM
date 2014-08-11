@@ -34,9 +34,9 @@ namespace putslam {
             double fi = atan2(transformation.matrix()(1,0), transformation.matrix()(0,0));
             double psi = -asin(transformation.matrix()(2,0));
             double theta = atan2(transformation.matrix()(2,1), transformation.matrix()(2,2));
-            std::cout << "euler: " << "fi: " << fi << ", psi: " << psi << ", theta: " << theta <<"\n";
+            //std::cout << "euler: " << "fi: " << fi << ", psi: " << psi << ", theta: " << theta <<"\n";
             float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
-            std::cout << "transl: " << "x: " << x << ", y: " << y << ", z: " << z <<"\n";
+            //std::cout << "transl: " << "x: " << x << ", y: " << y << ", z: " << z <<"\n";
             Eigen::MatrixXd Cx(2*3*setA.rows(),2*3*setA.rows());
             Cx = Eigen::ArrayXXd::Zero(2*3*setA.rows(), 2*3*setA.rows());
             Eigen::MatrixXd dgdX(2*3*setA.rows(),6);
