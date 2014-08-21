@@ -16,7 +16,7 @@ auto startT = std::chrono::high_resolution_clock::now();
 std::default_random_engine generator;
 
 /// noise: x, y, z, qx, qy, qz
-float_type noise[6] = {0.0, 0.0, 0.0, 0.0, 0.000, 0.000};
+float_type noise[6] = {0.01, 0.02, 0.03, 0.0, 0.000, 0.000};
 /// x, y, z, fi, psi, theta
 float_type transformation[6] = {0.1, 0.2, -0.3, 0.1, 0.2, -0.3};
 
@@ -312,6 +312,8 @@ int main(int argc, char * argv[])
 
         uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
         std::cout << "uncertainty x y z qx qy qz: \n" << uncertainty << std::endl;
+        uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+        std::cout << "uncertainty x y z qx qy qz (directly from quaternions): \n" << uncertainty << std::endl;
         save2file("../../resources/kabsch.m",setA, setB, setTransformed);
 
         std::cout << "\n\n\nSingle transformation: room test\n";
@@ -458,7 +460,6 @@ int main(int argc, char * argv[])
         }
         //additional edges
         for (int i=7;i<trajectory.size();i++){
-
             //match and estimate transformation
             for (int j=2;j<8;j++){
                 matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
@@ -512,8 +513,8 @@ int main(int argc, char * argv[])
             if (setA.rows()>3){
                 std::cout << "matched: " << setA.rows() << "\n";
                 trans = transEst->computeTransformation(setB, setA);
-                uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+                uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                 sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                 //add vertex to the graph
                 pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
@@ -543,8 +544,8 @@ std::cout << "more edges\n";
                 matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
                 if (setA.rows()>3){
                     trans = transEst->computeTransformation(setB, setA);
-                    uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                    uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+                    uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+                    //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                     // add edge to the g2o graph
                     pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);

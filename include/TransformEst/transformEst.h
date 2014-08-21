@@ -25,7 +25,7 @@ namespace putslam {
             /// Virtual descrutor
             virtual ~TransformEst() {}
 
-        /// Compute uncertainty matrix [6x6] (qx,qy,qz,x,y,z)
+        /// Compute uncertainty matrix [6x6] (fi,psi,theta,x,y,z)
         virtual const Mat66& computeUncertainty(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
             Mat66 dgdTheta; dgdTheta.setZero();
             //Eigen::Matrix<double,3,1> euler = transformation.rotation().eulerAngles(2, 1, 0);//z-y-x convention
@@ -142,11 +142,124 @@ namespace putslam {
             //std::cout << "dgdX: \n" << dgdX << "\n";
             //std::cout << "dgdTheta: \n" << dgdTheta << "\n";
             uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+            return uncertainty;
+        }
+
+        /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
+        virtual const Mat66& computeUncertaintyG2O(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
+            Mat66 dgdTheta; dgdTheta.setZero();
+            Quaternion quat(transformation.rotation());
+            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+
+
+            Eigen::MatrixXd Cx(2*3*setA.rows(),2*3*setA.rows());
+            Cx = Eigen::ArrayXXd::Zero(2*3*setA.rows(), 2*3*setA.rows());
+            Eigen::MatrixXd dgdX(2*3*setA.rows(),6);
+            float_type k = 1.0/setA.rows();
+            float_type qx = quat.x(); float_type qy = quat.y(); float_type qz = quat.z(); float_type qw = quat.w();
+            for (size_t i=0;i<setA.rows();i++){
+                float_type xa = setA(i,0); float_type ya = setA(i,1); float_type za = setA(i,2);
+                float_type xb = setB(i,0); float_type yb = setB(i,1); float_type zb = setB(i,2);
+
+                dgdTheta(0,0) += 2.0;
+                dgdTheta(0,1) += 0.0;
+                dgdTheta(0,2) += 0.0;
+                dgdTheta(0,3) += (4.0)*qy*yb+(4.0)*qz*zb;
+                dgdTheta(0,4) += (4.0)*qw*zb+(4.0)*yb*qx-(8.0)*qy*xb;
+                dgdTheta(0,5) += -(8.0)*xb*qz+(4.0)*qx*zb-(4.0)*yb*qw;
+
+                dgdTheta(1,0) += 0.0;
+                dgdTheta(1,1) += 2.0;
+                dgdTheta(1,2) += 0.0;
+                dgdTheta(1,3) += -(4.0)*qw*zb-(8.0)*yb*qx+(4.0)*qy*xb;
+                dgdTheta(1,4) += (4.0)*qx*xb+(4.0)*qz*zb;
+                dgdTheta(1,5) += (4.0)*qy*zb+(4.0)*qw*xb-(8.0)*yb*qz;
+
+                dgdTheta(2,0) += 0.0;
+                dgdTheta(2,1) += 0.0;
+                dgdTheta(2,2) += 2.0;
+                dgdTheta(2,3) += (4.0)*xb*qz-(8.0)*qx*zb+(4.0)*yb*qw;
+                dgdTheta(2,4) += -(8.0)*qy*zb-(4.0)*qw*xb+(4.0)*yb*qz;
+                dgdTheta(2,5) += (4.0)*qx*xb+(4.0)*qy*yb;
+
+                dgdTheta(3,0) += (4.0)*qy*yb+(4.0)*qz*zb;
+                dgdTheta(3,1) += -(4.0)*qw*zb-(8.0)*yb*qx+(4.0)*qy*xb;
+                dgdTheta(3,2) += (4.0)*xb*qz-(8.0)*qx*zb+(4.0)*yb*qw;
+                dgdTheta(3,3) += -(8.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*zb-(8.0)*yb*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))-(2.0)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)-(2.0)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)-(2.0)*((2.0)*qy*yb+(2.0)*qz*zb)*(-(2.0)*qy*yb-(2.0)*qz*zb);
+                dgdTheta(3,4) += -(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*xb-(2.0)*((2.0)*qy*yb+(2.0)*qz*zb)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb)-(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)+(4.0)*yb*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x);
+                dgdTheta(3,5) += -(2.0)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(2.0)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)+(4.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*xb-(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*((2.0)*qy*yb+(2.0)*qz*zb)+(4.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*zb;
+
+                dgdTheta(4,0) += (4.0)*qw*zb+(4.0)*yb*qx-(8.0)*qy*xb;
+                dgdTheta(4,1) += (4.0)*qx*xb+(4.0)*qz*zb;
+                dgdTheta(4,2) += -(8.0)*qy*zb-(4.0)*qw*xb+(4.0)*yb*qz;
+                dgdTheta(4,3) += (4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*xb-(2.0)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz)-(2.0)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)*(-(2.0)*qy*yb-(2.0)*qz*zb)+(4.0)*yb*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)-(2.0)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)*((2.0)*qx*xb+(2.0)*qz*zb);
+                dgdTheta(4,4) += -(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*((2.0)*qx*xb+(2.0)*qz*zb)-(8.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*zb-(8.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*xb-(2.0)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb)-(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz);
+                dgdTheta(4,5) += -(2.0)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz)*((2.0)*qx*xb+(2.0)*qz*zb)-(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*zb+(4.0)*yb*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)-(2.0)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz)*(-(2.0)*qx*xb-(2.0)*qy*yb);
+
+                dgdTheta(5,0) += -(8.0)*xb*qz+(4.0)*qx*zb-(4.0)*yb*qw;
+                dgdTheta(5,1) += (4.0)*qy*zb+(4.0)*qw*xb-(8.0)*yb*qz;
+                dgdTheta(5,2) += (4.0)*qx*xb+(4.0)*qy*yb;
+                dgdTheta(5,3) += -(2.0)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)*(-(2.0)*qy*yb-(2.0)*qz*zb)+(4.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*xb-(2.0)*((2.0)*qx*xb+(2.0)*qy*yb)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)+(4.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*zb;
+                dgdTheta(5,4) += -(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*((2.0)*qx*xb+(2.0)*qy*yb)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*(-(2.0)*qx*xb-(2.0)*qz*zb)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*zb+(4.0)*yb*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)-(2.0)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb);
+                dgdTheta(5,5) += -(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)-(8.0)*yb*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))-(8.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*xb-(2.0)*((2.0)*qx*xb+(2.0)*qy*yb)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz);
+
+                Cx.block<3,3>(i*3,i*3) = setAUncertainty[i];
+                Cx.block<3,3>(setA.rows()*3+i*3,setA.rows()*3+i*3) = setBUncertainty[i];
+
+                dgdX(i*3,0) = -2.0;
+                dgdX(i*3,1) = 0.0;
+                dgdX(i*3,2) = 0.0;
+                dgdX(i*3,3) = -(4.0)*qy*yb-(4.0)*qz*zb;
+                dgdX(i*3,4) = -(4.0)*qx*yb-(4.0)*qw*zb+(8.0)*xb*qy;
+                dgdX(i*3,5) = (4.0)*qw*yb+(8.0)*xb*qz-(4.0)*qx*zb;
+
+                dgdX(i*3+1,0) = 0.0;
+                dgdX(i*3+1,1) = -2.0;
+                dgdX(i*3+1,2) = 0.0;
+                dgdX(i*3+1,3) = (8.0)*qx*yb+(4.0)*qw*zb-(4.0)*xb*qy;
+                dgdX(i*3+1,4) = -(4.0)*qx*xb-(4.0)*qz*zb;
+                dgdX(i*3+1,5) = (8.0)*qz*yb-(4.0)*zb*qy-(4.0)*qw*xb;
+
+                dgdX(i*3+2,0) = 0.0;
+                dgdX(i*3+2,1) = 0.0;
+                dgdX(i*3+2,2) = -2.0;
+                dgdX(i*3+2,3) = -(4.0)*qw*yb-(4.0)*xb*qz+(8.0)*qx*zb;
+                dgdX(i*3+2,4) = -(4.0)*qz*yb+(8.0)*zb*qy+(4.0)*qw*xb;
+                dgdX(i*3+2,5) = -(4.0)*qx*xb-(4.0)*qy*yb;
+
+                dgdX(setA.rows()*3+i*3,0) = 2.0-(4.0)*pow(qy,2.0)-(4.0)*pow(qz,2.0);
+                dgdX(setA.rows()*3+i*3,1) = (4.0)*qx*qy+(4.0)*qw*qz;
+                dgdX(setA.rows()*3+i*3,2) = (4.0)*qx*qz-(4.0)*qw*qy;
+                dgdX(setA.rows()*3+i*3,3) = (4.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qy-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*(-(2.0)*qy*yb-(2.0)*qz*zb)-(2.0)*((4.0)*qx*yb+(2.0)*qw*zb-(2.0)*xb*qy)*((2.0)*qx*qy+(2.0)*qw*qz)-(2.0)*(-(2.0)*qw*yb-(2.0)*xb*qz+(4.0)*qx*zb)*((2.0)*qx*qz-(2.0)*qw*qy)+(4.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qz;
+                dgdX(setA.rows()*3+i*3,4) = -(2.0)*((2.0)*qx*qz-(2.0)*qw*qy)*(-(2.0)*qz*yb+(4.0)*zb*qy+(2.0)*qw*xb)-(4.0)*qw*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*(-(2.0)*qx*yb-(2.0)*qw*zb+(4.0)*xb*qy)-(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*((2.0)*qx*qy+(2.0)*qw*qz)+(4.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qx-(8.0)*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)*qy;
+                dgdX(setA.rows()*3+i*3,5) = (4.0)*qw*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)-(2.0)*((2.0)*qx*qz-(2.0)*qw*qy)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(8.0)*qz*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)+(4.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qx-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*((2.0)*qw*yb+(4.0)*xb*qz-(2.0)*qx*zb)-(2.0)*((2.0)*qx*qy+(2.0)*qw*qz)*((4.0)*qz*yb-(2.0)*zb*qy-(2.0)*qw*xb);
+
+                dgdX(setA.rows()*3+i*3+1,0) = (4.0)*qx*qy-(4.0)*qw*qz;
+                dgdX(setA.rows()*3+i*3+1,1) = 2.0-(4.0)*pow(qz,2.0)-(4.0)*pow(qx,2.0);
+                dgdX(setA.rows()*3+i*3+1,2) = (4.0)*qw*qx+(4.0)*qz*qy;
+                dgdX(setA.rows()*3+i*3+1,3) = -(2.0)*(-(2.0)*qy*yb-(2.0)*qz*zb)*((2.0)*qx*qy-(2.0)*qw*qz)-(2.0)*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*((4.0)*qx*yb+(2.0)*qw*zb-(2.0)*xb*qy)+(4.0)*qw*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)-(8.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qx+(4.0)*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)*qy-(2.0)*((2.0)*qw*qx+(2.0)*qz*qy)*(-(2.0)*qw*yb-(2.0)*xb*qz+(4.0)*qx*zb);
+                dgdX(setA.rows()*3+i*3+1,4) = (4.0)*qx*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)-(2.0)*(-(2.0)*qx*yb-(2.0)*qw*zb+(4.0)*xb*qy)*((2.0)*qx*qy-(2.0)*qw*qz)-(2.0)*((2.0)*qw*qx+(2.0)*qz*qy)*(-(2.0)*qz*yb+(4.0)*zb*qy+(2.0)*qw*xb)-(2.0)*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*(-(2.0)*qx*xb-(2.0)*qz*zb)+(4.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qz;
+                dgdX(setA.rows()*3+i*3+1,5) = -(8.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qz+(4.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qy-(2.0)*((2.0)*qw*qx+(2.0)*qz*qy)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(2.0)*((2.0)*qx*qy-(2.0)*qw*qz)*((2.0)*qw*yb+(4.0)*xb*qz-(2.0)*qx*zb)-(4.0)*qw*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)-(2.0)*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*((4.0)*qz*yb-(2.0)*zb*qy-(2.0)*qw*xb);
+
+                dgdX(setA.rows()*3+i*3+2,0) = (4.0)*qx*qz+(4.0)*qw*qy;
+                dgdX(setA.rows()*3+i*3+2,1) = -(4.0)*qw*qx+(4.0)*qz*qy;
+                dgdX(setA.rows()*3+i*3+2,2) = 2.0-(4.0)*pow(qy,2.0)-(4.0)*pow(qx,2.0);
+                dgdX(setA.rows()*3+i*3+2,3) = -(4.0)*qw*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)-(2.0)*((4.0)*qx*yb+(2.0)*qw*zb-(2.0)*xb*qy)*(-(2.0)*qw*qx+(2.0)*qz*qy)-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*(-(2.0)*qw*yb-(2.0)*xb*qz+(4.0)*qx*zb)+(4.0)*qz*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)-(2.0)*((2.0)*qx*qz+(2.0)*qw*qy)*(-(2.0)*qy*yb-(2.0)*qz*zb)-(8.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qx;
+                dgdX(setA.rows()*3+i*3+2,4) = -(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*(-(2.0)*qw*qx+(2.0)*qz*qy)+(4.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qz-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*(-(2.0)*qz*yb+(4.0)*zb*qy+(2.0)*qw*xb)-(2.0)*((2.0)*qx*qz+(2.0)*qw*qy)*(-(2.0)*qx*yb-(2.0)*qw*zb+(4.0)*xb*qy)-(8.0)*(((2.0)*qw*qx+(2.0)*qz*qy)*yb-za+xb*((2.0)*qx*qz-(2.0)*qw*qy)+z+(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*zb)*qy+(4.0)*qw*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb);
+                dgdX(setA.rows()*3+i*3+2,5) = (4.0)*qx*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)-(2.0)*((2.0)*qx*qz+(2.0)*qw*qy)*((2.0)*qw*yb+(4.0)*xb*qz-(2.0)*qx*zb)-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*(-(2.0)*qx*xb-(2.0)*qy*yb)+(4.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qy-(2.0)*(-(2.0)*qw*qx+(2.0)*qz*qy)*((4.0)*qz*yb-(2.0)*zb*qy-(2.0)*qw*xb);
+            }
+            dgdX = k*dgdX; dgdTheta = k * dgdTheta;
+            Mat66 dgdThetaInv = dgdTheta.inverse();
+
+            //std::cout << "Cx: \n" << Cx << "\n";
+            //std::cout << "dgdX: \n" << dgdX << "\n";
+            //std::cout << "dgdTheta: \n" << dgdTheta << "\n";
+            uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
             //uncertainty = ConvertUncertaintyEuler2quat(uncertainty, transformation);
             return uncertainty;
         }
 
-        /// convert [fi psi theta x y z] uncertainty matrix to [qx qy qz x y z]
+        /// convert [fi psi theta x y z] uncertainty matrix to [x y z qx qy qz]
         virtual const Mat66& ConvertUncertaintyEuler2quat(const Mat66& _uncertainty, const Mat34& transformation) {
             double fi = atan2(transformation.matrix()(1,0), transformation.matrix()(0,0));
             double psi = -asin(transformation.matrix()(2,0));
