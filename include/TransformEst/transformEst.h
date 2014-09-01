@@ -250,11 +250,14 @@ namespace putslam {
             }
             dgdX = k*dgdX; dgdTheta = k * dgdTheta;
             Mat66 dgdThetaInv = dgdTheta.inverse();
+            Mat66 dgdThetatrans = dgdTheta.transpose();
+            Mat66 dgdThetatransInv = dgdThetatrans.inverse();
 
             //std::cout << "Cx: \n" << Cx << "\n";
             //std::cout << "dgdX: \n" << dgdX << "\n";
             //std::cout << "dgdTheta: \n" << dgdTheta << "\n";
-            uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+            //uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+            uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetatransInv;
             //uncertainty = ConvertUncertaintyEuler2quat(uncertainty, transformation);
             return uncertainty;
         }

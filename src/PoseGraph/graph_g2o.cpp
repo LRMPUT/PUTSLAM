@@ -95,11 +95,15 @@ bool PoseGraphG2O::removeEdge(unsigned int id){
 /// clears the graph and empties all structures.
 void PoseGraphG2O::clear(){
     mtxGraph.lock();
+    mtxBuffGraph.lock();
     optimizer.clear();
     graph.edges.clear();
     graph.vertices.clear();
+    graph.prunedEdges.clear();
     bufferGraph.vertices.clear();
     bufferGraph.edges.clear();
+    bufferGraph.prunedEdges.clear();
+    mtxBuffGraph.unlock();
     mtxGraph.unlock();
 }
 

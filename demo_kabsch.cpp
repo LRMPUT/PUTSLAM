@@ -192,6 +192,7 @@ void saveGroundTruth(std::string filename, std::vector<Mat34>& trajectory) {
 std::vector<int> getCloud(const Mat34& sensorPose, KinectGrabber::UncertaintyModel& sensorModel, const PointCloud& room, PointCloud& setPoints, std::vector<Mat33>& setUncertainty){
     std::vector<int> pointIdentifiers;
     setPoints.clear();
+    setUncertainty.clear();
     for (size_t i=0;i<room.size();i++){
         Eigen::Vector4d point(room[i].x, room[i].y, room[i].z, 1);
         Eigen::Vector4d pointCamera = sensorPose.matrix().inverse()*point;
@@ -258,7 +259,7 @@ PointCloud createRoom(size_t pointsNo, float_type width, float_type length, floa
     return room;
 }
 
-void runExperiment(int expType, const std::vector<Mat34>& trajectory, KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, std::vector< std::vector<int> >& setIds, TransformEst* transEst){
+void runExperiment(int expType, const std::vector<Mat34>& trajectory, const KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
     Mat34 initPose;
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
@@ -461,7 +462,7 @@ int main(int argc, char * argv[])
 
         std::cout << "\n\n\nSingle transformation: room test\n";
         PointCloud room;
-        size_t pointsNo = 5000;
+        size_t pointsNo = 3000;
         float_type roomDim[3] = {7, 7, 3};
         room = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
         savePointCloud("../../resources/KabschUncertainty/room.m", room);
@@ -552,8 +553,9 @@ int main(int argc, char * argv[])
             trajectorySensor.push_back(initPose);
 
             std::vector< std::vector<int> > setIds;
-            std::vector<PointCloud> cloudSeq;
             std::vector< std::vector<Mat33> > uncertaintySet;
+
+            std::vector<PointCloud> cloudSeq;
             Mat34 sensorPose; sensorPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
             setAids = getCloud(sensorPose, sensorModel, room, cloudA, uncertaintyCloudA);
             cloudSeq.push_back(cloudA);
@@ -587,6 +589,7 @@ int main(int argc, char * argv[])
 
             graph->clear();
             runExperiment(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
 
             filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
             graph->save2file(filename);
