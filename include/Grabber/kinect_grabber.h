@@ -53,6 +53,7 @@ class KinectGrabber : public Grabber {
             return point;
         }
 
+        /// u,v [px], depth [m]
         void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov) {
             //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
             Mat33 J;

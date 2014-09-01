@@ -171,6 +171,24 @@ void savePointCloud(std::string filename, PointCloud& cloud, std::vector<Mat33>&
     file.close();
 }
 
+void saveGroundTruth(std::string filename, std::vector<Mat34>& trajectory) {
+    std::ofstream file(filename);
+    file << "# ground truth trajectory:\n";
+    file << "# file: 'simulator_room.bag'\n";
+    file << "# timestamp tx ty tz qx qy qz qw\n";
+    for (int i=0;i<trajectory.size();i++){
+        Quaternion q(trajectory[i].rotation());
+        file << i << " " << trajectory[i](0,3) << " " << trajectory[i](1,3) << " " << trajectory[i](2,3) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << "\n";
+    }
+    file.close();
+
+    std::ofstream fileInds("../../resources/KabschUncertainty/g2oIndices");
+    for (int i=0;i<trajectory.size();i++){
+        fileInds << i << "\n";
+    }
+    fileInds.close();
+}
+
 std::vector<int> getCloud(const Mat34& sensorPose, KinectGrabber::UncertaintyModel& sensorModel, const PointCloud& room, PointCloud& setPoints, std::vector<Mat33>& setUncertainty){
     std::vector<int> pointIdentifiers;
     setPoints.clear();
@@ -219,25 +237,150 @@ PointCloud createRoom(size_t pointsNo, float_type width, float_type length, floa
     for (size_t i = 0; i<pointsNo/6;i++){
         Point3D point;
         //floor
-        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = 0;
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
         //ceiling
-        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = height;
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
         //wall 1
-        point.x = -width/2.0; point.y = distributionLength(generator); point.z = distributionHeight(generator);
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
         //wall 2
-        point.x = width/2.0; point.y = distributionLength(generator); point.z = distributionHeight(generator);
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
         //wall 3
-        point.x = distributionWidth(generator); point.y = length/2.0; point.z = distributionHeight(generator);
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
         //wall 4
-        point.x = distributionWidth(generator); point.y = -length/2.0; point.z = distributionHeight(generator);
+        point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         room.push_back(point);
     }
     return room;
+}
+
+void runExperiment(int expType, const std::vector<Mat34>& trajectory, KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, std::vector< std::vector<int> >& setIds, TransformEst* transEst){
+    Mat34 initPose;
+    std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
+    trajectorySensor2.push_back(initPose);
+    int vertexId2 = 0;
+    Vec3 pos2(initPose(0,3), initPose(1,3), initPose(2,3));  Quaternion rot2(initPose.rotation());
+    VertexSE3 vertex2(vertexId2, pos2, rot2);
+    if (!graph->addVertexPose(vertex2))
+        std::cout << "error: vertex exists!\n";
+    vertexId2++;
+    Mat34 sensorPose;
+    Eigen::MatrixXd setA(1, 3);
+    Eigen::MatrixXd setB(1, 3);
+    Mat66 uncertainty;
+    for (int i=1;i<trajectory.size();i++){
+        //get point clouds
+        sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
+
+        //match and estimate transformation
+        std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
+        std::cout << "View points: " << cloudSeq[i-1].size() << "\n";
+        matchClouds(cloudSeq[i-1], setA, uncertaintySet[i-1], setAUncertainty, setIds[i-1], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
+        if (setA.rows()>3){
+            std::cout << "matched: " << setA.rows() << "\n";
+            Mat34 trans = transEst->computeTransformation(setB, setA);
+            uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+            //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+            sensorPose.matrix() = trajectorySensor2.back().matrix()*trans.matrix();
+            //add vertex to the graph
+            Vec3 pos;
+            trajectorySensor2.push_back(sensorPose);
+            pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
+            Quaternion quatSensor(sensorPose.rotation());
+            VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
+            if (!graph->addVertexPose(vertexSensor))
+                std::cout << "error: vertex exists!\n";
+            // add edge to the g2o graph
+            pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+            Quaternion quatMotion(trans.rotation());
+            RobotPose measurement(pos, quatMotion);
+            Mat66 infoMat;
+            if (expType==0)
+                infoMat.setIdentity();
+            else if (expType==1){
+                infoMat = uncertainty;
+                infoMat = infoMat.inverse();
+            }
+            EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
+            if (!graph->addEdgeSE3(edge))
+                std::cout << "error: vertex doesn't exist!\n";
+            vertexId2++;
+        }
+        else{
+            std::cout << "could not add edge\n";
+        }
+    }
+std::cout << "more edges\n";
+    //additional edges
+    for (int i=7;i<trajectory.size();i++){
+        //match and estimate transformation
+        for (int j=2;j<8;j++){
+            std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
+            matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
+            if (setA.rows()>3){
+                Mat34 trans = transEst->computeTransformation(setB, setA);
+                uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+                // add edge to the g2o graph
+                Vec3 pos;
+                pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+                Quaternion quatMotion(trans.rotation());
+                RobotPose measurement(pos, quatMotion);
+                Mat66 infoMat;
+                if (expType==0)
+                    infoMat.setIdentity();
+                else if (expType==1){
+                    infoMat = uncertainty;
+                    infoMat = infoMat.inverse();
+                }
+                EdgeSE3 edge(measurement,infoMat,i-j,i);
+                if (!graph->addEdgeSE3(edge))
+                    std::cout << "error: vertex doesn't exist!\n";
+            }
+            else{
+                std::cout << "could not add\n";
+            }
+        }
+    }
+}
+
+std::vector<float_type> computeRPE(std::vector<Mat34>& trajectoryRef, std::vector<Mat34>& trajectory){
+    std::vector<float_type> rpe;
+    if (trajectoryRef.size()!=trajectory.size()){
+        std::cout << "RPE computation error: trajectories sizes does no match\n";
+        return rpe;
+    }
+    for (int i=1;i<trajectoryRef.size();i++){
+        Mat34 error = (trajectoryRef[i-1].inverse()*trajectoryRef[i]).inverse()*(trajectory[i-1].inverse()*trajectory[i]);
+        float_type errorVal = pow(error(0,3),2.0)+pow(error(1,3),2.0)+pow(error(2,3),2.0);
+        rpe.push_back(errorVal);
+    }
+    return rpe;
+}
+
+float_type computeRMSE(std::vector<float_type>& error){
+    float_type rmse=0;
+    for (int i=0;i<error.size();i++){
+        rmse+=error[i];
+    }
+    return sqrt(rmse/error.size());
+}
+
+float_type computeMean(std::vector<float_type>& error){
+    float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
+    return sum / error.size();
+}
+
+float_type computeStd(std::vector<float_type>& error){
+    float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
+    float_type mean = sum / error.size();
+
+    float_type sq_sum = std::inner_product(error.begin(), error.end(), error.begin(), 0.0);
+    return std::sqrt(sq_sum / error.size() - mean * mean);
 }
 
 int main(int argc, char * argv[])
@@ -318,10 +461,10 @@ int main(int argc, char * argv[])
 
         std::cout << "\n\n\nSingle transformation: room test\n";
         PointCloud room;
-        size_t pointsNo = 1000;
+        size_t pointsNo = 5000;
         float_type roomDim[3] = {7, 7, 3};
         room = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-        savePointCloud("../../resources/room.m", room);
+        savePointCloud("../../resources/KabschUncertainty/room.m", room);
 
         KinectGrabber::UncertaintyModel sensorModel(configFile);
         Mat34 initPose = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0,roomDim[2]/2.0);
@@ -376,16 +519,12 @@ int main(int argc, char * argv[])
 
         std::cout << "\n\n\nTrajectory test\n";
         //create reference trajectory
-        Mat34 pose = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0.3*roomDim[0], -0.3*roomDim[1],roomDim[2]/2.0);
+        Mat34 pose = quatFromEuler((-M_PI/2.0),0,0)*Eigen::Translation<double,3>(0,0,0);
+        pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
         int motions = 20;
         std::vector<Mat34> trajectory; trajectory.push_back(pose);
-        Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0, (0.6*roomDim[1])/float_type(motions), 0);
         Mat34 moveRot = quatFromEuler((M_PI/2.0)/float_type(motions),0,0)*Eigen::Translation<double,3>(0, 0, 0);
-        for (int i=0;i<motions;i++){
-            pose.matrix() *= move.matrix();
-            trajectory.push_back(pose);
-        }
-        move = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((roomDim[0]/2.0)/float_type(motions), 0, 0);
+        Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0.0, (roomDim[0]-3.0)/float_type(motions), 0);
         for (int j=0;j<4;j++){
             //forward
             for (int i=0;i<motions;i++){
@@ -398,179 +537,110 @@ int main(int argc, char * argv[])
                 trajectory.push_back(pose);
             }
         }
-        saveTrajectory("../../resources/trajectory.m",trajectory, "k");
+        saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
+        saveGroundTruth("../../resources/KabschUncertainty/groundtruth.txt", trajectory);
+
 
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
 
-        //move camera along reference trajectory and estimate trajectory
-        std::vector<Mat34> trajectorySensor; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
-        trajectorySensor.push_back(initPose);
-        int vertexId = 0;
-        Vec3 pos(initPose(0,3), initPose(1,3), initPose(2,3));  Quaternion rot(initPose.rotation());
-        VertexSE3 vertex(vertexId, pos, rot);
-        if (!graph->addVertexPose(vertex))
-            std::cout << "error: vertex exists!\n";
-        vertexId++;
+        int trialsNo = 10;
+        for (int i=0;i<trialsNo;i++){
 
-        std::vector< std::vector<int> > setIds;
-        std::vector<PointCloud> cloudSeq;
-        std::vector< std::vector<Mat33> > uncertaintySet;
-        Mat34 sensorPose; sensorPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
-        setAids = getCloud(sensorPose, sensorModel, room, cloudA, uncertaintyCloudA);
-        cloudSeq.push_back(cloudA);
-        setIds.push_back(setAids);
-        uncertaintySet.push_back( uncertaintyCloudA );
-        for (int i=1;i<trajectory.size();i++){
-            //get point clouds
-            sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
-            std::vector<int> setBids = getCloud(sensorPose, sensorModel, room, cloudB, uncertaintyCloudB);
+            //move camera along reference trajectory and capture point clouds
+            std::vector<Mat34> trajectorySensor; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
+            trajectorySensor.push_back(initPose);
 
-            //match and estimate transformation
-            matchClouds(cloudSeq.back(), setA, uncertaintySet.back(), setAUncertainty, setIds.back(), cloudB, setB, uncertaintyCloudB, setBUncertainty, setBids);
-            if (setA.rows()>3){
-                std::cout << "matched: " << setA.rows() << "\n";
-                trans = transEst->computeTransformation(setB, setA);
-                uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
-                sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
-                trajectorySensor.push_back(sensorPose);
-                //add vertex to the graph
-                pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
-                Quaternion quatSensor(sensorPose.rotation());
-                VertexSE3 vertexSensor(vertexId, pos, quatSensor);
-                if (!graph->addVertexPose(vertexSensor))
-                    std::cout << "error: vertex exists!\n";
-                // add edge to the g2o graph
-                pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                Quaternion quatMotion(trans.rotation());
-                RobotPose measurement(pos, quatMotion);
-                Mat66 infoMat(uncertainty); infoMat.inverse(); infoMat.setIdentity();
-                EdgeSE3 edge(measurement,infoMat,vertexId-1,vertexId);
-                if (!graph->addEdgeSE3(edge))
-                    std::cout << "error: vertex doesn't exist!\n";
-                vertexId++;
-            }
-            else{
-                std::cout << "could not add edge\n";
-            }
-            cloudSeq.push_back(cloudB);
-            setIds.push_back(setBids);
-            uncertaintySet.push_back(uncertaintyCloudB);
-        }
-        //additional edges
-        for (int i=7;i<trajectory.size();i++){
-            //match and estimate transformation
-            for (int j=2;j<8;j++){
-                matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
+            std::vector< std::vector<int> > setIds;
+            std::vector<PointCloud> cloudSeq;
+            std::vector< std::vector<Mat33> > uncertaintySet;
+            Mat34 sensorPose; sensorPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
+            setAids = getCloud(sensorPose, sensorModel, room, cloudA, uncertaintyCloudA);
+            cloudSeq.push_back(cloudA);
+            setIds.push_back(setAids);
+            uncertaintySet.push_back( uncertaintyCloudA );
+            for (int i=1;i<trajectory.size();i++){
+                //get point clouds
+                sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
+                std::vector<int> setBids = getCloud(sensorPose, sensorModel, room, cloudB, uncertaintyCloudB);
+
+                //match and estimate transformation
+                matchClouds(cloudSeq.back(), setA, uncertaintySet.back(), setAUncertainty, setIds.back(), cloudB, setB, uncertaintyCloudB, setBUncertainty, setBids);
                 if (setA.rows()>3){
+                    std::cout << "matched: " << setA.rows() << "\n";
                     trans = transEst->computeTransformation(setB, setA);
-                    uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                    uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
-                    // add edge to the g2o graph
-                    pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                    Quaternion quatMotion(trans.rotation());
-                    RobotPose measurement(pos, quatMotion);
-                    Mat66 infoMat(uncertainty); infoMat.inverse(); infoMat.setIdentity();
-                    EdgeSE3 edge(measurement,infoMat,i-j,i);
-                    if (!graph->addEdgeSE3(edge))
-                        std::cout << "error: vertex doesn't exist!\n";
+                    trajectorySensor.push_back(sensorPose);
                 }
                 else{
-                    std::cout << "could not add\n";
-                }
-            }
-        }
-
-        saveTrajectory("../../resources/trajectorySensor.m",trajectorySensor, "r");
-        graph->save2file("../../resources/graphKabsch.g2o");
-        //optimize
-        std::cout << "optimization\n";
-        std::thread tOpt(optimizeAndPrune);
-
-        std::cout << "end optimization\n";
-        tOpt.join();
-        std::vector<Mat34> trajectoryOpt = graph->getTrajectory();
-        saveTrajectory("../../resources/trajectory_g2o_nouncertainty.m",trajectoryOpt, "g");
-
-        graph->clear();
-        //move camera along reference trajectory and estimate trajectory
-        std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
-        trajectorySensor2.push_back(initPose);
-        int vertexId2 = 0;
-        Vec3 pos2(initPose(0,3), initPose(1,3), initPose(2,3));  Quaternion rot2(initPose.rotation());
-        VertexSE3 vertex2(vertexId2, pos2, rot2);
-        if (!graph->addVertexPose(vertex2))
-            std::cout << "error: vertex exists!\n";
-        vertexId2++;
-        for (int i=1;i<trajectory.size();i++){
-            //get point clouds
-            sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
-
-            //match and estimate transformation
-            matchClouds(cloudSeq[i-1], setA, uncertaintySet[i-1], setAUncertainty, setIds[i-1], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-            if (setA.rows()>3){
-                std::cout << "matched: " << setA.rows() << "\n";
-                trans = transEst->computeTransformation(setB, setA);
-                uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
-                sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
-                //add vertex to the graph
-                pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
-                Quaternion quatSensor(sensorPose.rotation());
-                VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
-                if (!graph->addVertexPose(vertexSensor))
-                    std::cout << "error: vertex exists!\n";
-                // add edge to the g2o graph
-                pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                Quaternion quatMotion(trans.rotation());
-                RobotPose measurement(pos, quatMotion);
-                Mat66 infoMat(uncertainty); infoMat = infoMat.inverse();
-                EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
-                if (!graph->addEdgeSE3(edge))
-                    std::cout << "error: vertex doesn't exist!\n";
-                vertexId2++;
-            }
-            else{
-                std::cout << "could not add edge\n";
-            }
-        }
-std::cout << "more edges\n";
-        //additional edges
-        for (int i=7;i<trajectory.size();i++){
-            //match and estimate transformation
-            for (int j=2;j<8;j++){
-                matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-                if (setA.rows()>3){
-                    trans = transEst->computeTransformation(setB, setA);
-                    uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                    //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+                    std::cout << "could not add edge (added identity transformation)\n";
+                    trans.setIdentity();
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
-                    // add edge to the g2o graph
-                    pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                    Quaternion quatMotion(trans.rotation());
-                    RobotPose measurement(pos, quatMotion);
-                    Mat66 infoMat(uncertainty); infoMat = infoMat.inverse();
-                    EdgeSE3 edge(measurement,infoMat,i-j,i);
-                    if (!graph->addEdgeSE3(edge))
-                        std::cout << "error: vertex doesn't exist!\n";
+                    trajectorySensor.push_back(sensorPose);
                 }
-                else{
-                    std::cout << "could not add\n";
-                }
+                cloudSeq.push_back(cloudB);
+                setIds.push_back(setBids);
+                uncertaintySet.push_back(uncertaintyCloudB);
             }
+            std::string filename= "../../resources/KabschUncertainty/trajectorySensor" + std::to_string(i) + ".m";
+            saveTrajectory(filename,trajectorySensor, "r");
+
+            graph->clear();
+            runExperiment(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
+            //optimize
+            std::cout << "optimization\n";
+            std::thread tOpt(optimizeAndPrune);
+
+            std::cout << "end optimization\n";
+            tOpt.join();
+            filename= "../../resources/KabschUncertainty/graphKabsch_g2o" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
+            std::vector<Mat34> trajectoryOpt = graph->getTrajectory();
+            filename= "../../resources/KabschUncertainty/trajectory_g2o" + std::to_string(i) + ".m";
+            saveTrajectory(filename,trajectoryOpt, "g");
+
+            graph->clear();
+            //move camera along reference trajectory and estimate trajectory
+            runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            //optimize
+            std::cout << "optimization\n";
+            std::thread tOpt2(optimizeAndPrune);
+            tOpt2.join();
+            std::cout << "end optimization\n";
+
+            filename= "../../resources/KabschUncertainty/graphKabsch_g2o_uncertainty" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
+            std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
+            filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
+            saveTrajectory(filename,trajectoryOpt2, "b");
+
+            /*std::array<float_type, 3> errors;
+            std::vector<float_type> errorRPE = computeRPE(trajectory,trajectory);
+            errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
+            std::cout << "original trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
+
+            errorRPE = computeRPE(trajectory,trajectorySensor);
+            std::cout << "traj size: " << trajectory.size() <<"\n";
+            std::cout << "traj sensor size: " << trajectorySensor.size() <<"\n";
+            errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
+            std::cout << "Sensor trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
+
+            errorRPE = computeRPE(trajectory,trajectoryOpt);
+            errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
+            std::cout << "g2o trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
+
+            errorRPE = computeRPE(trajectory,trajectoryOpt2);
+            errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
+            std::cout << "g2o with uncertainty trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
+            getchar();*/
         }
-
-        graph->save2file("../../resources/graphKabsch_uncertainty.g2o");
-        //optimize
-        std::cout << "optimization\n";
-        std::thread tOpt2(optimizeAndPrune);
-        tOpt2.join();
-        std::cout << "end optimization\n";
-
-        std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
-        saveTrajectory("../../resources/trajectory_g2o_uncertainty.m",trajectoryOpt2, "b");
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
