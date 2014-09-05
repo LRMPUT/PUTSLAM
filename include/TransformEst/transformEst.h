@@ -151,7 +151,6 @@ namespace putslam {
             Quaternion quat(transformation.rotation());
             float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
 
-
             Eigen::MatrixXd Cx(2*3*setA.rows(),2*3*setA.rows());
             Cx = Eigen::ArrayXXd::Zero(2*3*setA.rows(), 2*3*setA.rows());
             Eigen::MatrixXd dgdX(2*3*setA.rows(),6);
@@ -168,39 +167,24 @@ namespace putslam {
                 dgdTheta(0,4) += (4.0)*qw*zb+(4.0)*yb*qx-(8.0)*qy*xb;
                 dgdTheta(0,5) += -(8.0)*xb*qz+(4.0)*qx*zb-(4.0)*yb*qw;
 
-                dgdTheta(1,0) += 0.0;
                 dgdTheta(1,1) += 2.0;
                 dgdTheta(1,2) += 0.0;
                 dgdTheta(1,3) += -(4.0)*qw*zb-(8.0)*yb*qx+(4.0)*qy*xb;
                 dgdTheta(1,4) += (4.0)*qx*xb+(4.0)*qz*zb;
                 dgdTheta(1,5) += (4.0)*qy*zb+(4.0)*qw*xb-(8.0)*yb*qz;
 
-                dgdTheta(2,0) += 0.0;
-                dgdTheta(2,1) += 0.0;
                 dgdTheta(2,2) += 2.0;
                 dgdTheta(2,3) += (4.0)*xb*qz-(8.0)*qx*zb+(4.0)*yb*qw;
                 dgdTheta(2,4) += -(8.0)*qy*zb-(4.0)*qw*xb+(4.0)*yb*qz;
                 dgdTheta(2,5) += (4.0)*qx*xb+(4.0)*qy*yb;
 
-                dgdTheta(3,0) += (4.0)*qy*yb+(4.0)*qz*zb;
-                dgdTheta(3,1) += -(4.0)*qw*zb-(8.0)*yb*qx+(4.0)*qy*xb;
-                dgdTheta(3,2) += (4.0)*xb*qz-(8.0)*qx*zb+(4.0)*yb*qw;
                 dgdTheta(3,3) += -(8.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*zb-(8.0)*yb*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))-(2.0)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)-(2.0)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)-(2.0)*((2.0)*qy*yb+(2.0)*qz*zb)*(-(2.0)*qy*yb-(2.0)*qz*zb);
                 dgdTheta(3,4) += -(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*xb-(2.0)*((2.0)*qy*yb+(2.0)*qz*zb)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb)-(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)+(4.0)*yb*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x);
                 dgdTheta(3,5) += -(2.0)*((2.0)*xb*qz-(4.0)*qx*zb+(2.0)*yb*qw)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(2.0)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz)*(-(2.0)*qw*zb-(4.0)*yb*qx+(2.0)*qy*xb)+(4.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*xb-(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*((2.0)*qy*yb+(2.0)*qz*zb)+(4.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*zb;
 
-                dgdTheta(4,0) += (4.0)*qw*zb+(4.0)*yb*qx-(8.0)*qy*xb;
-                dgdTheta(4,1) += (4.0)*qx*xb+(4.0)*qz*zb;
-                dgdTheta(4,2) += -(8.0)*qy*zb-(4.0)*qw*xb+(4.0)*yb*qz;
-                dgdTheta(4,3) += (4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*xb-(2.0)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz)-(2.0)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)*(-(2.0)*qy*yb-(2.0)*qz*zb)+(4.0)*yb*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)-(2.0)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)*((2.0)*qx*xb+(2.0)*qz*zb);
                 dgdTheta(4,4) += -(2.0)*(-(2.0)*qx*xb-(2.0)*qz*zb)*((2.0)*qx*xb+(2.0)*qz*zb)-(8.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*zb-(8.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*xb-(2.0)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb)-(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz);
                 dgdTheta(4,5) += -(2.0)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz)*((2.0)*qx*xb+(2.0)*qz*zb)-(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*((2.0)*qw*zb+(2.0)*yb*qx-(4.0)*qy*xb)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*zb+(4.0)*yb*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)-(2.0)*(-(4.0)*qy*zb-(2.0)*qw*xb+(2.0)*yb*qz)*(-(2.0)*qx*xb-(2.0)*qy*yb);
 
-                dgdTheta(5,0) += -(8.0)*xb*qz+(4.0)*qx*zb-(4.0)*yb*qw;
-                dgdTheta(5,1) += (4.0)*qy*zb+(4.0)*qw*xb-(8.0)*yb*qz;
-                dgdTheta(5,2) += (4.0)*qx*xb+(4.0)*qy*yb;
-                dgdTheta(5,3) += -(2.0)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)*(-(2.0)*qy*yb-(2.0)*qz*zb)+(4.0)*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)*xb-(2.0)*((2.0)*qx*xb+(2.0)*qy*yb)*(-(2.0)*xb*qz+(4.0)*qx*zb-(2.0)*yb*qw)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*((2.0)*qw*zb+(4.0)*yb*qx-(2.0)*qy*xb)+(4.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*zb;
-                dgdTheta(5,4) += -(2.0)*((4.0)*qy*zb+(2.0)*qw*xb-(2.0)*yb*qz)*((2.0)*qx*xb+(2.0)*qy*yb)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*(-(2.0)*qx*xb-(2.0)*qz*zb)+(4.0)*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))*zb+(4.0)*yb*((1.0-(2.0)*pow(qx,2.0)-(2.0)*pow(qy,2.0))*zb-za+z+yb*((2.0)*qy*qz+(2.0)*qw*qx)+(-(2.0)*qy*qw+(2.0)*qx*qz)*xb)-(2.0)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)*(-(2.0)*qw*zb-(2.0)*yb*qx+(4.0)*qy*xb);
                 dgdTheta(5,5) += -(2.0)*((4.0)*xb*qz-(2.0)*qx*zb+(2.0)*yb*qw)*(-(4.0)*xb*qz+(2.0)*qx*zb-(2.0)*yb*qw)-(8.0)*yb*(xb*((2.0)*qw*qz+(2.0)*qy*qx)-ya+((2.0)*qy*qz-(2.0)*qw*qx)*zb+y+yb*(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0)))-(8.0)*((1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qy,2.0))*xb+yb*(-(2.0)*qw*qz+(2.0)*qy*qx)+((2.0)*qy*qw+(2.0)*qx*qz)*zb-xa+x)*xb-(2.0)*((2.0)*qx*xb+(2.0)*qy*yb)*(-(2.0)*qx*xb-(2.0)*qy*yb)-(2.0)*((2.0)*qy*zb+(2.0)*qw*xb-(4.0)*yb*qz)*(-(2.0)*qy*zb-(2.0)*qw*xb+(4.0)*yb*qz);
 
                 Cx.block<3,3>(i*3,i*3) = setAUncertainty[i];
@@ -249,16 +233,57 @@ namespace putslam {
                 dgdX(setA.rows()*3+i*3+2,5) = (4.0)*qx*((1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qz,2.0))*xb-xa+((2.0)*qx*qz+(2.0)*qw*qy)*zb+x+((2.0)*qx*qy-(2.0)*qw*qz)*yb)-(2.0)*((2.0)*qx*qz+(2.0)*qw*qy)*((2.0)*qw*yb+(4.0)*xb*qz-(2.0)*qx*zb)-(2.0)*(1.0-(2.0)*pow(qy,2.0)-(2.0)*pow(qx,2.0))*(-(2.0)*qx*xb-(2.0)*qy*yb)+(4.0)*(xb*((2.0)*qx*qy+(2.0)*qw*qz)-ya+y+zb*(-(2.0)*qw*qx+(2.0)*qz*qy)+(1.0-(2.0)*pow(qz,2.0)-(2.0)*pow(qx,2.0))*yb)*qy-(2.0)*(-(2.0)*qw*qx+(2.0)*qz*qy)*((4.0)*qz*yb-(2.0)*zb*qy-(2.0)*qw*xb);
             }
             dgdX = k*dgdX; dgdTheta = k * dgdTheta;
+
+            dgdTheta(1,0) = dgdTheta(0,1);
+
+            dgdTheta(2,0) = dgdTheta(0,2);
+            dgdTheta(2,1) = dgdTheta(1,2);
+
+            dgdTheta(3,0) = dgdTheta(0,3);
+            dgdTheta(3,1) = dgdTheta(1,3);
+            dgdTheta(3,2) = dgdTheta(2,3);
+
+            dgdTheta(4,0) = dgdTheta(0,4);
+            dgdTheta(4,1) = dgdTheta(1,4);
+            dgdTheta(4,2) = dgdTheta(2,4);
+            dgdTheta(4,3) = dgdTheta(3,4);
+
+            dgdTheta(5,0) = dgdTheta(0,5);
+            dgdTheta(5,1) = dgdTheta(1,5);
+            dgdTheta(5,2) = dgdTheta(2,5);
+            dgdTheta(5,3) = dgdTheta(3,5);
+            dgdTheta(5,4) = dgdTheta(4,5);
+
             Mat66 dgdThetaInv = dgdTheta.inverse();
-            Mat66 dgdThetatrans = dgdTheta.transpose();
-            Mat66 dgdThetatransInv = dgdThetatrans.inverse();
+            //Mat66 dgdThetatrans = dgdTheta.transpose();
+            //Mat66 dgdThetatransInv = dgdThetatrans.inverse();
 
             //std::cout << "Cx: \n" << Cx << "\n";
             //std::cout << "dgdX: \n" << dgdX << "\n";
             //std::cout << "dgdTheta: \n" << dgdTheta << "\n";
-            //uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
-            uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetatransInv;
+            uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+            //uncertainty = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetatransInv;
+            //std::cout << "dgdThetaInv: \n" << dgdThetaInv << "\n";
+            //std::cout << "dgdThetatransInv: \n" << dgdThetatransInv << "\n";
+            //getchar();
+
             //uncertainty = ConvertUncertaintyEuler2quat(uncertainty, transformation);
+            return uncertainty;
+        }
+
+        /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
+        virtual const Mat66& computeUncertaintyStrasdat(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
+            uncertainty.setIdentity();
+            //compute average depth.
+            float_type depthAv = 0;
+            for (int i=0;i<setA.rows();i++){
+                depthAv += sqrt(pow(setA(i,0),2.0)+pow(setA(i,1),2.0)+pow(setA(i,2),2.0));
+                depthAv += sqrt(pow(setB(i,0),2.0)+pow(setB(i,1),2.0)+pow(setB(i,2),2.0));
+            }
+            depthAv/=2*setA.rows();
+            uncertainty(0,0) = pow(transformation(0,3)/depthAv,2.0);
+            uncertainty(1,1) = pow(transformation(1,3)/depthAv,2.0);
+            uncertainty(2,2) = pow(transformation(2,3)/depthAv,2.0);
             return uncertainty;
         }
 
