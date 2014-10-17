@@ -103,6 +103,26 @@ namespace putslam {
             }
     };
 
+    class OrientedDescriptor{
+        cv::Mat descriptor;
+        Quaternion cameraOrientation;
+    };
+
+    class MapFeature{
+        unsigned int id;
+        Vec3 position;
+        std::vector<OrientedDescriptor> desciptors;
+
+        MapFeature(unsigned int id);
+    };
+
+    //map:
+    //addFeature(Vec3 pos, cv::Mat desc, Quaternion cameraOrient);
+    //std::vector<MapFeature>& getAllFeatures();
+    //vec3 getFeaturePosition(unsigned int id);
+    //getVisibleFeatures();
+    //getCurrentPose();
+
     /// Key Point
     class KeyPoint {
         public:

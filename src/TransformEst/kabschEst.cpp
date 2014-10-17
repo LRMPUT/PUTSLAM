@@ -24,6 +24,8 @@ const std::string& KabschEst::getName() const {
 Mat34& KabschEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB){
 
     Eigen::Vector3d centerOfMassA, centerOfMassB;
+    transformation.setIdentity();
+    if (setA.rows()==0) return transformation;
 
     // Calculating center of mass
     for (int i=0;i<3;i++) {
@@ -60,7 +62,6 @@ Mat34& KabschEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen
     T += centerOfMassB;
 
     // Optimal transformation
-    transformation.setIdentity();
     transformation.matrix().block<3,3>(0,0) = U.block<3,3>(0,0);
     transformation.matrix().block<3,1>(0,3) = T.head<3>();
     return transformation;

@@ -162,15 +162,16 @@ bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
  */
 bool PoseGraphG2O::addVertex(const Vertex3D& v){
     mtxGraph.lock();
-    if (graph.vertices.size() > v.vertexId){//wrong id
-        mtxGraph.unlock();
-        return false;
-    }
-    else {//add vertex
+    //add vertex
+    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
         graph.vertices.push_back(std::unique_ptr<Vertex>(new Vertex3D(v)));//update putslam structure
         std::stringstream currentLine;
         currentLine << v.keypoint.depthFeature.x() << ' ' << v.keypoint.depthFeature.y() << ' ' << v.keypoint.depthFeature.z();
         addVertexG2O(v.vertexId, currentLine, Vertex::VERTEX3D);
+        mtxGraph.unlock();
+        return true;
+    }
+    else {
         mtxGraph.unlock();
         return true;
     }
@@ -194,17 +195,18 @@ bool PoseGraphG2O::addVertexPose(const putslam::VertexSE3& v){
  */
 bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
     mtxGraph.lock();
-    if (graph.vertices.size() > v.vertexId){//wrong id
-        mtxGraph.unlock();
-        return false;
-    }
-    else {//add vertex
+    //add vertex
+    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
         graph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE3(v)));//update putslam structure
         std::stringstream currentLine;
         currentLine << v.nodeSE3.pos.x() << ' ' << v.nodeSE3.pos.y() << ' ' << v.nodeSE3.pos.z() << ' ' << v.nodeSE3.rot.x() << ' ' << v.nodeSE3.rot.y() << ' ' << v.nodeSE3.rot.z() << ' ' << v.nodeSE3.rot.w();
         addVertexG2O(v.vertexId, currentLine, Vertex::VERTEXSE3);
         mtxGraph.unlock();
         return true;
+    }
+    else {
+        mtxGraph.unlock();
+        return false;
     }
 }
 
@@ -348,29 +350,32 @@ bool PoseGraphG2O::updateGraph(void){
             if ((*it).get()->type==Vertex::VERTEX3D){
                 if (!addVertex(*(Vertex3D*)it->get())){
                     mtxGraph.unlock();
+                    std::cout << "could not add vertex 3D id" << (*it).get()->vertexId << "\n";
                     return false;
                 }
             }
             else if (it->get()->type==Vertex::VERTEXSE3){
                 if (!addVertex(*(putslam::VertexSE3*)it->get())){
                     mtxGraph.unlock();
+                    std::cout << "could not add vertex SE3\n";
                     return false;
                 }
             }
         }
         for (putslam::PoseGraph::EdgeSet::iterator it = tmpGraph.edges.begin(); it!=tmpGraph.edges.end();it++){
             if (it->get()->type==Edge::EDGE_3D){
-                std::cout << "add Edge 3D\n";
+                //std::cout << "add Edge 3D\n";
                 if (!addEdge(*(Edge3D*)it->get())){
                     mtxGraph.unlock();
+                    std::cout << "could not add edge 3D\n";
                     return false;
                 }
             }
             else if (it->get()->type==Edge::EDGE_SE3){
-                std::cout << "add Edge SE3\n";
+                //std::cout << "add Edge SE3\n";
                 if (!addEdge(*(EdgeSE3*)it->get())){
                     mtxGraph.unlock();
-                    std::cout << "add Edge SE3 failed\n";
+                    std::cout << "could not add edge SE3\n";
                     return false;
                 }
             }
@@ -559,30 +564,29 @@ void PoseGraphG2O::updateEstimate(void){
       }
     }
 
-    int iter = 0;
     mtxGraph.unlock();
     for (set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
       OptimizableGraph::Vertex* v = *it;
       std::vector<double> estimate;
       v->getEstimateData(estimate);
-      if (graph.vertices[iter].get()->type==Vertex::VERTEX3D){
-          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.x() = estimate[0];
-          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.y() = estimate[1];
-          ((Vertex3D*)graph.vertices[iter].get())->keypoint.depthFeature.z() = estimate[2];
+      PoseGraph::VertexSet::iterator itVertex = findVertex(v->id());
+      if (itVertex->get()->type==Vertex::VERTEX3D){
+        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.x() = estimate[0];
+        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.y() = estimate[1];
+        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.z() = estimate[2];
       }
-      else if (graph.vertices[iter].get()->type==Vertex::VERTEXSE3){
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.x() = estimate[0];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.y() = estimate[1];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.pos.z() = estimate[2];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.x() = estimate[3];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.y() = estimate[4];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.z() = estimate[5];
-          ((putslam::VertexSE3*)graph.vertices[iter].get())->nodeSE3.rot.w() = estimate[6];
+      else if (itVertex->get()->type==Vertex::VERTEXSE3){
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.x() = estimate[0];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.y() = estimate[1];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.z() = estimate[2];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.x() = estimate[3];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.y() = estimate[4];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.z() = estimate[5];
+            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.w() = estimate[6];
       }
-      iter++;
     }
-    updateGraph();
     mtxGraph.unlock();
+    updateGraph();
 }
 
 /// Find all edges which points to the vertex 'toVertexId'
