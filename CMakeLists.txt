@@ -30,8 +30,8 @@ option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimatio
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" YES)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
-option(BUILD_PUTSLAM_GLOBAL_MAP "Build PUTSLAM Global Map library" YES)
-mark_as_advanced(BUILD_PUTSLAM_GLOBAL_MAP)
+option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" YES)
+mark_as_advanced(BUILD_PUTSLAM_MAP)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -216,22 +216,22 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
 ###############################################################################
 #
-# PUTSLAM Global Map library
+# PUTSLAM Map library
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_MAP)
-        file(GLOB GLOBAL_MAP_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/GlobalMap/*.cpp"
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
+        file(GLOB MAP_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Map/*.cpp"
         )
-        file(GLOB GLOBAL_MAP_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/GlobalMap/*.h"
+        file(GLOB MAP_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Map/*.h"
         )
 
-        ADD_LIBRARY(GlobalMap STATIC ${GLOBAL_MAP_SOURCES} ${GLOBAL_MAP_HEADERS})
-        INSTALL(TARGETS GlobalMap RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${GLOBAL_MAP_HEADERS} DESTINATION include/putslam/GlobalMap/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GLOBAL_MAP)
+        ADD_LIBRARY(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
+        INSTALL(TARGETS Map RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${MAP_HEADERS} DESTINATION include/putslam/Map/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
 
 ###############################################################################
 #

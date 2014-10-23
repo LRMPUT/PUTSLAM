@@ -12,6 +12,7 @@
 #include <memory>
 #include <cmath>
 #include "opencv2/core/core.hpp"
+#include <opencv2/features2d.hpp>
 #include "../../3rdParty/Eigen/Geometry"
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -103,25 +104,51 @@ namespace putslam {
             }
     };
 
-    class OrientedDescriptor{
-        cv::Mat descriptor;
-        Quaternion cameraOrientation;
+    class ExtendedDescriptor{
+        public:
+            /// set of descriptors
+            typedef std::vector<ExtendedDescriptor> Seq;
+
+            /// OpenCV descriptor
+            std::unique_ptr<cv::DescriptorExtractor> descriptor;
+
+            /// camera orientation
+            Quaternion cameraOrientation;
+
+            /// Constructor
+            ExtendedDescriptor(){};
+
+            /// Constructor
+            ExtendedDescriptor(Quaternion& cameraOrient) : cameraOrientation(cameraOrient){};
     };
 
-    class MapFeature{
+    class RGBDFeature{
+        public:
+            /// Position of the feature
+            Vec3 position;
+
+            /// set of descriptors
+            std::vector<ExtendedDescriptor> desciptors;
+
+            RGBDFeature(void){};
+
+            RGBDFeature(Vec3& _position) : position(_position){
+            };
+    };
+
+    class MapFeature : RGBDFeature{
+        /// id of the feature
         unsigned int id;
-        Vec3 position;
-        std::vector<OrientedDescriptor> desciptors;
 
-        MapFeature(unsigned int id);
+        /// Constructor
+        MapFeature(){};
+
+        /// Constructor
+        MapFeature(unsigned int _id, Vec3& _position) : RGBDFeature(_position), id(_id) {};
+
+        /// Constructor
+        MapFeature(unsigned int _id) : id(_id){};
     };
-
-    //map:
-    //addFeature(Vec3 pos, cv::Mat desc, Quaternion cameraOrient);
-    //std::vector<MapFeature>& getAllFeatures();
-    //vec3 getFeaturePosition(unsigned int id);
-    //getVisibleFeatures();
-    //getCurrentPose();
 
     /// Key Point
     class KeyPoint {
