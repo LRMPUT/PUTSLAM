@@ -445,8 +445,9 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
                     uncertaintyPose = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
                     infoMat = uncertaintyPose.inverse();
                 }
+                infoMat*=setA.rows();
                 std::cout << "add edge se3\n";
-                getchar();
+                //getchar();
                 EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
                 if (!graph->addEdgeSE3(edge))
                     std::cout << "error: vertex doesn't exist!\n";
@@ -662,7 +663,7 @@ int main(int argc, char * argv[])
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
 
-        int trialsNo = 100;
+        int trialsNo =1;
         for (int i=0;i<trialsNo;i++){
 
             PointCloud room;
@@ -734,7 +735,7 @@ int main(int argc, char * argv[])
                 uncertaintySet.push_back(uncertaintyCloudB);
             }
             std::cout << "koniec\n";
-            getchar();
+           // getchar();
             std::string filename= "../../resources/KabschUncertainty/trajectorySensor" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectorySensor, "r");
 
@@ -775,7 +776,7 @@ int main(int argc, char * argv[])
             saveTrajectory(filename,trajectoryOpt2, "b");
 
             //Strasdat
-            graph->clear();
+/*            graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
 
@@ -791,7 +792,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryStrasdat = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_strasdat" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryStrasdat, "c");
-
+*/
             //Bundle Adjustment Identity
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -827,7 +828,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryBAuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAuncert" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAuncert, "m");*/
-getchar();
+//getchar();
             //Bundle Adjustment + pose ident
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
