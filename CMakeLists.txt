@@ -24,6 +24,8 @@ option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
 option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER)
+option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO)
+mark_as_advanced(BUILD_PUTSLAM_GRABBER_PTGREY)
 option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
@@ -140,17 +142,35 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Include")
-        INCLUDE_DIRECTORIES("/usr/include/flycapture")
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            INCLUDE_DIRECTORIES("/usr/include/flycapture")
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
         LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib")
         file(GLOB GRABBER_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/Grabber/*.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
+            if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgey_grabber.cpp"
+            endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            "${CMAKE_SOURCE_DIR}/src/Grabber/template_graber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.cpp"
         )
         file(GLOB GRABBER_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Grabber/*.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.h"
+            if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgey_grabber.h"
+            endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            "${CMAKE_SOURCE_DIR}/src/Grabber/template_graber.h"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.h"
         )
 
         ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
-        TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS} flycapture-c flycapture)
+        TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS})
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS} flycapture-c flycapture)
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
         file(INSTALL "${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib/" DESTINATION bin)
         INSTALL(TARGETS Grabber RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${GRABBER_HEADERS} GRABBERKINECT_HEADERS DESTINATION include/putslam/Grabber/)

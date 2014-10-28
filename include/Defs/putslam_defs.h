@@ -12,7 +12,6 @@
 #include <memory>
 #include <cmath>
 #include "opencv2/core/core.hpp"
-#include <opencv2/features2d.hpp>
 #include "../../3rdParty/Eigen/Geometry"
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -110,7 +109,7 @@ namespace putslam {
             typedef std::vector<ExtendedDescriptor> Seq;
 
             /// OpenCV descriptor
-            std::unique_ptr<cv::DescriptorExtractor> descriptor;
+            cv::Mat descriptor;
 
             /// camera orientation
             Quaternion cameraOrientation;
