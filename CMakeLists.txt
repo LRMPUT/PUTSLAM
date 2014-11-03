@@ -143,27 +143,28 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Include")
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            add_definitions(-DWITH_PTGREY)
             INCLUDE_DIRECTORIES("/usr/include/flycapture")
         endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
         LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib")
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
-            if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgey_grabber.cpp"
-            endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/src/Grabber/template_graber.cpp"
+            #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgrey_grabber.cpp"
+            #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            "${CMAKE_SOURCE_DIR}/src/Grabber/template_grabber.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.cpp"
         )
         file(GLOB GRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.h"
-            if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgey_grabber.h"
-            endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/src/Grabber/template_graber.h"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
+            #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgrey_grabber.h"
+            #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
+            "${CMAKE_SOURCE_DIR}/include/Grabber/template_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/xtion_grabber.h"
         )
 
         ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})

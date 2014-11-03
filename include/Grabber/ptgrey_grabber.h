@@ -11,13 +11,16 @@
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>
-#include "FlyCapture2.h"
+#ifdef WITH_PTGREY
+    #include "FlyCapture2.h"
+#endif
 #include <chrono>
 #include <thread>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
-using namespace FlyCapture2;
+#ifdef WITH_PTGREY
+    using namespace FlyCapture2;
+#endif
 
 
 namespace putslam {
@@ -131,10 +134,10 @@ class PtgreyGrabber : public Grabber {
 
         /// Grab image and/or point cloud
         virtual void grab();
-
+    #ifdef WITH_PTGREY
         ///Sensor initialization
         virtual int initPtGrey ();
-
+    #endif
         /// Calibrate sensor
         virtual void calibrate(void);
 
@@ -143,6 +146,7 @@ class PtgreyGrabber : public Grabber {
 
         UncertaintyModel model;
     protected:
+    #ifdef WITH_PTGREY
         Error error;
         BusManager busMgr;
         unsigned int numCameras;
@@ -154,7 +158,7 @@ class PtgreyGrabber : public Grabber {
         void PrintError( Error error );
         ///Prints out camera info
         void PrintCameraInfo( CameraInfo* pCamInfo );
-
+    #endif
 
 };
 

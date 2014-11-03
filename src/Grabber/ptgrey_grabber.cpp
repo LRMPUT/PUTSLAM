@@ -14,9 +14,9 @@ PtgreyGrabber::PtgreyGrabber(void) : Grabber("Ptgrey Grabber", TYPE_PRIMESENSE) 
 }
 
 PtgreyGrabber::PtgreyGrabber(std::string modelFilename) : Grabber("Ptgrey Grabberr", TYPE_PRIMESENSE), model(modelFilename){
-
+#ifdef WITH_PTGREY
     initPtGrey ();
-
+#endif
 }
 
 const std::string& PtgreyGrabber::getName() const {
@@ -32,7 +32,7 @@ const SensorFrame& PtgreyGrabber::getSensorFrame(void) const {
 }
 
 void PtgreyGrabber::grab(void) {
-
+#ifdef WITH_PTGREY
     //RunSingleCamera( guid );
 
     Image rawImage;
@@ -57,7 +57,7 @@ void PtgreyGrabber::grab(void) {
 
         this->sensor_frame.image.create(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC3);
         memcpy(sensor_frame.image.data,convertedImage.GetData(),convertedImage.GetStride() * convertedImage.GetRows());
-
+#endif
 }
 
 /// run grabber thread
@@ -66,7 +66,7 @@ void PtgreyGrabber::calibrate(void) {
 }
 
 int PtgreyGrabber::grabberClose(){
-
+#ifdef WITH_PTGREY
     // Stop capturing images
     error = cam.StopCapture();
     if (error != PGRERROR_OK)
@@ -82,9 +82,11 @@ int PtgreyGrabber::grabberClose(){
         PrintError( error );
         return -1;
     }
+#endif
     return 0;
 }
 
+#ifdef WITH_PTGREY
 void PtgreyGrabber::PrintError( Error error )
 {
     error.PrintErrorTrace();
@@ -184,6 +186,7 @@ int PtgreyGrabber::initPtGrey (){
 
     return 0;
 }
+#endif
 
 putslam::Grabber* putslam::createGrabberPtgrey(void) {
     grabberP.reset(new PtgreyGrabber());
