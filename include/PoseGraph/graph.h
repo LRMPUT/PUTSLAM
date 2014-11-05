@@ -52,7 +52,7 @@ namespace putslam {
             virtual bool addEdge3D(const Edge3D& e) = 0;
 
             /// Optimize graph
-            virtual void optimize(uint_fast32_t maxIterations) = 0;
+            virtual bool optimize(uint_fast32_t maxIterations) = 0;
 
             /// Save graph to file
             virtual void save2file(const std::string filename) const = 0;

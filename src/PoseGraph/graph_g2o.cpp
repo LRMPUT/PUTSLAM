@@ -539,16 +539,19 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
 }
 
 /// Optimize graph
-void PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
+bool PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
     std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
     optimizer.initializeOptimization();
     optimizer.computeInitialGuess();
     optimizer.optimize(maxIterations);
 
+    if (!std::isfinite(optimizer.chi2()))
+        return false;
     updateEstimate();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
     std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
+    return true;
 }
 
 /// copy g2o optimization result to to putslam graph

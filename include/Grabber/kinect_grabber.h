@@ -33,7 +33,7 @@ class KinectGrabber : public Grabber {
         /// Construction
         UncertaintyModel(std::string configFile) : config(configFile){
             PHCPModel << 1/config.focalLength[0],0,-config.focalAxis[0]/config.focalLength[0],
-                          0,1/config.focalLength[1], -config.focalAxis[1]/config.focalLength[1],
+                          0,-1/config.focalLength[1], +config.focalAxis[1]/config.focalLength[1],
                           0,0,1;
             Ruvd << config.varU, 0, 0,
                     0, config.varV, 0,
@@ -46,7 +46,7 @@ class KinectGrabber : public Grabber {
         }
 
         Eigen::Vector3d inverseModel(float_type x, float_type y, float_type z) const{
-            Eigen::Vector3d point(config.focalLength[0]*((x/z)+(config.focalAxis[0]/config.focalLength[0])), config.focalLength[1]*((y/z)+(config.focalAxis[1]/config.focalLength[1])), z);
+            Eigen::Vector3d point(config.focalLength[0]*((x/z)+(config.focalAxis[0]/config.focalLength[0])), config.focalLength[1]*(-(y/z)+(config.focalAxis[1]/config.focalLength[1])), z);
             if (point(0)<0||point(0)>640||point(1)<0||point(1)>480||z<0.8||z>6.0){
                 point(0) = -1; point(1) = -1; point(2) = -1;
             }

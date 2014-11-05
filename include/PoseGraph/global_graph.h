@@ -67,7 +67,7 @@ class GlobalGraph : public Graph {
         bool importRGBDSLAM(const std::string filename);
 
         /// Optimize graph
-        void optimize(uint_fast32_t maxIterations);
+        bool optimize(uint_fast32_t maxIterations);
 
         /// Removes weak edes (with error bigger than threshold
         bool optimizeAndPrune(float_type threshold, unsigned int singleIteration);

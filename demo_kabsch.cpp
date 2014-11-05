@@ -316,7 +316,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
     Mat66 uncertainty;
     for (int i=1;i<trajectory.size();i++){
         //get point clouds
-        sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
+        //sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
         //match and estimate transformation
         std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
@@ -327,6 +327,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
             Mat34 trans = transEst->computeTransformation(setB, setA);
             //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
             sensorPose.matrix() = trajectorySensor2.back().matrix()*trans.matrix();
+
             //add vertex to the graph
             Vec3 pos;
             trajectorySensor2.push_back(sensorPose);
@@ -356,7 +357,8 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
             vertexId2++;
         }
         else{
-            std::cout << "could not add edge\n";
+            std::cout << "could not add edge1\n";
+            getchar();
         }
     }
 std::cout << "more edges\n";
@@ -390,7 +392,8 @@ std::cout << "more edges\n";
                     std::cout << "error: vertex doesn't exist!\n";
             }
             else{
-                std::cout << "could not add\n";
+                std::cout << "could not add edge2\n";
+                getchar();
             }
         }
     }
@@ -424,7 +427,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
                 trans = ident;
                 sensorPose.matrix() = trajectorySensor2.back().matrix()*ident.matrix();
             }
-            sensorPose.matrix() = sensorPose.matrix()*sensorModel.config.pose.matrix();
+            trajectorySensor2.push_back(sensorPose);
             Vec3 pos;
             pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
             Quaternion quatSensor(sensorPose.rotation());
@@ -445,7 +448,6 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
                     uncertaintyPose = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
                     infoMat = uncertaintyPose.inverse();
                 }
-                infoMat*=setA.rows();
                 std::cout << "add edge se3\n";
                 //getchar();
                 EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
@@ -454,9 +456,9 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
             }
         }
         else {
-            sensorPose.matrix() = initPose.matrix()*sensorModel.config.pose.matrix();
-            Quaternion quatSensor(sensorPose.rotation());
-            Vec3 pos(sensorPose(0,3), sensorPose(1,3), sensorPose(2,3));
+            sensorPose.matrix() = initPose.matrix();
+            Quaternion quatSensor(initPose.rotation());
+            Vec3 pos(initPose(0,3), initPose(1,3), initPose(2,3));
             VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
@@ -465,17 +467,28 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
         //add features
         std::cout << "View points: " << cloudSeq[i].size() << "\n";
         for (int j=0; j<cloudSeq[i].size(); j++){
-            Vec3 posFeature(0.0, 0.0, 0.0);
+            Mat34 featurePose;
+            Mat34 sensor2feature; sensor2feature.setIdentity();
+            sensor2feature(0,3) = cloudSeq[i][j].x; sensor2feature(1,3) = cloudSeq[i][j].y; sensor2feature(2,3) = cloudSeq[i][j].z;
+            featurePose.matrix() = sensorPose.matrix() * sensor2feature.matrix();
+            Vec3 posFeature(featurePose(0,3), featurePose(1,3), featurePose(2,3));
             Vertex3D vertexFeature(vertexId+setIds[i][j], posFeature);
             if (!graph->addVertexFeature(vertexFeature))
                 std::cout << "error: vertex exists!\n";
 
-            Vec3 pos13(cloudSeq[i][j].x, cloudSeq[i][j].y, cloudSeq[i][j].z);
+            Vec3 pos13(-cloudSeq[i][j].y, -cloudSeq[i][j].z, cloudSeq[i][j].x);
             Mat33 infoMat13;
             if (expType==0)
                 infoMat13.setIdentity();
-            else if (expType==1){
+            else if (expType==1||expType==2||expType==3){
                 uncertainty = uncertaintySet[i][j];
+                uncertainty(0,0) = uncertaintySet[i][j](1,1); uncertainty(0,1) = uncertaintySet[i][j](1,2); uncertainty(0,2) = uncertaintySet[i][j](0,1);
+                uncertainty(1,0) = uncertaintySet[i][j](2,1); uncertainty(1,1) = uncertaintySet[i][j](2,2); uncertainty(1,2) = uncertaintySet[i][j](0,2);
+                uncertainty(2,0) = uncertaintySet[i][j](0,1); uncertainty(2,1) = uncertaintySet[i][j](0,2); uncertainty(2,2) = uncertaintySet[i][j](0,0);
+                // -y -z x
+                // [xx xy xz]    [yy yz yx]
+                // [yx yy yz] -> [zy zz zx]
+                // [zx zy zz]    [xy xz xx]
                 infoMat13 = uncertainty.inverse();
             }
             Edge3D edge(pos13,infoMat13, vertexId2, vertexId+setIds[i][j]);
@@ -484,7 +497,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
         }
         vertexId2++;
         if ((i%5)==0){
-            std::thread tOpt4(optimize,10);
+            std::thread tOpt4(optimize,5);
             tOpt4.join();
         }
     }
@@ -603,7 +616,7 @@ int main(int argc, char * argv[])
 
         std::cout << "\n\n\nSingle transformation: room test\n";
         PointCloud roomTest;
-        size_t pointsNo = 3000;
+        size_t pointsNo = 1000;
         float_type roomDim[3] = {7, 7, 3};
         roomTest = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
         savePointCloud("../../resources/KabschUncertainty/room.m", roomTest);
@@ -663,7 +676,7 @@ int main(int argc, char * argv[])
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
 
-        int trialsNo =1;
+        int trialsNo =10;
         for (int i=0;i<trialsNo;i++){
 
             PointCloud room;
@@ -674,12 +687,13 @@ int main(int argc, char * argv[])
 
             std::cout << "\n\n\nTrajectory test\n";
             //create reference trajectory
-            Mat34 pose = quatFromEuler((-M_PI/2.0),0,0)*Eigen::Translation<double,3>(0,0,0);
+            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
             pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
-            int motions = 20;
+            int motions = 10;
+            int motions_rot = 20;
             std::vector<Mat34> trajectory; trajectory.push_back(pose);
-            Mat34 moveRot = quatFromEuler((M_PI/2.0)/float_type(motions),0,0)*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0.0, (roomDim[0]-3.0)/float_type(motions), 0);
+            Mat34 moveRot = quatFromEuler((M_PI/2.0)/float_type(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((roomDim[0]-3.0)/float_type(motions), 0.0, 0.0);
             for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
@@ -687,13 +701,19 @@ int main(int argc, char * argv[])
                     trajectory.push_back(pose);
                 }
                 //rotate pi/2
-                for (int i=0;i<motions;i++){
+                for (int i=0;i<motions_rot;i++){
                     pose.matrix() *= moveRot.matrix();
                     trajectory.push_back(pose);
                 }
             }
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
-            saveGroundTruth("../../resources/KabschUncertainty/groundtruth.txt", trajectory);
+            std::vector<Mat34> trajectorySens;
+            for (int iter = 0; iter<trajectory.size();iter++){
+                Mat34 tmppos;
+                tmppos.matrix() = trajectory[iter].matrix()*sensorModel.config.pose.matrix();
+                trajectorySens.push_back(tmppos);
+            }
+            saveGroundTruth("../../resources/KabschUncertainty/groundtruth.txt", trajectorySens);
 
             //move camera along reference trajectory and capture point clouds
             std::vector<Mat34> trajectorySensor; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
@@ -726,6 +746,7 @@ int main(int argc, char * argv[])
                 }
                 else{
                     std::cout << "could not add edge (added identity transformation)\n";
+                    getchar();
                     trans.setIdentity();
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                     trajectorySensor.push_back(sensorPose);
@@ -762,6 +783,9 @@ int main(int argc, char * argv[])
             //move camera along reference trajectory and estimate trajectory
             runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
 
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_uncertainty" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
             //optimize
             std::cout << "optimization\n";
             std::thread tOpt2(optimizeAndPrune);
@@ -776,9 +800,12 @@ int main(int argc, char * argv[])
             saveTrajectory(filename,trajectoryOpt2, "b");
 
             //Strasdat
-/*            graph->clear();
+            graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_strasdat" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
 
             //optimize
             std::cout << "optimization\n";
@@ -792,11 +819,14 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryStrasdat = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_strasdat" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryStrasdat, "c");
-*/
+
             //Bundle Adjustment Identity
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperimentBA(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_BAident" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
 
             //optimize
             std::cout << "optimization\n";
@@ -812,9 +842,12 @@ int main(int argc, char * argv[])
             saveTrajectory(filename,trajectoryBAident, "c");
 
             //Bundle Adjustment uncert
-/*            graph->clear();
+            graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperimentBA(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_BAuncert" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
 
             //optimize
             std::cout << "optimization\n";
@@ -827,12 +860,16 @@ int main(int argc, char * argv[])
 
             std::vector<Mat34> trajectoryBAuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAuncert" + std::to_string(i) + ".m";
-            saveTrajectory(filename,trajectoryBAuncert, "m");*/
+            saveTrajectory(filename,trajectoryBAuncert, "m");
 //getchar();
+
             //Bundle Adjustment + pose ident
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperimentBA(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_BAposeident" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
 
             //optimize
             std::cout << "optimization\n";
@@ -852,6 +889,9 @@ int main(int argc, char * argv[])
             //move camera along reference trajectory and estimate trajectory
             runExperimentBA(3, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
 
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_BAposeuncert" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
             //optimize
             std::cout << "optimization\n";
             std::thread tOpt7(optimize,70);
@@ -863,7 +903,7 @@ int main(int argc, char * argv[])
 
             std::vector<Mat34> trajectoryBAposeuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAposeuncert" + std::to_string(i) + ".m";
-            saveTrajectory(filename,trajectoryBAposeuncert, "m");
+            saveTrajectory(filename,trajectoryBAposeuncert, "y");
 
             /*std::array<float_type, 3> errors;
             std::vector<float_type> errorRPE = computeRPE(trajectory,trajectory);
