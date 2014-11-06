@@ -449,7 +449,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
 
-            if (expType==2||expType==3){
+            if (expType==2||expType==3||expType==4){
                 // add edge to the g2o graph
                 pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
                 Quaternion quatMotion(trans.rotation());
@@ -494,7 +494,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
             Mat33 infoMat13;
             if (expType==0)
                 infoMat13.setIdentity();
-            else if (expType==1||expType==2||expType==3){
+            else if (expType==1||expType==2||expType==3||expType==4){
                 uncertainty = uncertaintySet[i][j];
                 uncertainty(0,0) = uncertaintySet[i][j](1,1); uncertainty(0,1) = uncertaintySet[i][j](1,2); uncertainty(0,2) = uncertaintySet[i][j](0,1);
                 uncertainty(1,0) = uncertaintySet[i][j](2,1); uncertainty(1,1) = uncertaintySet[i][j](2,2); uncertainty(1,2) = uncertaintySet[i][j](0,2);
