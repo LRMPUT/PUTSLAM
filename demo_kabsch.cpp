@@ -966,6 +966,27 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAposeuncert" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAposeuncert, "y");
 
+            //Bundle Adjustment + pose uncert + more edges
+            graph->clear();
+            //move camera along reference trajectory and estimate trajectory
+            runExperimentBA(4, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+
+            filename= "../../resources/KabschUncertainty/init_graph_g2o_BAposeuncertfull" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
+            //optimize
+            std::cout << "optimization\n";
+            std::thread tOpt8(optimize,70);
+            tOpt8.join();
+            std::cout << "end optimization BA + pose uncert full " << i << "\n";
+
+            filename= "../../resources/KabschUncertainty/graphKabsch_g2o_BAposeuncertfull" + std::to_string(i) + ".g2o";
+            graph->save2file(filename);
+
+            std::vector<Mat34> trajectoryBAposeuncertfull = graph->getTrajectory();
+            filename= "../../resources/KabschUncertainty/trajectory_g2o_BAposeuncertfull" + std::to_string(i) + ".m";
+            saveTrajectory(filename,trajectoryBAposeuncertfull, "y");
+
             /*std::array<float_type, 3> errors;
             std::vector<float_type> errorRPE = computeRPE(trajectory,trajectory);
             errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
