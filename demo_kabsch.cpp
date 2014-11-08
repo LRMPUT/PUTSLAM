@@ -300,11 +300,9 @@ PointCloud createEnvironment(size_t pointsNo, float_type width, float_type lengt
     int patchNo=10;
     for (size_t i = 0; i<pointsNo;i++){
         Point3D point;
-        std::cout << "FD\n";
         point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
         if (i%2){
             for (int j=0;j<patchNo;j++){
-                std::cout << "FD1\n";
                 Point3D pointTmp;
                 pointTmp.x = point.x + distWidthPatch(generator); pointTmp.y = point.y + distLengthPatch(generator); pointTmp.z = point.z + distHeightPatch(generator);
                 room.push_back(pointTmp);
@@ -312,7 +310,6 @@ PointCloud createEnvironment(size_t pointsNo, float_type width, float_type lengt
         }
         else {
             for (int j=0;j<patchNo;j++){
-                std::cout << "FD2\n";
                 Point3D pointTmp;
                 pointTmp.x = point.x + distLengthPatch(generator); pointTmp.y = point.y + distWidthPatch(generator); pointTmp.z = point.z + distHeightPatch(generator);
                 room.push_back(pointTmp);
