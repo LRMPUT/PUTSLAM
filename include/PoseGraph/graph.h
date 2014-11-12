@@ -57,6 +57,9 @@ namespace putslam {
             /// Save graph to file
             virtual void save2file(const std::string filename) const = 0;
 
+            /// Load graph from file
+            virtual void load(const std::string filename) = 0;
+
             /// Export camera path to file (RGB-D SLAM format)
             virtual void export2RGBDSLAM(const std::string filename) const = 0;
 
@@ -81,7 +84,7 @@ namespace putslam {
                     if (it->get()->type==Vertex::VERTEXSE3)
                         file << "plot3(" << std::setprecision (5) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << ", " << pointPropertySE3 << ");\n";
                     else if (it->get()->type==Vertex::VERTEX3D)
-                        file << "plot3(" << std::setprecision (5) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << ", " << pointProperty3D << ");\n";
+                        file << "plot3(" << std::setprecision (5) << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.x() << ", " << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.y() << ", " << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.z() << ", " << pointProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
                     putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
@@ -89,7 +92,7 @@ namespace putslam {
                     if (it->get()->type==Edge::EDGE_SE3)
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< linePropertySE3 << ");\n";
                     else if (it->get()->type==Edge::EDGE_3D)
-                        file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< lineProperty3D << ");\n";
+                        file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.z() << "], "<< lineProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.prunedEdges.begin(); it!=graph.prunedEdges.end();it++){
                     putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
@@ -97,7 +100,7 @@ namespace putslam {
                     if (it->get()->type==Edge::EDGE_SE3)
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< prunedEdgesPropertySE3 << ");\n";
                     else if (it->get()->type==Edge::EDGE_3D)
-                        file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< prunedEdgesProperty3D << ");\n";
+                        file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.z() << "], "<< prunedEdgesProperty3D << ");\n";
                 }
                 file << "xlabel('x [m]');\n ylabel('y [m]');\n zlabel('z [m]');\n";
                 file.close();

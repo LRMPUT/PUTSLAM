@@ -60,6 +60,9 @@ class GlobalGraph : public Graph {
         /// Save graph to file
         void save2file(const std::string filename) const;
 
+        /// Load graph from file
+        void load(const std::string filename);
+
         /// Export camera path to file (RGB-D SLAM format)
         void export2RGBDSLAM(const std::string filename) const;
 

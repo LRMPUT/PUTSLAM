@@ -40,21 +40,21 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
 
     factory = g2o::Factory::instance();
 
-    cameraOffset = new g2o::ParameterSE3Offset;
-    cameraOffset->setId(0);
+    //cameraOffset = new g2o::ParameterSE3Offset;
+    //cameraOffset->setId(0);
     Eigen::Isometry3d cameraPose;
     Eigen::Matrix3d R;  R  << 1,  0,  0,  0,  1,  0,  0,  0,  1;
     cameraPose = R; cameraPose.translation() = Vector3d(0.0, 0.0, 0.0);
-    cameraOffset->setOffset(cameraPose);
-    optimizer.addParameter(cameraOffset);
+    //cameraOffset->setOffset(cameraPose);
+    //optimizer.addParameter(cameraOffset);
 }
 
 PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
     Eigen::Isometry3d camPos;
     camPos = cameraPose.matrix();
     camPos.translation() = Vector3d (cameraPose(0,3), cameraPose(1,3), cameraPose(2,3));
-    cameraOffset->setOffset(camPos);    cameraOffset->setId(0);
-    optimizer.addParameter(cameraOffset);
+    //cameraOffset->setOffset(camPos);    cameraOffset->setId(0);
+    //optimizer.addParameter(cameraOffset);
 }
 
 /// Destructor
@@ -389,6 +389,11 @@ bool PoseGraphG2O::updateGraph(void){
 /// Save graph to file
 void PoseGraphG2O::save2file(const std::string filename) const{
     optimizer.save(filename.c_str());
+}
+
+/// Load graph from file
+void PoseGraphG2O::load(const std::string filename) {
+    this->loadG2O(filename);
 }
 
 /// Load Graph from g2o file

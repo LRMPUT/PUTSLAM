@@ -291,7 +291,7 @@ PointCloud createEnvironment(size_t pointsNo, float_type width, float_type lengt
     PointCloud room;
     std::uniform_real_distribution<double> distributionWidth(-width/2.0, width/2.0);
     std::uniform_real_distribution<double> distributionLength(-length/2.0, length/2.0);
-    std::uniform_real_distribution<double> distributionHeight(-height, height);
+    std::uniform_real_distribution<double> distributionHeight(-height/2.0, height/2.0);
 
     double patchSize[3]={0.05,0,0.05};
     std::uniform_real_distribution<double> distWidthPatch(-patchSize[0], patchSize[0]);
@@ -318,6 +318,50 @@ PointCloud createEnvironment(size_t pointsNo, float_type width, float_type lengt
     }
     std::cout << "room size " << room.size() << "\n";
     return room;
+}
+
+
+//converts local position to global
+Eigen::MatrixXd cloud2local(const Eigen::MatrixXd& cloud, const Mat34& sensorPose){
+    Eigen::MatrixXd tmp; tmp.resize(cloud.rows(),cloud.cols());
+    for (int i=0;i<cloud.rows();i++){
+        Mat34 pose; pose.setIdentity();
+        pose(0,3) = cloud(i,0); pose(1,3) = cloud(i,1); pose(2,3) = cloud(i,2);
+        //std::cout << cloud(i,1) << ", " << cloud(i,1) << ", " << cloud(i,2) << "\n";
+        pose.matrix() = sensorPose.matrix().inverse() * pose.matrix();
+        tmp(i,0) = pose(0,3); tmp(i,1) = pose(1,3); tmp(i,2) = pose(2,3);
+        //std::cout << tmp(i,0) << ", " << tmp(i,1) << ", " << tmp(i,2) << "\n";
+        //getchar();
+    }
+    return tmp;
+}
+
+//converts local position to global
+PointCloud cloud2global(const PointCloud& cloud, Mat34& sensorPose){
+    PointCloud tmp;
+    for (int i=0;i<cloud.size();i++){
+        Point3D point;
+        Mat34 pose; pose.setIdentity();
+        pose(0,3) = cloud[i].x; pose(1,3) = cloud[i].y; pose(2,3) = cloud[i].z;
+        pose.matrix() = sensorPose.matrix() * pose.matrix();
+        point.x = pose(0,3); point.y = pose(1,3); point.z = pose(2,3);
+        tmp.push_back(point);
+    }
+    return tmp;
+}
+
+//converts local position to global
+PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
+    PointCloud tmp;
+    for (int i=0;i<cloud.size();i++){
+        Point3D point;
+        Mat34 pose; pose.setIdentity();
+        pose(0,3) = cloud[i].x; pose(1,3) = cloud[i].y; pose(2,3) = cloud[i].z;
+        pose.matrix() = sensorPose.matrix().inverse() * pose.matrix();
+        point.x = pose(0,3); point.y = pose(1,3); point.z = pose(2,3);
+        tmp.push_back(point);
+    }
+    return tmp;
 }
 
 void saveImageFeatures(std::string filename, const Mat34 sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const KinectGrabber::UncertaintyModel& sensorModel){
@@ -374,6 +418,8 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
             Quaternion quatMotion(trans.rotation());
             RobotPose measurement(pos, quatMotion);
             Mat66 infoMat;
+            //setA = cloud2local(setA, trajectory[i]);
+            //setB = cloud2local(setB, trajectory[i]);
             if (expType==0)
                 infoMat.setIdentity();
             else if (expType==1){
@@ -410,12 +456,14 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
     }
 std::cout << "more edges\n";
     //additional edges
-    for (int i=7;i<trajectory.size();i++){
+    for (int i=2;i<trajectory.size();i++){
         //match and estimate transformation
-        for (int j=2;j<8;j++){
+        for (int j=2;j<18;j++){
+            if (i-j<0)
+                break;
             std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
             matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-            int efficientFeatures = 10;
+            int efficientFeatures = 50;
             if (setA.rows()>efficientFeatures){
                 Mat34 trans = transEst->computeTransformation(setB, setA);
                 //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
@@ -425,6 +473,8 @@ std::cout << "more edges\n";
                 Quaternion quatMotion(trans.rotation());
                 RobotPose measurement(pos, quatMotion);
                 Mat66 infoMat;
+                //setA = cloud2local(setA, trajectory[i]);
+                //setB = cloud2local(setB, trajectory[i]);
                 if (expType==0)
                     infoMat.setIdentity();
                 else if (expType==1){
@@ -524,15 +574,16 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
             if (!graph->addVertexFeature(vertexFeature))
                 std::cout << "error: vertex exists!\n";
 
-            Vec3 pos13(-cloudSeq[i][j].y, -cloudSeq[i][j].z, cloudSeq[i][j].x);
+            //Vec3 pos13(-cloudSeq[i][j].y, -cloudSeq[i][j].z, cloudSeq[i][j].x);
+            Vec3 pos13(cloudSeq[i][j].x, cloudSeq[i][j].y, cloudSeq[i][j].z);
             Mat33 infoMat13;
             if (expType==0)
                 infoMat13.setIdentity();
             else if (expType==1||expType==2||expType==3||expType==4){
                 uncertainty = uncertaintySet[i][j];
-                uncertainty(0,0) = uncertaintySet[i][j](1,1); uncertainty(0,1) = uncertaintySet[i][j](1,2); uncertainty(0,2) = uncertaintySet[i][j](0,1);
-                uncertainty(1,0) = uncertaintySet[i][j](2,1); uncertainty(1,1) = uncertaintySet[i][j](2,2); uncertainty(1,2) = uncertaintySet[i][j](0,2);
-                uncertainty(2,0) = uncertaintySet[i][j](0,1); uncertainty(2,1) = uncertaintySet[i][j](0,2); uncertainty(2,2) = uncertaintySet[i][j](0,0);
+                //uncertainty(0,0) = uncertaintySet[i][j](1,1); uncertainty(0,1) = uncertaintySet[i][j](1,2); uncertainty(0,2) = uncertaintySet[i][j](0,1);
+                //uncertainty(1,0) = uncertaintySet[i][j](2,1); uncertainty(1,1) = uncertaintySet[i][j](2,2); uncertainty(1,2) = uncertaintySet[i][j](0,2);
+                //uncertainty(2,0) = uncertaintySet[i][j](0,1); uncertainty(2,1) = uncertaintySet[i][j](0,2); uncertainty(2,2) = uncertaintySet[i][j](0,0);
                 // -y -z x
                 // [xx xy xz]    [yy yz yx]
                 // [yx yy yz] -> [zy zz zx]
@@ -550,17 +601,19 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
         }
     }
 
-    if (expType==4){
+    if (expType==2||expType==4){
         std::cout << "more edges\n";
         //additional edges
-        for (int i=7;i<trajectory.size();i++){
+        for (int i=2;i<trajectory.size();i++){
             //match and estimate transformation
-            for (int j=2;j<8;j++){
+            for (int j=2;j<18;j++){
+                if (i-j<0)
+                    break;
                 Eigen::MatrixXd setA(1, 3);
                 Eigen::MatrixXd setB(1, 3);
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-                int efficientFeatures = 10;
+                int efficientFeatures = 50;
                 if (setA.rows()>efficientFeatures){
                     Mat34 trans = transEst->computeTransformation(setB, setA);
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
@@ -771,28 +824,36 @@ int main(int argc, char * argv[])
 
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
+        std::string filename1= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.g2o";
+        graph->load(filename1);
+        std::string filename2= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.m";
+        graph->plot2file(filename2);
+        std::cout << "fdf\n";
+        getchar();
+        getchar();
 
-        int trialsNo =100;
+        int trialsNo =10;
         for (int i=0;i<trialsNo;i++){
 
             PointCloud room;
             size_t pointsNo = 5000;
             float_type roomDim[3] = {7, 7, 3};
             //room = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            room = createEnvironment(2000, 10, 6, 6);
+            room = createEnvironment(1000, 15, 15, 15);
             if (i==0) savePointCloud("../../resources/KabschUncertainty/room.m", room);
 
             std::cout << "\n\n\nTrajectory test\n";
             //create reference trajectory
             std::vector<Mat34> trajectory;
             //rectangular trajectory
-            /* trajectory.push_back(pose);
-            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
-            pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
+            /*Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
+            //pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
+            pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
+            trajectory.push_back(pose);
             int motions = 10;
             int motions_rot = 20;
-            Mat34 moveRot = quatFromEuler((M_PI/2.0)/float_type(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((roomDim[0]-3.0)/float_type(motions), 0.0, 0.0);
+            Mat34 moveRot = quatFromEuler(0,0,(-M_PI/2.0)/float_type(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0.0, 0.0, (roomDim[1]-3.0)/float_type(motions));
             for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
@@ -809,15 +870,20 @@ int main(int argc, char * argv[])
             // 0 -sin(2t)  -cos(2t)
             // i    j         k
             // -msin(2t)*k-2mcos^2(2t)*i-2msin^2(2t)*i+mcos(2t)*j
-            int trajectoryLength = 65;
+            int trajectoryLength = 130;
             for (int j=0;j<trajectoryLength;j++){
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
-                pose(0,3) = t; pose(1,3) = sin(2*t); pose(2,3) = cos(2*t);
-                pose(0,0) = 1/sqrt(5); pose(1,0) = (2*cos(2*t))/sqrt(5); pose(2,0) = (-2*sin(2*t))/sqrt(5);
-                pose(0,1) = 0; pose(1,1) = -sin(2*t); pose(2,1) = -cos(2*t);
-                pose(0,2) = -2/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = -sin(2*t)/sqrt(5);
+                pose(0,3) = cos(2*t); pose(1,3) = sin(2*t); pose(2,3) = t;
+                pose(0,0) = (-2*sin(2*t))/sqrt(5); pose(1,0) = (2*cos(2*t))/sqrt(5); pose(2,0) = -1/sqrt(5);
+                pose(0,1) = -cos(2*t); pose(1,1) = -sin(2*t); pose(2,1) = 0;
+                pose(0,2) = -sin(2*t)/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = +2/sqrt(5);
                 trajectory.push_back(pose);
+                /*if (j==0){
+                    std::cout << pose.matrix() << "\n";
+                    std::cout << pose.rotation().determinant() << "\n";
+                    getchar();
+                }*/
             }
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
@@ -838,6 +904,7 @@ int main(int argc, char * argv[])
             std::vector<PointCloud> cloudSeq;
             Mat34 sensorPose; sensorPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
             setAids = getCloud(sensorPose, sensorModel, room, cloudA, uncertaintyCloudA);
+            //cloudA = cloud2local(cloudA, sensorPose);
             cloudSeq.push_back(cloudA);
             setIds.push_back(setAids);
             saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel);
@@ -846,6 +913,7 @@ int main(int argc, char * argv[])
                 //get point clouds
                 sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
                 std::vector<int> setBids = getCloud(sensorPose, sensorModel, room, cloudB, uncertaintyCloudB);
+                //cloudB = cloud2local(cloudB, sensorPose);
 
                 std::string filename= "../../resources/simulator/frame" + std::to_string(i) + ".dat";
                 saveImageFeatures(filename, sensorPose, cloudB, setBids, sensorModel);
@@ -881,7 +949,7 @@ int main(int argc, char * argv[])
 
             //optimize
             std::cout << "optimization\n";
-            std::thread tOpt(optimizeAndPrune);
+            std::thread tOpt(optimize,70);//tOpt(optimizeAndPrune);
 
             std::cout << "end optimization Kabsch identity " << i << "\n";
             tOpt.join();
@@ -901,7 +969,7 @@ int main(int argc, char * argv[])
 
             //optimize
             std::cout << "optimization\n";
-            std::thread tOpt2(optimizeAndPrune);
+            std::thread tOpt2(optimize,70);//tOpt2(optimizeAndPrune);
             tOpt2.join();
             std::cout << "end optimization Kabsch uncertainty " << i << "\n";
 
@@ -922,7 +990,7 @@ int main(int argc, char * argv[])
 
             //optimize
             std::cout << "optimization\n";
-            std::thread tOpt3(optimizeAndPrune);
+            std::thread tOpt3(optimize,70);//tOpt3(optimizeAndPrune);
             tOpt3.join();
             std::cout << "end optimization Strasdat " << i << "\n";
 
@@ -943,7 +1011,7 @@ int main(int argc, char * argv[])
 
             //optimize
             std::cout << "optimization\n";
-            std::thread tOpt4(optimize,70);
+            std::thread tOpt4(optimize,70);//tOpt4(optimize,70);
             tOpt4.join();
             std::cout << "end optimization BA identity " << i << "\n";
 
