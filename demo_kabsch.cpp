@@ -18,7 +18,7 @@ std::default_random_engine generator;
 /// noise: x, y, z, qx, qy, qz
 float_type noise[6] = {0.01, 0.02, 0.03, 0.0, 0.000, 0.000};
 /// x, y, z, fi, psi, theta
-float_type transformation[6] = {0.1, 0.2, -0.3, 0.1, 0.2, -0.3};
+float_type transformation[6] = {0.1, 0.2, -0.3, 0.0, 0.0, -0.0};
 
 Graph * graph;
 
@@ -134,9 +134,9 @@ void saveTrajectory(std::string filename, std::vector<Mat34> trajectory, std::st
     }
     file << "];\n";
     file << "plot3(body_x, body_y, body_z, '"<< color << "', 'LineWidth',3); hold on\n";
-    /*for (size_t i = 0; i<trajectory.size();i++){
+    for (size_t i = 0; i<trajectory.size();i=i+trajectory.size()/10){
         plotCoordinates(file, trajectory[i]);
-    }*/
+    }
     file << "xlabel('x');\n"; file << "ylabel('y');\n"; file << "zlabel('z');\n";
 }
 
@@ -206,9 +206,10 @@ std::vector<int> getCloud(const Mat34& sensorPose, KinectGrabber::UncertaintyMod
         if (point2d(0)!=-1){
             Mat33 uncertainty;
             sensorModel.computeCov(point2d(0), point2d(1), point2d(2), uncertainty);
-            Point3D point = sampleFromMultivariateGaussian(Eigen::Vector3d(pointCamera(0), pointCamera(1), pointCamera(2)),uncertainty);
-            //point.x = pointCamera[0]; point.y = pointCamera[1]; point.z = pointCamera[2]; // no noise
-            setPoints.push_back(point);
+            Point3D point3D = sampleFromMultivariateGaussian(Eigen::Vector3d(pointCamera(0), pointCamera(1), pointCamera(2)),uncertainty);
+            //point3D.x = pointCamera[0]; point3D.y = pointCamera[1]; point3D.z = pointCamera[2]; // no noise
+            setPoints.push_back(point3D);
+            //sensorModel.computeCov(point3D.x, point3D.y, point3D.z, uncertainty);
             setUncertainty.push_back(uncertainty);
             pointIdentifiers.push_back(i);
         }
@@ -418,12 +419,12 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
             Quaternion quatMotion(trans.rotation());
             RobotPose measurement(pos, quatMotion);
             Mat66 infoMat;
-            //setA = cloud2local(setA, trajectory[i]);
-            //setB = cloud2local(setB, trajectory[i]);
             if (expType==0)
                 infoMat.setIdentity();
             else if (expType==1){
                 uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                 // [xx  xy  xz  xrx  xry  xrz ]    [yy  yz  yx  yry  yrz  yrx ]
                 // [yx  yy  yz  yrx  yry  yrz ] -> [zy  zz  zx  zry  zrz  zrx ]
                 // [zx  zy  zz  zrx  zry  zrz ]    [xy  xz  xx  xry  xrz  xrx ]
@@ -438,7 +439,20 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 unc(4,0) = uncertainty(5,1); unc(4,1) = uncertainty(5,2); unc(4,2) = uncertainty(5,0); unc(4,3) = uncertainty(5,4); unc(4,4) = uncertainty(5,5); unc(4,5) = uncertainty(5,3);
                 unc(5,0) = uncertainty(3,1); unc(5,1) = uncertainty(3,2); unc(5,2) = uncertainty(3,0); unc(5,3) = uncertainty(3,4); unc(5,4) = uncertainty(3,5); unc(5,5) = uncertainty(3,3);
                 */
+                //std::cout << "uncertainty: \n" << uncertainty << "\n";
                 infoMat = uncertainty.inverse();
+                /*Quaternion qqq(trans.rotation());
+                infoMat(0,0) = 1; infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
+                infoMat(1,0) = 0; infoMat(1,1) = 1; infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
+                infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = 1; infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
+                infoMat(3,0) = 0; infoMat(3,1) = 0; infoMat(3,2) = 0; infoMat(3,3)=1; infoMat(3,4)=0; infoMat(3,5)=0;
+                infoMat(4,0) = 0; infoMat(4,1) = 0; infoMat(4,2) = 0; infoMat(4,3)=0; infoMat(4,4)=1; infoMat(4,5)=0;
+                infoMat(5,0) = 0; infoMat(5,1) = 0; infoMat(5,2) = 0; infoMat(5,3)=0; infoMat(5,4)=0; infoMat(5,5)=1;*/
+                /*std::cout << "trans: \n" <<  trans.matrix() << "\n";
+                std::cout << "uncertainty: \n" <<  uncertainty << "\n";
+                getchar();*/
+                //std::cout << "info: \n" << infoMat << "\n";
+                //getchar();
             }
             else if (expType==2){
                 uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
@@ -473,13 +487,25 @@ std::cout << "more edges\n";
                 Quaternion quatMotion(trans.rotation());
                 RobotPose measurement(pos, quatMotion);
                 Mat66 infoMat;
-                //setA = cloud2local(setA, trajectory[i]);
-                //setB = cloud2local(setB, trajectory[i]);
                 if (expType==0)
                     infoMat.setIdentity();
                 else if (expType==1){
                     uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
+                    //uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                    //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     infoMat = uncertainty.inverse();
+                    /*Quaternion qqq(trans.rotation());
+                    infoMat(0,0) = 1; infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
+                    infoMat(1,0) = 0; infoMat(1,1) = 1; infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
+                    infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = 1; infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
+                    infoMat(3,0) = 0; infoMat(3,1) = 0; infoMat(3,2) = 0; infoMat(3,3)=1; infoMat(3,4)=0; infoMat(3,5)=0;
+                    infoMat(4,0) = 0; infoMat(4,1) = 0; infoMat(4,2) = 0; infoMat(4,3)=0; infoMat(4,4)=1; infoMat(4,5)=0;
+                    infoMat(5,0) = 0; infoMat(5,1) = 0; infoMat(5,2) = 0; infoMat(5,3)=0; infoMat(5,4)=0; infoMat(5,5)=1;*/
+                    /*Quaternion qqq(trans.rotation());
+                    std::cout << "trans x y z qx qy qz qw: " << trans(0,3) << ", " << trans(1,3) << ", " << trans(2,3) << ", " << qqq.w() << ", " << qqq.x() << ", " << qqq.y() << ", " << qqq.z() << ", "<< "\n";
+                    std::cout << "uncertainty: \n" << uncertainty << "\n";
+                    std::cout << "infoMat: \n" << infoMat << "\n";
+                    getchar();*/
                 }
                 else if (expType==2){
                     uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
@@ -563,7 +589,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const Ki
         }
 
         //add features
-        std::cout << "View points: " << cloudSeq[i].size() << "\n";
+        std::cout << "View points1: " << cloudSeq[i].size() << "\n";
         for (int j=0; j<cloudSeq[i].size(); j++){
             Mat34 featurePose;
             Mat34 sensor2feature; sensor2feature.setIdentity();
@@ -757,11 +783,12 @@ int main(int argc, char * argv[])
             setTransformed(i,0) = point.x(); setTransformed(i,1) = point.y(); setTransformed(i,2) = point.z();
         }
 
-        uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
-        std::cout << "uncertainty x y z qx qy qz: \n" << uncertainty << std::endl;
+        //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+        //std::cout << "uncertainty x y z qx qy qz: \n" << uncertainty << std::endl;
         uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
         std::cout << "uncertainty x y z qx qy qz (directly from quaternions): \n" << uncertainty << std::endl;
         save2file("../../resources/kabsch.m",setA, setB, setTransformed);
+        getchar();
 
         std::cout << "\n\n\nSingle transformation: room test\n";
         PointCloud roomTest;
@@ -794,7 +821,7 @@ int main(int argc, char * argv[])
         std::cout << "setAuncertainy: " << setAUncertainty[0](0,0) << ", " << setAUncertainty[0](1,1) << ", " << setAUncertainty[0](2,2) << "\n";
         uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
 
-        Mat66 uncertaintySensor = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+        //Mat66 uncertaintySensor = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
 
         Mat34 translation = sensorModel.config.pose*trans;
         trans(0,3) = translation(0,3); trans(1,3) = translation(1,3); trans(2,3) = translation(2,3);
@@ -804,8 +831,6 @@ int main(int argc, char * argv[])
         theta = atan2(trans.matrix()(2,1), trans.matrix()(2,2));
         std::cout << "euler: " << "fi: " << fi << ", psi: " << psi << ",theta: " << theta <<"\n";
         printUncertainty(uncertainty, trans, moveTab[0], moveTab[1], moveTab[2], moveTab[3], moveTab[4], moveTab[5]);
-
-        std::cout << "uncertainty in sensor frame!: x y z qx qy qz: \n" << uncertaintySensor << std::endl;
 
         ///sampling from ellipsoid
         int samplesNo=250;     // How many samples (columns) to draw
@@ -824,15 +849,13 @@ int main(int argc, char * argv[])
 
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
-        std::string filename1= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.g2o";
-        graph->load(filename1);
-        std::string filename2= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.m";
-        graph->plot2file(filename2);
-        std::cout << "fdf\n";
-        getchar();
-        getchar();
+        //std::string filename1= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.g2o";
+        //graph->load(filename1);
+        //std::string filename2= "../../resources/KabschUncertainty/resultsHelix/graphKabsch_g2o_BAident0.m";
+        //graph->plot2file(filename2);
+        //std::cout << "fdf\n"; getchar();
 
-        int trialsNo =10;
+        int trialsNo =100;
         for (int i=0;i<trialsNo;i++){
 
             PointCloud room;
@@ -846,15 +869,29 @@ int main(int argc, char * argv[])
             //create reference trajectory
             std::vector<Mat34> trajectory;
             //rectangular trajectory
-            /*Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
-            //pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
-            pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
+            /*Mat34 pose = quatFromEuler(0,0,(M_PI/2.0))*Eigen::Translation<double,3>(0,0,0);
+            pose(0,3)=(-roomDim[0]/2.0)+1.5; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = roomDim[2]/2.0;
+            //pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
             trajectory.push_back(pose);
             int motions = 10;
-            int motions_rot = 20;
-            Mat34 moveRot = quatFromEuler(0,0,(-M_PI/2.0)/float_type(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0.0, 0.0, (roomDim[1]-3.0)/float_type(motions));
-            for (int j=0;j<4;j++){
+            int motions_rot = 90;
+            Mat34 moveRot = quatFromEuler((2*M_PI)/float_type(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((roomDim[1]-3.0)/float_type(motions),-(roomDim[1]-3.0)/float_type(motions), 0.0);
+            for (int i=0;i<motions;i++){
+                pose.matrix() *= moveForward.matrix();
+                trajectory.push_back(pose);
+            }
+            Mat34 moveForward1 = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,(roomDim[1]-3.0)/float_type(motions), -(roomDim[1]-3.0)/float_type(motions));
+            for (int i=0;i<motions;i++){
+                pose.matrix() *= moveForward1.matrix();
+                trajectory.push_back(pose);
+            }
+            Mat34 moveForward2 = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(-(roomDim[1]-3.0)/float_type(motions),0, -(roomDim[1]-3.0)/float_type(motions));
+            for (int i=0;i<motions;i++){
+                pose.matrix() *= moveForward2.matrix();
+                trajectory.push_back(pose);
+            }*/
+            /*for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
                     pose.matrix() *= moveForward.matrix();
@@ -870,7 +907,7 @@ int main(int argc, char * argv[])
             // 0 -sin(2t)  -cos(2t)
             // i    j         k
             // -msin(2t)*k-2mcos^2(2t)*i-2msin^2(2t)*i+mcos(2t)*j
-            int trajectoryLength = 130;
+            int trajectoryLength = 65;
             for (int j=0;j<trajectoryLength;j++){
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
@@ -879,11 +916,11 @@ int main(int argc, char * argv[])
                 pose(0,1) = -cos(2*t); pose(1,1) = -sin(2*t); pose(2,1) = 0;
                 pose(0,2) = -sin(2*t)/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = +2/sqrt(5);
                 trajectory.push_back(pose);
-                /*if (j==0){
-                    std::cout << pose.matrix() << "\n";
-                    std::cout << pose.rotation().determinant() << "\n";
-                    getchar();
-                }*/
+                //if (j==0){
+                //    std::cout << pose.matrix() << "\n";
+                //    std::cout << pose.rotation().determinant() << "\n";
+                //    getchar();
+                //}
             }
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
@@ -979,7 +1016,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");
-
+/*
             //Strasdat
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -1106,7 +1143,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryBAposeuncertfull = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAposeuncertfull" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAposeuncertfull, "y");
-
+*/
             /*std::array<float_type, 3> errors;
             std::vector<float_type> errorRPE = computeRPE(trajectory,trajectory);
             errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
