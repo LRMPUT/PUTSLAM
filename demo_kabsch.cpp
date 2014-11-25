@@ -208,12 +208,14 @@ std::vector<int> getCloud(const Mat34& sensorPose, KinectGrabber::UncertaintyMod
             sensorModel.computeCov(point2d(0), point2d(1), point2d(2), uncertainty);
             Point3D point3D = sampleFromMultivariateGaussian(Eigen::Vector3d(pointCamera(0), pointCamera(1), pointCamera(2)),uncertainty);
             //point3D.x = pointCamera[0]; point3D.y = pointCamera[1]; point3D.z = pointCamera[2]; // no noise
+            //point3D.x = room[i].x; point3D.y = room[i].y; point3D.z = room[i].z; // no noise global frame
             setPoints.push_back(point3D);
-            //sensorModel.computeCov(point3D.x, point3D.y, point3D.z, uncertainty);
+            sensorModel.computeCov(point3D.x, point3D.y, point3D.z, uncertainty);
             setUncertainty.push_back(uncertainty);
             pointIdentifiers.push_back(i);
         }
     }
+    std::cout << "points in view: " << setPoints.size() << "\n";
     return pointIdentifiers;
 }
 
@@ -431,28 +433,28 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 // [rxx rxy rxz rxrx rxry rxrz]    [ryy ryz ryx ryry ryrz ryrx]
                 // [ryx ryy ryz ryrx ryry ryrz] -> [rzy rzz rzx rzry rzrz rzrx]
                 // [rzx rzy rzz rzrx rzry rzrz]    [rxy rxz rxx rxry rxrz rxrx]
-                //Mat66 unc;
-                /*unc(0,0) = uncertainty(1,1); unc(0,1) = uncertainty(1,2); unc(0,2) = uncertainty(1,0); unc(0,3) = uncertainty(1,4); unc(0,4) = uncertainty(1,5); unc(0,5) = uncertainty(1,3);
-                unc(1,0) = uncertainty(2,1); unc(1,1) = uncertainty(2,2); unc(1,2) = uncertainty(2,0); unc(1,3) = uncertainty(2,4); unc(1,4) = uncertainty(2,5); unc(1,5) = uncertainty(2,3);
-                unc(2,0) = uncertainty(0,1); unc(2,1) = uncertainty(0,2); unc(2,2) = uncertainty(0,0); unc(2,3) = uncertainty(0,4); unc(2,4) = uncertainty(0,5); unc(2,5) = uncertainty(0,3);
-                unc(3,0) = uncertainty(4,1); unc(3,1) = uncertainty(4,2); unc(3,2) = uncertainty(4,0); unc(3,3) = uncertainty(4,4); unc(3,4) = uncertainty(4,5); unc(3,5) = uncertainty(4,3);
-                unc(4,0) = uncertainty(5,1); unc(4,1) = uncertainty(5,2); unc(4,2) = uncertainty(5,0); unc(4,3) = uncertainty(5,4); unc(4,4) = uncertainty(5,5); unc(4,5) = uncertainty(5,3);
-                unc(5,0) = uncertainty(3,1); unc(5,1) = uncertainty(3,2); unc(5,2) = uncertainty(3,0); unc(5,3) = uncertainty(3,4); unc(5,4) = uncertainty(3,5); unc(5,5) = uncertainty(3,3);
-                */
+                /*Mat66 unc;
+                unc(0,0) = uncertainty(1,1); unc(0,1) = 0; unc(0,2) = 0; unc(0,3) = 0; unc(0,4) = 0; unc(0,5) = 0;
+                unc(1,0) = 0; unc(1,1) = uncertainty(2,2); unc(1,2) = 0; unc(1,3) = 0; unc(1,4) = 0; unc(1,5) = 0;
+                unc(2,0) = 0; unc(2,1) = 0; unc(2,2) = uncertainty(3,3); unc(2,3) = 0; unc(2,4) = 0; unc(2,5) = 0;
+                unc(3,0) = 0; unc(3,1) = 0; unc(3,2) = 0; unc(3,3) = 1; unc(3,4) = 0; unc(3,5) = 0;
+                unc(4,0) = 0; unc(4,1) = 0; unc(4,2) = 0; unc(4,3) = 0; unc(4,4) = 1; unc(4,5) = 0;
+                unc(5,0) = 0; unc(5,1) = 0; unc(5,2) = 0; unc(5,3) = 0; unc(5,4) = 0; unc(5,5) = 1;
+                uncertainty = unc;*/
                 //std::cout << "uncertainty: \n" << uncertainty << "\n";
                 infoMat = uncertainty.inverse();
                 /*Quaternion qqq(trans.rotation());
-                infoMat(0,0) = 1; infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
-                infoMat(1,0) = 0; infoMat(1,1) = 1; infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
-                infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = 1; infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
+                infoMat(0,0) = infoMat(0,0); infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
+                infoMat(1,0) = 0; infoMat(1,1) = infoMat(1,1); infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
+                infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = infoMat(2,2); infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
                 infoMat(3,0) = 0; infoMat(3,1) = 0; infoMat(3,2) = 0; infoMat(3,3)=1; infoMat(3,4)=0; infoMat(3,5)=0;
                 infoMat(4,0) = 0; infoMat(4,1) = 0; infoMat(4,2) = 0; infoMat(4,3)=0; infoMat(4,4)=1; infoMat(4,5)=0;
-                infoMat(5,0) = 0; infoMat(5,1) = 0; infoMat(5,2) = 0; infoMat(5,3)=0; infoMat(5,4)=0; infoMat(5,5)=1;*/
+                infoMat(5,0) = 0; infoMat(5,1) = 0; infoMat(5,2) = 0; infoMat(5,3)=0; infoMat(5,4)=0; infoMat(5,5)=1;
+                */
                 /*std::cout << "trans: \n" <<  trans.matrix() << "\n";
                 std::cout << "uncertainty: \n" <<  uncertainty << "\n";
+                std::cout << "info: \n" << infoMat << "\n";
                 getchar();*/
-                //std::cout << "info: \n" << infoMat << "\n";
-                //getchar();
             }
             else if (expType==2){
                 uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
@@ -493,11 +495,19 @@ std::cout << "more edges\n";
                     uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
                     //uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
+                    /*Mat66 unc;
+                    unc(0,0) = uncertainty(1,1); unc(0,1) = 0; unc(0,2) = 0; unc(0,3) = 0; unc(0,4) = 0; unc(0,5) = 0;
+                    unc(1,0) = 0; unc(1,1) = uncertainty(2,2); unc(1,2) = 0; unc(1,3) = 0; unc(1,4) = 0; unc(1,5) = 0;
+                    unc(2,0) = 0; unc(2,1) = 0; unc(2,2) = uncertainty(3,3); unc(2,3) = 0; unc(2,4) = 0; unc(2,5) = 0;
+                    unc(3,0) = 0; unc(3,1) = 0; unc(3,2) = 0; unc(3,3) = 1; unc(3,4) = 0; unc(3,5) = 0;
+                    unc(4,0) = 0; unc(4,1) = 0; unc(4,2) = 0; unc(4,3) = 0; unc(4,4) = 1; unc(4,5) = 0;
+                    unc(5,0) = 0; unc(5,1) = 0; unc(5,2) = 0; unc(5,3) = 0; unc(5,4) = 0; unc(5,5) = 1;
+                    uncertainty = unc;*/
                     infoMat = uncertainty.inverse();
                     /*Quaternion qqq(trans.rotation());
-                    infoMat(0,0) = 1; infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
-                    infoMat(1,0) = 0; infoMat(1,1) = 1; infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
-                    infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = 1; infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
+                    infoMat(0,0) = infoMat(0,0); infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
+                    infoMat(1,0) = 0; infoMat(1,1) = infoMat(1,1); infoMat(1,2) = 0; infoMat(1,3) = 0; infoMat(1,4) = 0; infoMat(1,5) = 0;
+                    infoMat(2,0) = 0; infoMat(2,1) = 0; infoMat(2,2) = infoMat(2,2); infoMat(2,3) = 0; infoMat(2,4) = 0; infoMat(2,5) = 0;
                     infoMat(3,0) = 0; infoMat(3,1) = 0; infoMat(3,2) = 0; infoMat(3,3)=1; infoMat(3,4)=0; infoMat(3,5)=0;
                     infoMat(4,0) = 0; infoMat(4,1) = 0; infoMat(4,2) = 0; infoMat(4,3)=0; infoMat(4,4)=1; infoMat(4,5)=0;
                     infoMat(5,0) = 0; infoMat(5,1) = 0; infoMat(5,2) = 0; infoMat(5,3)=0; infoMat(5,4)=0; infoMat(5,5)=1;*/
@@ -912,15 +922,27 @@ int main(int argc, char * argv[])
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
                 pose(0,3) = cos(2*t); pose(1,3) = sin(2*t); pose(2,3) = t;
-                pose(0,0) = (-2*sin(2*t))/sqrt(5); pose(1,0) = (2*cos(2*t))/sqrt(5); pose(2,0) = -1/sqrt(5);
+                pose(0,0) = -sin(2*t)/sqrt(5); pose(1,0) = cos(2*t)/sqrt(5); pose(2,0) = +2/sqrt(5);
+                pose(0,1) = cos(2*t); pose(1,1) = sin(2*t); pose(2,1) = 0;
+                pose(0,2) = (-2*sin(2*t))/sqrt(5); pose(1,2) = (2*cos(2*t))/sqrt(5); pose(2,2) = -1/sqrt(5);
+
+                /*pose(0,0) = (-2*sin(2*t))/sqrt(5); pose(1,0) = (2*cos(2*t))/sqrt(5); pose(2,0) = -1/sqrt(5);
                 pose(0,1) = -cos(2*t); pose(1,1) = -sin(2*t); pose(2,1) = 0;
-                pose(0,2) = -sin(2*t)/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = +2/sqrt(5);
+                pose(0,2) = -sin(2*t)/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = +2/sqrt(5);*/
+
+                /*pose(0,0) = cos(2*t); pose(1,0) = sin(2*t); pose(2,0) = 0;
+                pose(0,1) = (-2*sin(2*t))/sqrt(5); pose(1,1) = (2*cos(2*t))/sqrt(5); pose(2,1) = -1/sqrt(5);
+                pose(0,2) = -sin(2*t)/sqrt(5); pose(1,2) = cos(2*t)/sqrt(5); pose(2,2) = +2/sqrt(5);*/
+
+                /*pose(0,0) = 1; pose(1,0) = 0; pose(2,0) = 0;
+                pose(0,1) = 0; pose(1,1) = 1; pose(2,1) = 0;
+                pose(0,2) = 0; pose(1,2) = 0; pose(2,2) = 1;*/
                 trajectory.push_back(pose);
-                //if (j==0){
-                //    std::cout << pose.matrix() << "\n";
-                //    std::cout << pose.rotation().determinant() << "\n";
-                //    getchar();
-                //}
+                /*if (j==0){
+                    std::cout << "orientation: \n" << pose.matrix() << "\n";
+                    std::cout << pose.rotation().determinant() << "\n";
+                    getchar();
+                }*/
             }
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
@@ -941,6 +963,7 @@ int main(int argc, char * argv[])
             std::vector<PointCloud> cloudSeq;
             Mat34 sensorPose; sensorPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
             setAids = getCloud(sensorPose, sensorModel, room, cloudA, uncertaintyCloudA);
+            savePointCloud("../../resources/KabschUncertainty/cloud0.m", cloudA);
             //cloudA = cloud2local(cloudA, sensorPose);
             cloudSeq.push_back(cloudA);
             setIds.push_back(setAids);
@@ -949,8 +972,14 @@ int main(int argc, char * argv[])
             for (int i=1;i<trajectory.size();i++){
                 //get point clouds
                 sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
+
+                std::cout << "sensor pose: " << sensorPose.matrix() << "\n";
+                std::cout << "sensor pose det : " << sensorPose.matrix().determinant() << "\n";
                 std::vector<int> setBids = getCloud(sensorPose, sensorModel, room, cloudB, uncertaintyCloudB);
                 //cloudB = cloud2local(cloudB, sensorPose);
+
+                std::string filenameCloud= "../../resources/KabschUncertainty/cloud" + std::to_string(i) + ".m";
+                savePointCloud(filenameCloud.c_str(), cloudB);
 
                 std::string filename= "../../resources/simulator/frame" + std::to_string(i) + ".dat";
                 saveImageFeatures(filename, sensorPose, cloudB, setBids, sensorModel);
@@ -973,8 +1002,8 @@ int main(int argc, char * argv[])
                 setIds.push_back(setBids);
                 uncertaintySet.push_back(uncertaintyCloudB);
             }
-            std::cout << "koniec\n";
-           // getchar();
+            /*std::cout << "koniec\n";
+            getchar();*/
             std::string filename= "../../resources/KabschUncertainty/trajectorySensor" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectorySensor, "r");
 

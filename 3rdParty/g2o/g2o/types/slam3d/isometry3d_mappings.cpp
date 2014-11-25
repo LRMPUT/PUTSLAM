@@ -93,6 +93,7 @@ namespace g2o {
     // functions to handle the toVector of the whole transformations
     Vector6d toVectorMQT(const Isometry3d& t) {
       Vector6d v;
+      //v.block<3,1>(3,0)=toEuler(extractRotation(t));
       v.block<3,1>(3,0) = toCompactQuaternion(extractRotation(t));
       v.block<3,1>(0,0) = t.translation();
       return v;
@@ -116,6 +117,7 @@ namespace g2o {
 
     Isometry3d fromVectorMQT(const Vector6d& v){
       Isometry3d t;
+      //t = fromEuler(v.block<3,1>(3,0));
       t = fromCompactQuaternion(v.block<3,1>(3,0));
       t.translation() = v.block<3,1>(0,0);
       return t;

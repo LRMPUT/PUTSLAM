@@ -231,9 +231,13 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     edge->setVertex(1, to);
     edge->read(edgeStream);
     edge->setId(id);
+    //g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
+    //rk->setDelta(1);
+    //edge->setRobustKernel(rk);
     if (!optimizer.addEdge(edge)) {
         cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
+      //  delete rk;
     }
 }
 
