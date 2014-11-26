@@ -129,17 +129,19 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
         element = factory->construct("VERTEX_SE3:QUAT", elemBitset);
     else if (type==Vertex::VERTEX3D)
         element = factory->construct("VERTEX_TRACKXYZ", elemBitset);
+    else if (type==Vertex::VERTEXSE2)
+        element = factory->construct("VERTEX_SE2", elemBitset);
     else {
         std::cout << "error: unknown vertex type!\n";
         return false;
     }
-    g2o::OptimizableGraph::Vertex* vse3 = static_cast<g2o::OptimizableGraph::Vertex*>(element);
-    vse3->read(vertex);
-    vse3->setId(id);
+    g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(element);
+    vert->read(vertex);
+    vert->setId(id);
     if (graph.vertices.size()==1){
-        vse3->setFixed(true);
+        vert->setFixed(true);
     }
-    if (!optimizer.addVertex(vse3)) {
+    if (!optimizer.addVertex(vert)) {
       std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
     }
 }
@@ -210,6 +212,39 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
     }
 }
 
+/**
+ * adds a vertex to the graph - x,y,theta.
+ * returns true, on success, or false on failure.
+ */
+bool PoseGraphG2O::addVertex(const VertexSE2& v){
+    mtxGraph.lock();
+    //add vertex
+    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+        graph.vertices.push_back(std::unique_ptr<Vertex>(new VertexSE2(v)));//update putslam structure
+        std::stringstream currentLine;
+        currentLine << v.pos.x() << ' ' << v.pos.y() << ' ' << v.theta;
+        addVertexG2O(v.vertexId, currentLine, Vertex::VERTEXSE2);
+        mtxGraph.unlock();
+        return true;
+    }
+    else {
+        mtxGraph.unlock();
+        return true;
+    }
+}
+
+/**
+ * adds a vertex to the graph - x,y,theta
+ * returns true, on success, or false on failure.
+ */
+bool PoseGraphG2O::addVertexSE2(const VertexSE2& v){
+    mtxBuffGraph.lock();
+    bufferGraph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE2(v)));
+    mtxBuffGraph.unlock();
+    updateGraph();//try to update graph
+    return true;
+}
+
 /// add edge to g2o interface
 bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast32_t toId, std::stringstream& edgeStream, Edge::Type type){
     g2o::HyperGraph::GraphElemBitset elemBitset;
@@ -220,6 +255,8 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
         element = factory->construct("EDGE_SE3:QUAT", elemBitset);
     else if (type==Edge::EDGE_3D)
         element = factory->construct("EDGE_SE3_TRACKXYZ", elemBitset);
+    else if (type==Edge::EDGE_SE2)
+        element = factory->construct("EDGE_SE2", elemBitset);
     else {
         std::cout << "error: unknown edge type!\n";
         return false;
@@ -231,9 +268,9 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     edge->setVertex(1, to);
     edge->read(edgeStream);
     edge->setId(id);
-    //g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
+    g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
     //rk->setDelta(1);
-    //edge->setRobustKernel(rk);
+    edge->setRobustKernel(rk);
     if (!optimizer.addEdge(edge)) {
         cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
@@ -334,6 +371,50 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
 }
 
 /**
+ * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+ * does nothing and returns false. Otherwise it returns true.
+ */
+bool PoseGraphG2O::addEdge(EdgeSE2& e){
+    mtxGraph.lock();
+    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
+        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+        mtxGraph.unlock();
+        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+        addVertexSE2(putslam::VertexSE2(e.fromVertexId, pos, rot));
+        mtxGraph.lock();
+    }
+    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+        mtxGraph.unlock();
+        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+        addVertexSE2(putslam::VertexSE2(e.toVertexId, pos, rot));
+        mtxGraph.lock();
+    }
+    e.id = graph.edges.size();
+    graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(e)));
+    std::stringstream currentLine;
+    currentLine << e.trans.x() << ' ' << e.trans.y() << ' ' << e.theta
+                << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2)
+                << ' ' << e.info(1,1) << ' ' << e.info(1,2)
+                << ' ' << e.info(2,2);
+    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE2);
+    mtxGraph.unlock();
+    return true;
+}
+
+/**
+ * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+ * does nothing and returns false. Otherwise it returns true.
+ */
+bool PoseGraphG2O::addEdgeSE2(const EdgeSE2& e){
+    mtxBuffGraph.lock();
+    bufferGraph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(e)));
+    mtxBuffGraph.unlock();
+    updateGraph();//try to update graph
+    return true;
+}
+
+/**
  * update graph: adds vertices and edges to the graph.
  * returns true, on success, or false on failure.
  */
@@ -365,6 +446,13 @@ bool PoseGraphG2O::updateGraph(void){
                     return false;
                 }
             }
+            else if (it->get()->type==Vertex::VERTEXSE2){
+                if (!addVertex(*(putslam::VertexSE2*)it->get())){
+                    mtxGraph.unlock();
+                    std::cout << "could not add vertex SE2\n";
+                    return false;
+                }
+            }
         }
         for (putslam::PoseGraph::EdgeSet::iterator it = tmpGraph.edges.begin(); it!=tmpGraph.edges.end();it++){
             if (it->get()->type==Edge::EDGE_3D){
@@ -380,6 +468,14 @@ bool PoseGraphG2O::updateGraph(void){
                 if (!addEdge(*(EdgeSE3*)it->get())){
                     mtxGraph.unlock();
                     std::cout << "could not add edge SE3\n";
+                    return false;
+                }
+            }
+            else if (it->get()->type==Edge::EDGE_SE2){
+                //std::cout << "add Edge SE3\n";
+                if (!addEdge(*(EdgeSE2*)it->get())){
+                    mtxGraph.unlock();
+                    std::cout << "could not add edge SE2\n";
                     return false;
                 }
             }
@@ -445,10 +541,19 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 if (!addVertexFeature(vertex))
                     std::cout << "error: vertex exists!\n";
             }
+            else if (lineType == "VERTEX_SE2"){
+                unsigned int id;
+                float_type theta;
+                is >> id >> pos[0] >> pos[1] >> theta;
+                Eigen::Vector2d position(pos[0], pos[1]);
+                VertexSE2 vertex(id, position, theta);
+                if (!addVertexSE2(vertex))
+                    std::cout << "error: vertex exists!\n";
+            }
             else if (lineType == "EDGE_SE3:QUAT"){
                 unsigned int to, from;
                 float_type info[21];
-                is >> to >> from >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
+                is >> from >> to >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
                 for (int i=0;i<21;i++) is >> info[i];
                 Vec3 position(pos[0], pos[1], pos[2]); Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
                 RobotPose trans(position, qrot);
@@ -459,22 +564,36 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 infoMat(3,0) = info[3]; infoMat(3,1) = info[8]; infoMat(3,2) = info[12]; infoMat(3,3) = info[15]; infoMat(3,4) = info[16]; infoMat(3,5) = info[17];
                 infoMat(4,0) = info[4]; infoMat(4,1) = info[9]; infoMat(4,2) = info[13]; infoMat(4,3) = info[16]; infoMat(4,4) = info[18]; infoMat(4,5) = info[19];
                 infoMat(5,0) = info[5]; infoMat(5,1) = info[10]; infoMat(5,2) = info[14]; infoMat(5,3) = info[17]; infoMat(5,4) = info[19]; infoMat(5,5) = info[20];
-                EdgeSE3 edge(trans,infoMat,to,from);
+                EdgeSE3 edge(trans,infoMat,from, to);
                 if (!addEdgeSE3(edge))
                     std::cout << "error: vertex doesn't exist!\n";
             }
             else if (lineType == "EDGE_SE3_TRACKXYZ"){
                 unsigned int to, from, sensorFrame;
                 float_type info[6];
-                is >> to >> from >> sensorFrame >> pos[0] >> pos[1] >> pos[2];
+                is >> from >> to >> sensorFrame >> pos[0] >> pos[1] >> pos[2];
                 for (int i=0;i<6;i++) is >> info[i];
                 Vec3 position(pos[0], pos[1], pos[2]);
                 Mat33 infoMat;
                 infoMat(0,0) = info[0]; infoMat(0,1) = info[1]; infoMat(0,2) = info[2];
                 infoMat(1,0) = info[1]; infoMat(1,1) = info[3]; infoMat(1,2) = info[4];
                 infoMat(2,0) = info[2]; infoMat(2,1) = info[4]; infoMat(2,2) = info[5];
-                Edge3D edge(position, infoMat, to, from);
+                Edge3D edge(position, infoMat, from, to);
                 if (!addEdge3D(edge))
+                    std::cout << "error: vertex doesn't exist!\n";
+            }
+            else if (lineType == "EDGE_SE2"){
+                unsigned int to, from;
+                float_type info[6], theta;
+                is >> from >> to >> pos[0] >> pos[1] >> theta;
+                for (int i=0;i<6;i++) is >> info[i];
+                Eigen::Vector2d position(pos[0], pos[1]);
+                Mat33 infoMat;
+                infoMat(0,0) = info[0]; infoMat(0,1) = info[1]; infoMat(0,2) = info[2];
+                infoMat(1,0) = info[1]; infoMat(1,1) = info[3]; infoMat(1,2) = info[4];
+                infoMat(2,0) = info[2]; infoMat(2,1) = info[4]; infoMat(2,2) = info[5];
+                EdgeSE2 edge(position, theta, infoMat, from, to);
+                if (!addEdgeSE2(edge))
                     std::cout << "error: vertex doesn't exist!\n";
             }
         }
@@ -492,6 +611,13 @@ std::vector<Mat34> PoseGraphG2O::getTrajectory(void) const{
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
             Mat34 pose = ((putslam::VertexSE3*)it->get())->nodeSE3.pos * ((putslam::VertexSE3*)it->get())->nodeSE3.rot;
+            vertices.push_back(pose);
+        }
+        if (it->get()->type==Vertex::VERTEXSE2){
+            Mat34 pose; pose.setIdentity();
+            pose(0,0) = cos(((putslam::VertexSE2*)it->get())->theta); pose(0,1) = -sin(((putslam::VertexSE2*)it->get())->theta);
+            pose(1,0) = sin(((putslam::VertexSE2*)it->get())->theta); pose(1,1) = cos(((putslam::VertexSE2*)it->get())->theta);
+            pose(0,3) = ((putslam::VertexSE2*)it->get())->pos(0); pose(1,3) = ((putslam::VertexSE2*)it->get())->pos(1);
             vertices.push_back(pose);
         }
     }
@@ -587,6 +713,11 @@ void PoseGraphG2O::updateEstimate(void){
         ((Vertex3D*)itVertex->get())->keypoint.depthFeature.y() = estimate[1];
         ((Vertex3D*)itVertex->get())->keypoint.depthFeature.z() = estimate[2];
       }
+      if (itVertex->get()->type==Vertex::VERTEXSE2){
+        ((VertexSE2*)itVertex->get())->pos.x() = estimate[0];
+        ((VertexSE2*)itVertex->get())->pos.y() = estimate[1];
+        ((VertexSE2*)itVertex->get())->theta = estimate[2];
+      }
       else if (itVertex->get()->type==Vertex::VERTEXSE3){
             ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.x() = estimate[0];
             ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.y() = estimate[1];
@@ -599,16 +730,6 @@ void PoseGraphG2O::updateEstimate(void){
     }
     mtxGraph.unlock();
     updateGraph();
-}
-
-/// Find all edges which points to the vertex 'toVertexId'
-std::vector<unsigned int> PoseGraphG2O::findIncominEdges(unsigned int toVertexId){
-    std::vector<unsigned int> edgeIds;
-    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
-        if (it->get()->toVertexId == toVertexId)
-            edgeIds.push_back(it->get()->id);
-    }
-    return edgeIds;
 }
 
 /// search for sub-graphs which aren't anchored and anchor them

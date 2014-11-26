@@ -272,6 +272,76 @@ namespace putslam {
         }
 
         /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
+        virtual const Mat33 computeUncertainty2D(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
+            Mat33 dgdTheta; dgdTheta.setZero();
+            Mat33 uncert;
+            Quaternion q(transformation.rotation());
+            const double& q0 = q.w();
+            const double& q1 = q.x();
+            const double& q2 = q.y();
+            const double& q3 = q.z();
+            double roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)); // r32/r33
+            double pitch = asin(2*(q0*q2-q3*q1));
+            double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+            double theta = roll;
+
+            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+
+            Eigen::MatrixXd Cx(2*2*setA.rows(),2*2*setA.rows());
+            Cx = Eigen::ArrayXXd::Zero(2*2*setA.rows(), 2*2*setA.rows());
+            Eigen::MatrixXd dgdX(2*2*setA.rows(),3);
+            float_type k = 1.0/setA.rows();
+            for (size_t i=0;i<setA.rows();i++){
+                float_type xa = setA(i,0); float_type ya = setA(i,2);
+                float_type xb = setB(i,0); float_type yb = setB(i,2);
+
+                dgdTheta(0,0) += 2.0;
+                dgdTheta(0,1) += 0.0;
+                dgdTheta(0,2) += -(2.0)*sin(theta)*xb-(2.0)*yb*cos(theta);
+
+                dgdTheta(1,1) += 2.0;
+                dgdTheta(1,2) += (2.0)*cos(theta)*xb-(2.0)*sin(theta)*yb;
+
+                dgdTheta(2,2) += (2.0)*(ya-sin(theta)*xb-yb*cos(theta)-y)*(sin(theta)*xb+yb*cos(theta))+(2.0)*pow(cos(theta)*xb-sin(theta)*yb,2.0)+(2.0)*pow(sin(theta)*xb+yb*cos(theta),2.0)-(2.0)*(x-xa+cos(theta)*xb-sin(theta)*yb)*(cos(theta)*xb-sin(theta)*yb);
+
+                Cx(i*2,i*2) = setAUncertainty[i].matrix()(0,0); Cx(i*2,i*2+1) = setAUncertainty[i].matrix()(0,2);
+                Cx(i*2+1,i*2) = setAUncertainty[i].matrix()(2,0); Cx(i*2+1,i*2+1) = setAUncertainty[i].matrix()(2,2);
+                Cx(setA.rows()*2+i*2,setA.rows()*2+i*2) = setBUncertainty[i].matrix()(0,0); Cx(setA.rows()*2+i*2,setA.rows()*2+i*2+1) = setBUncertainty[i].matrix()(0,2);
+                Cx(setA.rows()*2+i*2+1,setA.rows()*2+i*2) = setBUncertainty[i].matrix()(2,0); Cx(setA.rows()*2+i*2+1,setA.rows()*2+i*2+1) = setBUncertainty[i].matrix()(2,2);
+                //Cx.block<2,2>(i*2,i*2) = setAUncertainty[i].matrix().block<2,2>(0,0);
+                //Cx.block<2,2>(setA.rows()*2+i*2,setA.rows()*2+i*2) = setBUncertainty[i].block<2,2>(0,0);
+
+                dgdX(i*2,0) = -2.0;
+                dgdX(i*2,1) = 0.0;
+                dgdX(i*2,2) = (2.0)*sin(theta)*xb+(2.0)*yb*cos(theta);
+
+                dgdX(i*2+1,0) = 0.0;
+                dgdX(i*2+1,1) = -2.0;
+                dgdX(i*2+1,2) = -(2.0)*cos(theta)*xb+(2.0)*sin(theta)*yb;
+
+                dgdX(setA.rows()*2+i*2,0) = (2.0)*cos(theta);
+                dgdX(setA.rows()*2+i*2,1) = (2.0)*sin(theta);
+                dgdX(setA.rows()*2+i*2,2) = -(2.0)*sin(theta)*(x-xa+cos(theta)*xb-sin(theta)*yb)-(2.0)*cos(theta)*(sin(theta)*xb+yb*cos(theta))-(2.0)*(ya-sin(theta)*xb-yb*cos(theta)-y)*cos(theta)+(2.0)*sin(theta)*(cos(theta)*xb-sin(theta)*yb);
+
+                dgdX(setA.rows()*2+i*2+1,0) = -(2.0)*sin(theta);
+                dgdX(setA.rows()*2+i*2+1,1) = (2.0)*cos(theta);
+                dgdX(setA.rows()*2+i*2+1,2) = (2.0)*sin(theta)*(ya-sin(theta)*xb-yb*cos(theta)-y)+(2.0)*cos(theta)*(cos(theta)*xb-sin(theta)*yb)-(2.0)*(x-xa+cos(theta)*xb-sin(theta)*yb)*cos(theta)+(2.0)*sin(theta)*(sin(theta)*xb+yb*cos(theta));
+
+            }
+            dgdX = k*dgdX; dgdTheta = k * dgdTheta;
+
+            dgdTheta(1,0) = dgdTheta(0,1);
+
+            dgdTheta(2,0) = dgdTheta(0,2);
+            dgdTheta(2,1) = dgdTheta(1,2);
+
+            Mat33 dgdThetaInv = dgdTheta.inverse();
+            uncert = dgdThetaInv*dgdX.transpose()*Cx*dgdX*dgdThetaInv;
+
+            return uncert;
+        }
+
+        /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
         virtual const Mat66& computeUncertaintyStrasdat(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
             uncertainty.setIdentity();
             //compute average depth.

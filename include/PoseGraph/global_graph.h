@@ -46,6 +46,12 @@ class GlobalGraph : public Graph {
         bool addVertexPose(const VertexSE3& v);
 
         /**
+         * adds a vertex to the graph - x,y,theta
+         * returns true, on success, or false on failure.
+         */
+        bool addVertexSE2(const VertexSE2& v);
+
+        /**
          * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
@@ -56,6 +62,12 @@ class GlobalGraph : public Graph {
          * does nothing and returns false. Otherwise it returns true.
          */
         bool addEdge3D(const Edge3D& e);
+
+        /**
+         * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdgeSE2(const EdgeSE2& e);
 
         /// Save graph to file
         void save2file(const std::string filename) const;

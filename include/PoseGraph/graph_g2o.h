@@ -70,6 +70,12 @@ class PoseGraphG2O : public Graph {
         bool addVertexPose(const VertexSE3& v);
 
         /**
+         * adds a vertex to the graph - x,y,theta
+         * returns true, on success, or false on failure.
+         */
+        bool addVertexSE2(const VertexSE2& v);
+
+        /**
          * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
@@ -80,6 +86,12 @@ class PoseGraphG2O : public Graph {
          * does nothing and returns false. Otherwise it returns true.
          */
         bool addEdge3D(const Edge3D& e);
+
+        /**
+         * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdgeSE2(const EdgeSE2& e);
 
         /// Save graph to file
         void save2file(const std::string filename) const;
@@ -157,6 +169,12 @@ class PoseGraphG2O : public Graph {
         bool addVertex(const VertexSE3& v);
 
         /**
+         * adds a vertex to the graph - x,y,theta
+         * returns true, on success, or false on failure.
+         */
+        bool addVertex(const VertexSE2& v);
+
+        /**
          * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
@@ -168,14 +186,17 @@ class PoseGraphG2O : public Graph {
          */
         bool addEdge(Edge3D& e);
 
+        /**
+         * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge(EdgeSE2& e);
+
         /// @returns the map <i>id -> vertex</i> where the vertices are stored
         const PoseGraph::VertexSet& vertices() const;
 
         /// @returns the set of edges of the hyper graph
         const PoseGraph::EdgeSet& edges() const;
-
-        /// Find all edges which points to the vertex 'toVertexId'
-        std::vector<unsigned int> findIncominEdges(unsigned int toVertexId);
 
         /// Find outlier using chi2
         g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges);

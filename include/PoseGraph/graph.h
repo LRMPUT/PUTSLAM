@@ -34,10 +34,16 @@ namespace putslam {
             virtual bool addVertexFeature(const Vertex3D& v) = 0;
 
             /**
-             * adds a vertex to the graph - feature
+             * adds a vertex to the graph - pose
              * returns true, on success, or false on failure.
              */
             virtual bool addVertexPose(const VertexSE3& v) = 0;
+
+            /**
+             * adds a vertex to the graph - x,y,theta
+             * returns true, on success, or false on failure.
+             */
+            virtual bool addVertexSE2(const VertexSE2& v) = 0;
 
             /**
              * Adds an SE3 edge to the graph. If the edge is already in the graph, it
@@ -50,6 +56,12 @@ namespace putslam {
              * does nothing and returns false. Otherwise it returns true.
              */
             virtual bool addEdge3D(const Edge3D& e) = 0;
+
+            /**
+             * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+             * does nothing and returns false. Otherwise it returns true.
+             */
+            virtual bool addEdgeSE2(const EdgeSE2& e) = 0;
 
             /// Optimize graph
             virtual bool optimize(uint_fast32_t maxIterations) = 0;
@@ -85,6 +97,8 @@ namespace putslam {
                         file << "plot3(" << std::setprecision (5) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << ", " << pointPropertySE3 << ");\n";
                     else if (it->get()->type==Vertex::VERTEX3D)
                         file << "plot3(" << std::setprecision (5) << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.x() << ", " << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.y() << ", " << ((putslam::Vertex3D*)it->get())->keypoint.depthFeature.z() << ", " << pointProperty3D << ");\n";
+                    else if (it->get()->type==Vertex::VERTEXSE2)
+                        file << "plot(" << std::setprecision (5) << ((putslam::VertexSE2*)it->get())->pos.x() << ", " << ((putslam::VertexSE2*)it->get())->pos.y() << ", " << pointProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
                     putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
@@ -93,6 +107,8 @@ namespace putslam {
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::VertexSE3*)toIt->get())->nodeSE3.pos.z() << "], "<< linePropertySE3 << ");\n";
                     else if (it->get()->type==Edge::EDGE_3D)
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.x() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.x() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.y() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.y() << "], [" << ((putslam::VertexSE3*)fromIt->get())->nodeSE3.pos.z() << ", " << ((putslam::Vertex3D*)toIt->get())->keypoint.depthFeature.z() << "], "<< lineProperty3D << ");\n";
+                    else if (it->get()->type==Edge::EDGE_SE2)
+                        file << "plot([" << std::setprecision (5) << ((putslam::VertexSE2*)fromIt->get())->pos.x() << ", " << ((putslam::VertexSE2*)toIt->get())->pos.x() << "], [" << ((putslam::VertexSE2*)fromIt->get())->pos.y() << ", " << ((putslam::VertexSE2*)toIt->get())->pos.y() << "], "<< lineProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.prunedEdges.begin(); it!=graph.prunedEdges.end();it++){
                     putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
@@ -141,6 +157,16 @@ namespace putslam {
                 }
                 mtxGraph.unlock();
                 return graph.edges.end();
+            }
+
+            /// Find all edges which points to the vertex 'toVertexId'
+            std::vector<unsigned int> findIncominEdges(unsigned int toVertexId){
+                std::vector<unsigned int> edgeIds;
+                for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
+                    if (it->get()->toVertexId == toVertexId)
+                        edgeIds.push_back(it->get()->id);
+                }
+                return edgeIds;
             }
     };
 };

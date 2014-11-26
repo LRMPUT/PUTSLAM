@@ -204,10 +204,12 @@ namespace putslam {
 
             /// Vertex type
             enum Type {
-                    /// Vertex 3D -- feature position
+                    /// Edge 3D -- feature position
                     EDGE_3D,
-                    /// Vertex SE(3) -- robot pose
-                    EDGE_SE3
+                    /// Edge SE(3) -- robot pose
+                    EDGE_SE3,
+                    /// Edge SE(2) -- robot x,y,theta
+                    EDGE_SE2
             };
 
             /// Vertex type
@@ -232,8 +234,8 @@ namespace putslam {
 
             /// Overloaded constructor
             inline Edge(Type _type, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) : type(_type),
-                toVertexId(_toVertexId),
-                fromVertexId(_fromVertexId) {
+                fromVertexId(_fromVertexId),
+                toVertexId(_toVertexId){
             }
     };
 
@@ -256,6 +258,34 @@ namespace putslam {
             /// Overloaded constructor
             inline Edge3D(Vec3& _trans, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
                 Edge(EDGE_3D, _fromVertexId, _toVertexId),
+                trans(_trans),
+                info(_info){
+            }
+    };
+
+    /// SE2 (x,y,theta) Edge of a graph
+    class EdgeSE2 : public Edge {
+        public:
+            /// set of Edges3D
+            typedef std::vector<EdgeSE2> Seq;
+
+            /// translation between nodes
+            Eigen::Vector2d trans;
+
+            /// rotation between nodes
+            float_type theta;
+
+            /// Information matrix
+            Mat33 info;
+
+            /// Default constructor
+            inline EdgeSE2() : Edge(EDGE_SE2){
+            }
+
+            /// Overloaded constructor
+            inline EdgeSE2(Eigen::Vector2d& _trans, float_type _theta, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+                Edge(EDGE_SE2, _fromVertexId, _toVertexId),
+                theta(_theta),
                 trans(_trans),
                 info(_info){
             }
@@ -295,7 +325,9 @@ namespace putslam {
                     /// Vertex 3D -- feature position
                     VERTEX3D,
                     /// Vertex SE(3) -- robot pose
-                    VERTEXSE3
+                    VERTEXSE3,
+                    /// Vertex SE(2) -- x,y,theta
+                    VERTEXSE2
             };
 
             /// Vertex type
@@ -332,6 +364,29 @@ namespace putslam {
             inline Vertex3D(uint_fast32_t _vertexId, Vec3& _pos) :
                 Vertex(VERTEX3D, _vertexId),
                 keypoint(_pos){
+            }
+    };
+
+    class VertexSE2 : public Vertex {
+        public:
+            /// Set of Vertices
+            typedef std::vector<VertexSE2> Seq;
+
+            /// position
+            Eigen::Vector2d pos;
+
+            /// orientation
+            float_type theta;
+
+            /// Default constructor
+            inline VertexSE2(void) : Vertex(VERTEXSE2, 0){
+            }
+
+            /// Overloaded constructor
+            inline VertexSE2(uint_fast32_t _vertexId, Eigen::Vector2d& _pos, float_type& _rot) :
+                Vertex(VERTEXSE2, _vertexId),
+                pos(_pos),
+                theta(_rot){
             }
     };
 

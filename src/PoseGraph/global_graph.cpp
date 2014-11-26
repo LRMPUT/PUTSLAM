@@ -72,10 +72,26 @@ bool GlobalGraph::addEdgeSE3(const EdgeSE3& e){
 }
 
 /**
+ * adds a vertex to the graph - x,y,theta
+ * returns true, on success, or false on failure.
+ */
+bool GlobalGraph::addVertexSE2(const VertexSE2& v){
+    return true;
+}
+
+/**
  * Adds an 3D edge to the graph. If the edge is already in the graph, it
  * does nothing and returns false. Otherwise it returns true.
  */
 bool GlobalGraph::addEdge3D(const Edge3D& e){
+    return true;
+}
+
+/**
+ * Adds an SE2 edge to the graph. If the edge is already in the graph, it
+ * does nothing and returns false. Otherwise it returns true.
+ */
+bool GlobalGraph::addEdgeSE2(const EdgeSE2& e){
     return true;
 }
 
