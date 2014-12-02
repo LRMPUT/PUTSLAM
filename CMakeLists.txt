@@ -22,6 +22,8 @@ option(BUILD_PUTSLAM_G2O "Build g2o library" YES)
 mark_as_advanced(BUILD_PUTSLAM_G2O)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
+option(BUILD_PUTSLAM_UTILITIES "Build PUTSLAM Utilities library" YES)
+mark_as_advanced(BUILD_PUTSLAM_UTILITIES)
 option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER)
 option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO)
@@ -45,6 +47,8 @@ option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_GRABBER)
 option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_KABSCH)
+option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" YES)
+mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 
 #additional dependencies
 # Boost
@@ -133,6 +137,25 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
 
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
+
+###############################################################################
+#
+# PUTSLAM Utilities library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
+        file(GLOB UTILITIES_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Utilities/*.cpp"
+        )
+        file(GLOB UTILITIES_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Utilities/*.h"
+        )
+
+        ADD_LIBRARY(Utilities STATIC ${UTILITIES_SOURCES} ${UTILITIES_HEADERS})
+        INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${TRACKER_HEADERS} DESTINATION include/putslam/Utilities/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
 
 ###############################################################################
 #
@@ -322,7 +345,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
         SET(DEMO_SOURCES ./demo_pruning.cpp)
         ADD_EXECUTABLE(Demo_pruning ${DEMO_SOURCES})
         add_dependencies(Demo_pruning g2o)
-        TARGET_LINK_LIBRARIES(Demo_pruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        TARGET_LINK_LIBRARIES(Demo_pruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND( TARGET Demo_pruning POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
@@ -336,7 +359,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 
 ###############################################################################
 #
-# PUTSLAM DEMO g2o graph pruning and optimization executables
+# PUTSLAM DEMO g2o grabber executables
 #
 ###############################################################################
 
@@ -387,3 +410,25 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
+
+###############################################################################
+#
+# PUTSLAM g2o 2D graph to 3D graph converter
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./graph2D2graph3D.cpp)
+        ADD_EXECUTABLE(graph2D2graph3D ${DEMO_SOURCES})
+        add_dependencies(graph2D2graph3D g2o)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND(TARGET graph2D2graph3D POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying grabber libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        TARGET_LINK_LIBRARIES(graph2D2graph3D tinyxml2 Utilities boost_system)
+        INSTALL(TARGETS graph2D2graph3D RUNTIME DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
