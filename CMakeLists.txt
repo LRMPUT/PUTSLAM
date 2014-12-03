@@ -422,13 +422,13 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
         SET(DEMO_SOURCES ./graph2D2graph3D.cpp)
         ADD_EXECUTABLE(graph2D2graph3D ${DEMO_SOURCES})
         add_dependencies(graph2D2graph3D g2o)
+        TARGET_LINK_LIBRARIES(graph2D2graph3D tinyxml2 Utilities PoseGraph ${OpenCV_LIBS} boost_system)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
             ADD_CUSTOM_COMMAND(TARGET graph2D2graph3D POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
                     COMMENT "copying grabber libs ..."
             )
         endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-        TARGET_LINK_LIBRARIES(graph2D2graph3D tinyxml2 Utilities boost_system)
         INSTALL(TARGETS graph2D2graph3D RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)

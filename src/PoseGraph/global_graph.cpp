@@ -145,3 +145,13 @@ bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIter
 bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration){
 
 }
+
+/// Returns set of graph vertices
+PoseGraph::VertexSet GlobalGraph::getVertices(void){
+
+}
+
+/// Returns set of graph edges
+PoseGraph::EdgeSet GlobalGraph::getEdges(void){
+
+}

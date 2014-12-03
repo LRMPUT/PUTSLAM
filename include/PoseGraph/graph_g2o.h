@@ -117,6 +117,12 @@ class PoseGraphG2O : public Graph {
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
 
+        /// Returns set of graph vertices
+        PoseGraph::VertexSet getVertices(void);
+
+        /// Returns set of graph edges
+        PoseGraph::EdgeSet getEdges(void);
+
         /// Return trajectory (set of SE3 poses)
         std::vector<Mat34> getTrajectory(void) const;
 

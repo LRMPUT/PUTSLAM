@@ -122,6 +122,12 @@ namespace putslam {
                 file.close();
             }
 
+            /// Returns set of graph edges
+            virtual PoseGraph::EdgeSet getEdges(void) = 0;
+
+            /// Returns set of graph vertices
+            virtual PoseGraph::VertexSet getVertices(void) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

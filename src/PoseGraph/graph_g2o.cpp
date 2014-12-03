@@ -3,7 +3,6 @@
 #include <chrono>
 
 using namespace putslam;
-using namespace g2o;
 
 // we use the 2D and 3D SLAM types here
 G2O_USE_TYPE_GROUP(slam2d);
@@ -32,7 +31,7 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     blockSolver = new g2o::BlockSolverX(linearSolver);
 
     // create the algorithm to carry out the optimization
-    OptimizationAlgorithmGaussNewton* optimizationAlgorithm = new OptimizationAlgorithmGaussNewton(blockSolver);
+    g2o::OptimizationAlgorithmGaussNewton* optimizationAlgorithm = new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
     //optimizationAlgorithm = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
 
     optimizer.setVerbose(true);
@@ -44,7 +43,7 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     cameraOffset->setId(0);
     Eigen::Isometry3d cameraPose;
     Eigen::Matrix3d R;  R  << 1,  0,  0,  0,  1,  0,  0,  0,  1;
-    cameraPose = R; cameraPose.translation() = Vector3d(0.0, 0.0, 0.0);
+    cameraPose = R; cameraPose.translation() = g2o::Vector3d(0.0, 0.0, 0.0);
     cameraOffset->setOffset(cameraPose);
     optimizer.addParameter(cameraOffset);
 }
@@ -52,7 +51,7 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
 PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
     Eigen::Isometry3d camPos;
     camPos = cameraPose.matrix();
-    camPos.translation() = Vector3d (cameraPose(0,3), cameraPose(1,3), cameraPose(2,3));
+    camPos.translation() = Eigen::Vector3d (cameraPose(0,3), cameraPose(1,3), cameraPose(2,3));
     cameraOffset->setOffset(camPos);    cameraOffset->setId(0);
     optimizer.addParameter(cameraOffset);
 }
@@ -139,6 +138,7 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
     vert->read(vertex);
     vert->setId(id);
     if (graph.vertices.size()==1){
+        //std::cout << "set fixed\n";
         vert->setFixed(true);
     }
     if (!optimizer.addVertex(vert)) {
@@ -216,7 +216,7 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
  * adds a vertex to the graph - x,y,theta.
  * returns true, on success, or false on failure.
  */
-bool PoseGraphG2O::addVertex(const VertexSE2& v){
+bool PoseGraphG2O::addVertex(const putslam::VertexSE2& v){
     mtxGraph.lock();
     //add vertex
     if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
@@ -224,6 +224,8 @@ bool PoseGraphG2O::addVertex(const VertexSE2& v){
         std::stringstream currentLine;
         currentLine << v.pos.x() << ' ' << v.pos.y() << ' ' << v.theta;
         addVertexG2O(v.vertexId, currentLine, Vertex::VERTEXSE2);
+
+
         mtxGraph.unlock();
         return true;
     }
@@ -237,7 +239,7 @@ bool PoseGraphG2O::addVertex(const VertexSE2& v){
  * adds a vertex to the graph - x,y,theta
  * returns true, on success, or false on failure.
  */
-bool PoseGraphG2O::addVertexSE2(const VertexSE2& v){
+bool PoseGraphG2O::addVertexSE2(const putslam::VertexSE2& v){
     mtxBuffGraph.lock();
     bufferGraph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE2(v)));
     mtxBuffGraph.unlock();
@@ -250,7 +252,7 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     g2o::HyperGraph::GraphElemBitset elemBitset;
     elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
     elemBitset.flip();
-    HyperGraph::HyperGraphElement* element;
+    g2o::HyperGraph::HyperGraphElement* element;
     if (type==Edge::EDGE_SE3)
         element = factory->construct("EDGE_SE3:QUAT", elemBitset);
     else if (type==Edge::EDGE_3D)
@@ -272,7 +274,7 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     //rk->setDelta(1);
     edge->setRobustKernel(rk);
     if (!optimizer.addEdge(edge)) {
-        cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
+        g2o::cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
       //  delete rk;
     }
@@ -440,6 +442,7 @@ bool PoseGraphG2O::updateGraph(void){
                 }
             }
             else if (it->get()->type==Vertex::VERTEXSE3){
+                //std::cout << "add Vertex SE3\n";
                 if (!addVertex(*(putslam::VertexSE3*)it->get())){
                     mtxGraph.unlock();
                     std::cout << "could not add vertex SE3\n";
@@ -472,7 +475,7 @@ bool PoseGraphG2O::updateGraph(void){
                 }
             }
             else if (it->get()->type==Edge::EDGE_SE2){
-                //std::cout << "add Edge SE3\n";
+                //std::cout << "add Edge SE2\n";
                 if (!addEdge(*(EdgeSE2*)it->get())){
                     mtxGraph.unlock();
                     std::cout << "could not add edge SE2\n";
@@ -502,14 +505,14 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
     graph.vertices.clear();
     optimizer.clear();
     //optimizer.load(filename.c_str());
-    ifstream file(filename);
+    std::ifstream file(filename);
     if (file.is_open()){ // open file
-        string line;
+        std::string line;
         clear();
         while ( getline (file,line) ) { // load each line
             std::istringstream is(line);
             std::string lineType;
-            std::cout << line << "\n";
+            //std::cout << line << "\n";
             float_type pos[3], rot[4];
             is >> lineType;
             if (lineType == "PARAMS_SE3OFFSET"){
@@ -519,7 +522,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 is >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
                 Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
                 Eigen::Matrix3d R(qrot);
-                cameraPose = R; cameraPose.translation() = Vector3d(pos[0], pos[1], pos[2]);
+                cameraPose = R; cameraPose.translation() = Eigen::Vector3d(pos[0], pos[1], pos[2]);
                 cameraOffset->setOffset(cameraPose);
                 optimizer.addParameter(cameraOffset);
             }
@@ -626,10 +629,10 @@ std::vector<Mat34> PoseGraphG2O::getTrajectory(void) const{
 
 /// Export camera path to file (RGB-D SLAM format)
 void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
-    ofstream file(filename);
+    std::ofstream file(filename);
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
-            file << std::setprecision (numeric_limits<double>::digits10 + 1) << ((putslam::VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
+            file << std::setprecision (std::numeric_limits<double>::digits10 + 1) << ((putslam::VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
         }
     }
     file.close();
@@ -637,9 +640,9 @@ void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
 
 /// Import camera path from file (RGB-D SLAM format)
 bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
-    ifstream file(filename);
+    std::ifstream file(filename);
     if (file.is_open()){ // open file
-        string line;
+        std::string line;
         clear();
         uint_fast32_t vertexId = 0;
         putslam::VertexSE3 vertexPrev;
@@ -692,19 +695,19 @@ bool PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
 /// copy g2o optimization result to to putslam graph
 void PoseGraphG2O::updateEstimate(void){
     //copy optimized graph to putslam dataset
-    set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare> verticesToCopy;
+    std::set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare> verticesToCopy;
     for (g2o::HyperGraph::EdgeSet::const_iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
       g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
       if (e->level() == 0) {
-        for (vector<g2o::HyperGraph::Vertex*>::const_iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
+        for (std::vector<g2o::HyperGraph::Vertex*>::const_iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
           verticesToCopy.insert(static_cast<g2o::OptimizableGraph::Vertex*>(*it));
         }
       }
     }
 
     mtxGraph.unlock();
-    for (set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
-      OptimizableGraph::Vertex* v = *it;
+    for (std::set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
+      g2o::OptimizableGraph::Vertex* v = *it;
       std::vector<double> estimate;
       v->getEstimateData(estimate);
       PoseGraph::VertexSet::iterator itVertex = findVertex(v->id());
@@ -768,7 +771,7 @@ void PoseGraphG2O::anchorVertices(void){
     }*/
     for (GraphOfVertices::iterator itGraph = graphs.begin(); itGraph!=graphs.end(); itGraph++){
         g2o::OptimizableGraph::Vertex* v = optimizer.vertex((*itGraph->begin()));
-        SparseOptimizer::VertexContainer::const_iterator it = optimizer.findActiveVertex(v);
+        g2o::SparseOptimizer::VertexContainer::const_iterator it = optimizer.findActiveVertex(v);
         if (it!=optimizer.activeVertices().end()){
             (*it)->setFixed(true);
         }
@@ -926,4 +929,41 @@ bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIt
     //g2o::OptimizableGraph::Edge e; e.id();
 }
 
+/// Returns set of graph vertices
+PoseGraph::VertexSet PoseGraphG2O::getVertices(void){
+    PoseGraph::VertexSet verticesTmp;
 
+    mtxGraph.lock();
+    for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
+        if (it->get()->type==Vertex::VERTEX3D){
+            verticesTmp.push_back(std::unique_ptr<Vertex>(new Vertex3D(*(Vertex3D*)it->get())));
+        }
+        if (it->get()->type==Vertex::VERTEXSE3){
+            verticesTmp.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE3(*(putslam::VertexSE3*)it->get())));
+        }
+        if (it->get()->type==Vertex::VERTEXSE2){
+            verticesTmp.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE2(*(putslam::VertexSE2*)it->get())));
+        }
+    }
+    mtxGraph.unlock();
+    return verticesTmp;
+}
+
+/// Returns set of graph edges
+PoseGraph::EdgeSet PoseGraphG2O::getEdges(void){
+    PoseGraph::EdgeSet edges;
+    mtxGraph.lock();
+    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
+        if (it->get()->type==Edge::EDGE_3D){
+            edges.push_back(std::unique_ptr<Edge>(new Edge3D(*(Edge3D*)it->get())));
+        }
+        if (it->get()->type==Edge::EDGE_SE3){
+            edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(*(EdgeSE3*)it->get())));
+        }
+        if (it->get()->type==Edge::EDGE_SE2){
+            edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(*(EdgeSE2*)it->get())));
+        }
+    }
+    mtxGraph.unlock();
+    return edges;
+}
