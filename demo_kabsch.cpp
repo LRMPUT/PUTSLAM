@@ -428,6 +428,10 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
         if (setA.rows()>3){
             std::cout << "matched: " << setA.rows() << "\n";
             Mat34 trans = transEst->computeTransformation(setB, setA);
+            trans(0,3) = 0;
+            trans(0,1) = 0; trans(0,2) = 0;
+            trans(1,0) = 0; trans(2,0) = 0;
+            trans(0,0) = 1;
             //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
             sensorPose.matrix() = trajectorySensor2.back().matrix()*trans.matrix();
 
@@ -465,6 +469,12 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 unc(5,0) = 0; unc(5,1) = 0; unc(5,2) = 0; unc(5,3) = 0; unc(5,4) = 0; unc(5,5) = 1;
                 uncertainty = unc;*/
                 //std::cout << "uncertainty: \n" << uncertainty << "\n";
+                uncertainty (0,0) = 0; uncertainty (0,1) = 0; uncertainty (0,2) = 0; uncertainty (0,3) = 0; uncertainty (0,4) = 0; uncertainty (0,5) = 0;
+                uncertainty (3,0) = 0; uncertainty (3,1) = 0; uncertainty (3,2) = 0; uncertainty (3,3) = 0; uncertainty (3,4) = 0; uncertainty (3,5) = 0;
+                uncertainty (4,0) = 0; uncertainty (4,1) = 0; uncertainty (4,2) = 0; uncertainty (4,3) = 0; uncertainty (4,4) = 0; uncertainty (4,5) = 0;
+                uncertainty (0,0) = 1e-7; uncertainty (1,0) = 0; uncertainty (2,0) = 0; uncertainty (3,0) = 0; uncertainty (4,0) = 0; uncertainty (5,0) = 0;
+                uncertainty (0,3) = 0; uncertainty (1,3) = 0; uncertainty (2,3) = 0; uncertainty (3,3) = 1e-7; uncertainty (4,3) = 0; uncertainty (5,3) = 0;
+                uncertainty (0,4) = 0; uncertainty (1,4) = 0; uncertainty (2,4) = 0; uncertainty (3,4) = 0; uncertainty (4,4) = 1e-7; uncertainty (5,4) = 0;
                 infoMat = uncertainty.inverse();
                 /*Quaternion qqq(trans.rotation());
                 infoMat(0,0) = infoMat(0,0); infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
@@ -506,6 +516,10 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 int efficientFeatures = 30;
                 if (setA.rows()>efficientFeatures){
                     Mat34 trans = transEst->computeTransformation(setB, setA);
+                    trans(0,3) = 0;
+                    trans(0,1) = 0; trans(0,2) = 0;
+                    trans(1,0) = 0; trans(2,0) = 0;
+                    trans(0,0) = 1;
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     // add edge to the g2o graph
                     Vec3 pos;
@@ -527,6 +541,12 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                         unc(4,0) = 0; unc(4,1) = 0; unc(4,2) = 0; unc(4,3) = 0; unc(4,4) = 1; unc(4,5) = 0;
                         unc(5,0) = 0; unc(5,1) = 0; unc(5,2) = 0; unc(5,3) = 0; unc(5,4) = 0; unc(5,5) = 1;
                         uncertainty = unc;*/
+                        uncertainty (0,0) = 0; uncertainty (0,1) = 0; uncertainty (0,2) = 0; uncertainty (0,3) = 0; uncertainty (0,4) = 0; uncertainty (0,5) = 0;
+                        uncertainty (3,0) = 0; uncertainty (3,1) = 0; uncertainty (3,2) = 0; uncertainty (3,3) = 0; uncertainty (3,4) = 0; uncertainty (3,5) = 0;
+                        uncertainty (4,0) = 0; uncertainty (4,1) = 0; uncertainty (4,2) = 0; uncertainty (4,3) = 0; uncertainty (4,4) = 0; uncertainty (4,5) = 0;
+                        uncertainty (0,0) = 1e-7; uncertainty (1,0) = 0; uncertainty (2,0) = 0; uncertainty (3,0) = 0; uncertainty (4,0) = 0; uncertainty (5,0) = 0;
+                        uncertainty (0,3) = 0; uncertainty (1,3) = 0; uncertainty (2,3) = 0; uncertainty (3,3) = 1e-7; uncertainty (4,3) = 0; uncertainty (5,3) = 0;
+                        uncertainty (0,4) = 0; uncertainty (1,4) = 0; uncertainty (2,4) = 0; uncertainty (3,4) = 0; uncertainty (4,4) = 1e-7; uncertainty (5,4) = 0;
                         infoMat = uncertainty.inverse();
                         /*Quaternion qqq(trans.rotation());
                         infoMat(0,0) = infoMat(0,0); infoMat(0,1) = 0; infoMat(0,2) = 0; infoMat(0,3) = 0; infoMat(0,4) = 0; infoMat(0,5) = 0;
@@ -568,7 +588,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
     if (!graph->addVertexSE2(vertex2))
         std::cout << "error: vertex exists!\n";
     vertexId2++;
-    Mat34 sensorPose;
+    Mat34 sensorPose(initPose);
     Eigen::MatrixXd setA(1, 3);
     Eigen::MatrixXd setB(1, 3);
     Mat33 uncertainty;
@@ -589,6 +609,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
         if (setA.rows()>3){
             std::cout << "matched: " << setA.rows() << "\n";
             Mat34 trans = transEst->computeTransformation(setB, setA);
+
             //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
             sensorPose.matrix() = trajectorySensor2.back().matrix()*trans.matrix();
 
@@ -607,12 +628,12 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
             double pitch = asin(2*(q0*q2-q3*q1));
             double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 
-            theta += yaw;
+            theta += roll;
             VertexSE2 vertexSensor(vertexId2, pos, theta);
             if (!graph->addVertexSE2(vertexSensor))
                 std::cout << "error: vertex exists!\n";
             // add edge to the g2o graph
-            pos.x() = trans(0,3); pos.y() = trans(1,3);
+            pos.x() = trans(2,3); pos.y() = -trans(1,3);
             Mat33 infoMat;
             if (expType==0||expType==1)
                 infoMat.setIdentity();
@@ -623,9 +644,9 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
                 /*for (int k=0;k<setA.rows();k++){
                     std::cout << "matched point: (" << setA(k,0) << "," << setA(k,1) << ") -> (" << setB(k,0) << "," << setB(k,1) << "\n";
                 }*/
-                uncertainty(0,0) = unc(0,0); uncertainty(0,1) = unc(0,1); uncertainty(0,2) = unc(0,5);
-                uncertainty(1,0) = unc(1,0); uncertainty(1,1) = unc(1,1); uncertainty(1,2) = unc(1,5);
-                uncertainty(2,0) = unc(5,0); uncertainty(2,1) = unc(5,1); uncertainty(2,2) = unc(5,5);
+                uncertainty(0,0) = unc(2,2); uncertainty(0,1) = -unc(2,1); uncertainty(0,2) = unc(2,3);
+                uncertainty(1,0) = -unc(1,2); uncertainty(1,1) = unc(1,1); uncertainty(1,2) = -unc(1,3);
+                uncertainty(2,0) = unc(3,2); uncertainty(2,1) = -unc(3,1); uncertainty(2,2) = unc(3,3);
                 //getchar();
                 //uncertainty = transEst->computeUncertainty2D(setA, setAUncertainty, setB, setBUncertainty, trans);
                 // [xx  xy  xz  xrx  xry  xrz ]    [yy  yz  yx  yry  yrz  yrx ]
@@ -658,7 +679,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
                 std::cout << "info: \n" << infoMat << "\n";
                 getchar();*/
             }
-            EdgeSE2 edge(pos,euler(2),infoMat,vertexId2-1,vertexId2);
+            EdgeSE2 edge(pos,roll,infoMat,vertexId2-1,vertexId2);
             if (!graph->addEdgeSE2(edge))
                 std::cout << "error: vertex doesn't exist!\n";
             vertexId2++;
@@ -684,7 +705,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     // add edge to the g2o graph
                     Eigen::Vector2d pos;
-                    pos.x() = trans(0,3); pos.y() = trans(1,3);
+                    pos.x() = trans(2,3); pos.y() = -trans(1,3);
                     Eigen::Matrix<double,3,1> euler = trans.rotation().eulerAngles(2, 1, 0);
 
                     Mat33 infoMat;
@@ -695,9 +716,9 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
                         //uncertainty = transEst->computeUncertainty2D(setA, setAUncertainty, setB, setBUncertainty, trans);
 
                         Mat66 unc = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                        uncertainty(0,0) = unc(0,0); uncertainty(0,1) = unc(0,1); uncertainty(0,2) = unc(0,5);
-                        uncertainty(1,0) = unc(1,0); uncertainty(1,1) = unc(1,1); uncertainty(1,2) = unc(1,5);
-                        uncertainty(2,0) = unc(5,0); uncertainty(2,1) = unc(5,1); uncertainty(2,2) = unc(5,5);
+                        uncertainty(0,0) = unc(2,2); uncertainty(0,1) = -unc(2,1); uncertainty(0,2) = unc(2,3);
+                        uncertainty(1,0) = -unc(1,2); uncertainty(1,1) = unc(1,1); uncertainty(1,2) = -unc(1,3);
+                        uncertainty(2,0) = unc(3,2); uncertainty(2,1) = -unc(3,1); uncertainty(2,2) = unc(3,3);
                         //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
 
                         infoMat = uncertainty.inverse();
@@ -716,7 +737,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
                     std::cout << "euler2: \n" << roll << ", " << pitch << "," << yaw << "\n";
 
                     getchar();*/
-                    EdgeSE2 edge(pos,yaw,infoMat,i-j,i);
+                    EdgeSE2 edge(pos,roll,infoMat,i-j,i);
                     if (!graph->addEdgeSE2(edge))
                         std::cout << "error: vertex doesn't exist!\n";
                 }
@@ -1065,8 +1086,8 @@ int main(int argc, char * argv[])
         for (int i=0;i<trialsNo;i++){
 
             PointCloud room;
-            size_t pointsNo = 1000;
-            float_type roomDim[3] = {3.5, 3.5, 3};
+            size_t pointsNo = 5000;
+            float_type roomDim[3] = {5.5, 5.5, 5.5};
             room = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
             //room = createEnvironment(1000, 15, 15, 15);
             if (i==0) savePointCloud("../../resources/KabschUncertainty/room.m", room);
@@ -1076,13 +1097,16 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectory;
             //rectangular trajectory
             Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
-            pose(0,3)=(-6.5/2.0)+1.5; pose(1,3)=(-6.5/2.0)+1.5; pose(2,3) = 0;
+            pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
+            pose(1,0) = 0; pose(1,1) = -1; pose(1,2) = 0;
+            pose(2,0) = 1; pose(2,1) = 0; pose(2,2) = 0;
+            pose(0,3)=(-6.5/2.0)+1.5; pose(1,3)=(-6.5/2.0)+1.5; pose(2,3) = 0.0;
             //pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
             trajectory.push_back(pose);
             int motions = 20;
             int motions_rot = 90;
-            Mat34 moveRot = quatFromEuler((M_PI/2)/float_type(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((6.5-3.0)/float_type(motions),0.0, 0.0);
+            Mat34 moveRot = quatFromEuler(0,0,(M_PI/2)/float_type(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0.0, (6.5-3.0)/float_type(motions));
             for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
@@ -1151,13 +1175,13 @@ int main(int argc, char * argv[])
             setIds.push_back(setAids);
             saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel);
             uncertaintySet.push_back( uncertaintyCloudA );
+            trajectorySensor.push_back(sensorPose);
             for (int i=1;i<trajectory.size();i++){
-                std::cout << "trajectory point " << i << "\n";
+                //std::cout << "trajectory point " << i << "\n";
                 //get point clouds
                 sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
-                std::cout << "sensor pose: " << sensorPose.matrix() << "\n";
-                std::cout << "sensor pose det : " << sensorPose.matrix().determinant() << "\n";
+                //std::cout << "sensor pose: " << sensorPose.matrix() << "\n";
                 std::vector<int> setBids = getCloud(sensorPose, sensorModel, room, cloudB, uncertaintyCloudB);
                 //cloudB = cloud2local(cloudB, sensorPose);
 
@@ -1171,12 +1195,22 @@ int main(int argc, char * argv[])
                 if (setA.rows()>3){
                     std::cout << "matched: " << setA.rows() << "\n";
                     trans = transEst->computeTransformation(setB, setA);
+                    std::cout << "trans: \n" << trans.matrix() << "\n";
+                    if (trans(2,3)>0.4){
+                        std::cout << "i: " << i << "\n";
+                        for (int kk=0;kk<setA.rows();kk++){
+                            std::cout << kk << ". " << setA(kk,0) << ", " << setA(kk,1) << ", " << setA(kk,2) << ", " << " -> " << setB(kk,0) << ", " << setB(kk,1) << ", " << setB(kk,2) << ")\n";
+                        }
+                        trans = transEst->computeTransformation(setB, setA);
+                        std::cout << "trans: \n" << trans.matrix() << "\n";
+                        getchar();
+                    }
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                     trajectorySensor.push_back(sensorPose);
                 }
                 else{
                     std::cout << "could not add edge (added identity transformation)\n";
-                  //  getchar();
+                    getchar();
                     trans.setIdentity();
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                     trajectorySensor.push_back(sensorPose);
@@ -1190,8 +1224,11 @@ int main(int argc, char * argv[])
             std::string filename= "../../resources/KabschUncertainty/trajectorySensor" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectorySensor, "r");
 
-/*            graph->clear();
+            graph->clear();
             runExperiment2D(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
+            std::vector<Mat34> trajectoryS = graph->getTrajectory();
+            filename= "../../resources/KabschUncertainty/trajectorySensorTest" + std::to_string(i) + ".m";
+            saveTrajectory(filename,trajectoryS, "m");
 
             filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
             graph->save2file(filename);
@@ -1232,7 +1269,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");
-*/
+/*
             graph->clear();
             runExperiment(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, transEst);
 
@@ -1273,7 +1310,7 @@ int main(int argc, char * argv[])
 
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
-            saveTrajectory(filename,trajectoryOpt2, "b");
+            saveTrajectory(filename,trajectoryOpt2, "b");*/
 /*
             //Strasdat
             graph->clear();

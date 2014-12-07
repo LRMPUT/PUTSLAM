@@ -50,7 +50,7 @@ Mat34& KabschEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen
 
     // Ensuring it is right-handed coordinate system
     Eigen::Matrix3d U = Eigen::MatrixXd::Identity(3,3);
-    U(2,2) = sgn(A.determinant());
+    U(2,2) = sgn((A.determinant()!=0) ? A.determinant() : 1);
 
     // Optimal rotation matrix
     U = W * U * V.transpose();
