@@ -206,12 +206,6 @@ HyperGraph::HyperGraphElement* Factory::construct(const std::string& tag, const 
   if (elemsToConstruct.none()) {
     return construct(tag);
   }
-  /*std::cout << _creator.size();
-  for (CreatorMap::const_iterator it=_creator.begin(); it!=_creator.end(); ++it){
-      std::cout << "FS\n";
-      std::cout << it->first << ' ' << it->second << '\n';
-  }*/
-
   CreatorMap::const_iterator foundIt = _creator.find(tag);
   if (foundIt != _creator.end() && foundIt->second->elementTypeBit >= 0 && elemsToConstruct.test(foundIt->second->elementTypeBit)) {
     return foundIt->second->creator->construct();

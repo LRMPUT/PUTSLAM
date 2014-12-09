@@ -28,6 +28,7 @@
 
 #ifdef G2O_HAVE_OPENGL
 #include "g2o/stuff/opengl_wrapper.h"
+#include "g2o/stuff/opengl_primitives.h"
 #endif
 
 namespace g2o {
@@ -39,7 +40,7 @@ namespace g2o {
 
   bool EdgeSE2::read(std::istream& is)
   {
-    Vector3d p;
+    Vector3D p;
     is >> p[0] >> p[1] >> p[2];
     setMeasurement(SE2(p));
     _inverseMeasurement = measurement().inverse();
@@ -54,7 +55,7 @@ namespace g2o {
 
   bool EdgeSE2::write(std::ostream& os) const
   {
-    Vector3d p = measurement().toVector();
+    Vector3D p = measurement().toVector();
     os << p.x() << " " << p.y() << " " << p.z();
     for (int i = 0; i < 3; ++i)
       for (int j = i; j < 3; ++j)
@@ -79,7 +80,7 @@ namespace g2o {
     const VertexSE2* vj = static_cast<const VertexSE2*>(_vertices[1]);
     double thetai = vi->estimate().rotation().angle();
 
-    Vector2d dt = vj->estimate().translation() - vi->estimate().translation();
+    Vector2D dt = vj->estimate().translation() - vi->estimate().translation();
     double si=sin(thetai), ci=cos(thetai);
 
     _jacobianOplusXi(0, 0) = -ci; _jacobianOplusXi(0, 1) = -si; _jacobianOplusXi(0, 2) = -si*dt.x()+ci*dt.y();
@@ -91,7 +92,7 @@ namespace g2o {
     _jacobianOplusXj(2, 0) = 0;  _jacobianOplusXj(2, 1)= 0;  _jacobianOplusXj(2, 2)= 1;
 
     const SE2& rmean = _inverseMeasurement;
-    Matrix3d z = Matrix3d::Zero();
+    Matrix3D z = Matrix3D::Zero();
     z.block<2, 2>(0, 0) = rmean.rotation().toRotationMatrix();
     z(2, 2) = 1.;
     _jacobianOplusXi = z * _jacobianOplusXi;
@@ -124,6 +125,19 @@ namespace g2o {
 #ifdef G2O_HAVE_OPENGL
   EdgeSE2DrawAction::EdgeSE2DrawAction(): DrawAction(typeid(EdgeSE2).name()){}
 
+  bool EdgeSE2DrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_){
+    if (!DrawAction::refreshPropertyPtrs(params_))
+      return false;
+    if (_previousParams){
+      _triangleX = _previousParams->makeProperty<FloatProperty>(_typeName + "::GHOST_TRIANGLE_X", .2f);
+      _triangleY = _previousParams->makeProperty<FloatProperty>(_typeName + "::GHOST_TRIANGLE_Y", .05f);
+    } else {
+      _triangleX = 0;
+      _triangleY = 0;
+    }
+    return true;
+  }
+
   HyperGraphElementAction* EdgeSE2DrawAction::operator()(HyperGraph::HyperGraphElement* element, 
                HyperGraphElementAction::Parameters* params_){
     if (typeid(*element).name()!=_typeName)
@@ -137,14 +151,42 @@ namespace g2o {
       return this;
 
     EdgeSE2* e =  static_cast<EdgeSE2*>(element);
-    VertexSE2* fromEdge = static_cast<VertexSE2*>(e->vertex(0));
-    VertexSE2* toEdge   = static_cast<VertexSE2*>(e->vertex(1));
-    glColor3f(0.5f,0.5f,0.8f);
-    glPushAttrib(GL_ENABLE_BIT);
+    VertexSE2* from = static_cast<VertexSE2*>(e->vertex(0));
+    VertexSE2* to   = static_cast<VertexSE2*>(e->vertex(1));
+    if (! from && ! to)
+      return this;
+    SE2 fromTransform;
+    SE2 toTransform;
+    glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING | GL_COLOR);
     glDisable(GL_LIGHTING);
+    if (! from) {
+      glColor3f(POSE_EDGE_GHOST_COLOR);
+      toTransform = to->estimate();
+      fromTransform = to->estimate()*e->measurement().inverse();
+      // DRAW THE FROM EDGE AS AN ARROW
+      glPushMatrix();
+      glTranslatef((float)fromTransform.translation().x(), (float)fromTransform.translation().y(),0.f);
+      glRotatef((float)RAD2DEG(fromTransform.rotation().angle()),0.f,0.f,1.f);
+      opengl::drawArrow2D((float)_triangleX->value(), (float)_triangleY->value(), (float)_triangleX->value()*.3f);
+      glPopMatrix();
+    } else if (! to){
+      glColor3f(POSE_EDGE_GHOST_COLOR);
+      fromTransform = from->estimate();
+      toTransform = from->estimate()*e->measurement();
+      // DRAW THE TO EDGE AS AN ARROW
+      glPushMatrix();
+      glTranslatef(toTransform.translation().x(),toTransform.translation().y(),0.f);
+      glRotatef((float)RAD2DEG(toTransform.rotation().angle()),0.f,0.f,1.f);
+      opengl::drawArrow2D((float)_triangleX->value(), (float)_triangleY->value(), (float)_triangleX->value()*.3f);
+      glPopMatrix();
+    } else {
+      glColor3f(POSE_EDGE_COLOR);
+      fromTransform = from->estimate();
+      toTransform = to->estimate();
+    }
     glBegin(GL_LINES);
-    glVertex3f((float)fromEdge->estimate().translation().x(),(float)fromEdge->estimate().translation().y(),0.f);
-    glVertex3f((float)toEdge->estimate().translation().x(),(float)toEdge->estimate().translation().y(),0.f);
+    glVertex3f((float)fromTransform.translation().x(),(float)fromTransform.translation().y(),0.f);
+    glVertex3f((float)toTransform.translation().x(),(float)toTransform.translation().y(),0.f);
     glEnd();
     glPopAttrib();
     return this;
