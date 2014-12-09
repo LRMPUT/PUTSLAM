@@ -26,15 +26,20 @@
 
 #include "vertex_se3.h"
 #include "g2o/core/factory.h"
+#ifdef G2O_HAVE_OPENGL
 #include "g2o/stuff/opengl_wrapper.h"
+#include "g2o/stuff/opengl_primitives.h"
+#endif
 
 #include <iostream>
 #include "g2o/core/cache.h"
 
+using namespace Eigen;
+
 namespace g2o {
 
   VertexSE3::VertexSE3() :
-    BaseVertex<6, Eigen::Isometry3d>(),
+    BaseVertex<6, Isometry3D>(),
     _numOplusCalls(0)
   {
     setToOriginImpl();
@@ -79,13 +84,13 @@ namespace g2o {
 
 #ifdef G2O_HAVE_OPENGL
   void drawTriangle(float xSize, float ySize){
-    Vector3f p[3];
+    Vector3F p[3];
     glBegin(GL_TRIANGLES);
     p[0] << 0., 0., 0.;
     p[1] << -xSize, ySize, 0.;
     p[2] << -xSize, -ySize, 0.;
     for (int i = 1; i < 2; ++i) {
-      Vector3f normal = (p[i] - p[0]).cross(p[i+1] - p[0]);
+      Vector3F normal = (p[i] - p[0]).cross(p[i+1] - p[0]);
       glNormal3f(normal.x(), normal.y(), normal.z());
       glVertex3f(p[0].x(), p[0].y(), p[0].z());
       glVertex3f(p[i].x(), p[i].y(), p[i].z());
@@ -115,11 +120,9 @@ namespace g2o {
                  HyperGraphElementAction::Parameters* params_){
     if (typeid(*element).name()!=_typeName)
       return 0;
-    if (! _cacheDrawActions){
-      _cacheDrawActions = HyperGraphActionLibrary::instance()->actionByName("draw");
-    }
-
+    initializeDrawActionsCache();
     refreshPropertyPtrs(params_);
+
     if (! _previousParams)
       return this;
     
@@ -128,24 +131,12 @@ namespace g2o {
 
     VertexSE3* that = static_cast<VertexSE3*>(element);
 
-    glColor3f(0.5f,0.5f,0.8f);
+    glColor3f(POSE_VERTEX_COLOR);
     glPushMatrix();
     glMultMatrixd(that->estimate().matrix().data());
-    if (_triangleX && _triangleY){
-      drawTriangle(_triangleX->value(), _triangleY->value());
-    }
-    CacheContainer* caches=that->cacheContainer();
-    if (caches){
-      for (CacheContainer::iterator it=caches->begin(); it!=caches->end(); it++){
-        Cache* c = it->second;
-        (*_cacheDrawActions)(c, params_);
-      }
-    }
-    OptimizableGraph::Data* d=that->userData();
-    while (d && _cacheDrawActions ){
-      (*_cacheDrawActions)(d, params_);
-      d=d->next();
-    }
+    opengl::drawArrow2D(_triangleX->value(), _triangleY->value(), _triangleX->value()*.3);
+    drawCache(that->cacheContainer(), params_);
+    drawUserData(that->userData(), params_);
     glPopMatrix();
     return this;
   }

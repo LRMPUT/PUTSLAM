@@ -61,6 +61,7 @@ static bool hasToStop=false;
 
 using namespace std;
 using namespace g2o;
+using namespace Eigen;
 
 // sort according to max id, dimension
 struct IncrementalEdgesCompare {
@@ -110,6 +111,7 @@ int main(int argc, char** argv)
   string strSolver;
   string loadLookup;
   bool initialGuess;
+  bool initialGuessOdometry;
   bool marginalize;
   bool listTypes;
   bool listSolvers;
@@ -121,16 +123,22 @@ int main(int argc, char** argv)
   bool computeMarginals;
   bool printSolverProperties;
   double huberWidth;
+  double gain;
+  int maxIterationsWithGain;
   //double lambdaInit;
   int updateGraphEachN = 10;
   string statsFile;
   string summaryFile;
+  bool nonSequential;
   // command line parsing
   std::vector<int> gaugeList;
   CommandArgs arg;
   arg.param("i", maxIterations, 5, "perform n iterations, if negative consider the gain");
+  arg.param("gain", gain, 1e-6, "the gain used to stop optimization (default = 1e-6)");
+  arg.param("ig",maxIterationsWithGain, std::numeric_limits<int>::max(), "Maximum number of iterations with gain enabled (default: inf)");
   arg.param("v", verbose, false, "verbose output of the optimization process");
   arg.param("guess", initialGuess, false, "initial guess based on spanning tree");
+  arg.param("guessOdometry", initialGuessOdometry, false, "initial guess based on odometry");
   arg.param("inc", incremental, false, "run incremetally");
   arg.param("update", updateGraphEachN, 10, "updates after x odometry nodes");
   arg.param("guiout", guiOut, false, "gui output while running incrementally");
@@ -157,6 +165,7 @@ int main(int argc, char** argv)
   arg.param("gaugeList", gaugeList, std::vector<int>(), "set the list of gauges separated by commas without spaces \n  e.g: 1,2,3,4,5 ");
   arg.param("summary", summaryFile, "", "append a summary of this optimization run to the summary file passed as argument");
   arg.paramLeftOver("graph-input", inputFilename, "", "graph file which will be processed", true);
+  arg.param("nonSequential", nonSequential, false, "apply the robust kernel only on loop closures and not odometries");
   
 
   arg.parseArgs(argc, argv);
@@ -202,8 +211,10 @@ int main(int argc, char** argv)
   SparseOptimizerTerminateAction* terminateAction = 0;
   if (maxIterations < 0) {
     cerr << "# setup termination criterion based on the gain of the iteration" << endl;
-    maxIterations = std::numeric_limits<int>::max();
+    maxIterations = maxIterationsWithGain;
     terminateAction = new SparseOptimizerTerminateAction;
+    terminateAction->setGainThreshold(gain);
+    terminateAction->setMaxIterations(maxIterationsWithGain);
     optimizer.addPostIterationAction(terminateAction);
   }
 
@@ -323,11 +334,22 @@ int main(int argc, char** argv)
     AbstractRobustKernelCreator* creator = RobustKernelFactory::instance()->creator(robustKernel);
     cerr << "# Preparing robust error function ... ";
     if (creator) {
-      for (SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
-        SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
-        e->setRobustKernel(creator->construct());
-        if (huberWidth > 0)
-          e->robustKernel()->setDelta(huberWidth);
+      if (nonSequential) {
+        for (SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
+          SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
+          if (e->vertices().size() >= 2 && std::abs(e->vertex(0)->id() - e->vertex(1)->id()) != 1) {
+            e->setRobustKernel(creator->construct());
+            if (huberWidth > 0)
+              e->robustKernel()->setDelta(huberWidth);
+          }
+        }
+      } else {
+        for (SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
+          SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
+          e->setRobustKernel(creator->construct());
+          if (huberWidth > 0)
+            e->robustKernel()->setDelta(huberWidth);
+        }
       }
       cerr << "done." << endl;
     } else {
@@ -546,6 +568,9 @@ int main(int argc, char** argv)
 
     if (initialGuess) {
       optimizer.computeInitialGuess();
+    } else if (initialGuessOdometry) {
+      EstimatePropagatorCostOdometry costFunction(&optimizer);
+      optimizer.computeInitialGuess(costFunction);
     }
     double initChi = optimizer.chi2();
 

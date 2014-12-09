@@ -34,6 +34,8 @@
 #include <iostream>
 #include "g2o/core/cache.h"
 
+using namespace Eigen;
+
 namespace g2o {
 namespace deprecated {
 
@@ -148,7 +150,7 @@ namespace deprecated {
         (*_cacheDrawActions)(c, params_);
       }
     }
-    OptimizableGraph::Data* d=that->userData();
+    HyperGraph::Data* d=that->userData();
     while (d && _cacheDrawActions ){
       (*_cacheDrawActions)(d, params_);
       d=d->next();

@@ -65,7 +65,7 @@ namespace g2o {
       }
 
       virtual bool getMeasurementData(double* d) const {
-        Vector3d v=_measurement.toVector();
+        Vector3D v=_measurement.toVector();
         d[0] = v[0];
         d[1] = v[1];
         d[2] = v[2];
@@ -105,6 +105,10 @@ namespace g2o {
     EdgeSE2DrawAction();
     virtual HyperGraphElementAction* operator()(HyperGraph::HyperGraphElement* element, 
             HyperGraphElementAction::Parameters* params_);
+  protected:
+    virtual bool refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_);
+    FloatProperty* _triangleX, *_triangleY;
+
   };
 #endif
 
