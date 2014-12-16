@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <queue>
 #include <mutex>
 
 namespace putslam {
@@ -43,10 +44,10 @@ namespace putslam {
             virtual const PointCloud& getCloud(void) const = 0;
 
             /// Returns the current 2D image
-            virtual const SensorFrame& getSensorFrame(void) const = 0;
+            virtual const SensorFrame& getSensorFrame(void) = 0;
 
             /// Grab image and/or point cloud
-            virtual void grab() = 0;
+            virtual bool grab() = 0;
 
             /// Calibrate sensor
             virtual void calibrate() = 0;
@@ -68,7 +69,10 @@ namespace putslam {
             PointCloud cloud;
 
             /// 2D image
-            SensorFrame sensor_frame;
+            SensorFrame sensorFrame;
+
+            /// sequence
+            std::queue<SensorFrame> sensorFrames;
 
             /// Calibration methods
             Calibration calibrator;

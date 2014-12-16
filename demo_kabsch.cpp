@@ -390,12 +390,15 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
     return tmp;
 }
 
-void saveImageFeatures(std::string filename, const Mat34 sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const KinectGrabber::UncertaintyModel& sensorModel){
+void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const KinectGrabber::UncertaintyModel& sensorModel, const Mat34& estimation){
     std::ofstream file(filename);
     file << "#sensor_x, sensor_y, sensor_z, sensor_qw, sensor_qx, sensor_qy, sensor_qz\n";
+    file << "#Kabsch_x, Kabsch_y, Kabsch_z, Kabsch_qw, Kabsch_qx, Kabsch_qy, Kabsch_qz\n";
     file << "#feature_id, feature_u, feature_v, depth\n";
     Quaternion q(sensorPose.rotation());
-    file << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << "\n";
+    Quaternion qKabsch(estimation.rotation());
+    file << sensorPose(0,3) << ", " << sensorPose(1,3) << ", " << sensorPose(2,3) << ", " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << "\n";
+    file << estimation(0,3) << ", " << estimation(1,3) << ", " << estimation(2,3) << ", " << qKabsch.w() << ", " << qKabsch.x() << ", " << qKabsch.y() << ", " << qKabsch.z() << "\n";
     for (int i=0;i<cloud.size();i++){
         Eigen::Vector3d cameraPoint = sensorModel.inverseModel(cloud[i].x, cloud[i].y, cloud[i].z);
         file << setIds[i] << ", " << cameraPoint.x() << ", " << cameraPoint.y() << ", " << cameraPoint.z() << "\n";
@@ -1173,7 +1176,8 @@ int main(int argc, char * argv[])
             //cloudA = cloud2local(cloudA, sensorPose);
             cloudSeq.push_back(cloudA);
             setIds.push_back(setAids);
-            saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel);
+            Mat34 estimKabsch; estimKabsch.setIdentity();
+            saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel, estimKabsch);
             uncertaintySet.push_back( uncertaintyCloudA );
             trajectorySensor.push_back(sensorPose);
             for (int i=1;i<trajectory.size();i++){
@@ -1188,8 +1192,6 @@ int main(int argc, char * argv[])
                 std::string filenameCloud= "../../resources/KabschUncertainty/cloud" + std::to_string(i) + ".m";
                 savePointCloud(filenameCloud.c_str(), cloudB);
 
-                std::string filename= "../../resources/simulator/frame" + std::to_string(i) + ".dat";
-                saveImageFeatures(filename, sensorPose, cloudB, setBids, sensorModel);
                 //match and estimate transformation
                 matchClouds(cloudSeq.back(), setA, uncertaintySet.back(), setAUncertainty, setIds.back(), cloudB, setB, uncertaintyCloudB, setBUncertainty, setBids);
                 if (setA.rows()>3){
@@ -1215,6 +1217,8 @@ int main(int argc, char * argv[])
                     sensorPose.matrix() = trajectorySensor.back().matrix()*trans.matrix();
                     trajectorySensor.push_back(sensorPose);
                 }
+                std::string filename= "../../resources/simulator/frame" + std::to_string(i) + ".dat";
+                saveImageFeatures(filename, sensorPose, cloudB, setBids, sensorModel, trans);
                 cloudSeq.push_back(cloudB);
                 setIds.push_back(setBids);
                 uncertaintySet.push_back(uncertaintyCloudB);

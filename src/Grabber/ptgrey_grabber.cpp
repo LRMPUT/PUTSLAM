@@ -27,11 +27,11 @@ const PointCloud& PtgreyGrabber::getCloud(void) const {
     return cloud;
 }
 
-const SensorFrame& PtgreyGrabber::getSensorFrame(void) const {
-    return sensor_frame;
+const SensorFrame& PtgreyGrabber::getSensorFrame(void) {
+    return sensorFrame;
 }
 
-void PtgreyGrabber::grab(void) {
+bool PtgreyGrabber::grab(void) {
 #ifdef WITH_PTGREY
     //RunSingleCamera( guid );
 
@@ -58,6 +58,7 @@ void PtgreyGrabber::grab(void) {
         this->sensor_frame.image.create(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC3);
         memcpy(sensor_frame.image.data,convertedImage.GetData(),convertedImage.GetStride() * convertedImage.GetRows());
 #endif
+        return true;
 }
 
 /// run grabber thread
