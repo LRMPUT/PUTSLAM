@@ -123,6 +123,23 @@ add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml
 
 ###############################################################################
 #
+# PUTSLAM positSolver library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM)
+        file(GLOB POSITSOLVER_SOURCES
+            "${CMAKE_SOURCE_DIR}/3rdParty/posit_solver/src/Solver/*.cpp"
+        )
+        file(GLOB POSITSOLVER_HEADERS
+            "${CMAKE_SOURCE_DIR}/3rdParty/posit_solver/include/Solver/*.h"
+        )
+
+        ADD_LIBRARY(Solver STATIC ${POSITSOLVER_SOURCES} ${POSITSOLVER_HEADERS})
+endif(BUILD_PUTSLAM)
+
+###############################################################################
+#
 # PUTSLAM defs library
 #
 ###############################################################################
@@ -236,6 +253,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+        TARGET_LINK_LIBRARIES(TransformEst Solver)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
