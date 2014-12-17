@@ -130,10 +130,10 @@ class PtgreyGrabber : public Grabber {
         virtual const PointCloud& getCloud(void) const;
 
         /// Returns the current 2D image
-        virtual const SensorFrame& getSensorFrame(void) const;
+        virtual const SensorFrame& getSensorFrame(void);
 
         /// Grab image and/or point cloud
-        virtual void grab();
+        virtual bool grab();
     #ifdef WITH_PTGREY
         ///Sensor initialization
         virtual int initPtGrey ();

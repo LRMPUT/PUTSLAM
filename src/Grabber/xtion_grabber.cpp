@@ -36,8 +36,8 @@ XtionGrabber::XtionGrabber(std::string modelFilename) : Grabber("Xtion Grabber",
         xtionDevice->FirstChildElement( "colorVideoMode" )->QueryIntText(&colorMode);
         xtionDevice->FirstChildElement("depthColorSyncEnabled")->QueryBoolText(&syncDepthColor);
     }
-rc = openni::STATUS_OK;
-initOpenNI();
+    rc = openni::STATUS_OK;
+    initOpenNI();
 }
 
 int XtionGrabber::grabberClose(){
@@ -60,7 +60,7 @@ const PointCloud& XtionGrabber::getCloud(void) const {
     return cloud;
 }
 
-const SensorFrame& XtionGrabber::getSensorFrame(void) const {
+const SensorFrame& XtionGrabber::getSensorFrame(void) {
     return sensor_frame;
 }
 
@@ -190,7 +190,7 @@ int XtionGrabber::acquireColorFrame(cv::Mat &m){
 
 }
 
-void XtionGrabber::grab(void) {
+bool XtionGrabber::grab(void) {
 //    Point3D point;
 //    point.r = 255; point.g = 0; point.b = 0; point.a = 255;
 //    point.x = 1.2; point.y = 3.4; point.z = 5.6;
@@ -198,6 +198,7 @@ void XtionGrabber::grab(void) {
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
       if(acquireDepthFrame(this->sensor_frame.depth)) throw 1;
       if(acquireColorFrame(this->sensor_frame.image)) throw 2;
+      return true;
 }
 
 int XtionGrabber::listDepthVideoMode(){
