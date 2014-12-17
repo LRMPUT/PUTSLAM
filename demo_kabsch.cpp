@@ -455,8 +455,8 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 infoMat.setIdentity();
             else if (expType==2){
                 //uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                //uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
+                uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
                 //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                 // [xx  xy  xz  xrx  xry  xrz ]    [yy  yz  yx  yry  yrz  yrx ]
                 // [yx  yy  yz  yrx  yry  yrz ] -> [zy  zz  zx  zry  zrz  zrx ]
@@ -535,8 +535,8 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                         infoMat.setIdentity();
                     else if (expType==2){
                         //uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                        //uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
-                        uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
+                        uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                        //uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
                         //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                         /*Mat66 unc;
                         unc(0,0) = uncertainty(1,1); unc(0,1) = 0; unc(0,2) = 0; unc(0,3) = 0; unc(0,4) = 0; unc(0,5) = 0;

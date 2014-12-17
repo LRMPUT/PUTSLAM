@@ -10,10 +10,6 @@
 #include "../Defs/putslam_defs.h"
 #include <string>
 #include <vector>
-#include "../../3rdParty/posit_solver/include/Solver/posit_solver.h"
-#include "../../3rdParty/posit_solver/include/Solver/solver.h"
-#include "../../3rdParty/posit_solver/include/Solver/cloud.h"
-#include "../../3rdParty/posit_solver/include/Solver/correspondence_finder.h"
 
 namespace putslam {
     /// Transformation Estimator interface
@@ -356,76 +352,6 @@ std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
             uncertainty(0,0) = pow(transformation(0,3)/depthAv,2.0);
             uncertainty(1,1) = pow(transformation(1,3)/depthAv,2.0);
             uncertainty(2,2) = pow(transformation(2,3)/depthAv,2.0);
-            return uncertainty;
-        }
-
-        /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
-        virtual const Mat66& computeUncertaintyGrisetti(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB, Mat34& transformation) {
-            using namespace DenseRGBDAligner;
-            PSolver::Solver solver2;
-            PSolver::Cloud reference;
-            PSolver::Cloud current;
-            for (int i=0;i<setA.rows();i++){
-                Eigen::Vector3f p(setA(i,0),setA(i,1),setA(i,2));
-                double length = sqrt(pow(p(0),2.0)+pow(p(1),2.0)+pow(p(2),2.0));
-                Eigen::Vector3f norm(p(0)/length, p(1)/length, p(2)/length);
-                PSolver::RichPoint point(p,norm);
-                reference.push_back(point);
-
-                Eigen::Vector3f p2(setB(i,0),setB(i,1),setB(i,2));
-                double length2 = sqrt(pow(p2(0),2.0)+pow(p2(1),2.0)+pow(p2(2),2.0));
-                Eigen::Vector3f norm2(p2(0)/length2, p2(1)/length2, p2(2)/length2);
-                PSolver::RichPoint point2(p2,norm2);
-                current.push_back(point2);
-            }
-            uncertainty.setIdentity();
-
-            solver2.setReferenceModel(&current);
-            solver2.setCurrentModel(&reference);
-
-            solver2.setMaxError(.001);
-            solver2.setDamping(1);
-            solver2.setGICP(true);
-
-            Eigen::Isometry3f initGuess;
-            initGuess.translation() << transformation(0,3), transformation(1,3), transformation(2,3);
-            initGuess.linear() = (transformation.rotation()).cast<float>();
-
-            Matrix6f initial_guess_information = Matrix6f::Identity();
-            solver2.setT(initGuess,initial_guess_information);
-
-
-            int iterations = 1000;
-            PSolver::CorrespondenceFinder::CorrespondenceVector corres;
-
-            for (int i=0;i<reference.size();i++){
-                PSolver::CorrespondenceFinder::Correspondence pair;
-                pair.first=i; pair.second=i;
-                corres.push_back(pair);
-            }
-
-            const PSolver::CorrespondenceFinder::CorrespondenceVector& corr=corres;
-            for (int i = 0; i< iterations; i++){
-              solver2.oneRound(corr, true);
-            }
-
-            /*std::cout << "H: \n" << solver2.H() << "\n";
-            std::cout << "info mat: \n" << solver2.informationMatrix() << "\n";
-            std::cout << "info mat inv: \n" << solver2.informationMatrix().inverse() << "\n";
-            std::cout << "T: \n" << solver2.T().matrix() << "\n";
-            std::cout << "Ttref: \n" << transformation.matrix() << "\n";
-            //std::cout << "T.inv: \n" << solver2.T().matrix().inverse() << "\n";
-            std::cout << "e: \n" << solver2.error() << "\n";
-            getchar();*/
-
-//Eigen::Matrix<float_type,6,6>
-            Matrix6f info = solver2.informationMatrix().inverse();
-            for (int i=0;i<6;i++){
-                for (int j=0;j<6;j++){
-                    uncertainty(i,j) = info(i,j);
-                }
-            }
-            uncertainty = ConvertUncertaintyEuler2quat(uncertainty, transformation);
             return uncertainty;
         }
 
