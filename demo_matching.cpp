@@ -46,7 +46,7 @@ int main()
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());
-t
+
         Grabber* grabber;
         if (grabberType == "Kinect") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
