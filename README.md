@@ -26,3 +26,39 @@ Xtion Grabber:
   - cmake does not link opencv libraries if not strictly shown in add_library;
   - opencv issue -- when using cvWatiKey the value is not returned properly add to the condition & 0xff;
   - openni 2.1 should not be used while it is not supporting c++11 (problems with naming of the standard constants)
+
+
+======= Installation guide on ubuntu 14.04.1
+
+== OpenCV installation (just paste and execute each line)
+
+sudo apt-get install build-essential
+sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j4
+sudo make install
+
+== PCL instllation (just paste and execute each line)
+
+sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
+sudo apt-get update
+sudo apt-get install libpcl-all
+
+== PUTSLAM
+
+Install g2o dependencies:
+
+sudo apt-get install libeigen3-dev libsuitesparse-dev libqt4-dev qt4-qmake libqglviewer-dev
+
+Go to directory you want to put the PUTSLAM and then:
+
+sudo apt-get install git
+git clone https://github.com/LRMPUT/PUTSLAM.git
+cd PUTSLAM && mkdir build && cd build
+cmake ..
+make -j4
+
+As a results in path (...)/PUTSLAM/build/bin you should have multiple files starting with "Demo_..." presenting the use of PUTSLAM.
+
+
+
