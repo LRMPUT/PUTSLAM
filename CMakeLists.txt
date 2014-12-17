@@ -30,6 +30,8 @@ option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO
 mark_as_advanced(BUILD_PUTSLAM_GRABBER_PTGREY)
 option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
+option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
+mark_as_advanced(BUILD_PUTSLAM_MATCHER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" YES)
@@ -221,6 +223,25 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
 
 ###############################################################################
 #
+# PUTSLAM Matcher library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
+        file(GLOB MATCHER_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Matcher/*.cpp"
+        )
+        file(GLOB MATCHER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Matcher/*.h"
+        )
+
+        ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
+        INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
+
+###############################################################################
+#
 # PUTSLAM Transformation Estimation library
 #
 ###############################################################################
@@ -302,6 +323,34 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+
+
+###############################################################################
+#
+# PUTSLAM DEMO matching executables
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+        SET(DEMO_SOURCES ./demo_matching.cpp)
+        ADD_EXECUTABLE(Demo_matching ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(Demo_matching tinyxml2 Grabber Matcher TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+            ADD_CUSTOM_COMMAND( TARGET Demo POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
+                    COMMENT "copying g2o libs ..."
+            )
+        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
+        INSTALL(TARGETS Demo_matching RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
+
 
 ###############################################################################
 #
