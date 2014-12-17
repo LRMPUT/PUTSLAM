@@ -355,6 +355,34 @@ std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
             return uncertainty;
         }
 
+        /// convert [x y z fi psi theta] uncertainty matrix to [x y z qx qy qz]
+        virtual const Mat66& ConvertUncertaintyEuler2quat(const Mat66& _uncertainty, const Mat34& transformation) {
+            double fi = atan2(transformation.matrix()(1,0), transformation.matrix()(0,0));
+            double psi = -asin(transformation.matrix()(2,0));
+            double theta = atan2(transformation.matrix()(2,1), transformation.matrix()(2,2));
+            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+            Mat66 J;
+            J(0,0) = 1; J(0,1) = 0; J(0,2) = 0; J(0,3) = 0; J(0,4) = 0; J(0,5) = 0;
+            J(1,0) = 0; J(1,1) = 1; J(1,2) = 0; J(1,3) = 0; J(1,4) = 0; J(1,5) = 0;
+            J(2,0) = 0; J(2,1) = 0; J(2,2) = 1; J(2,3) = 0; J(2,4) = 0; J(2,5) = 0;
+            J(3,0) = 0; J(3,1) = 0; J(3,2) = 0;
+            J(3,3) = -(0.5)*cos((0.5)*psi)*sin((0.5)*fi)*sin((0.5)*theta)-(0.5)*cos((0.5)*theta)*sin((0.5)*psi)*cos((0.5)*fi);
+            J(3,4) = -(0.5)*cos((0.5)*psi)*sin((0.5)*fi)*cos((0.5)*theta)-(0.5)*sin((0.5)*psi)*sin((0.5)*theta)*cos((0.5)*fi);
+            J(3,5) = (0.5)*cos((0.5)*psi)*cos((0.5)*theta)*cos((0.5)*fi)+(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta);
+
+            J(4,0) = 0; J(4,1) = 0; J(4,2) = 0;
+            J(4,3) = (0.5)*cos((0.5)*psi)*sin((0.5)*theta)*cos((0.5)*fi)-(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*sin((0.5)*psi);
+            J(4,4) = (0.5)*cos((0.5)*psi)*cos((0.5)*theta)*cos((0.5)*fi)-(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta);
+            J(4,5) = (0.5)*cos((0.5)*psi)*sin((0.5)*fi)*cos((0.5)*theta)-(0.5)*sin((0.5)*psi)*sin((0.5)*theta)*cos((0.5)*fi);
+
+            J(5,0) = 0; J(5,1) = 0; J(5,2) = 0;
+            J(5,3) = (0.5)*cos((0.5)*psi)*cos((0.5)*theta)*cos((0.5)*fi)+(0.5)*sin((0.5)*fi)*sin((0.5)*psi)*sin((0.5)*theta);
+            J(5,4) = -(0.5)*cos((0.5)*psi)*sin((0.5)*theta)*cos((0.5)*fi)-(0.5)*sin((0.5)*fi)*cos((0.5)*theta)*sin((0.5)*psi);
+            J(5,5) = -(0.5)*cos((0.5)*psi)*sin((0.5)*fi)*sin((0.5)*theta)-(0.5)*cos((0.5)*theta)*sin((0.5)*psi)*cos((0.5)*fi);
+            uncertainty = J*_uncertainty*J.transpose();
+            return uncertainty;
+        }
+
         protected:
 
             /// Estimated transformation

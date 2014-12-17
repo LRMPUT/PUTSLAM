@@ -43,7 +43,7 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     cameraOffset->setId(0);
     Eigen::Isometry3d cameraPose;
     Eigen::Matrix3d R;  R  << 1,  0,  0,  0,  1,  0,  0,  0,  1;
-    cameraPose = R; cameraPose.translation() = g2o::Vector3d(0.0, 0.0, 0.0);
+    cameraPose = R; cameraPose.translation() = Eigen::Vector3d(0.0, 0.0, 0.0);
     cameraOffset->setOffset(cameraPose);
     optimizer.addParameter(cameraOffset);
 }
@@ -274,7 +274,7 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     //rk->setDelta(1);
     edge->setRobustKernel(rk);
     if (!optimizer.addEdge(edge)) {
-        g2o::cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
+        std::cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
       //  delete rk;
     }

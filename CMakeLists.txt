@@ -175,6 +175,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/fileGrabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/src/Grabber/ptgrey_grabber.cpp"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
@@ -185,6 +186,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/include/Grabber/ptgrey_grabber.h"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
@@ -255,6 +257,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+        TARGET_LINK_LIBRARIES(TransformEst)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
