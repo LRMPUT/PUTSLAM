@@ -1,3 +1,9 @@
+/** @file RGBD.d
+ *
+ * \brief The methods, which might be useful when dealing with RGBD data
+ * \author Michal Nowicki
+ *
+ */
 #ifndef _RGBD_H
 #define _RGBD_H
 

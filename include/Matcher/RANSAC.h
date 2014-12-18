@@ -1,6 +1,7 @@
 /** @file RANSAC.h
  *
- * The robust estimation method to find transformation
+ * \brief The robust estimation method to find transformation based on two sets of 3D features
+ * \author Michal Nowicki
  *
  */
 
@@ -23,6 +24,14 @@ public:
 
 	RANSAC();
 
+	/**
+	 * Method used to robustly estimate transformation from given two sets of
+	 * 3D features and potentially correct matches between those sets
+	 *
+	 * prevFeatures 	-- 	3D locations of features from the first set
+	 * features 		--	3D locations of features currently observed (2nd set)
+	 * matches			--	vector of indices of corresponding features
+	 */
 	void estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
 				std::vector<Eigen::Vector3f> features,
 				std::vector<cv::DMatch> matches);

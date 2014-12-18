@@ -8,6 +8,12 @@
 #define MATCHERSURF_H_INCLUDED
 
 #include "matcher.h"
+/** @file matcherOpenCV.h
+ *
+ * \brief The matching methods implemented for detectors and descriptors in OpenCV
+ * \author Michal Nowicki
+ *
+ */
 #include <iostream>
 #include <memory>
 

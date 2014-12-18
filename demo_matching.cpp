@@ -5,12 +5,12 @@
 #include "Grabber/xtion_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
-#include "Matcher/matcherSURF.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <ctime>
 #include <ratio>
 #include <chrono>
+#include "include/Matcher/matcherOpenCV.h"
 
 using namespace std;
 
@@ -68,7 +68,7 @@ int main()
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
-        Matcher * matcher = createMatcherSURF();
+        Matcher * matcher = createMatcherOpenCV();
         cout << "Current matcher: " << matcher->getName() << std::endl;
         Graph * graph = createPoseGraphG2O();
         cout << "Current graph: " << graph->getName() << std::endl;

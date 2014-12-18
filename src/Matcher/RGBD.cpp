@@ -1,6 +1,7 @@
 /** @file RGBD.cpp
  *
- * implementation -
+ * \brief The methods, which might be useful when dealing with RGBD data
+ * \author Michal Nowicki
  *
  */
 #include "../include/Matcher/RGBD.h"
