@@ -1,8 +1,10 @@
 /** @file matcher.cpp
  *
- * implementation -
+ * \brief The core of matching Visual Odometry
+ * \author Michal Nowicki
  *
  */
+
 #include "../include/Matcher/matcher.h"
 #include "../include/Matcher/RGBD.h"
 #include "../include/Matcher/RANSAC.h"

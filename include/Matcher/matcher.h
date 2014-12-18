@@ -1,6 +1,7 @@
 /** @file matcher.h
  *
- * the interface of 2D image feature tracker
+ * \brief The core of matching Visual Odometry
+ * \author Michal Nowicki
  *
  */
 

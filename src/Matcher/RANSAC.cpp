@@ -1,3 +1,9 @@
+/** @file RANSAC.c
+ *
+ * \brief The robust estimation method to find transformation based on two sets of 3D features
+ * \author Michal Nowicki
+ *
+ */
 #include "../include/Matcher/RANSAC.h"
 
 RANSAC::RANSAC() {

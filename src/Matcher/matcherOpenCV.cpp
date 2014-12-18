@@ -1,3 +1,9 @@
+/** @file matcherOpenCV.cpp
+ *
+ * \brief The matching methods implemented for detectors and descriptors in OpenCV
+ * \author Michal Nowicki
+ *
+ */
 #include "../include/Matcher/matcherOpenCV.h"
 #include <memory>
 #include <stdexcept>
