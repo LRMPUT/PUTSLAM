@@ -12,26 +12,30 @@
 #include <memory>
 
 namespace putslam {
-/// create a single matcher (SURF)
-Matcher* createMatcherSURF(void);
+/// create a single matcher OpenCV
+Matcher* createMatcherOpenCV(void);
 }
 ;
 
 using namespace putslam;
 
 /// Tracker implementation
-class MatcherSURF: public Matcher {
+class MatcherOpenCV: public Matcher {
 public:
+	enum type{SURF, SIFT, ORB, FAST, LDB};
+
 	/// Pointer
-	typedef std::unique_ptr<MatcherSURF> Ptr;
+	typedef std::unique_ptr<MatcherOpenCV> Ptr;
 
 	/// Construction
-	MatcherSURF(void);
+	MatcherOpenCV(void);
 
 	/// Construction
-	MatcherSURF(const std::string _name) :
-			Matcher(_name) {
-	}
+	MatcherOpenCV(type detector, type descriptor);
+
+	/// Construction
+	MatcherOpenCV(const std::string _name) : Matcher(_name) {};
+
 
 	/// Name of the matcher
 	virtual const std::string& getName() const;
@@ -55,6 +59,10 @@ public:
 	virtual void reset();
 
 private:
+	/// Type of OpenCV matcher
+	type detectorType;
+	type descriptorType;
+
 
 };
 

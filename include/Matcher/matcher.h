@@ -1,4 +1,4 @@
-/** @file tracker.h
+/** @file matcher.h
  *
  * the interface of 2D image feature tracker
  *
@@ -57,22 +57,31 @@ public:
 //            virtual ~Tracker() {}
 
 protected:
-//            /// A set of 2D features
-//            ImageFeature::Seq features;
-//
+
 	/// Matcher name
 	const std::string name;
 
 	/// Frame id
 	uint_fast32_t frame_id;
+
+	std::vector<cv::KeyPoint> prevFeatures;
+	cv::Mat prevDescriptors;
+	std::vector<Eigen::Vector3f> prevFeatures3D;
+
+		//            /// A set of 2D features
+		//            ImageFeature::Seq features;
+		//
+
 //
 //            /// Computed homogenous transformation
 //            RobotPose transformation;
 //
 //            /// keypoint: robot/sensor pose + point cloud + features
 //            VertexSE3 keypoint;
+
+
+
 };
-}
-;
+};
 
 #endif // _MATCHER_H_
