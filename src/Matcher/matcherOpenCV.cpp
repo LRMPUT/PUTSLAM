@@ -1,4 +1,4 @@
-#include "../include/Matcher/matcherSURF.h"
+#include "../include/Matcher/matcherOpenCV.h"
 #include <memory>
 #include <stdexcept>
 
@@ -6,26 +6,31 @@
 
 using namespace putslam;
 
-/// A single instance of SURF matcher
-MatcherSURF::Ptr matcher;
+/// A single instance of OpenCV matcher
+MatcherOpenCV::Ptr matcher;
 
-putslam::Matcher* putslam::createMatcherSURF(void) {
-	matcher.reset(new MatcherSURF());
+putslam::Matcher* putslam::createMatcherOpenCV(void) {
+	matcher.reset(new MatcherOpenCV());
 	return matcher.get();
 }
 
 // MatcherSURF
-MatcherSURF::MatcherSURF(void) :
-		Matcher("SURF Matcher") {
+MatcherOpenCV::MatcherOpenCV(void) :
+		Matcher("OpenCV Matcher") {
 
 }
 
-const std::string& MatcherSURF::getName() const {
+MatcherOpenCV::MatcherOpenCV(type detector, type descriptor) : Matcher("OpenCV Matcher")
+{
+
+}
+
+const std::string& MatcherOpenCV::getName() const {
 	return name;
 }
 
 /// Detect features
-std::vector<cv::KeyPoint> MatcherSURF::detectFeatures(cv::Mat rgbImage) {
+std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::FeatureDetector *featureDetector;
 	featureDetector = new cv::SurfFeatureDetector();
 
@@ -40,7 +45,7 @@ std::vector<cv::KeyPoint> MatcherSURF::detectFeatures(cv::Mat rgbImage) {
 }
 
 /// Describe features
-cv::Mat MatcherSURF::describeFeatures(cv::Mat rgbImage,
+cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 		std::vector<cv::KeyPoint> features) {
 	cv::DescriptorExtractor * extractor;
 	extractor = new cv::SurfDescriptorExtractor();
@@ -53,7 +58,7 @@ cv::Mat MatcherSURF::describeFeatures(cv::Mat rgbImage,
 }
 
 /// Perform matching
-std::vector<cv::DMatch> MatcherSURF::performMatching(cv::Mat prevDescriptors,
+std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 		cv::Mat descriptors) {
 
 	cv::FlannBasedMatcher matcher;
@@ -63,6 +68,6 @@ std::vector<cv::DMatch> MatcherSURF::performMatching(cv::Mat prevDescriptors,
 }
 
 /// Reset matching
-void MatcherSURF::reset() {
+void MatcherOpenCV::reset() {
 
 }

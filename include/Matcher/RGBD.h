@@ -24,6 +24,11 @@ std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 		std::vector<float> depth, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
+
+// Remove features without depth
+void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features, cv::Mat depthImage);
+
+
 // Building a point cloud
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 

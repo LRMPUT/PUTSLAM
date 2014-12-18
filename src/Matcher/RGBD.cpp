@@ -1,4 +1,4 @@
-/** @file matcher.cpp
+/** @file RGBD.cpp
  *
  * implementation -
  *
@@ -41,5 +41,18 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 	}
 
 	return features3D;
+}
+
+
+void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features, cv::Mat depthImage)
+{
+	// Lambda expression
+	auto it = std::remove_if (features.begin(), features.end(), [depthImage](cv::KeyPoint kp){
+	    if (depthImage.at<float>(kp.pt) > 0.0) {
+	        return false;
+	    }
+	    return true;
+	});
+	features.erase(it, features.end());
 }
 
