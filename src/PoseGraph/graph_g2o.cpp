@@ -838,10 +838,10 @@ bool PoseGraphG2O::isSingleOutgoingEdge(unsigned int edgeId){
 }
 
 ///return Hessian
-Eigen::MatrixXd PoseGraphG2O::getHessian(int vertexId){
+Mat66 PoseGraphG2O::getHessian(int vertexId){
     g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
     //g2o::OptimizableGraph::Vertex v;
-
+Mat66 tmp;
     Eigen::MatrixXd Hessian((vertices.size()-2)*3+6,(vertices.size()-2)*3+6);
     for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
         //std::cout << "cinh" << (*it)->colInHessian() << "\n";
@@ -853,25 +853,26 @@ Eigen::MatrixXd PoseGraphG2O::getHessian(int vertexId){
                 std::cout << " " << res[i];
             }
             std::cout << "\n";
-        }
-        if ((*it)->colInHessian()>0){
+            if ((*it)->colInHessian()>0){
 
-            std::cout << " dim " << (*it)->dimension() << "\n";
-            std::cout << " colinhes " << (*it)->colInHessian() << "\n";
-            for (int i=0;i<(*it)->dimension();i++){
-                for (int j=0;j<(*it)->dimension();j++){
-                    Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
+                std::cout << " dim " << (*it)->dimension() << "\n";
+                std::cout << " colinhes " << (*it)->colInHessian() << "\n";
+                for (int i=0;i<(*it)->dimension();i++){
+                    for (int j=0;j<(*it)->dimension();j++){
+                        tmp(i,j) = (*it)->hessian(i,j);
+                    }
                 }
             }
         }
+
     }
     //Hessian=Hessian.inverse();
 //    optimizer.computeMarginals()
 
-    Mat66 tmp = Hessian.block<6,6>(0,0);
+    //Mat66 tmp = Hessian.block<6,6>(0,0);
     //std::cout << tmp << "\n";
     //getchar();
-    return Hessian;
+    return tmp;
 }
 
 /**
