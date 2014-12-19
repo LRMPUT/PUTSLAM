@@ -1,4 +1,5 @@
 #include "../include/PoseGraph/graph_g2o.h"
+#include "../include/TransformEst/unscented.h"
 #include <stdexcept>
 #include <chrono>
 
@@ -43,7 +44,8 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     cameraOffset->setId(0);
     Eigen::Isometry3d cameraPose;
     Eigen::Matrix3d R;  R  << 1,  0,  0,  0,  1,  0,  0,  0,  1;
-    cameraPose = R; cameraPose.translation() = Eigen::Vector3d(0.0, 0.0, 0.0);
+    //Quaternion q(-0.5, 0.5, -0.5, 0.5);
+    cameraPose= R; cameraPose.translation() = Eigen::Vector3d(0.0, 0.0, 0.0);
     cameraOffset->setOffset(cameraPose);
     optimizer.addParameter(cameraOffset);
 }
@@ -833,6 +835,43 @@ bool PoseGraphG2O::isSingleOutgoingEdge(unsigned int edgeId){
     }
     mtxGraph.unlock();
     return true;
+}
+
+///return Hessian
+Eigen::MatrixXd PoseGraphG2O::getHessian(int vertexId){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    //g2o::OptimizableGraph::Vertex v;
+
+    Eigen::MatrixXd Hessian((vertices.size()-2)*3+6,(vertices.size()-2)*3+6);
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        //std::cout << "cinh" << (*it)->colInHessian() << "\n";
+        if ((*it)->id()==vertexId){
+            std::vector<double> res;
+            (*it)->getEstimateData(res);
+            std::cout << "g2o est: \n";
+            for (int i=0;i<res.size();i++){
+                std::cout << " " << res[i];
+            }
+            std::cout << "\n";
+        }
+        if ((*it)->colInHessian()>0){
+
+            std::cout << " dim " << (*it)->dimension() << "\n";
+            std::cout << " colinhes " << (*it)->colInHessian() << "\n";
+            for (int i=0;i<(*it)->dimension();i++){
+                for (int j=0;j<(*it)->dimension();j++){
+                    Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
+                }
+            }
+        }
+    }
+    //Hessian=Hessian.inverse();
+//    optimizer.computeMarginals()
+
+    Mat66 tmp = Hessian.block<6,6>(0,0);
+    //std::cout << tmp << "\n";
+    //getchar();
+    return Hessian;
 }
 
 /**

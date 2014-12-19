@@ -9,6 +9,7 @@
 #include <stdexcept>
 
 #include <opencv2/nonfree/nonfree.hpp>
+#include <opencv2/imgproc.hpp>
 
 using namespace putslam;
 
@@ -41,7 +42,7 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	featureDetector = new cv::SurfFeatureDetector();
 
 	cv::Mat grayImage;
-	cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
+    cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
 	featureDetector->detect(grayImage, raw_keypoints);
