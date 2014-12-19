@@ -126,6 +126,9 @@ class PoseGraphG2O : public Graph {
         /// Return trajectory (set of SE3 poses)
         std::vector<Mat34> getTrajectory(void) const;
 
+        ///return Hessian
+        Eigen::MatrixXd getHessian(int vertexId);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;

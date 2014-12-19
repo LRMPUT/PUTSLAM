@@ -4,6 +4,7 @@
 #include "Grabber/kinect_grabber.h"
 #include "Tracker/trackerKLT.h"
 #include "TransformEst/kabschEst.h"
+#include "TransformEst/g2oEst.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
 #include "3rdParty/g2o/g2o/types/slam3d/isometry3d_mappings.h"
 #include "Grabber/kinect_grabber.h"
@@ -455,7 +456,10 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 infoMat.setIdentity();
             else if (expType==2){
                 //uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                //uncertainty = transEst->computeUncertainty(setB, setBUncertainty, setA, setAUncertainty, trans);
+                // create g2o transform estimator
+                TransformEst* g2oEst = createG2OEstimator();
+                uncertainty = g2oEst->computeUncertainty(setB, setBUncertainty, setA, setAUncertainty, trans);
                 //uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
                 //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                 // [xx  xy  xz  xrx  xry  xrz ]    [yy  yz  yx  yry  yrz  yrx ]
@@ -535,7 +539,9 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                         infoMat.setIdentity();
                     else if (expType==2){
                         //uncertainty = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
-                        uncertainty = transEst->computeUncertainty(setA, setAUncertainty, setB, setBUncertainty, trans);
+                        //uncertainty = transEst->computeUncertainty(setB, setBUncertainty, setA, setAUncertainty, trans);
+                        TransformEst* g2oEst = createG2OEstimator();
+                        uncertainty = g2oEst->computeUncertainty(setB, setBUncertainty, setA, setAUncertainty, trans);
                         //uncertainty = transEst->computeUncertaintyGrisetti(setB, setA, trans);
                         //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                         /*Mat66 unc;
@@ -1102,7 +1108,7 @@ int main(int argc, char * argv[])
             //create reference trajectory
             std::vector<Mat34> trajectory;
             //rectangular trajectory
-/*            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
+            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
             pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
             pose(1,0) = 0; pose(1,1) = -1; pose(1,2) = 0;
             pose(2,0) = 1; pose(2,1) = 0; pose(2,2) = 0;
@@ -1124,12 +1130,12 @@ int main(int argc, char * argv[])
                     pose.matrix() *= moveRot.matrix();
                     trajectory.push_back(pose);
                 }
-            }*/
+            }
             // m 2mcos(2t) -2msin(2t)
             // 0 -sin(2t)  -cos(2t)
             // i    j         k
             // -msin(2t)*k-2mcos^2(2t)*i-2msin^2(2t)*i+mcos(2t)*j
-            int trajectoryLength = 65;
+            /*int trajectoryLength = 65;
             for (int j=0;j<trajectoryLength;j++){
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
@@ -1155,7 +1161,7 @@ int main(int argc, char * argv[])
                 //    std::cout << pose.rotation().determinant() << "\n";
                 //    getchar();
                 //}
-            }
+            }*/
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
             for (int iter = 0; iter<trajectory.size();iter++){
