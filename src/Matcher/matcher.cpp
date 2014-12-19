@@ -31,7 +31,7 @@ bool Matcher::match(const SensorFrame& next_frame) {
 
 	// RANSAC
 	RANSAC ransac;
-	ransac.estimateTransformation(prevFeatures3D,features3D,matches);
+	Eigen::Matrix4f bestTransformation = ransac.estimateTransformation(prevFeatures3D,features3D,matches);
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);

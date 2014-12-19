@@ -26,17 +26,6 @@ public:
 	/// Name of the Matcher
 	virtual const std::string& getName() const = 0;
 
-	/// Detect features
-	virtual std::vector<cv::KeyPoint> detectFeatures(cv::Mat rgbImage) = 0;
-
-	/// Describe features
-	virtual cv::Mat describeFeatures(cv::Mat rgbImage,
-			std::vector<cv::KeyPoint> features) = 0;
-
-	/// Perform matching
-	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
-			cv::Mat descriptors) = 0;
-
 //
 //            /// Returns the current set of features
 //            virtual const ImageFeature::Seq& getFeatures(void) const = 0;
@@ -80,6 +69,16 @@ protected:
 //            /// keypoint: robot/sensor pose + point cloud + features
 //            VertexSE3 keypoint;
 
+	/// Detect features
+	virtual std::vector<cv::KeyPoint> detectFeatures(cv::Mat rgbImage) = 0;
+
+	/// Describe features
+	virtual cv::Mat describeFeatures(cv::Mat rgbImage,
+			std::vector<cv::KeyPoint> features) = 0;
+
+	/// Perform matching
+	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
+			cv::Mat descriptors) = 0;
 
 
 };
