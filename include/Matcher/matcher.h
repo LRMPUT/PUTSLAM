@@ -33,6 +33,10 @@ public:
 //            /// Reset tracking and find new set of features
 //            virtual void reset() = 0;
 //
+
+	/// Load features at the start of the sequence
+	void loadInitFeatures(const SensorFrame& next_frame);
+
 	/// Run single match
 	bool match(const SensorFrame& next_frame);
 
