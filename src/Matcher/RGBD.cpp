@@ -21,20 +21,7 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 			cv::Mat(3, 3, CV_32FC1, &cameraMatrix),
 			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
 }
-std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> features,
-		cv::Mat depthImage) {
 
-	// Assume standard distortion
-	float distortionCoeffs[5] = { -0.003632241033, -0.2716829622,
-			0.001093892549, -0.001320103758, 0.8473502424 };
-	float cameraMatrix[3][3] = { { 574.1240803, 0, 319.796104 }, { 0,
-			573.9756877, 243.9607685 }, { 0, 0, 1 } };
-
-	// Call method with additional parameters
-	return keypoints2Dto3D(features, depthImage,
-			cv::Mat(3, 3, CV_32FC1, &cameraMatrix),
-			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
-}
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 		std::vector<float> depth, cv::Mat cameraMatrix, cv::Mat distCoeffs) {
 
@@ -64,6 +51,21 @@ int RGBD::roundSize(double x, int size) {
 	else if (x > size - 1)
 		x = size;
 	return round(x);
+}
+
+std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> features,
+		cv::Mat depthImage) {
+
+	// Assume standard distortion
+	float distortionCoeffs[5] = { -0.003632241033, -0.2716829622,
+			0.001093892549, -0.001320103758, 0.8473502424 };
+	float cameraMatrix[3][3] = { { 574.1240803, 0, 319.796104 }, { 0,
+			573.9756877, 243.9607685 }, { 0, 0, 1 } };
+
+	// Call method with additional parameters
+	return keypoints2Dto3D(features, depthImage,
+			cv::Mat(3, 3, CV_32FC1, &cameraMatrix),
+			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
 }
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> features,

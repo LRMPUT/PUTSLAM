@@ -11,6 +11,22 @@
 
 using namespace putslam;
 
+void Matcher::loadInitFeatures(const SensorFrame &next_frame)
+{
+	// Detect salient features
+	prevFeatures = detectFeatures(next_frame.image);
+
+	// Remove features without depth
+	RGBD::removeFeaturesWithoutDepth(prevFeatures, next_frame.depth);
+
+	// Describe salient features
+	prevDescriptors = describeFeatures(next_frame.image, prevFeatures);
+
+	// Associate depth
+	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, next_frame.depth);
+}
+
+
 bool Matcher::match(const SensorFrame& next_frame) {
 	// Detect salient features
 	std::vector<cv::KeyPoint> features = detectFeatures(next_frame.image);
@@ -40,3 +56,5 @@ bool Matcher::match(const SensorFrame& next_frame) {
 
 	return false;
 }
+
+
