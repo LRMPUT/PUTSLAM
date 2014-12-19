@@ -24,12 +24,21 @@
 
 namespace RGBD {
 
-// Convert Keypoints to 3D points
+// Convert keypoints to 3D points using vector of float as depth
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 		std::vector<float> depth);
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 		std::vector<float> depth, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
+// Convert keypoints to 3D points using depth image
+std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
+		cv::Mat depthImage);
+std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
+		cv::Mat depthImage, cv::Mat cameraMatrix, cv::Mat distCoeffs);
+
+
+// Rounds the (u,v) location to integer
+int roundSize(double x, int size);
 
 // Remove features without depth
 void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features, cv::Mat depthImage);

@@ -15,7 +15,7 @@ RANSAC::RANSAC() {
 // TODO: MISSING:
 // - model feasibility
 // - test of minimal inlierRatio of bestModel
-void RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
+Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
 		std::vector<Eigen::Vector3f> features,
 		std::vector<cv::DMatch> matches) {
 
@@ -44,6 +44,8 @@ void RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
 
 	// Test for minimal inlierRatio of bestModel
 
+
+	return bestTransformationModel;
 }
 
 // TODO: MISSING:
@@ -141,5 +143,10 @@ inline void RANSAC::saveBetterModel(const float inlierRatio,
 		bestTransformationModel = transformationModel;
 		bestInlierRatio = inlierRatio;
 	}
+}
+
+inline int RANSAC::computeRANSACIteration(double inlierRatio, double successProbability, int numberOfPairs)
+{
+	return (log(1 - successProbability) / log(1 - pow(inlierRatio, numberOfPairs)));
 }
 
