@@ -50,7 +50,7 @@ namespace putslam {
             PoseGraphG2O graph;
 
             ///computes information matrix from hessian using unscented transform
-            Mat66 computeInformationMatrix(const Eigen::MatrixXd& Hessian, const Mat34& transformation);
+            Mat66 computeInformationMatrix(const Mat66& Hessian, const Mat34& transformation);
 
             inline Eigen::Isometry3f v2t(const Vector6f& t){
               Eigen::Isometry3f T;
