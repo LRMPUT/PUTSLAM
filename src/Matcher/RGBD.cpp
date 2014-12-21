@@ -87,7 +87,7 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 		float v = pointsUndistorted.at<cv::Vec2f>(i)[1];
 		float uRounded = roundSize(u, depthImage.cols);
 		float vRounded = roundSize(v, depthImage.rows);
-		float Z = depthImage.at<float>(vRounded, uRounded);
+		float Z = depthImage.at<float>(vRounded, uRounded) / RGBD::depthScale;
 		features3D[i] = Eigen::Vector3f(u * Z, v * Z, Z);
 	}
 
@@ -99,7 +99,7 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features, cv::M
 {
 	// Lambda expression
 	auto it = std::remove_if (features.begin(), features.end(), [depthImage](cv::KeyPoint kp){
-	    if (depthImage.at<float>(kp.pt) > 0.0) {
+	    if (depthImage.at<uint16_t>(kp.pt) / RGBD::depthScale > 0.0) {
 	        return false;
 	    }
 	    return true;

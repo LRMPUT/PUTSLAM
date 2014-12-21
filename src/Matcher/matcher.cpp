@@ -16,6 +16,9 @@ void Matcher::loadInitFeatures(const SensorFrame &next_frame)
 	// Detect salient features
 	prevFeatures = detectFeatures(next_frame.image);
 
+	// Show detected features
+	//showFeatures(next_frame.image, prevFeatures);
+
 	// Remove features without depth
 	RGBD::removeFeaturesWithoutDepth(prevFeatures, next_frame.depth);
 
@@ -24,6 +27,10 @@ void Matcher::loadInitFeatures(const SensorFrame &next_frame)
 
 	// Associate depth
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, next_frame.depth);
+
+	// Save rgb/depth images
+	prevRgbImage = next_frame.image.clone();
+	prevDepthImage = next_frame.depth.clone();
 }
 
 
@@ -42,12 +49,14 @@ bool Matcher::match(const SensorFrame& next_frame) {
 			descriptors);
 
 	// Associate depth
-	std::vector<float> depth;
-	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, depth);
+	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, next_frame.depth);
+
+	// Visualize matches
+	showMatches(prevRgbImage, prevFeatures, next_frame.image, features, matches);
 
 	// RANSAC
-	RANSAC ransac;
-	Eigen::Matrix4f bestTransformation = ransac.estimateTransformation(prevFeatures3D,features3D,matches);
+	//RANSAC ransac;
+	//Eigen::Matrix4f bestTransformation = ransac.estimateTransformation(prevFeatures3D,features3D,matches);
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
@@ -58,3 +67,23 @@ bool Matcher::match(const SensorFrame& next_frame) {
 }
 
 
+void Matcher::showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features)
+{
+	cv::Mat imageToShow;
+	cv::drawKeypoints(rgbImage,prevFeatures,imageToShow);
+
+	cv::imshow("Showing features", imageToShow);
+	cv::waitKey(10000);
+}
+
+void Matcher::showMatches(cv::Mat prevRgbImage,
+		std::vector<cv::KeyPoint> prevFeatures, cv::Mat rgbImage,
+		std::vector<cv::KeyPoint> features, std::vector<cv::DMatch> matches) {
+
+	cv::Mat imageToShow;
+	cv::drawMatches(prevRgbImage, prevFeatures, rgbImage, features, matches,
+			imageToShow);
+
+	cv::imshow("Showing matches", imageToShow);
+	cv::waitKey(10000);
+}
