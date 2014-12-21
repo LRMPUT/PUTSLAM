@@ -13,6 +13,8 @@
 #include <iostream>
 #include <chrono>
 #include <memory>
+#include <fstream>
+#include <stdlib.h>
 
 namespace putslam {
     /// create a single grabber (Generic Camera)
@@ -75,6 +77,9 @@ class FileGrabber : public Grabber {
 
         /// file number
         uint_fast32_t fileNo;
+
+        /// timestamp file
+        std::ifstream timestampFile;
 
         ///sensor model
         XtionGrabber::UncertaintyModel asusModel;

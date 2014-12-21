@@ -16,6 +16,9 @@ FileGrabber::Ptr fileGrabber;
 
 FileGrabber::FileGrabber(void) : Grabber("File Grabber", TYPE_RGB) {
     startT = std::chrono::high_resolution_clock::now();
+
+
+    timestampFile.open("matched");
 }
 
 FileGrabber::~FileGrabber(void) {
@@ -43,15 +46,32 @@ bool FileGrabber::grab(void) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
+    // Increment file number
+    fileNo++;
+
     //SensorFrame frameTmp;
     //frameTmp.depth = tmp.depth.clone();
     //tmp.depth.convertTo(tmp.depth, CV_16SC1);
     //tmp.cloud = asusModel.depth2cloud(tmp.depth);
-    tmp.timestamp = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::high_resolution_clock::now() - startT).count();
+
+    // Consider timestamps from provided file
+    std::string timestampString;
+    std::getline(timestampFile, timestampString);
+
+    // Compute the average of rgb and depth timestamp
+    double timestamp1 = atof(timestampString.substr(0,timestampString.find(' ')).c_str());
+    double timestamp2 = atof(timestampString.substr(timestampString.find(' ')+1).c_str());
+
+    std::ostringstream ossTimestamp;
+    ossTimestamp << imageSeqPrefix << std::setfill('0') << std::setprecision(17) << (timestamp1 + timestamp2)/2;
+    std::cout<< "Measurement timestamp : " << ossTimestamp.str() << std::endl;
+    tmp.timestamp = (timestamp1 + timestamp2)/2;
+
+    // Add to queue
     mtx.lock();
     sensorFrames.push(tmp);
     mtx.unlock();
-    fileNo++;
+
     return true;
 }
 
