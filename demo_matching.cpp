@@ -82,15 +82,27 @@ int main()
 				<< std::endl;
 
 		auto start = chrono::system_clock::now();
+		bool ifStart = true;
 		// Main loop
 		while (1) {
 			grabber->grab(); // grab frame
-			//matcher->Matcher::match(grabber->getSensorFrame());
+			SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
-			SensorFrame a = grabber->getSensorFrame();
+			if ( ifStart )
+			{
+				matcher->Matcher::loadInitFeatures(currentSensorFrame);
+				ifStart = false;
+			}
+			else
+			{
+				matcher->Matcher::match(currentSensorFrame);
 
-			imshow("1",a.image);
-			imshow("2",a.depth);
+				break;
+			}
+
+
+			//imshow("1",a.image);
+			//imshow("2",a.depth);
 			cvWaitKey(500);
 
 //			if (!tracker->track(grabber->getSensorFrame())) { //check if tracker should start new tracking

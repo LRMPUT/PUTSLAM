@@ -58,13 +58,17 @@ protected:
 	/// Frame id
 	uint_fast32_t frame_id;
 
+	/// Information about previous keypoints + descriptors
 	std::vector<cv::KeyPoint> prevFeatures;
 	cv::Mat prevDescriptors;
 	std::vector<Eigen::Vector3f> prevFeatures3D;
+	cv::Mat prevRgbImage, prevDepthImage;
 
-		//            /// A set of 2D features
-		//            ImageFeature::Seq features;
-		//
+	// Methods used to visualize results/data
+	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);
+	void showMatches(cv::Mat prevRgbImage,
+			std::vector<cv::KeyPoint> prevFeatures, cv::Mat rgbImage,
+			std::vector<cv::KeyPoint> features, std::vector<cv::DMatch> matches);
 
 //
 //            /// Computed homogenous transformation
