@@ -3,6 +3,7 @@
 #include "include/Defs/putslam_defs.h"
 #include "Grabber/kinect_grabber.h"
 #include "Grabber/xtion_grabber.h"
+#include "Grabber/file_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
@@ -10,6 +11,8 @@
 #include <ctime>
 #include <ratio>
 #include <chrono>
+
+#include "include/Grabber/file_grabber.h"
 #include "include/Matcher/matcherOpenCV.h"
 
 using namespace std;
@@ -56,15 +59,17 @@ int main()
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberXtion(configFile);
         }
+        /// Still do not take into account the config file
+        else if (grabberType == "File") {
+			std::string configFile(
+					config.FirstChildElement("Grabber")->FirstChildElement(
+							"calibrationFile")->GetText());
+			grabber = createGrabberFile(configFile);
+		}
         else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();
         else // Default
             grabber = createGrabberKinect();
-
-        Mat33 cov;
-        ((KinectGrabber*)grabber)->model.computeCov(80, 360, 0.5837, cov);
-        Eigen::Vector3d vec;
-        ((KinectGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
@@ -80,7 +85,13 @@ int main()
 		// Main loop
 		while (1) {
 			grabber->grab(); // grab frame
-			matcher->Matcher::match(grabber->getSensorFrame());
+			//matcher->Matcher::match(grabber->getSensorFrame());
+
+			SensorFrame a = grabber->getSensorFrame();
+
+			imshow("1",a.image);
+			imshow("2",a.depth);
+			cvWaitKey(500);
 
 //			if (!tracker->track(grabber->getSensorFrame())) { //check if tracker should start new tracking
 //				if (thread_poseGraph) {
@@ -96,13 +107,13 @@ int main()
 //								tracker->getVertex())); // throw thread
 //				tracker->reset();
 //			}
-			if (chrono::duration_cast < chrono::duration<unsigned>
+			/*if (chrono::duration_cast < chrono::duration<unsigned>
 					> (chrono::system_clock::now() - start).count()
 					> max_tracking_duration) {
 				thread_poseGraph->join();
 				thread_globalGraph->join();
 				break;
-			}
+			}*/
 		}
 
     }

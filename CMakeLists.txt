@@ -175,7 +175,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/fileGrabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/file_grabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/src/Grabber/ptgrey_grabber.cpp"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
@@ -186,7 +186,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/fileGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/file_grabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/include/Grabber/ptgrey_grabber.h"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
