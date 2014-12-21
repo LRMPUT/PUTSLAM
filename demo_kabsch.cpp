@@ -431,7 +431,17 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
         matchClouds(cloudSeq[i-1], setA, uncertaintySet[i-1], setAUncertainty, setIds[i-1], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
         if (setA.rows()>3){
             std::cout << "matched: " << setA.rows() << "\n";
-            Mat34 trans = transEst->computeTransformation(setB, setA);
+            Mat34 trans;
+            if (expType==2){
+                trans = transEst->computeTransformation(setB, setA);
+                TransformEst* g2oEst = createG2OEstimator();
+                trans = ((G2OEst*)g2oEst)->computeTransformation(setB, setBUncertainty, setA, setAUncertainty, trans);
+            }
+            else {
+                trans = transEst->computeTransformation(setB, setA);
+                TransformEst* g2oEst = createG2OEstimator();
+                trans = ((G2OEst*)g2oEst)->computeTransformation(setB, setBUncertainty, setA, setAUncertainty, trans);
+            }
             //trans(0,3) = 0;
             //trans(0,1) = 0; trans(0,2) = 0;
             //trans(1,0) = 0; trans(2,0) = 0;
@@ -523,7 +533,17 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
                 matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
                 int efficientFeatures = 30;
                 if (setA.rows()>efficientFeatures){
-                    Mat34 trans = transEst->computeTransformation(setB, setA);
+                    Mat34 trans;
+                    if (expType==2){
+                        trans = transEst->computeTransformation(setB, setA);
+                        TransformEst* g2oEst = createG2OEstimator();
+                        trans = ((G2OEst*)g2oEst)->computeTransformation(setB, setBUncertainty, setA, setAUncertainty, trans);
+                    }
+                    else {
+                        trans = transEst->computeTransformation(setB, setA);
+                        TransformEst* g2oEst = createG2OEstimator();
+                        trans = ((G2OEst*)g2oEst)->computeTransformation(setB, setBUncertainty, setA, setAUncertainty, trans);
+                    }
                     //trans(0,3) = 0;
                     //trans(0,1) = 0; trans(0,2) = 0;
                     //trans(1,0) = 0; trans(2,0) = 0;
@@ -1108,7 +1128,7 @@ int main(int argc, char * argv[])
             //create reference trajectory
             std::vector<Mat34> trajectory;
             //rectangular trajectory
-            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
+/*            Mat34 pose = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
             pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
             pose(1,0) = 0; pose(1,1) = -1; pose(1,2) = 0;
             pose(2,0) = 1; pose(2,1) = 0; pose(2,2) = 0;
@@ -1130,12 +1150,12 @@ int main(int argc, char * argv[])
                     pose.matrix() *= moveRot.matrix();
                     trajectory.push_back(pose);
                 }
-            }
+            }*/
             // m 2mcos(2t) -2msin(2t)
             // 0 -sin(2t)  -cos(2t)
             // i    j         k
             // -msin(2t)*k-2mcos^2(2t)*i-2msin^2(2t)*i+mcos(2t)*j
-            /*int trajectoryLength = 65;
+            int trajectoryLength = 65;
             for (int j=0;j<trajectoryLength;j++){
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
@@ -1161,7 +1181,7 @@ int main(int argc, char * argv[])
                 //    std::cout << pose.rotation().determinant() << "\n";
                 //    getchar();
                 //}
-            }*/
+            }
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
             for (int iter = 0; iter<trajectory.size();iter++){
