@@ -16,7 +16,8 @@
 
 namespace putslam {
     /// create a single grabber (Generic Camera)
-    Grabber* createFileGrabber(void);
+    Grabber* createGrabberFile(void);
+    Grabber* createGrabberFile(std::string configFile);
 };
 
 using namespace putslam;
@@ -29,6 +30,8 @@ class FileGrabber : public Grabber {
 
         /// Construction
         FileGrabber(void);
+        //FileGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
+        //      }
 
         /// Destructor
         ~FileGrabber(void);
