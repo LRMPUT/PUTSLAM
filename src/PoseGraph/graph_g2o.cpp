@@ -837,12 +837,44 @@ bool PoseGraphG2O::isSingleOutgoingEdge(unsigned int edgeId){
     return true;
 }
 
+///return Transform between origin and vertex
+Mat34 PoseGraphG2O::getTransform(int vertexId){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    Mat34 tmp;
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()==vertexId){
+            std::vector<double> res;
+            (*it)->getEstimateData(res);
+            std::cout << "g2o est: \n";
+            tmp(0,3)=res[0]; tmp(1,3)=res[1]; tmp(2,3)=res[2];
+            Eigen::Vector3f rot(res[3],res[4],res[5]);
+            float w=rot.squaredNorm();
+            if (w<1) {
+              w=sqrt(1-w);
+              Eigen::Quaterniond quat(w, res[3], res[4], res[5]);
+              tmp(0,0)=quat.matrix()(0,0); tmp(0,1)=quat.matrix()(0,1); tmp(0,2)=quat.matrix()(0,2);
+              tmp(1,0)=quat.matrix()(1,0); tmp(1,1)=quat.matrix()(1,1); tmp(1,2)=quat.matrix()(1,2);
+              tmp(2,0)=quat.matrix()(2,0); tmp(2,1)=quat.matrix()(2,1); tmp(2,2)=quat.matrix()(2,2);
+            } else {
+              rot.normalize();
+              Eigen::Quaterniond quat(0, rot(0), rot(1), rot(2));
+              tmp(0,0)=quat.matrix()(0,0); tmp(0,1)=quat.matrix()(0,1); tmp(0,2)=quat.matrix()(0,2);
+              tmp(1,0)=quat.matrix()(1,0); tmp(1,1)=quat.matrix()(1,1); tmp(1,2)=quat.matrix()(1,2);
+              tmp(2,0)=quat.matrix()(2,0); tmp(2,1)=quat.matrix()(2,1); tmp(2,2)=quat.matrix()(2,2);
+            }
+            break;
+        }
+    }
+    return tmp;
+}
+
 ///return Hessian
 Mat66 PoseGraphG2O::getHessian(int vertexId){
     g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
     //g2o::OptimizableGraph::Vertex v;
-Mat66 tmp;
     Eigen::MatrixXd Hessian((vertices.size()-2)*3+6,(vertices.size()-2)*3+6);
+    Hessian.setZero();
+    g2o::OptimizableGraph::VertexContainer verts;
     for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
         //std::cout << "cinh" << (*it)->colInHessian() << "\n";
         if ((*it)->id()==vertexId){
@@ -853,23 +885,32 @@ Mat66 tmp;
                 std::cout << " " << res[i];
             }
             std::cout << "\n";
-            if ((*it)->colInHessian()>0){
+            verts.push_back(*it);
+        }
+        if ((*it)->colInHessian()>=0){
 
-                std::cout << " dim " << (*it)->dimension() << "\n";
-                std::cout << " colinhes " << (*it)->colInHessian() << "\n";
-                for (int i=0;i<(*it)->dimension();i++){
-                    for (int j=0;j<(*it)->dimension();j++){
-                        tmp(i,j) = (*it)->hessian(i,j);
-                    }
+            //std::cout << " dim " << (*it)->dimension() << "\n";
+            //std::cout << " colinhes " << (*it)->colInHessian() << "\n";
+            for (int i=0;i<(*it)->dimension();i++){
+                for (int j=0;j<(*it)->dimension();j++){
+                    Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
                 }
             }
         }
-
     }
-    //Hessian=Hessian.inverse();
-//    optimizer.computeMarginals()
+    //std::cout << "Hessian:\n" << Hessian.block<12,12>(0,0) << "\n";
+    //getchar();
+    Hessian=Hessian.inverse();
+    //g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
+    //optimizer.computeMarginals(spinv,verts);
 
-    //Mat66 tmp = Hessian.block<6,6>(0,0);
+    //std::cout << "Hessian inv:\n" << Hessian.block<12,12>(0,0) << "\n";
+    //getchar();
+
+    Mat66 tmp = Hessian.block<6,6>(0,0);
+    /*std::cout << "\ntmp: \n" << tmp << "  " << verts.size() <<  "\n";
+    std::cout << "spinv: \n" << spinv.rows() << " " << spinv.cols() << "\n";
+    getchar();*/
     //std::cout << tmp << "\n";
     //getchar();
     return tmp;

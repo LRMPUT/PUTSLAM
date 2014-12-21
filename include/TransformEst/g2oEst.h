@@ -37,6 +37,9 @@ namespace putslam {
             /// compute transformation using two set of keypoints
             Mat34& computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB);
 
+            /// compute transformation using two set of keypoints
+            Mat34& computeTransformation(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation);
+
             /// Compute uncertainty matrix [6x6] (fi,psi,theta,x,y,z)
             const Mat66& computeUncertainty(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation);
 

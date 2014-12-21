@@ -129,6 +129,9 @@ class PoseGraphG2O : public Graph {
         ///return Hessian
         Mat66 getHessian(int vertexId);
 
+        ///return Transform between origin and vertex
+        Mat34 getTransform(int vertexId);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
