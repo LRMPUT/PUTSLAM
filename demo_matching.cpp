@@ -92,6 +92,7 @@ int main()
 			{
 				matcher->Matcher::loadInitFeatures(currentSensorFrame);
 				ifStart = false;
+				//break;
 			}
 			else
 			{

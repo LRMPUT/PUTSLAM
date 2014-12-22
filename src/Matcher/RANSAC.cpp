@@ -7,9 +7,10 @@
 #include "../include/Matcher/RANSAC.h"
 
 RANSAC::RANSAC() {
+	srand(time(0));
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
 	RANSACParams.usedPairs = 3;
-	RANSACParams.inlierThreshold = 0.03;
+	RANSACParams.inlierThreshold = 0.02;
 }
 
 // TODO: MISSING:
@@ -24,16 +25,24 @@ Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prev
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
-		std::cout<<"RANSAC: randomly sampling ids of matches" << std::endl;
+		std::cout << "RANSAC: randomly sampling ids of matches" << std::endl;
 		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
+		std::cout << "Matches ids : " << randomMatches[0].queryIdx << " "
+				<< randomMatches[1].queryIdx << " "
+				<< randomMatches[2].queryIdx << std::endl;
+
+		std::cout << "Matches ids 2: " << randomMatches[0].trainIdx << " "
+						<< randomMatches[1].trainIdx << " "
+						<< randomMatches[2].trainIdx << std::endl;
 
 		// Compute model based on those matches
-		std::cout<<"RANSAC: computing model based on matches" << std::endl;
+		std::cout << "RANSAC: computing model based on matches" << std::endl;
 		Eigen::Matrix4f transformationModel;
 		bool modelComputation = computeTransformationModel(prevFeatures,
-				features, matches, transformationModel);
+				features, randomMatches, transformationModel);
 
+		std::cout<<std::endl<<transformationModel<<std::endl<<std::endl;
 
 		// Check if the model is feasible ?
 
@@ -47,7 +56,8 @@ Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prev
 		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
 				bestTransformationModel);
 
-		std::cout<<"RANSAC: best model inlier ratio : " << bestInlierRatio << std::endl;
+		std::cout<<"RANSAC: best model inlier ratio : " << bestInlierRatio * 100.0 << "%"<< std::endl;
+
 	}
 
 	// Test for minimal inlierRatio of bestModel
@@ -141,7 +151,7 @@ float RANSAC::computeInlierRatio(
 	}
 
 	// Percent of correct matches
-	return inlierCount / matches.size();
+	return float(inlierCount) / matches.size();
 }
 
 inline void RANSAC::saveBetterModel(const float inlierRatio,
