@@ -21,6 +21,11 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 	return matcher.get();
 }
 
+putslam::Matcher* putslam::createMatcherOpenCV(const std::string _parametersFile) {
+	matcher.reset(new MatcherOpenCV(_parametersFile));
+	return matcher.get();
+}
+
 // MatcherSURF
 MatcherOpenCV::MatcherOpenCV(void) :
 		Matcher("OpenCV Matcher") {

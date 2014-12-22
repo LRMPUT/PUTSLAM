@@ -20,8 +20,10 @@
 namespace putslam {
 /// create a single matcher OpenCV
 Matcher* createMatcherOpenCV(void);
-}
-;
+Matcher* createMatcherOpenCV(const std::string _parametersFile);
+};
+
+
 
 using namespace putslam;
 
@@ -41,6 +43,7 @@ public:
 
 	/// Construction
 	MatcherOpenCV(const std::string _name) : Matcher(_name) {};
+	MatcherOpenCV(const std::string _name, const std::string _parametersFile) : Matcher(_name, _parametersFile) {};
 
 
 	/// Name of the matcher

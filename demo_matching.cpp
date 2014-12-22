@@ -73,7 +73,8 @@ int main()
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
-        Matcher * matcher = createMatcherOpenCV();
+        string matcherParameters = config.FirstChildElement("Matcher")->FirstChildElement("parametersFile")->GetText();
+        Matcher * matcher = createMatcherOpenCV(matcherParameters);
         cout << "Current matcher: " << matcher->getName() << std::endl;
         Graph * graph = createPoseGraphG2O();
         cout << "Current graph: " << graph->getName() << std::endl;

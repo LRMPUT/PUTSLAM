@@ -10,3 +10,8 @@
 	<!-- <name>Ptgrey</name> -->
 	<!-- <calibrationFile>PtgreyModel.xml</calibrationFile> -->
   </Grabber>
+  
+  <Matcher>
+  	<name>OpenCV</name>
+  	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
+  </Matcher>
