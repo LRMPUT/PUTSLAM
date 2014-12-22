@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+	<!-- MatcherOpenCV parameters -->  
+ 
+ 	<Matcher>
+ 		<!-- RANSAC settings
+ 			verbose : 	0 -> no debug
+ 						1 -> print final result
+ 						2 -> print every iteration
+ 			inlierThreshold : maximal error of inlier in RANSAC (in meters)
+ 		-->
+    	<RANSAC verbose="0" inlierThreshold="0.02"></RANSAC>
+	</Matcher>

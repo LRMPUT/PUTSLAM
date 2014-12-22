@@ -14,6 +14,7 @@
 #include "opencv/cv.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 
+
 namespace putslam {
 /// Grabber interface
 class Matcher {
@@ -45,12 +46,16 @@ public:
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());
 			if (config.ErrorID())
+			{
 				std::cout << "Unable to load Matcher OpenCV config file: " << configFilename << std::endl;
-			tinyxml2::XMLElement * model = config.FirstChildElement("Matcher");
-			model->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
+			}
+			tinyxml2::XMLElement * params = config.FirstChildElement("Matcher");
+			params->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
 					&inlierThreshold);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACVerbose);
 		}
 	public:
+		int RANSACVerbose;
 		double inlierThreshold;
 	};
 
