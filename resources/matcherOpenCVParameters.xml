@@ -8,6 +8,13 @@
  						1 -> print final result
  						2 -> print every iteration
  			inlierThreshold : maximal error of inlier in RANSAC (in meters)
+ 			usedPairs : numbers of pairs used to create model in RANSAC iteration
  		-->
-    	<RANSAC verbose="0" inlierThreshold="0.02"></RANSAC>
+    	<RANSAC verbose="0" inlierThreshold="0.02" usedPairs="3"></RANSAC>
+    	
+    	<!-- Matching settings
+    		detector : 		FAST, ORB, SURF, SIFT
+    		descriptor :	BRIEF, ORB, SURF, SIFT    	
+    	-->
+    	<MatcherOpenCV detector="SURF" descriptor="SURF"> </MatcherOpenCV>
 	</Matcher>

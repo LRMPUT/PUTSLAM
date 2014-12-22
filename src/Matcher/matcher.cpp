@@ -7,7 +7,6 @@
 
 #include "../include/Matcher/matcher.h"
 #include "../include/Matcher/RGBD.h"
-#include "../TransformEst/RANSAC.h"
 
 using namespace putslam;
 
@@ -55,7 +54,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 	//showMatches(prevRgbImage, prevFeatures, next_frame.image, features, matches);
 
 	// RANSAC
-	RANSAC ransac(matcherParameters.RANSACVerbose, matcherParameters.inlierThreshold);
+
+	RANSAC ransac(matcherParameters.RANSACParams);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D, features3D, matches);
 
 

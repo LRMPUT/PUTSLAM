@@ -13,12 +13,16 @@
 #include <vector>
 #include "opencv/cv.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
-
+#include "../TransformEst/RANSAC.h"
 
 namespace putslam {
 /// Grabber interface
 class Matcher {
 public:
+	struct parameters {
+			std::string detector;
+			std::string descriptor;
+		};
 
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
@@ -50,13 +54,19 @@ public:
 				std::cout << "Unable to load Matcher OpenCV config file: " << configFilename << std::endl;
 			}
 			tinyxml2::XMLElement * params = config.FirstChildElement("Matcher");
+			// RANSAC
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.verbose);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
-					&inlierThreshold);
-			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACVerbose);
+					&RANSACParams.inlierThreshold);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.usedPairs);
+			// Matcher OpenCV
+			OpenCVParams.detector = params->FirstChildElement("MatcherOpenCV")->Attribute("detector");
+			OpenCVParams.descriptor = params->FirstChildElement("MatcherOpenCV")->Attribute("descriptor");
+
 		}
 	public:
-		int RANSACVerbose;
-		double inlierThreshold;
+		RANSAC::parameters RANSACParams;
+		Matcher::parameters OpenCVParams;
 	};
 
 
