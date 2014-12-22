@@ -7,9 +7,9 @@
 #include "../include/Matcher/RANSAC.h"
 
 RANSAC::RANSAC() {
-	RANSACParams.iterationCount = 5000;
+	RANSACParams.iterationCount = computeRANSACIteration(0.20);
 	RANSACParams.usedPairs = 3;
-	RANSACParams.inlierThreshold = 0.2;
+	RANSACParams.inlierThreshold = 0.03;
 }
 
 // TODO: MISSING:
@@ -24,22 +24,30 @@ Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prev
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
+		std::cout<<"RANSAC: randomly sampling ids of matches" << std::endl;
 		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
+
 		// Compute model based on those matches
+		std::cout<<"RANSAC: computing model based on matches" << std::endl;
 		Eigen::Matrix4f transformationModel;
 		bool modelComputation = computeTransformationModel(prevFeatures,
 				features, matches, transformationModel);
 
+
 		// Check if the model is feasible ?
 
 		// Evaluate the model
+		std::cout<<"RANSAC: evaluating the model" << std::endl;
 		float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
 				transformationModel);
 
 		// Save better model
+		std::cout<<"RANSAC: saving best model" << std::endl;
 		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
 				bestTransformationModel);
+
+		std::cout<<"RANSAC: best model inlier ratio : " << bestInlierRatio << std::endl;
 	}
 
 	// Test for minimal inlierRatio of bestModel
@@ -57,7 +65,7 @@ std::vector<cv::DMatch> RANSAC::getRandomMatches(
 	const int matchesSize = matches.size();
 
 	std::vector<cv::DMatch> chosenMatches;
-	std::vector<int> validIndex(matchesSize);
+	std::vector<bool> validIndex(matchesSize, true);
 
 	// Loop until we found enough matches
 	while (chosenMatches.size() < RANSACParams.usedPairs) {
@@ -133,15 +141,19 @@ float RANSAC::computeInlierRatio(
 	}
 
 	// Percent of correct matches
-	return inlierCount * 100.0 / matches.size();
+	return inlierCount / matches.size();
 }
 
 inline void RANSAC::saveBetterModel(const float inlierRatio,
 		const Eigen::Matrix4f transformationModel, float &bestInlierRatio,
 		Eigen::Matrix4f & bestTransformationModel) {
 	if (inlierRatio > bestInlierRatio) {
+		// Save better model
 		bestTransformationModel = transformationModel;
 		bestInlierRatio = inlierRatio;
+
+		// Update iteration count
+		RANSACParams.iterationCount = computeRANSACIteration(bestInlierRatio);
 	}
 }
 

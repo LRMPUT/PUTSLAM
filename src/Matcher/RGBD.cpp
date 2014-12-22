@@ -87,7 +87,7 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 		float v = pointsUndistorted.at<cv::Vec2f>(i)[1];
 		float uRounded = roundSize(u, depthImage.cols);
 		float vRounded = roundSize(v, depthImage.rows);
-		float Z = depthImage.at<float>(vRounded, uRounded) / RGBD::depthScale;
+		float Z = depthImage.at<uint16_t>(vRounded, uRounded) / RGBD::depthScale;
 		features3D[i] = Eigen::Vector3f(u * Z, v * Z, Z);
 	}
 
