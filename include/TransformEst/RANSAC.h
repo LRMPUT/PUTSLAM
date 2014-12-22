@@ -20,9 +20,10 @@ public:
 		int iterationCount;
 		int usedPairs;
 		float inlierThreshold;
+		bool verbose;
 	};
 
-	RANSAC();
+	RANSAC(bool verbose = false, float inlierThreshold = 0.02);
 
 	/**
 	 * Method used to robustly estimate transformation from given two sets of

@@ -42,7 +42,7 @@ public:
 	MatcherOpenCV(type detector, type descriptor);
 
 	/// Construction
-	MatcherOpenCV(const std::string _name) : Matcher(_name) {};
+	MatcherOpenCV(const std::string _parametersFile) : Matcher("OpenCVMatcher", _parametersFile) {};
 	MatcherOpenCV(const std::string _name, const std::string _parametersFile) : Matcher(_name, _parametersFile) {};
 
 
