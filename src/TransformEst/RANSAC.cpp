@@ -6,12 +6,14 @@
  */
 #include "../include/TransformEst/RANSAC.h"
 
-RANSAC::RANSAC(bool _verbose, float _inlierThreshold) {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	srand(time(0));
-	RANSACParams.verbose = _verbose;
+
+	RANSACParams.verbose = _RANSACParameters.verbose;
+	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
+	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
+
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
-	RANSACParams.usedPairs = 3;
-	RANSACParams.inlierThreshold = _inlierThreshold;
 }
 
 // TODO: MISSING:
