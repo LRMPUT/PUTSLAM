@@ -68,6 +68,9 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
 }
 
+
+// TODO:
+// - due to undistortion, we may achieve a feature without depth!!!!
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> features,
 		cv::Mat depthImage, cv::Mat cameraMatrix, cv::Mat distCoeffs) {
 
@@ -85,10 +88,12 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(std::vector<cv::KeyPoint> fea
 	for (int i = 0; i < pointsUndistorted.rows; i++) {
 		float u = pointsUndistorted.at<cv::Vec2f>(i)[0];
 		float v = pointsUndistorted.at<cv::Vec2f>(i)[1];
-		float uRounded = roundSize(u, depthImage.cols);
-		float vRounded = roundSize(v, depthImage.rows);
+		int uRounded = roundSize((u+1.0) * cameraMatrix.at<float>(0,2), depthImage.cols);
+		int vRounded = roundSize((v+1.0) * cameraMatrix.at<float>(1,2), depthImage.rows);
 		float Z = depthImage.at<uint16_t>(vRounded, uRounded) / RGBD::depthScale;
 		features3D[i] = Eigen::Vector3f(u * Z, v * Z, Z);
+//		std::cout << "u, v, uR, vR, x, y, z : " << u << " " << v << " " << " "
+//				<< uRounded << " " << vRounded << " "<< u*Z<<" " << v*Z << " " <<Z << std::endl;
 	}
 
 	return features3D;
