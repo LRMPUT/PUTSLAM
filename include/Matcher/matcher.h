@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include "opencv/cv.h"
+#include "../../3rdParty/tinyXML/tinyxml2.h"
 
 namespace putslam {
 /// Grabber interface
@@ -22,17 +23,12 @@ public:
 	Matcher(const std::string _name) :
 			name(_name), frame_id(0) {
 	}
+	Matcher(const std::string _name, const std::string parametersFile) :
+			name(_name), frame_id(0), matcherParameters(parametersFile) {
+	}
 
 	/// Name of the Matcher
 	virtual const std::string& getName() const = 0;
-
-//
-//            /// Returns the current set of features
-//            virtual const ImageFeature::Seq& getFeatures(void) const = 0;
-//
-//            /// Reset tracking and find new set of features
-//            virtual void reset() = 0;
-//
 
 	/// Load features at the start of the sequence
 	void loadInitFeatures(const SensorFrame& sensorData);
@@ -40,15 +36,24 @@ public:
 	/// Run single match
 	bool match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation);
 
-//
-//            /// Compute homogenous transformation
-//            virtual const RobotPose& computeTransform(void) = 0;
-//
-//            /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
-//            virtual const VertexSE3& getVertex(void) = 0;
-//
-//            /// Virtual descrutor
-//            virtual ~Tracker() {}
+	/// Class used to hold all parameters
+	class Parameters {
+	public:
+		Parameters(){};
+		Parameters(std::string configFilename) {
+			tinyxml2::XMLDocument config;
+			std::string filename = "../../resources/" + configFilename;
+			config.LoadFile(filename.c_str());
+			if (config.ErrorID())
+				std::cout << "Unable to load Matcher OpenCV config file: " << configFilename << std::endl;
+			tinyxml2::XMLElement * model = config.FirstChildElement("Matcher");
+			model->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
+					&inlierThreshold);
+		}
+	public:
+		double inlierThreshold;
+	};
+
 
 protected:
 
@@ -64,18 +69,14 @@ protected:
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
 
-	// Methods used to visualize results/data
+	/// Parameters
+	Parameters matcherParameters;
+
+	/// Methods used to visualize results/data
 	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);
 	void showMatches(cv::Mat prevRgbImage,
 			std::vector<cv::KeyPoint> prevFeatures, cv::Mat rgbImage,
 			std::vector<cv::KeyPoint> features, std::vector<cv::DMatch> matches);
-
-//
-//            /// Computed homogenous transformation
-//            RobotPose transformation;
-//
-//            /// keypoint: robot/sensor pose + point cloud + features
-//            VertexSE3 keypoint;
 
 	/// Detect features
 	virtual std::vector<cv::KeyPoint> detectFeatures(cv::Mat rgbImage) = 0;
