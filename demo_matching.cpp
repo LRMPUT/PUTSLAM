@@ -95,8 +95,10 @@ int main()
 			}
 			else
 			{
-				matcher->Matcher::match(currentSensorFrame);
+				Eigen::Matrix4f transformation;
+				matcher->Matcher::match(currentSensorFrame, transformation);
 
+				std::cout<<std::endl<<transformation<<std::endl;
 				break;
 			}
 

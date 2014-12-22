@@ -35,10 +35,10 @@ public:
 //
 
 	/// Load features at the start of the sequence
-	void loadInitFeatures(const SensorFrame& next_frame);
+	void loadInitFeatures(const SensorFrame& sensorData);
 
 	/// Run single match
-	bool match(const SensorFrame& next_frame);
+	bool match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation);
 
 //
 //            /// Compute homogenous transformation
