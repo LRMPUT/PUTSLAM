@@ -18,8 +18,6 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 
 # core libraries
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
-option(BUILD_PUTSLAM_G2O "Build g2o library" YES)
-mark_as_advanced(BUILD_PUTSLAM_G2O)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
 option(BUILD_PUTSLAM_UTILITIES "Build PUTSLAM Utilities library" YES)
@@ -53,6 +51,9 @@ option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" Y
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 
 #additional dependencies
+
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
+
 # Boost
 #FIND_PACKAGE(Boost COMPONENTS system filesystem thread)
 # OpenCV
@@ -66,15 +67,18 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o/cmake_modules")
+#g2o library
 find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIR})
+link_directories(${G2O_LIBRARY_DIRS})
+
+#CSparse library
+FIND_PACKAGE(CSparse)
+include_directories(${LIBCSPARSE_INCLUDE_DIR})
+link_directories(${LIBCSPARSE_LIBRARY})
 
 #Eigen
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
-
-#g2o
-link_directories("${CMAKE_SOURCE_DIR}/build/lib")
-link_directories("${CMAKE_SOURCE_DIR}/build/bin")
 
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
@@ -101,19 +105,6 @@ endforeach(CONFIGURATION_TYPE CMAKE_CONFIGURATION_TYPES)
 if (MSVC)
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif()
-
-###############################################################################
-#
-# PUTSLAM g2o library
-#
-###############################################################################
-
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-        ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o)
-        INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/g2o")
-        INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/g2o/EXTERNAL/ceres")
-        INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/g2o/EXTERNAL/csparse")
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
 
 ###############################################################################
 #
@@ -282,7 +273,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         )
 
         ADD_LIBRARY(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
-        TARGET_LINK_LIBRARIES(PoseGraph core csparse csparse_extension solver_csparse types_slam2d types_slam3d g2o_types_slam2d g2o_types_slam3d g2o_csparse_extension g2o_ext_csparse g2o_stuff g2o_core g2o_solver_csparse)
+        TARGET_LINK_LIBRARIES(PoseGraph csparse g2o_types_slam2d g2o_types_slam3d g2o_csparse_extension g2o_stuff g2o_core g2o_solver_csparse)
         INSTALL(TARGETS PoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
@@ -321,12 +312,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         SET(DEMO_SOURCES ./main.cpp)
         ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
         TARGET_LINK_LIBRARIES(Demo tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying g2o libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -348,12 +333,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         SET(DEMO_SOURCES ./demo_matching.cpp)
         ADD_EXECUTABLE(Demo_matching ${DEMO_SOURCES})
         TARGET_LINK_LIBRARIES(Demo_matching tinyxml2 Grabber Matcher TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying g2o libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_matching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -376,12 +355,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
         ADD_EXECUTABLE(Demo_g2o ${DEMO_SOURCES})
         add_dependencies(Demo_g2o g2o)
         TARGET_LINK_LIBRARIES(Demo_g2o tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo_g2o POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying g2o libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_g2o RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -403,12 +376,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
         ADD_EXECUTABLE(Demo_pruning ${DEMO_SOURCES})
         add_dependencies(Demo_pruning g2o)
         TARGET_LINK_LIBRARIES(Demo_pruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo_pruning POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying g2o libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_pruning RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -430,12 +397,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
         ADD_EXECUTABLE(Demo_grabber ${DEMO_SOURCES})
         add_dependencies(Demo_grabber g2o)
         TARGET_LINK_LIBRARIES(Demo_grabber tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo_grabber POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying grabber libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_grabber RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -457,12 +418,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
         ADD_EXECUTABLE(Demo_kabsch ${DEMO_SOURCES})
         add_dependencies(Demo_kabsch g2o)
         TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND( TARGET Demo_kabsch POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying grabber libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS Demo_kabsch RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -480,12 +435,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
         ADD_EXECUTABLE(graph2D2graph3D ${DEMO_SOURCES})
         add_dependencies(graph2D2graph3D g2o)
         TARGET_LINK_LIBRARIES(graph2D2graph3D tinyxml2 Utilities PoseGraph ${OpenCV_LIBS} boost_system)
-        if(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
-            ADD_CUSTOM_COMMAND(TARGET graph2D2graph3D POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/3rdParty/g2o/lib/" "${PROJECT_SOURCE_DIR}/build/lib"
-                    COMMENT "copying grabber libs ..."
-            )
-        endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_G2O)
         INSTALL(TARGETS graph2D2graph3D RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)

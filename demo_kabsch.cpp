@@ -6,7 +6,7 @@
 #include "TransformEst/kabschEst.h"
 #include "TransformEst/g2oEst.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
-#include "3rdParty/g2o/g2o/types/slam3d/isometry3d_mappings.h"
+#include <g2o/types/slam3d/isometry3d_mappings.h>
 #include "Grabber/kinect_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include <cmath>
