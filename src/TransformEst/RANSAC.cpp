@@ -4,19 +4,23 @@
  * \author Michal Nowicki
  *
  */
-#include "../include/Matcher/RANSAC.h"
+#include "../include/TransformEst/RANSAC.h"
 
-RANSAC::RANSAC() {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	srand(time(0));
+
+	RANSACParams.verbose = _RANSACParameters.verbose;
+	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
+	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
+
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
-	RANSACParams.usedPairs = 3;
-	RANSACParams.inlierThreshold = 0.02;
 }
 
 // TODO: MISSING:
 // - model feasibility
 // - test of minimal inlierRatio of bestModel
-Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
+Eigen::Matrix4f RANSAC::estimateTransformation(
+		std::vector<Eigen::Vector3f> prevFeatures,
 		std::vector<Eigen::Vector3f> features,
 		std::vector<cv::DMatch> matches) {
 
@@ -25,43 +29,41 @@ Eigen::Matrix4f RANSAC::estimateTransformation(std::vector<Eigen::Vector3f> prev
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
-		std::cout << "RANSAC: randomly sampling ids of matches" << std::endl;
+		if (RANSACParams.verbose)
+			std::cout << "RANSAC: randomly sampling ids of matches"
+					<< std::endl;
 		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
-		std::cout << "Matches ids : " << randomMatches[0].queryIdx << " "
-				<< randomMatches[1].queryIdx << " "
-				<< randomMatches[2].queryIdx << std::endl;
-
-		std::cout << "Matches ids 2: " << randomMatches[0].trainIdx << " "
-						<< randomMatches[1].trainIdx << " "
-						<< randomMatches[2].trainIdx << std::endl;
-
 		// Compute model based on those matches
-		std::cout << "RANSAC: computing model based on matches" << std::endl;
+		if (RANSACParams.verbose)
+			std::cout << "RANSAC: computing model based on matches"
+					<< std::endl;
 		Eigen::Matrix4f transformationModel;
 		bool modelComputation = computeTransformationModel(prevFeatures,
 				features, randomMatches, transformationModel);
 
-		std::cout<<std::endl<<transformationModel<<std::endl<<std::endl;
-
-		// Check if the model is feasible ?
+		// TODO: Check if the model is feasible ?
 
 		// Evaluate the model
-		std::cout<<"RANSAC: evaluating the model" << std::endl;
+		if (RANSACParams.verbose)
+			std::cout << "RANSAC: evaluating the model" << std::endl;
 		float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
 				transformationModel);
 
 		// Save better model
-		std::cout<<"RANSAC: saving best model" << std::endl;
+		if (RANSACParams.verbose)
+			std::cout << "RANSAC: saving best model" << std::endl;
 		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
 				bestTransformationModel);
 
-		std::cout<<"RANSAC: best model inlier ratio : " << bestInlierRatio * 100.0 << "%"<< std::endl;
+		// Print achieved result
+		if (RANSACParams.verbose)
+			std::cout << "RANSAC: best model inlier ratio : "
+					<< bestInlierRatio * 100.0 << "%" << std::endl;
 
 	}
 
 	// Test for minimal inlierRatio of bestModel
-
 
 	return bestTransformationModel;
 }
@@ -167,8 +169,9 @@ inline void RANSAC::saveBetterModel(const float inlierRatio,
 	}
 }
 
-inline int RANSAC::computeRANSACIteration(double inlierRatio, double successProbability, int numberOfPairs)
-{
-	return (log(1 - successProbability) / log(1 - pow(inlierRatio, numberOfPairs)));
+inline int RANSAC::computeRANSACIteration(double inlierRatio,
+		double successProbability, int numberOfPairs) {
+	return (log(1 - successProbability)
+			/ log(1 - pow(inlierRatio, numberOfPairs)));
 }
 

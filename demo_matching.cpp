@@ -75,6 +75,7 @@ int main()
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
         string matcherParameters = config.FirstChildElement("Matcher")->FirstChildElement("parametersFile")->GetText();
+
         Matcher * matcher = createMatcherOpenCV(matcherParameters);
         cout << "Current matcher: " << matcher->getName() << std::endl;
         Graph * graph = createPoseGraphG2O();
@@ -86,7 +87,7 @@ int main()
 		auto start = chrono::system_clock::now();
 		bool ifStart = true;
 		// Main loop
-		while (1) {
+		while (true) {
 			grabber->grab(); // grab frame
 			SensorFrame currentSensorFrame = grabber->getSensorFrame();
 

@@ -17,12 +17,13 @@
 class RANSAC {
 public:
 	struct parameters {
-		int iterationCount;
+		int verbose;
+		double inlierThreshold;
 		int usedPairs;
-		float inlierThreshold;
+		int iterationCount;
 	};
 
-	RANSAC();
+	RANSAC(RANSAC::parameters RANSACParameters);
 
 	/**
 	 * Method used to robustly estimate transformation from given two sets of
