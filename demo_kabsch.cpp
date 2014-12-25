@@ -197,7 +197,7 @@ void saveGroundTruth(std::string filename, std::vector<Mat34>& trajectory) {
     fileInds.close();
 }
 
-std::vector<int> getCloud(const Mat34& sensorPose, KinectGrabber::UncertaintyModel& sensorModel, const PointCloud& room, PointCloud& setPoints, std::vector<Mat33>& setUncertainty){
+std::vector<int> getCloud(const Mat34& sensorPose, DepthSensorModel& sensorModel, const PointCloud& room, PointCloud& setPoints, std::vector<Mat33>& setUncertainty){
     std::vector<int> pointIdentifiers;
     setPoints.clear();
     setUncertainty.clear();
@@ -391,7 +391,7 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
     return tmp;
 }
 
-void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const KinectGrabber::UncertaintyModel& sensorModel, const Mat34& estimation){
+void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const DepthSensorModel& sensorModel, const Mat34& estimation){
     std::ofstream file(filename);
     file << "#sensor_x, sensor_y, sensor_z, sensor_qw, sensor_qx, sensor_qy, sensor_qz\n";
     file << "#Kabsch_x, Kabsch_y, Kabsch_z, Kabsch_qw, Kabsch_qx, Kabsch_qy, Kabsch_qz\n";
@@ -407,7 +407,7 @@ void saveImageFeatures(std::string filename, const Mat34& sensorPose, const Poin
     file.close();
 }
 
-void runExperiment(int expType, const std::vector<Mat34>& trajectory, const KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
+void runExperiment(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
     Mat34 initPose;
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
@@ -610,7 +610,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Kine
     }
 }
 
-void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
+void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
     Mat34 initPose;
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
@@ -782,7 +782,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const Ki
     }
 }
 
-void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const KinectGrabber::UncertaintyModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
+void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, TransformEst* transEst){
     Mat34 initPose;
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
@@ -1056,7 +1056,7 @@ int main(int argc, char * argv[])
         roomTest = createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
         savePointCloud("../../resources/KabschUncertainty/room.m", roomTest);
 
-        KinectGrabber::UncertaintyModel sensorModel(configFile);
+        DepthSensorModel sensorModel(configFile);
         Mat34 initPose = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0,roomDim[2]/2.0);
         initPose.matrix() *= sensorModel.config.pose.matrix();
         PointCloud cloudA; std::vector<Mat33> uncertaintyCloudA;

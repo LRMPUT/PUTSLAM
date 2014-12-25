@@ -174,6 +174,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         LINK_DIRECTORIES("${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib")
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/depthSensorModel.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/file_grabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
@@ -185,6 +186,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB GRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/depthSensorModel.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/file_grabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)

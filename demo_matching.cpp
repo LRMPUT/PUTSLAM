@@ -7,6 +7,7 @@
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
+#include <opencv/highgui.h>
 #include <cmath>
 #include <ctime>
 #include <ratio>
@@ -107,7 +108,7 @@ int main()
 
 			//imshow("1",a.image);
 			//imshow("2",a.depth);
-			cvWaitKey(500);
+            cvWaitKey(500);
 
 //			if (!tracker->track(grabber->getSensorFrame())) { //check if tracker should start new tracking
 //				if (thread_poseGraph) {

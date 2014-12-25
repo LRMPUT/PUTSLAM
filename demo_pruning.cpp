@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-        KinectGrabber::UncertaintyModel sensorModel(configFile);
+        DepthSensorModel sensorModel(configFile);
         graph = createPoseGraphG2O(sensorModel.config.pose);
 
         //load graph from file

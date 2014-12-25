@@ -2,6 +2,7 @@
 #include <thread>
 #include "include/Defs/putslam_defs.h"
 #include "Grabber/kinect_grabber.h"
+#include "Grabber/depthSensorModel.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "Tracker/trackerKLT.h"
@@ -64,7 +65,7 @@ int main()
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-        KinectGrabber::UncertaintyModel sensorModel(configFile);
+        DepthSensorModel sensorModel(configFile);
         graph = createPoseGraphG2O(sensorModel.config.pose);
         cout << "Current graph: " << graph->getName() << std::endl;
 
