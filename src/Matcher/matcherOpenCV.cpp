@@ -32,10 +32,6 @@ MatcherOpenCV::MatcherOpenCV(void) :
 
 }
 
-MatcherOpenCV::MatcherOpenCV(type detector, type descriptor) : Matcher("OpenCV Matcher")
-{
-
-}
 
 const std::string& MatcherOpenCV::getName() const {
 	return name;
@@ -44,7 +40,17 @@ const std::string& MatcherOpenCV::getName() const {
 /// Detect features
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::FeatureDetector *featureDetector;
-	featureDetector = new cv::SurfFeatureDetector();
+
+	if (matcherParameters.OpenCVParams.detector == "FAST")
+		featureDetector = new cv::FastFeatureDetector();
+	else if (matcherParameters.OpenCVParams.detector == "ORB")
+		featureDetector = new cv::OrbFeatureDetector();
+	else if (matcherParameters.OpenCVParams.detector == "SURF")
+		featureDetector = new cv::SurfFeatureDetector();
+	else if (matcherParameters.OpenCVParams.detector == "SIFT")
+		featureDetector = new cv::SiftFeatureDetector();
+	else
+		featureDetector = new cv::SurfFeatureDetector();
 
 	cv::Mat grayImage;
     cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
@@ -60,7 +66,15 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 		std::vector<cv::KeyPoint> features) {
 	cv::DescriptorExtractor * extractor;
-	extractor = new cv::SurfDescriptorExtractor();
+
+	if (matcherParameters.OpenCVParams.descriptor == "BRIEF")
+		extractor = new cv::BriefDescriptorExtractor();
+	else if (matcherParameters.OpenCVParams.descriptor == "ORB")
+		extractor = new cv::OrbDescriptorExtractor();
+	else if (matcherParameters.OpenCVParams.descriptor == "SURF")
+		extractor = new cv::SurfDescriptorExtractor();
+	else if (matcherParameters.OpenCVParams.descriptor == "SIFT")
+		extractor = new cv::SiftDescriptorExtractor();
 
 	cv::Mat descriptors;
 	extractor->compute(rgbImage, features, descriptors);
