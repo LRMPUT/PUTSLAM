@@ -16,7 +16,7 @@
 namespace putslam {
 	/// create a single grabber (Kinect)
 	Grabber* createGrabberKinect(void);
-    Grabber* createGrabberKinect(std::string configFile);
+    Grabber* createGrabberKinect(std::string configFile, Grabber::Mode mode);
 };
 
 using namespace putslam;
@@ -25,8 +25,6 @@ using namespace putslam;
 class KinectGrabber : public Grabber {
     public:
 
-
-
         /// Pointer
         typedef std::unique_ptr<KinectGrabber> Ptr;
 
@@ -34,7 +32,7 @@ class KinectGrabber : public Grabber {
         KinectGrabber(void);
 
         /// Construction
-        KinectGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
+        KinectGrabber(std::string modelFilename, Mode _model) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, _model), model(modelFilename){
         }
 
         /// Name of the grabber
@@ -42,9 +40,6 @@ class KinectGrabber : public Grabber {
 
         /// Returns current point cloud
         virtual const PointCloud& getCloud(void) const;
-
-        /// Returns the current 2D image
-        virtual const SensorFrame& getSensorFrame(void);
 
         /// Grab image and/or point cloud
         virtual bool grab();
