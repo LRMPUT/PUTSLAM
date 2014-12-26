@@ -67,9 +67,7 @@ class XtionGrabber : public Grabber {
     ///Sensor uninitialize
     virtual int grabberClose();
 
-    DepthSensorModel model;
-
-protected:
+private:
 
     //Comments on variables
     openni::Status rc;
@@ -95,9 +93,8 @@ protected:
     ///Lists all the Color Video Modes available for current sensor
     int listColorVideoMode();
 
-
-private:
-
+    /// Sensor model
+    DepthSensorModel model;
 
 };
 
