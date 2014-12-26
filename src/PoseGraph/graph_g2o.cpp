@@ -680,8 +680,7 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
 
 /// Optimize graph
 bool PoseGraphG2O::optimize(uint_fast32_t maxIterations, int verbose) {
-    if (verbose == 0)
-        optimizer.setVerbose(false);
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     if (verbose>0)
         std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
@@ -926,8 +925,7 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
 bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
-    if (verbose == 0)
-        optimizer.setVerbose(false);
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();
     optimizer.computeInitialGuess();
@@ -975,8 +973,7 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
 bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
-    if (verbose == 0)
-        optimizer.setVerbose(false);
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();
     optimizer.computeInitialGuess();

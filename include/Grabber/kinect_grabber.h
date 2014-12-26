@@ -50,9 +50,10 @@ class KinectGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+    private:
+        /// Sensor model
         DepthSensorModel model;
 
-    private:
 };
 
 #endif // KINECT_GRABBER_H_INCLUDED

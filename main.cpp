@@ -2,6 +2,7 @@
 #include <thread>
 #include "include/Defs/putslam_defs.h"
 #include "Grabber/kinect_grabber.h"
+#include "Grabber/depthSensorModel.h"
 #include "Grabber/xtion_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
@@ -62,9 +63,10 @@ int main()
             grabber = createGrabberKinect();
 
         Mat33 cov;
-        ((KinectGrabber*)grabber)->model.computeCov(80, 360, 0.5837, cov);
+        DepthSensorModel KinectModel("../../resources/KinectModel.xml");
+        KinectModel.computeCov(80, 360, 0.5837, cov);
         Eigen::Vector3d vec;
-        ((KinectGrabber*)grabber)->model.getPoint(377.177, 112.906, 6.468, vec);
+        KinectModel.getPoint(377.177, 112.906, 6.468, vec);
 
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
