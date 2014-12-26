@@ -106,13 +106,13 @@ class PoseGraphG2O : public Graph {
         bool importRGBDSLAM(const std::string filename);
 
         /// Optimize graph
-        bool optimize(uint_fast32_t maxIterations);
+        bool optimize(uint_fast32_t maxIterations, int verbose = 0);
 
         /// Removes weak edes (with error bigger than threshold
-        bool optimizeAndPrune(float_type threshold, unsigned int singleIteration);
+        bool optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Removes weak edes (with error bigger than threshold chi2/median(chi2)
-        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration);
+        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
