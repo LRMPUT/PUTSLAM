@@ -417,7 +417,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
         SET(DEMO_SOURCES ./demo_kabsch.cpp)
         ADD_EXECUTABLE(Demo_kabsch ${DEMO_SOURCES})
         add_dependencies(Demo_kabsch g2o)
-        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst Utilities ${OpenCV_LIBS} PoseGraph boost_system)
         INSTALL(TARGETS Demo_kabsch RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
