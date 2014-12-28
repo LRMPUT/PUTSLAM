@@ -34,8 +34,16 @@ namespace putslam {
                     TYPE_FILE
             };
 
+            /// Mode
+            enum Mode {
+                    /// get only last frame
+                    MODE_CONTINUOUS,
+                    /// buffer all frames in memory
+                    MODE_BUFFER,
+            };
+
             /// overloaded constructor
-            Grabber(const std::string _name, Type _type) : name(_name), type(_type) {};
+            Grabber(const std::string _name, Type _type, Mode _mode) : name(_name), type(_type), mode(_mode) {};
 
             /// Name of the grabber
             virtual const std::string& getName() const = 0;
@@ -44,7 +52,15 @@ namespace putslam {
             virtual const PointCloud& getCloud(void) const = 0;
 
             /// Returns the current 2D image
-            virtual const SensorFrame& getSensorFrame(void) = 0;
+            virtual const SensorFrame& getSensorFrame(void) {
+                if (mode==MODE_BUFFER){
+                    mtx.lock();
+                    sensorFrame = sensorFrames.front();
+                    sensorFrames.pop();
+                    mtx.unlock();
+                }
+                return sensorFrame;
+            }
 
             /// Grab image and/or point cloud
             virtual bool grab() = 0;
@@ -62,13 +78,16 @@ namespace putslam {
             /// Grabber type
             Type type;
 
+            /// Operation mode
+            Mode mode;
+
             /// Grabber name
             const std::string name;
 
             /// RGBZXYZ Point cloud
             PointCloud cloud;
 
-            /// 2D image
+            /// Sensor frame
             SensorFrame sensorFrame;
 
             /// sequence

@@ -14,7 +14,7 @@ using namespace std::chrono;
 /// A single instance of file grabber
 FileGrabber::Ptr fileGrabber;
 
-FileGrabber::FileGrabber(void) : Grabber("File Grabber", TYPE_RGB) {
+FileGrabber::FileGrabber(void) : Grabber("File Grabber", TYPE_RGB, MODE_BUFFER) {
     startT = std::chrono::high_resolution_clock::now();
 
 
@@ -69,7 +69,11 @@ bool FileGrabber::grab(void) {
 
     // Add to queue
     mtx.lock();
-    sensorFrames.push(tmp);
+    if (mode==MODE_CONTINUOUS)
+        sensorFrame = tmp;
+    else if (mode==MODE_BUFFER){
+        sensorFrames.push(tmp);
+    }
     mtx.unlock();
 
     return true;

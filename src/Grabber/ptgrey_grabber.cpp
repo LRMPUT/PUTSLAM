@@ -9,11 +9,11 @@ using namespace putslam;
 /// A single instance of Kinect grabber
 PtgreyGrabber::Ptr grabberP;
 
-PtgreyGrabber::PtgreyGrabber(void) : Grabber("Ptgrey Grabber", TYPE_PRIMESENSE) {
+PtgreyGrabber::PtgreyGrabber(void) : Grabber("Ptgrey Grabber", TYPE_PRIMESENSE, MODE_BUFFER) {
 
 }
 
-PtgreyGrabber::PtgreyGrabber(std::string modelFilename) : Grabber("Ptgrey Grabberr", TYPE_PRIMESENSE), model(modelFilename){
+PtgreyGrabber::PtgreyGrabber(std::string modelFilename, Mode mode) : Grabber("Ptgrey Grabberr", TYPE_PRIMESENSE, mode){
 #ifdef WITH_PTGREY
     initPtGrey ();
 #endif
@@ -25,10 +25,6 @@ const std::string& PtgreyGrabber::getName() const {
 
 const PointCloud& PtgreyGrabber::getCloud(void) const {
     return cloud;
-}
-
-const SensorFrame& PtgreyGrabber::getSensorFrame(void) {
-    return sensorFrame;
 }
 
 bool PtgreyGrabber::grab(void) {
@@ -55,8 +51,13 @@ bool PtgreyGrabber::grab(void) {
             PrintError( error );
         }
 
-        this->sensor_frame.image.create(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC3);
-        memcpy(sensor_frame.image.data,convertedImage.GetData(),convertedImage.GetStride() * convertedImage.GetRows());
+        mtx.lock();
+        this->sensorFrame.image.create(convertedImage.GetRows(), convertedImage.GetCols(), CV_8UC3);
+        memcpy(sensorFrame.image.data,convertedImage.GetData(),convertedImage.GetStride() * convertedImage.GetRows());
+        if (mode==MODE_BUFFER){
+            sensorFrames.push(sensorFrame);
+        }
+        mtx.unlock();
 #endif
         return true;
 }
@@ -194,8 +195,8 @@ putslam::Grabber* putslam::createGrabberPtgrey(void) {
     return grabberP.get();
 }
 
-putslam::Grabber* putslam::createGrabberPtgrey(std::string configFile) {
-    grabberP.reset(new PtgreyGrabber(configFile));
+putslam::Grabber* putslam::createGrabberPtgrey(std::string configFile, Grabber::Mode mode) {
+    grabberP.reset(new PtgreyGrabber(configFile, mode));
     return grabberP.get();
 }
 

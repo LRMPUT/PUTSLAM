@@ -18,13 +18,13 @@ using namespace putslam;
 /// A single instance of Kinect grabber
 XtionGrabber::Ptr grabberX;
 
-XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE) {
+XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE, MODE_BUFFER) {
     rc = openni::STATUS_OK;
     initOpenNI();
 
 }
 
-XtionGrabber::XtionGrabber(std::string modelFilename) : Grabber("Xtion Grabber", TYPE_PRIMESENSE), model(modelFilename){
+XtionGrabber::XtionGrabber(std::string modelFilename, Mode _mode) : Grabber("Xtion Grabber", TYPE_PRIMESENSE, _mode), model(modelFilename){
     tinyxml2::XMLDocument config;
     std::string filename = "../../resources/" + modelFilename;
     config.LoadFile(filename.c_str());
@@ -58,10 +58,6 @@ const std::string& XtionGrabber::getName() const {
 
 const PointCloud& XtionGrabber::getCloud(void) const {
     return cloud;
-}
-
-const SensorFrame& XtionGrabber::getSensorFrame(void) {
-    return sensor_frame;
 }
 
 int XtionGrabber::initOpenNI(){
@@ -196,8 +192,13 @@ bool XtionGrabber::grab(void) {
 //    point.x = 1.2; point.y = 3.4; point.z = 5.6;
 //    cloud.push_back(point);
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      if(acquireDepthFrame(this->sensor_frame.depth)) throw 1;
-      if(acquireColorFrame(this->sensor_frame.image)) throw 2;
+      mtx.lock();
+      if(acquireDepthFrame(this->sensorFrame.depth)) throw 1;
+      if(acquireColorFrame(this->sensorFrame.image)) throw 2;
+      else if (mode==MODE_BUFFER) {
+          sensorFrames.push(sensorFrame);
+      }
+      mtx.unlock();
       return true;
 }
 
@@ -238,8 +239,8 @@ putslam::Grabber* putslam::createGrabberXtion(void) {
     return grabberX.get();
 }
 
-putslam::Grabber* putslam::createGrabberXtion(std::string configFile) {
-    grabberX.reset(new XtionGrabber(configFile));
+putslam::Grabber* putslam::createGrabberXtion(std::string configFile, Grabber::Mode mode) {
+    grabberX.reset(new XtionGrabber(configFile, mode));
     return grabberX.get();
 }
 

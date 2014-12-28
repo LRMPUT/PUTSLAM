@@ -32,15 +32,15 @@ int main()
         Grabber* grabber;
         if (grabberType == "Kinect") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-            grabber = createGrabberKinect(configFile);
+            grabber = createGrabberKinect(configFile, Grabber::MODE_BUFFER);
         }
         if (grabberType == "Xtion") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-            grabber = createGrabberXtion(configFile);
+            grabber = createGrabberXtion(configFile, Grabber::MODE_BUFFER);
         }
         if (grabberType == "Ptgrey") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-            grabber = createGrabberPtgrey(configFile);
+            grabber = createGrabberPtgrey(configFile, Grabber::MODE_BUFFER);
         }
         else if (grabberType == "MesaImaging")
             grabber = createGrabberKinect();
