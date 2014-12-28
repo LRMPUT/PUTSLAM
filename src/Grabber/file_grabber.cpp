@@ -15,17 +15,25 @@ using namespace std::chrono;
 FileGrabber::Ptr fileGrabber;
 
 FileGrabber::FileGrabber(void) : Grabber("File Grabber", TYPE_RGB, MODE_BUFFER) {
-    startT = std::chrono::high_resolution_clock::now();
+	initFileGrabber();
+}
 
+FileGrabber::FileGrabber(std::string configFilename) : Grabber("File Grabber", TYPE_PRIMESENSE, MODE_BUFFER), parameters(configFilename){
+	initFileGrabber();
+}
 
-    timestampFile.open("matched");
+void FileGrabber::initFileGrabber() {
+	startT = std::chrono::high_resolution_clock::now();
+
+	std::cout << "Open : " << parameters.fullPath + "matched" << std::endl;
+	timestampFile.open(parameters.fullPath + "matched");
 }
 
 FileGrabber::~FileGrabber(void) {
 }
 
 bool FileGrabber::grab(void) {
-    // Some variables
+	// Some variables
 	SensorFrame tmp;
 
 	// RGB
@@ -130,6 +138,23 @@ const PointCloud& FileGrabber::getCloud(void) const{
 ///Clossing a device
 int FileGrabber::grabberClose() {
     return 0;
+}
+
+/// Return starting position of sensor
+Eigen::Matrix4f FileGrabber::getStartingSensorPose()
+{
+	std::ifstream initialSensorPoseStream(parameters.fullPath + "initialPosition");
+	double x, y, z, qw, qx, qy, qz;
+	initialSensorPoseStream >> x >> y >> z >> qx >> qy >> qz >> qw;
+	initialSensorPoseStream.close();
+
+	Eigen::Matrix4f initialSensorPose = Eigen::Matrix4f::Identity();
+	Eigen::Quaternion<float> quat(qw, qx, qy, qz);
+	initialSensorPose(0, 3) = x;
+	initialSensorPose(1, 3) = y;
+	initialSensorPose(2, 3) = z;
+	initialSensorPose.block<3, 3>(0, 0) = quat.toRotationMatrix();
+	return initialSensorPose;
 }
 
 putslam::Grabber* putslam::createGrabberFile(void) {

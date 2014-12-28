@@ -1,6 +1,6 @@
 /** @file RANSAC.c
  *
- * \brief The robust estimation method to find transformation based on two sets of 3D features
+ * \brief The robust estimation method to find transformation based on two sets of 3f features
  * \author Michal Nowicki
  *
  */
@@ -14,6 +14,13 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
 
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
+
+	if (RANSACParams.verbose > 0)
+	{
+		std::cout<<"RANSACParams.verbose --> " <<RANSACParams.verbose<< std::endl;
+		std::cout<<"RANSACParams.usedPairs --> " << RANSACParams.usedPairs << std::endl;
+		std::cout<<"RANSACParams.inlierThreshold --> " << RANSACParams.inlierThreshold << std::endl;
+	}
 }
 
 // TODO: MISSING:
@@ -29,13 +36,13 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: randomly sampling ids of matches"
 					<< std::endl;
 		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
 		// Compute model based on those matches
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: computing model based on matches"
 					<< std::endl;
 		Eigen::Matrix4f transformationModel;
@@ -45,26 +52,27 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		// TODO: Check if the model is feasible ?
 
 		// Evaluate the model
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: evaluating the model" << std::endl;
 		float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
 				transformationModel);
 
 		// Save better model
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: saving best model" << std::endl;
 		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
 				bestTransformationModel);
 
 		// Print achieved result
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: best model inlier ratio : "
 					<< bestInlierRatio * 100.0 << "%" << std::endl;
 
 	}
 
 	// Test for minimal inlierRatio of bestModel
-
+	if (RANSACParams.verbose > 0)
+		std::cout<<"RANSAC best model : " << bestTransformationModel<<std::endl;
 	return bestTransformationModel;
 }
 

@@ -33,8 +33,10 @@ class FileGrabber : public Grabber {
 
         /// Construction
         FileGrabber(void);
-        FileGrabber(std::string configFilename) : Grabber("File Grabber", TYPE_PRIMESENSE), parameters(configFilename){
-        }
+        FileGrabber(std::string configFilename);
+
+        ///
+        void initFileGrabber();
 
         /// Destructor
         ~FileGrabber(void);
@@ -60,8 +62,11 @@ class FileGrabber : public Grabber {
         /// Returns the current point cloud
         const PointCloud& getCloud(void) const;
 
-        ///Closing a device
+        /// Closing a device
         int grabberClose();
+
+        /// Return starting position of sensor
+        Eigen::Matrix4f getStartingSensorPose();
 
         /// Class used to hold all parameters
 	class Parameters {

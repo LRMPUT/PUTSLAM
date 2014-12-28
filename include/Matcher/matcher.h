@@ -58,7 +58,7 @@ public:
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.verbose);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
 					&RANSACParams.inlierThreshold);
-			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.usedPairs);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("usedPairs", &RANSACParams.usedPairs);
 			// Matcher OpenCV
 			OpenCVParams.detector = params->FirstChildElement("MatcherOpenCV")->Attribute("detector");
 			OpenCVParams.descriptor = params->FirstChildElement("MatcherOpenCV")->Attribute("descriptor");
