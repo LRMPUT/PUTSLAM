@@ -130,19 +130,19 @@ bool GlobalGraph::importRGBDSLAM(const std::string filename){
 }
 
 /// Optimize graph
-bool GlobalGraph::optimize(uint_fast32_t maxIterations) {
+bool GlobalGraph::optimize(uint_fast32_t maxIterations, int verbose) {
     std::cout << "start global graph optimization (t = 0s)\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::cout << "finish global graph optimization (t = 0.2s)\n";
 }
 
 /// Removes weak edes (with error bigger than threshold
-bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration){
+bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
 
 }
 
 /// Removes weak edes (with error bigger than threshold
-bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration){
+bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
 
 }
 

@@ -679,18 +679,23 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
 }
 
 /// Optimize graph
-bool PoseGraphG2O::optimize(uint_fast32_t maxIterations) {
-    std::cout << "start local graph optimization (t = 0s)\n";
+bool PoseGraphG2O::optimize(uint_fast32_t maxIterations, int verbose) {
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
+    if (verbose>0)
+        std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
     optimizer.initializeOptimization();
     optimizer.computeInitialGuess();
     optimizer.optimize(maxIterations);
+    optimizer.setVerbose(true);
 
     if (!std::isfinite(optimizer.chi2()))
         return false;
     updateEstimate();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
+    if (verbose>0) {
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+        std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
+    }
     return true;
 }
 
@@ -919,7 +924,8 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
 /**
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
-bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIteration){
+bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();
     optimizer.computeInitialGuess();
@@ -966,7 +972,8 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
 /**
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
-bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIteration){
+bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
+    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();
     optimizer.computeInitialGuess();

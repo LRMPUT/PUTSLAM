@@ -64,7 +64,7 @@ namespace putslam {
             virtual bool addEdgeSE2(const EdgeSE2& e) = 0;
 
             /// Optimize graph
-            virtual bool optimize(uint_fast32_t maxIterations) = 0;
+            virtual bool optimize(uint_fast32_t maxIterations, int verbose = 0) = 0;
 
             /// Save graph to file
             virtual void save2file(const std::string filename) const = 0;
@@ -79,10 +79,10 @@ namespace putslam {
             virtual bool importRGBDSLAM(const std::string filename) = 0;
 
             /// Removes weak edes (with error bigger than threshold
-            virtual bool optimizeAndPrune(float_type threshold, unsigned int singleIteration) = 0;
+            virtual bool optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose = 0) = 0;
 
             /// Removes weak edes (with error bigger than threshold
-            virtual bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration) = 0;
+            virtual bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose = 0) = 0;
 
             /// Return trajectory (set of SE3 poses)
             virtual std::vector<Mat34> getTrajectory(void) const = 0;

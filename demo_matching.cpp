@@ -7,6 +7,7 @@
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
+#include <opencv/highgui.h>
 #include <cmath>
 #include <ctime>
 #include <ratio>
@@ -53,11 +54,11 @@ int main()
         Grabber* grabber;
         if (grabberType == "Kinect") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-            grabber = createGrabberKinect(configFile);
+            grabber = createGrabberKinect(configFile, Grabber::MODE_BUFFER);
         }
         else if (grabberType == "Xtion") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-            grabber = createGrabberXtion(configFile);
+            grabber = createGrabberXtion(configFile, Grabber::MODE_BUFFER);
         }
         /// Still do not take into account the config file
         else if (grabberType == "File") {
@@ -108,7 +109,7 @@ int main()
 
 			//imshow("1",a.image);
 			//imshow("2",a.depth);
-			cvWaitKey(500);
+            cvWaitKey(500);
 
 			// dEMO _G2O
 		}

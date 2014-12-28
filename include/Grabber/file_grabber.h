@@ -8,6 +8,7 @@
 #define FILE_GRABBER_H_INCLUDED
 
 #include "grabber.h"
+#include "depthSensorModel.h"
 #include "../include/Grabber/xtion_grabber.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
@@ -80,9 +81,6 @@ class FileGrabber : public Grabber {
 
         /// timestamp file
         std::ifstream timestampFile;
-
-        ///sensor model
-        XtionGrabber::UncertaintyModel asusModel;
 };
 
 #endif // FILE_GRABBER_H_INCLUDED
