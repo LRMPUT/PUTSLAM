@@ -32,7 +32,7 @@ bool FileGrabber::grab(void) {
 	std::ostringstream oss;
 	oss << imageSeqPrefix << std::setfill('0') << std::setw(5) << fileNo;
     std::cout << "Loading file: " << "rgb_" + oss.str() << ".png" << std::endl;
-    tmp.image = cv::imread( "rgb_" +  oss.str() +".png", CV_LOAD_IMAGE_COLOR );
+    tmp.image = cv::imread(parameters.fullPath + "rgb_" +  oss.str() +".png", CV_LOAD_IMAGE_COLOR );
     if(!tmp.image.data ) {
         std::cout <<  "Could not open or find the image" << std::endl ;
     }
@@ -41,7 +41,7 @@ bool FileGrabber::grab(void) {
     std::ostringstream ossDepth;
     ossDepth << depthSeqPrefix << std::setfill('0') << std::setw(5) <<  fileNo ;
     std::cout << "Loading file: " << "depth_" << ossDepth.str() << ".png" << std::endl;
-    tmp.depth = cv::imread( "depth_" + ossDepth.str() + ".png", CV_LOAD_IMAGE_ANYDEPTH );
+    tmp.depth = cv::imread(parameters.fullPath + "depth_" + ossDepth.str() + ".png", CV_LOAD_IMAGE_ANYDEPTH );
     if(!tmp.image.data ) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
@@ -138,7 +138,6 @@ putslam::Grabber* putslam::createGrabberFile(void) {
 }
 
 putslam::Grabber* putslam::createGrabberFile(std::string configFile) {
-   // fileGrabber.reset(new FileGrabber(configFile));
-	fileGrabber.reset(new FileGrabber());
+    fileGrabber.reset(new FileGrabber(configFile));
 	return fileGrabber.get();
 }
