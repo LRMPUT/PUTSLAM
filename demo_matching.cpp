@@ -110,27 +110,7 @@ int main()
 			//imshow("2",a.depth);
 			cvWaitKey(500);
 
-//			if (!tracker->track(grabber->getSensorFrame())) { //check if tracker should start new tracking
-//				if (thread_poseGraph) {
-//					thread_poseGraph->join(); //wait until pose graph thread is comleted (it should be considered as an error)
-//					thread_poseGraph.release(); //release object (is it possible to start thread without 'new'?)
-//				}
-//
-//				// MATCHING ADD RESULT
-//
-//
-//				thread_poseGraph = unique_ptr < thread
-//						> (new thread(&poseGraphUpdate, graph, global_graph,
-//								tracker->getVertex())); // throw thread
-//				tracker->reset();
-//			}
-			/*if (chrono::duration_cast < chrono::duration<unsigned>
-					> (chrono::system_clock::now() - start).count()
-					> max_tracking_duration) {
-				thread_poseGraph->join();
-				thread_globalGraph->join();
-				break;
-			}*/
+			// dEMO _G2O
 		}
 
     }
