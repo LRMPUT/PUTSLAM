@@ -50,6 +50,9 @@ class KinectGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+        /// Return starting position of sensor TODO: Implement
+        Eigen::Matrix4f getStartingSensorPose(){};
+
     private:
         /// Sensor model
         DepthSensorModel model;

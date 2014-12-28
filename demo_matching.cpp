@@ -41,31 +41,6 @@ void poseGraphUpdate(Graph* graph, Graph* global_graph, const VertexSE3& transfo
 
 unsigned const max_tracking_duration = 6;//seconds
 
-Eigen::Matrix4d readRobotStartingPose(tinyxml2::XMLDocument config) {
-	double x, y, z, qw, qx, qy, qz;
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("x",
-			&x);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("y",
-			&y);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("z",
-			&z);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qw",
-			&qw);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qx",
-			&qx);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qy",
-			&qy);
-	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qz",
-			&qz);
-	Eigen::Matrix4d robotPose = Eigen::Matrix4d::Identity();
-	Quaternion quat(qw, qx, qy, qz);
-	robotPose(0, 3) = x;
-	robotPose(1, 3) = y;
-	robotPose(2, 3) = z;
-	robotPose.block<3, 3>(0, 0) = quat.toRotationMatrix();
-	return robotPose;
-}
-
 void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
 		std::ofstream & estTrajectory, double timestamp) {
 	std::ostringstream ossTimestamp;
@@ -123,7 +98,7 @@ int main()
 				<< std::endl;
 
 		// Reading robot starting pose
-		Eigen::Matrix4d robotPose = readRobotStartingPose(config);
+		Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
 
 		// File to save trajectory
 		ofstream trajectoryFreiburgStream("result/estimatedTrajectory");
@@ -152,7 +127,7 @@ int main()
 				robotPose = robotPose * transformation;
 
 				std::cout<<std::endl<<transformation<<std::endl;
-				break;
+				//break;
 			}
 
 			// Save trajectory

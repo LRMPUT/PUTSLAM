@@ -54,10 +54,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 	//showMatches(prevRgbImage, prevFeatures, next_frame.image, features, matches);
 
 	// RANSAC
-
 	RANSAC ransac(matcherParameters.RANSACParams);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D, features3D, matches);
-
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
