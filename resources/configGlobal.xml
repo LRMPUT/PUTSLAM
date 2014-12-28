@@ -15,3 +15,6 @@
   	<name>OpenCV</name>
   	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
   </Matcher>
+  
+  <robotStartingPose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"></robotStartingPose>
+  

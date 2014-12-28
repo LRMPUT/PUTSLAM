@@ -12,6 +12,7 @@
 #include <ctime>
 #include <ratio>
 #include <chrono>
+#include <fstream>
 
 #include "include/Grabber/file_grabber.h"
 #include "include/Matcher/matcherOpenCV.h"
@@ -39,6 +40,43 @@ void poseGraphUpdate(Graph* graph, Graph* global_graph, const VertexSE3& transfo
 }
 
 unsigned const max_tracking_duration = 6;//seconds
+
+Eigen::Matrix4d readRobotStartingPose(tinyxml2::XMLDocument config) {
+	double x, y, z, qw, qx, qy, qz;
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("x",
+			&x);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("y",
+			&y);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("z",
+			&z);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qw",
+			&qw);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qx",
+			&qx);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qy",
+			&qy);
+	config.FirstChildElement("robotStartingPose")->QueryDoubleAttribute("qz",
+			&qz);
+	Eigen::Matrix4d robotPose = Eigen::Matrix4d::Identity();
+	Quaternion quat(qw, qx, qy, qz);
+	robotPose(0, 3) = x;
+	robotPose(1, 3) = y;
+	robotPose(2, 3) = z;
+	robotPose.block<3, 3>(0, 0) = quat.toRotationMatrix();
+	return robotPose;
+}
+
+void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
+		std::ofstream & estTrajectory, double timestamp) {
+	std::ostringstream ossTimestamp;
+	ossTimestamp << std::setfill('0') << std::setprecision(17) << timestamp;
+	// Saving estimate in Freiburg format
+	Eigen::Quaternion<float> Q(transformation.block<3, 3>(0, 0));
+	estTrajectory << ossTimestamp.str() << " " << transformation(0, 3) << " "
+			<< transformation(1, 3) << " " << transformation(2, 3) << " "
+			<< Q.coeffs().x() << " " << Q.coeffs().y() << " " << Q.coeffs().z()
+			<< " " << Q.coeffs().w() << endl;
+}
 
 int main()
 {
@@ -84,6 +122,13 @@ int main()
 		cout << "Current global graph: " << global_graph->getName()
 				<< std::endl;
 
+		// Reading robot starting pose
+		Eigen::Matrix4d robotPose = readRobotStartingPose(config);
+
+		// File to save trajectory
+		ofstream trajectoryFreiburgStream("result/estimatedTrajectory");
+
+
 		auto start = chrono::system_clock::now();
 		bool ifStart = true;
 		// Main loop
@@ -102,10 +147,16 @@ int main()
 				Eigen::Matrix4f transformation;
 				matcher->Matcher::match(currentSensorFrame, transformation);
 
+
+				// TODO: test it !
+				robotPose = robotPose * transformation;
+
 				std::cout<<std::endl<<transformation<<std::endl;
 				break;
 			}
 
+			// Save trajectory
+			saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream, currentSensorFrame.timestamp);
 
 			//imshow("1",a.image);
 			//imshow("2",a.depth);
@@ -114,6 +165,8 @@ int main()
 			// dEMO _G2O
 		}
 
+		// Close trajectory stream
+		trajectoryFreiburgStream.close();
     }
 	catch (const std::exception& ex) {
 		std::cerr << ex.what() << std::endl;

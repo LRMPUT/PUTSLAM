@@ -117,8 +117,8 @@ bool RANSAC::computeTransformationModel(
 	}
 
 	// Compute transformation
-	transformationModel = Eigen::umeyama(prevFeaturesMatrix.transpose(),
-			featuresMatrix.transpose(), false);
+	transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
+			prevFeaturesMatrix.transpose(), false);
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
@@ -142,11 +142,11 @@ float RANSAC::computeInlierRatio(
 	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
-		Eigen::Vector3f estimatedNewPosition = R * prevFeatures[it->queryIdx]
+		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx]
 				+ t;
 
 		// Compute residual error and compare it to inlier threshold
-		if ((estimatedNewPosition - features[it->trainIdx]).norm()
+		if ((estimatedNewPosition - prevFeatures[it->queryIdx]).norm()
 				< RANSACParams.inlierThreshold) {
 			inlierCount++;
 		}

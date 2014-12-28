@@ -9,7 +9,7 @@
 
 #include "grabber.h"
 #include "depthSensorModel.h"
-#include "../include/Grabber/xtion_grabber.h"
+#include "../include/Grabber/grabber.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <chrono>
@@ -33,8 +33,8 @@ class FileGrabber : public Grabber {
 
         /// Construction
         FileGrabber(void);
-        //FileGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
-        //      }
+        FileGrabber(std::string configFilename) : Grabber("File Grabber", TYPE_PRIMESENSE), parameters(configFilename){
+        }
 
         /// Destructor
         ~FileGrabber(void);
@@ -63,7 +63,36 @@ class FileGrabber : public Grabber {
         ///Closing a device
         int grabberClose();
 
+        /// Class used to hold all parameters
+	class Parameters {
+	public:
+		Parameters() {
+		}
+		;
+		Parameters(std::string configFilename) {
+			tinyxml2::XMLDocument config;
+			std::string filename = "../../resources/" + configFilename;
+			config.LoadFile(filename.c_str());
+			if (config.ErrorID()) {
+				std::cout << "Unable to load File Grabber config file: "
+						<< configFilename << std::endl;
+			}
+
+			// dataset path
+			tinyxml2::XMLElement * params = config.FirstChildElement("datasetPath");
+			basePath = params->Attribute("base");
+			datasetName = params->Attribute("datasetName");
+			fullPath = basePath + "/" + datasetName + "/";
+		}
+	public:
+		 /// path of the dataset
+		 std::string basePath, datasetName, fullPath;
+	};
+
     private:
+		/// Parameters read from file
+		Parameters parameters;
+
         /// start timestamp
         std::chrono::high_resolution_clock::time_point startT;
 
@@ -81,6 +110,8 @@ class FileGrabber : public Grabber {
 
         /// timestamp file
         std::ifstream timestampFile;
+
+
 };
 
 #endif // FILE_GRABBER_H_INCLUDED
