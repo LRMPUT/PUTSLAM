@@ -235,6 +235,11 @@ void XtionGrabber::calibrate(void) {
 
 }
 
+Eigen::Matrix4f XtionGrabber::getStartingSensorPose()
+{
+	Eigen::Matrix4f::Identity();
+}
+
 putslam::Grabber* putslam::createGrabberXtion(void) {
     grabberX.reset(new XtionGrabber());
     return grabberX.get();

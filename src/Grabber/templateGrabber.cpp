@@ -39,6 +39,11 @@ int KinectGrabber::grabberClose(){
     return 0;
 }
 
+Eigen::Matrix4f KinectGrabber::getStartingSensorPose()
+{
+	Eigen::Matrix4f::Identity();
+}
+
 putslam::Grabber* putslam::createGrabberKinect(void) {
     grabberK.reset(new KinectGrabber());
     return grabberK.get();
