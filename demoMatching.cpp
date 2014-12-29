@@ -126,7 +126,6 @@ int main()
 				// TODO: test it !
 				robotPose = robotPose * transformation;
 
-				std::cout<<std::endl<<transformation<<std::endl;
 				//break;
 			}
 
