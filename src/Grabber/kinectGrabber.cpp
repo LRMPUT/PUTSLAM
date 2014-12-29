@@ -1,4 +1,5 @@
-#include "../include/Grabber/kinect_grabber.h"
+#include "../../include/Grabber/kinectGrabber.h"
+
 #include <memory>
 #include <stdexcept>
 #include <chrono>

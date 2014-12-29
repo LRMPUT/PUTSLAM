@@ -1,3 +1,5 @@
+#include "../../include/Grabber/fileGrabber.h"
+
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -6,7 +8,6 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
-#include "../../include/Grabber/file_grabber.h"
 
 using namespace putslam;
 using namespace std::chrono;

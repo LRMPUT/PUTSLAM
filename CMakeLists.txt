@@ -166,25 +166,25 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/depthSensorModel.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/file_grabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/kinectGrabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/fileGrabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgrey_grabber.cpp"
+                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgreyGrabber.cpp"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/src/Grabber/template_grabber.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/templateGrabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/xtionGrabber.cpp"
         )
         file(GLOB GRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/depthSensorModel.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/file_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/kinectGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgrey_grabber.h"
+                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgreyGrabber.h"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/include/Grabber/template_grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/xtion_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/templateGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/xtionGrabber.h"
         )
 
         ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})

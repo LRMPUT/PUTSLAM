@@ -1,9 +1,10 @@
+
 // Undeprecate CRT functions
 #ifndef _CRT_SECURE_NO_DEPRECATE
     #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include "../include/Grabber/xtion_grabber.h"
+#include "../../include/Grabber/xtionGrabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
