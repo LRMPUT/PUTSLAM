@@ -1,4 +1,5 @@
-#include "../include/Grabber/ptgrey_grabber.h"
+#include "../../include/Grabber/ptgreyGrabber.h"
+
 #include <memory>
 #include <stdexcept>
 #include <chrono>

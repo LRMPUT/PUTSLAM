@@ -1,8 +1,8 @@
-#include "../include/Grabber/kinect_grabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
 #include <thread>
+#include "../../include/Grabber/kinectGrabber.h"
 
 using namespace putslam;
 

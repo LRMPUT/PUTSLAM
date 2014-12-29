@@ -1,14 +1,14 @@
 #include <iostream>
 #include <thread>
 #include "include/Defs/putslam_defs.h"
-#include "Grabber/kinect_grabber.h"
-#include "Grabber/xtion_grabber.h"
-#include "Grabber/ptgrey_grabber.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <ctime>
 #include <ratio>
 #include <chrono>
+#include "include/Grabber/kinectGrabber.h"
+#include "include/Grabber/ptgreyGrabber.h"
+#include "include/Grabber/xtionGrabber.h"
 
 using namespace std;
 
