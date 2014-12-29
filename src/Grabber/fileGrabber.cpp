@@ -37,6 +37,32 @@ bool FileGrabber::grab(void) {
 	// Some variables
 	SensorFrame tmp;
 
+	std::string timestampString;
+	// If the option to skip frames was activated (playEveryNth > 1), we skip some frames
+	for (int i = 0; i < parameters.playEveryNth; i++) {
+		// Increment file number
+		fileNo++;
+
+		// Consider timestamps from provided file
+		std::getline(timestampFile, timestampString);
+	}
+
+	// End of file
+	if( timestampString.length() < 3)
+		return false;
+
+	// Compute the average of rgb and depth timestamp
+	double timestamp1 = atof(
+			timestampString.substr(0, timestampString.find(' ')).c_str());
+	double timestamp2 = atof(
+			timestampString.substr(timestampString.find(' ') + 1).c_str());
+
+	std::ostringstream ossTimestamp;
+	ossTimestamp << imageSeqPrefix << std::setfill('0') << std::setprecision(17)
+			<< (timestamp1 + timestamp2) / 2;
+	std::cout << "Measurement timestamp : " << ossTimestamp.str() << std::endl;
+	tmp.timestamp = (timestamp1 + timestamp2) / 2;
+
 	// RGB
 	std::ostringstream oss;
 	oss << imageSeqPrefix << std::setfill('0') << std::setw(5) << fileNo;
@@ -55,25 +81,7 @@ bool FileGrabber::grab(void) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
-	std::string timestampString;
-	// If the option to skip frames was activated (playEveryNth > 1), we skip some frames
-    for (int i=0;i< parameters.playEveryNth;i++)
-    {
-		// Increment file number
-		fileNo++;
 
-		// Consider timestamps from provided file
-		std::getline(timestampFile, timestampString);
-    }
-
-    // Compute the average of rgb and depth timestamp
-    double timestamp1 = atof(timestampString.substr(0,timestampString.find(' ')).c_str());
-    double timestamp2 = atof(timestampString.substr(timestampString.find(' ')+1).c_str());
-
-    std::ostringstream ossTimestamp;
-    ossTimestamp << imageSeqPrefix << std::setfill('0') << std::setprecision(17) << (timestamp1 + timestamp2)/2;
-    std::cout<< "Measurement timestamp : " << ossTimestamp.str() << std::endl;
-    tmp.timestamp = (timestamp1 + timestamp2)/2;
 
     // Add to queue
     mtx.lock();

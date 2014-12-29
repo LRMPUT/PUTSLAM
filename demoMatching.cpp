@@ -108,7 +108,10 @@ int main()
 		bool ifStart = true;
 		// Main loop
 		while (true) {
-			grabber->grab(); // grab frame
+			bool middleOfSequence = grabber->grab(); // grab frame
+			if ( !middleOfSequence )
+				break;
+
 			SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
 			if ( ifStart )
@@ -126,7 +129,6 @@ int main()
 				// TODO: test it !
 				robotPose = robotPose * transformation;
 
-				//break;
 			}
 
 			// Save trajectory
@@ -134,9 +136,7 @@ int main()
 
 			//imshow("1",a.image);
 			//imshow("2",a.depth);
-            cvWaitKey(500);
-
-			// dEMO _G2O
+			//cvWaitKey(500);
 		}
 
 		// Close trajectory stream
