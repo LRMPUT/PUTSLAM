@@ -54,17 +54,16 @@ bool FileGrabber::grab(void) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
-    // Increment file number
-    fileNo++;
+	std::string timestampString;
+	// If the option to skip frames was activated (playEveryNth > 1), we skip some frames
+    for (int i=0;i< parameters.playEveryNth;i++)
+    {
+		// Increment file number
+		fileNo++;
 
-    //SensorFrame frameTmp;
-    //frameTmp.depth = tmp.depth.clone();
-    //tmp.depth.convertTo(tmp.depth, CV_16SC1);
-    //tmp.cloud = asusModel.depth2cloud(tmp.depth);
-
-    // Consider timestamps from provided file
-    std::string timestampString;
-    std::getline(timestampFile, timestampString);
+		// Consider timestamps from provided file
+		std::getline(timestampFile, timestampString);
+    }
 
     // Compute the average of rgb and depth timestamp
     double timestamp1 = atof(timestampString.substr(0,timestampString.find(' ')).c_str());
