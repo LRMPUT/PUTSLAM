@@ -191,6 +191,11 @@ int PtgreyGrabber::initPtGrey (){
 }
 #endif
 
+Eigen::Matrix4f PtgreyGrabber::getStartingSensorPose()
+{
+	return Eigen::Matrix4f::Identity();
+}
+
 putslam::Grabber* putslam::createGrabberPtgrey(void) {
     grabberP.reset(new PtgreyGrabber());
     return grabberP.get();
