@@ -82,9 +82,12 @@ class FileGrabber : public Grabber {
 				std::cout << "Unable to load File Grabber config file: "
 						<< configFilename << std::endl;
 			}
+			// Play parameters
+			config.FirstChildElement("playParameters")->QueryIntAttribute(
+					"playEveryNthFrame", &playEveryNth);
 
 			// dataset path
-			tinyxml2::XMLElement * params = config.FirstChildElement("datasetPath");
+			tinyxml2::XMLElement *params = config.FirstChildElement("datasetPath");
 			basePath = params->Attribute("base");
 			datasetName = params->Attribute("datasetName");
 			fullPath = basePath + "/" + datasetName + "/";
@@ -92,6 +95,9 @@ class FileGrabber : public Grabber {
 	public:
 		 /// path of the dataset
 		 std::string basePath, datasetName, fullPath;
+
+		 /// Play parameters
+		 int playEveryNth;
 	};
 
     private:
