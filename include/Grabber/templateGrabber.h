@@ -49,6 +49,9 @@ class KinectGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+        /// Return starting position of sensor
+        Eigen::Matrix4f getStartingSensorPose();
+
     private:
 };
 

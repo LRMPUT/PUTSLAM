@@ -54,6 +54,8 @@ public:
 				std::cout << "Unable to load Matcher OpenCV config file: " << configFilename << std::endl;
 			}
 			tinyxml2::XMLElement * params = config.FirstChildElement("Matcher");
+			// Matcher
+			params->QueryIntAttribute("verbose", &verbose);
 			// RANSAC
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.verbose);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
@@ -65,6 +67,7 @@ public:
 
 		}
 	public:
+		int verbose;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 	};

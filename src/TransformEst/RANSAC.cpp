@@ -20,11 +20,11 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 		std::cout<<"RANSACParams.verbose --> " <<RANSACParams.verbose<< std::endl;
 		std::cout<<"RANSACParams.usedPairs --> " << RANSACParams.usedPairs << std::endl;
 		std::cout<<"RANSACParams.inlierThreshold --> " << RANSACParams.inlierThreshold << std::endl;
+		std::cout<<"RANSACParams.minimalInlierRatioThreshold --> " << RANSACParams.minimalInlierRatioThreshold << std::endl;
 	}
 }
 
 // TODO: MISSING:
-// - model feasibility
 // - test of minimal inlierRatio of bestModel
 Eigen::Matrix4f RANSAC::estimateTransformation(
 		std::vector<Eigen::Vector3f> prevFeatures,
@@ -50,29 +50,41 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 				features, randomMatches, transformationModel);
 
 		// TODO: Check if the model is feasible ?
+		bool correctModel = checkModelFeasibility(transformationModel);
+		if (correctModel)
+		{
+			// Evaluate the model
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: evaluating the model" << std::endl;
+			float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
+					transformationModel);
 
-		// Evaluate the model
-		if (RANSACParams.verbose > 1)
-			std::cout << "RANSAC: evaluating the model" << std::endl;
-		float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
-				transformationModel);
+			// Save better model
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: saving best model" << std::endl;
+			saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
+					bestTransformationModel);
 
-		// Save better model
-		if (RANSACParams.verbose > 1)
-			std::cout << "RANSAC: saving best model" << std::endl;
-		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
-				bestTransformationModel);
+			// Print achieved result
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: best model inlier ratio : "
+						<< bestInlierRatio * 100.0 << "%" << std::endl;
+		}
 
-		// Print achieved result
-		if (RANSACParams.verbose > 1)
-			std::cout << "RANSAC: best model inlier ratio : "
-					<< bestInlierRatio * 100.0 << "%" << std::endl;
+	}
 
+	// Test the number of inliers
+	if (bestInlierRatio < RANSACParams.minimalInlierRatioThreshold)
+	{
+		bestTransformationModel = Eigen::Matrix4f::Identity();
 	}
 
 	// Test for minimal inlierRatio of bestModel
 	if (RANSACParams.verbose > 0)
-		std::cout<<"RANSAC best model : " << bestTransformationModel<<std::endl;
+	{
+		std::cout<<"RANSAC best model : inlierRatio = " << bestInlierRatio * 100.0 << "%" <<std::endl;
+		std::cout<<"RANSAC best model : " << std::endl << bestTransformationModel<<std::endl;
+	}
 	return bestTransformationModel;
 }
 
@@ -135,6 +147,13 @@ bool RANSAC::computeTransformationModel(
 	}
 	return true;
 }
+
+// TODO: - model feasibility
+bool RANSAC::checkModelFeasibility(Eigen::Matrix4f transformationModel)
+{
+	return true;
+}
+
 
 float RANSAC::computeInlierRatio(
 		const std::vector<Eigen::Vector3f> prevFeatures,

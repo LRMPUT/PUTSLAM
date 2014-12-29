@@ -16,7 +16,8 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 	prevFeatures = detectFeatures(sensorData.image);
 
 	// Show detected features
-	//showFeatures(next_frame.image, prevFeatures);
+	if (matcherParameters.verbose > 1)
+		showFeatures(sensorData.image, prevFeatures);
 
 	// Remove features without depth
 	RGBD::removeFeaturesWithoutDepth(prevFeatures, sensorData.depth);
@@ -37,6 +38,9 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 	// Detect salient features
 	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.image);
 
+	if (matcherParameters.verbose > 1)
+			showFeatures(sensorData.image, features);
+
 	// Remove features without depth
 	RGBD::removeFeaturesWithoutDepth(features, sensorData.depth);
 
@@ -51,7 +55,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, sensorData.depth);
 
 	// Visualize matches
-	//showMatches(prevRgbImage, prevFeatures, next_frame.image, features, matches);
+	if (matcherParameters.verbose > 0)
+			showMatches(prevRgbImage, prevFeatures, sensorData.image, features, matches);
 
 	// RANSAC
 	RANSAC ransac(matcherParameters.RANSACParams);
