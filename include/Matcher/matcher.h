@@ -20,9 +20,9 @@ namespace putslam {
 class Matcher {
 public:
 	struct parameters {
-			std::string detector;
-			std::string descriptor;
-		};
+		std::string detector;
+		std::string descriptor;
+	};
 
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
@@ -39,31 +39,43 @@ public:
 	void loadInitFeatures(const SensorFrame& sensorData);
 
 	/// Run single match
-	bool match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation);
+	bool match(const SensorFrame& sensorData,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Class used to hold all parameters
 	class Parameters {
 	public:
-		Parameters(){};
+		Parameters() {
+		}
+		;
 		Parameters(std::string configFilename) {
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());
-			if (config.ErrorID())
-			{
-				std::cout << "Unable to load Matcher OpenCV config file: " << configFilename << std::endl;
+			if (config.ErrorID()) {
+				std::cout << "Unable to load Matcher OpenCV config file: "
+						<< configFilename << std::endl;
 			}
 			tinyxml2::XMLElement * params = config.FirstChildElement("Matcher");
 			// Matcher
 			params->QueryIntAttribute("verbose", &verbose);
 			// RANSAC
-			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose", &RANSACParams.verbose);
-			params->FirstChildElement("RANSAC")->QueryDoubleAttribute("inlierThreshold",
-					&RANSACParams.inlierThreshold);
-			params->FirstChildElement("RANSAC")->QueryIntAttribute("usedPairs", &RANSACParams.usedPairs);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose",
+					&RANSACParams.verbose);
+			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+					"inlierThreshold", &RANSACParams.inlierThreshold);
+			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+					"minimalInlierRatioThreshold",
+					&RANSACParams.minimalInlierRatioThreshold);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("usedPairs",
+					&RANSACParams.usedPairs);
 			// Matcher OpenCV
-			OpenCVParams.detector = params->FirstChildElement("MatcherOpenCV")->Attribute("detector");
-			OpenCVParams.descriptor = params->FirstChildElement("MatcherOpenCV")->Attribute("descriptor");
+			OpenCVParams.detector =
+					params->FirstChildElement("MatcherOpenCV")->Attribute(
+							"detector");
+			OpenCVParams.descriptor =
+					params->FirstChildElement("MatcherOpenCV")->Attribute(
+							"descriptor");
 
 		}
 	public:
@@ -71,7 +83,6 @@ public:
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 	};
-
 
 protected:
 
@@ -94,7 +105,8 @@ protected:
 	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);
 	void showMatches(cv::Mat prevRgbImage,
 			std::vector<cv::KeyPoint> prevFeatures, cv::Mat rgbImage,
-			std::vector<cv::KeyPoint> features, std::vector<cv::DMatch> matches);
+			std::vector<cv::KeyPoint> features,
+			std::vector<cv::DMatch> matches);
 
 	/// Detect features
 	virtual std::vector<cv::KeyPoint> detectFeatures(cv::Mat rgbImage) = 0;
@@ -107,8 +119,8 @@ protected:
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors) = 0;
 
-
 };
-};
+}
+;
 
 #endif // _MATCHER_H_

@@ -12,6 +12,7 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	RANSACParams.verbose = _RANSACParameters.verbose;
 	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
 	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
+	RANSACParams.minimalInlierRatioThreshold = _RANSACParameters.minimalInlierRatioThreshold;
 
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
 

@@ -19,7 +19,13 @@
     	
     	<!-- Matching settings
     		detector : 		FAST, ORB, SURF, SIFT
-    		descriptor :	BRIEF, ORB, SURF, SIFT    	
+    		descriptor :	BRIEF, ORB, LDB, SURF, SIFT
+    		
+    		Recommended configurations: FAST-BRIEF, ORB-ORB, ORB-LDB, SURF-SURF, SIFT-SIFT
+    		
+    		Used norms in matching:  Hamming (ORB, BRIEF, LDB), L2 (SURF, SIFT)
+    		
+    		TODO: LDB didn't compile due to LDB issues    	
     	-->
     	<MatcherOpenCV detector="SURF" descriptor="SURF"> </MatcherOpenCV>
 	</Matcher>
