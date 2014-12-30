@@ -100,10 +100,10 @@ int main() {
 
 	Matcher * matcher = createMatcherOpenCV(matcherParameters);
 	cout << "Current matcher: " << matcher->getName() << std::endl;
-	Graph * graph = createPoseGraphG2O();
-	cout << "Current graph: " << graph->getName() << std::endl;
-	Graph * global_graph = createGlobalGraph();
-	cout << "Current global graph: " << global_graph->getName() << std::endl;
+//	Graph * graph = createPoseGraphG2O();
+//	cout << "Current graph: " << graph->getName() << std::endl;
+//	Graph * global_graph = createGlobalGraph();
+//	cout << "Current global graph: " << global_graph->getName() << std::endl;
 
 	// Reading robot starting pose
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
@@ -148,8 +148,8 @@ int main() {
 
 	delete matcher;
 	delete grabber;
-	delete graph;
-	delete global_graph;
+//	delete graph;
+//	delete global_graph;
 
 	return 0;
 }

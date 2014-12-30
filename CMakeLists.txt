@@ -28,6 +28,8 @@ option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO
 mark_as_advanced(BUILD_PUTSLAM_GRABBER_PTGREY)
 option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
+option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" YES)
+mark_as_advanced(BUILD_PUTSLAM_LDB)
 option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MATCHER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
@@ -238,6 +240,26 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 ###############################################################################
 #
+# PUTSLAM LDB library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
+        file(GLOB LDB_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/LDB/*.cpp"
+        )
+        file(GLOB LDB_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/LDB/*.h"
+        )
+
+        ADD_LIBRARY(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
+        INSTALL(TARGETS LDB RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${LDB_HEADERS} DESTINATION include/putslam/LDB/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
+
+
+###############################################################################
+#
 # PUTSLAM Matcher library
 #
 ###############################################################################
@@ -251,7 +273,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         )
 
         ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst)
+        TARGET_LINK_LIBRARIES(TransformEst LDB)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
@@ -332,7 +354,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(DEMO_SOURCES ./demoMatching.cpp)
         ADD_EXECUTABLE(demoMatching ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Matcher TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph boost_system)
         INSTALL(TARGETS demoMatching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
