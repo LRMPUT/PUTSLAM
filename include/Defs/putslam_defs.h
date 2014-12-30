@@ -61,10 +61,10 @@ namespace putslam {
             typedef std::vector<SensorFrame> Seq;
 
             /// 2D image
-            cv::Mat image;
+            cv::Mat rgbImage;
 
             /// 2D image
-            cv::Mat depth;
+            cv::Mat depthImage;
 
             /// XYZRGBA point cloud
             PointCloud cloud;
