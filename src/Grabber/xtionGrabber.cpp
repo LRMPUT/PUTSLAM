@@ -194,8 +194,8 @@ bool XtionGrabber::grab(void) {
 //    cloud.push_back(point);
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
       mtx.lock();
-      if(acquireDepthFrame(this->sensorFrame.depth)) throw 1;
-      if(acquireColorFrame(this->sensorFrame.image)) throw 2;
+      if(acquireDepthFrame(this->sensorFrame.depthImage)) throw 1;
+      if(acquireColorFrame(this->sensorFrame.rgbImage)) throw 2;
       else if (mode==MODE_BUFFER) {
           sensorFrames.push(sensorFrame);
       }

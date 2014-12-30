@@ -69,7 +69,7 @@ int main()
             sf = grabber->getSensorFrame();
             //sf.depth.convertTo(depth, CV_8UC1, 255.0/1024.0); //conversion to 8-bit format
             //cv::imshow("Depth View",depth);
-            cv::imshow( "RGB View", sf.image );
+            cv::imshow( "RGB View", sf.rgbImage );
 
 //            if (chrono::duration_cast<chrono::duration<unsigned> >(chrono::system_clock::now() - start).count()>max_tracking_duration){
 

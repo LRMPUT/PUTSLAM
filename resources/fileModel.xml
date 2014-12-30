@@ -9,6 +9,12 @@
  
   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath>
  
-  <playParameters playEveryNthFrame="4"></playParameters>
+ 
+  <!-- Parameters defining the way the data is played from files:
+  			verbose				-> verbose level (0 - no debug, 1 - some debug inf)
+  			playEveryNthFrame 	-> only every Nth frame is used in motion estimation
+  			realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
+  -->
+  <playParameters verbose="0" playEveryNthFrame="4" realTime="1"></playParameters>
  
   <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"></pose>

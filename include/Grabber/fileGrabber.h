@@ -84,7 +84,11 @@ class FileGrabber : public Grabber {
 			}
 			// Play parameters
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
+											"verbose", &verbose);
+			config.FirstChildElement("playParameters")->QueryIntAttribute(
 					"playEveryNthFrame", &playEveryNth);
+			config.FirstChildElement("playParameters")->QueryBoolAttribute(
+								"realTime", &realTime);
 
 			// dataset path
 			tinyxml2::XMLElement *params = config.FirstChildElement("datasetPath");
@@ -98,14 +102,19 @@ class FileGrabber : public Grabber {
 
 		 /// Play parameters
 		 int playEveryNth;
+		 bool realTime;
+
+		 /// Verbose
+		 int verbose;
 	};
 
     private:
+
+		// Convert to string with high numer of digits
+		std::string convertToHighPrecisionString(double timestamp, int precision = 20);
+
 		/// Parameters read from file
 		Parameters parameters;
-
-        /// start timestamp
-        std::chrono::high_resolution_clock::time_point startT;
 
         /// file prefix (images)
         std::string imageSeqPrefix;
@@ -121,6 +130,11 @@ class FileGrabber : public Grabber {
 
         /// timestamp file
         std::ifstream timestampFile;
+
+        /// timestamp at the start
+        std::chrono::high_resolution_clock::time_point startPlayTimestamp;
+        double startSeqTimestamp;
+        double lastSeqTimestamp;
 
 
 };

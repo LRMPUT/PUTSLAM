@@ -15,7 +15,7 @@
  			minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
  			usedPairs : numbers of pairs used to create model in RANSAC iteration
  		-->
-    	<RANSAC verbose="1" inlierThreshold="0.02" minimalInlierRatioThreshold="0.1" usedPairs="3"></RANSAC>
+    	<RANSAC verbose="0" inlierThreshold="0.02" minimalInlierRatioThreshold="0.1" usedPairs="3"></RANSAC>
     	
     	<!-- Matching settings
     		detector : 		FAST, ORB, SURF, SIFT
@@ -27,5 +27,5 @@
     		
     		TODO: LDB didn't compile due to LDB issues    	
     	-->
-    	<MatcherOpenCV detector="SURF" descriptor="SURF"> </MatcherOpenCV>
+    	<MatcherOpenCV detector="ORB" descriptor="ORB"> </MatcherOpenCV>
 	</Matcher>

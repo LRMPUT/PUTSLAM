@@ -24,9 +24,11 @@ FileGrabber::FileGrabber(std::string configFilename) : Grabber("File Grabber", T
 }
 
 void FileGrabber::initFileGrabber() {
-	startT = std::chrono::high_resolution_clock::now();
+	startPlayTimestamp = std::chrono::high_resolution_clock::now();
+	startSeqTimestamp = -1.0;
+	lastSeqTimestamp = -1;
+	fileNo = -1;
 
-	std::cout << "Open : " << parameters.fullPath + "matched" << std::endl;
 	timestampFile.open(parameters.fullPath + "matched");
 }
 
@@ -34,50 +36,101 @@ FileGrabber::~FileGrabber(void) {
 }
 
 bool FileGrabber::grab(void) {
-	// Some variables
-	SensorFrame tmp;
+	// File was already fully read
+	if (timestampFile.eof())
+		return false;
 
-	std::string timestampString;
+	// sensorFrame to read rgb image, depth image and timestamp
+	SensorFrame tmpSensorFrame;
+
+
+	double timestamp;
+	int previousLinePlace;
+
 	// If the option to skip frames was activated (playEveryNth > 1), we skip some frames
-	for (int i = 0; i < parameters.playEveryNth; i++) {
+	// If the real time option is activated we drop frames until we catch up current time
+	for (int i = 0; (i < parameters.playEveryNth) || parameters.realTime ; i++) {
+
 		// Increment file number
 		fileNo++;
 
+		// We save the position of last line in case we need to go back by one line
+		previousLinePlace = timestampFile.tellg();
+
 		// Consider timestamps from provided file
+		std::string timestampString;
 		std::getline(timestampFile, timestampString);
+
+		// No more timestamps ---> we detected the end of sequence
+		if (timestampString.length() < 3)
+			return false;
+
+		// Compute the average of rgb and depth timestamps
+		double timestamp1 = atof(
+				timestampString.substr(0, timestampString.find(' ')).c_str());
+		double timestamp2 = atof(
+				timestampString.substr(timestampString.find(' ') + 1).c_str());
+		timestamp = (timestamp1 + timestamp2) / 2;
+
+		// In case of processing real time we check more conditions
+		if ( parameters.realTime )
+		{
+			// Compute milliseconds between current frame and start of sequence
+			double msSeq = timestamp - startSeqTimestamp;
+
+			// Compute milliseconds between current time and start of processing
+			double msPlay = std::chrono::duration_cast < std::chrono::milliseconds
+					> (std::chrono::high_resolution_clock::now()
+							- startPlayTimestamp).count()/1000.0;
+
+			if (parameters.verbose > 1)
+				std::cout<<"Considering " << fileNo << ":\tplayTime=" << msPlay << " [s]\tsequenceTime=" << msSeq <<" [s]"<< std::endl;
+
+			// Sequence time is ahead of processing or we just started
+			if ( msPlay < msSeq || startSeqTimestamp< 0)
+			{
+				// we just started
+				if (startSeqTimestamp < 0)
+				{
+					startSeqTimestamp = timestamp;
+					startPlayTimestamp = std::chrono::high_resolution_clock::now();
+				}
+				// we can read one image earlier
+				if (lastSeqTimestamp > 0)
+				{
+					fileNo--;
+					lastSeqTimestamp = timestamp;
+					timestampFile.seekg(previousLinePlace);
+				}
+				lastSeqTimestamp = timestamp;
+				break;
+			}
+		}
 	}
 
-	// End of file
-	if( timestampString.length() < 3)
-		return false;
 
-	// Compute the average of rgb and depth timestamp
-	double timestamp1 = atof(
-			timestampString.substr(0, timestampString.find(' ')).c_str());
-	double timestamp2 = atof(
-			timestampString.substr(timestampString.find(' ') + 1).c_str());
 
-	std::ostringstream ossTimestamp;
-	ossTimestamp << imageSeqPrefix << std::setfill('0') << std::setprecision(17)
-			<< (timestamp1 + timestamp2) / 2;
-	std::cout << "Measurement timestamp : " << ossTimestamp.str() << std::endl;
-	tmp.timestamp = (timestamp1 + timestamp2) / 2;
+	if (parameters.verbose > 0)
+		std::cout << "Measurement timestamp : " << convertToHighPrecisionString(timestamp) << std::endl;
+	tmpSensorFrame.timestamp = timestamp;
 
 	// RGB
 	std::ostringstream oss;
-	oss << imageSeqPrefix << std::setfill('0') << std::setw(5) << fileNo;
-    std::cout << "Loading file: " << "rgb_" + oss.str() << ".png" << std::endl;
-    tmp.image = cv::imread(parameters.fullPath + "rgb_" +  oss.str() +".png", CV_LOAD_IMAGE_COLOR );
-    if(!tmp.image.data ) {
+	oss <<  std::setfill('0') << std::setw(5) << fileNo;
+	if (parameters.verbose > 0)
+		std::cout << "Loading file: " << "rgb_" + oss.str() << ".png" << std::endl;
+    tmpSensorFrame.rgbImage = cv::imread(parameters.fullPath + "rgb_" +  oss.str() +".png", CV_LOAD_IMAGE_COLOR );
+    if(!tmpSensorFrame.rgbImage.data ) {
         std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
     //Depth
     std::ostringstream ossDepth;
-    ossDepth << depthSeqPrefix << std::setfill('0') << std::setw(5) <<  fileNo ;
-    std::cout << "Loading file: " << "depth_" << ossDepth.str() << ".png" << std::endl;
-    tmp.depth = cv::imread(parameters.fullPath + "depth_" + ossDepth.str() + ".png", CV_LOAD_IMAGE_ANYDEPTH );
-    if(!tmp.image.data ) {
+    ossDepth << std::setfill('0') << std::setw(5) <<  fileNo ;
+    if (parameters.verbose > 0)
+    	std::cout << "Loading file: " << "depth_" << ossDepth.str() << ".png" << std::endl;
+    tmpSensorFrame.depthImage = cv::imread(parameters.fullPath + "depth_" + ossDepth.str() + ".png", CV_LOAD_IMAGE_ANYDEPTH );
+    if(!tmpSensorFrame.rgbImage.data ) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
@@ -86,13 +139,20 @@ bool FileGrabber::grab(void) {
     // Add to queue
     mtx.lock();
     if (mode==MODE_CONTINUOUS)
-        sensorFrame = tmp;
+        sensorFrame = tmpSensorFrame;
     else if (mode==MODE_BUFFER){
-        sensorFrames.push(tmp);
+        sensorFrames.push(tmpSensorFrame);
     }
     mtx.unlock();
 
     return true;
+}
+
+std::string FileGrabber::convertToHighPrecisionString(double timestamp, int precision) {
+	std::ostringstream ossTimestamp;
+	ossTimestamp << imageSeqPrefix << std::setfill('0') << std::setprecision(precision)
+			<< timestamp;
+	return ossTimestamp.str();
 }
 
 /// Set sequence properties
