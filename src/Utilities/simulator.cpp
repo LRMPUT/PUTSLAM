@@ -112,12 +112,14 @@ std::vector<int> Simulator::getCloud(const Mat34& sensorPose, DepthSensorModel& 
             Point3D point3D = sampleFromMultivariateGaussian(Eigen::Vector3d(pointCamera(0), pointCamera(1), pointCamera(2)),uncertainty);
             //point3D.x = pointCamera[0]; point3D.y = pointCamera[1]; point3D.z = pointCamera[2]; // no noise
             //point3D.x = room[i].x; point3D.y = room[i].y; point3D.z = room[i].z; // no noise global frame
-
-            setPoints.push_back(point3D);
-            Eigen::Vector3d inv2d = sensorModel.inverseModel(point3D.x, point3D.y, point3D.z);
-            sensorModel.computeCov(inv2d(0), inv2d(1), inv2d(2), uncertainty);
-            setUncertainty.push_back(uncertainty);
-            pointIdentifiers.push_back(i);
+            Eigen::Vector3d point2dTmp = sensorModel.inverseModel(point3D.x, point3D.y, point3D.z);
+            if (point2dTmp(0)!=-1){
+                setPoints.push_back(point3D);
+                Eigen::Vector3d inv2d = sensorModel.inverseModel(point3D.x, point3D.y, point3D.z);
+                sensorModel.computeCov(inv2d(0), inv2d(1), inv2d(2), uncertainty);
+                setUncertainty.push_back(uncertainty);
+                pointIdentifiers.push_back(i);
+            }
         }
     }
     return pointIdentifiers;
@@ -164,6 +166,20 @@ void Simulator::moveCamera(const std::vector<Mat34>& robotTrajectory, const Mat3
         cloudSeq.push_back(cloud);
         setIds.push_back(setId);
         //saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel, estimKabsch);
+        for (int j=0;j<uncertaintyCloud.size();j++){
+            if (uncertaintyCloud[j](0,0)>1){
+                std::cout << j << "dupa\n" << uncertaintyCloud[j] << "\n";
+                std::cout << "robot pose" << robotTrajectory[i].matrix() << "\n";
+                std::cout << "sens pose" << sensorPose.matrix() << "\n";
+                std::cout << "point" << cloud[j].x << ", " << cloud[j].y << ", " << cloud[j].z << ", " << "\n";
+                Eigen::Vector3d pp = sensorModel.inverseModel(cloud[j].x, cloud[j].y, cloud[j].z);
+                std::cout << "im point: \n" << pp << "\n";
+                Mat33 cov;
+                sensorModel.computeCov(pp(0),pp(1),pp(2),cov);
+                std::cout << "cov \n" << cov < "\n";
+                getchar();
+            }
+        }
         uncertaintySet.push_back(uncertaintyCloud);
         //trajectorySensor.push_back(sensorPose);
     }

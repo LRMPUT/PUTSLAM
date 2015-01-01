@@ -150,14 +150,14 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
     graph.optimize(70);
 
     uncertainty = graph.getHessian(1);
-    std::cout << "kabsch est: \n";
-    std::cout << transformation(0,3) << " " << transformation(1,3) << " "  << transformation(2,3);
-    Quaternion qq(transformation.rotation());
-    std::cout << " " << qq.x() << " " << qq.y() << " "  << qq.z() << " " << qq.w() << "\n";
+    //std::cout << "kabsch est: \n";
+    //std::cout << transformation(0,3) << " " << transformation(1,3) << " "  << transformation(2,3);
+    //Quaternion qq(transformation.rotation());
+    //std::cout << " " << qq.x() << " " << qq.y() << " "  << qq.z() << " " << qq.w() << "\n";
     //getchar();
     uncertainty = computeInformationMatrix(uncertainty,transformation).inverse();
 
-
+    uncertainty = uncertainty.inverse();
 
     return uncertainty;
 }

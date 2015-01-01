@@ -22,5 +22,7 @@ function [X,Y] = calculateEllipse(x, y, a, b, angle, steps)
     X = x + (a * cosalpha * cosbeta - b * sinalpha * sinbeta);
     Y = y + (a * cosalpha * sinbeta + b * sinalpha * cosbeta);
 
+    C=[b^2*(cos(angle))^2+a^2*(sin(angle))^2, -a^2*cos(angle)*sin(angle)+b^2*sin(angle)*cos(angle);
+       -a^2*cos(angle)*sin(angle)+b^2*sin(angle)*cos(angle), a^2*(cos(angle))^2+b^2*(sin(angle))^2]
     if nargout==1, X = [X Y]; end
 end
