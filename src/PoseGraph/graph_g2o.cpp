@@ -33,7 +33,8 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
 
     // create the algorithm to carry out the optimization
     g2o::OptimizationAlgorithmGaussNewton* optimizationAlgorithm = new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
-    //optimizationAlgorithm = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+    //g2o::OptimizationAlgorithmWithHessian* optimizationAlgorithm = new g2o::OptimizationAlgorithmWithHessian(blockSolver);
+    //g2o::OptimizationAlgorithmLevenberg* optimizationAlgorithm = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
 
     optimizer.setVerbose(true);
     optimizer.setAlgorithm(optimizationAlgorithm);
@@ -906,9 +907,14 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
     //std::cout << "Hessian:\n" << Hessian.block<12,12>(0,0) << "\n";
     //getchar();
     Hessian=Hessian.inverse();
-    //g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
-    //optimizer.computeMarginals(spinv,verts);
-
+    /*g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
+    if (!optimizer.computeMarginals(spinv,verts))
+        std::cout << "not supported\n";
+    else{
+        std::cout << "Hessian supported\n";
+    }
+    std::cout << spinv.cols() << ", " << spinv.rows() <<"\n";
+*/
     //std::cout << "Hessian inv:\n" << Hessian.block<12,12>(0,0) << "\n";
     //getchar();
 

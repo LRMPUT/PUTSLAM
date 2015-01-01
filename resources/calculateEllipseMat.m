@@ -8,7 +8,7 @@ function [X,Y] = calculateEllipseMat(pos, mat, steps)
     x=pos(1);
     y=pos(2);
     
-    angle = 0.5*atan(2*mat(1,2)/(mat(1,1)-mat(2,2)));
+    angle = 0.5*atan2(2*mat(1,2),(mat(1,1)-mat(2,2)));
     tau = sqrt(mat(1,1)^2+mat(2,2)^2-2*mat(1,1)*mat(2,2)+4*mat(1,2));
     k = -2*log(1-99);
     if (mat(1,1)>mat(2,2))
