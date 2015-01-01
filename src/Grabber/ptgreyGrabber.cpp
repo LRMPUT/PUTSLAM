@@ -1,4 +1,5 @@
-#include "../include/Grabber/ptgrey_grabber.h"
+#include "../../include/Grabber/ptgreyGrabber.h"
+
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -189,6 +190,11 @@ int PtgreyGrabber::initPtGrey (){
     return 0;
 }
 #endif
+
+Eigen::Matrix4f PtgreyGrabber::getStartingSensorPose()
+{
+	return Eigen::Matrix4f::Identity();
+}
 
 putslam::Grabber* putslam::createGrabberPtgrey(void) {
     grabberP.reset(new PtgreyGrabber());

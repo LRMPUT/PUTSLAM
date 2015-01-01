@@ -19,6 +19,7 @@ public:
 	struct parameters {
 		int verbose;
 		double inlierThreshold;
+		double minimalInlierRatioThreshold;
 		int usedPairs;
 		int iterationCount;
 	};
@@ -60,6 +61,12 @@ private:
 			const std::vector<Eigen::Vector3f> features,
 			const std::vector<cv::DMatch> matches,
 			Eigen::Matrix4f &transformationModel);
+
+	/**
+	 * Method used to check if the found transformation does not exceed sensible constrains:
+	 * transformationModel 		-- transformation to check
+	 */
+	bool checkModelFeasibility(Eigen::Matrix4f transformationModel);
 
 	/**
 	 * Method used to compute the inlierRatio based on:

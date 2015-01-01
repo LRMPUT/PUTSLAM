@@ -9,13 +9,14 @@
 
 #include "grabber.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
+#include "depthSensorModel.h"
 #include <iostream>
 #include <memory>
 
 namespace putslam {
 	/// create a single grabber (Kinect)
 	Grabber* createGrabberKinect(void);
-    Grabber* createGrabberKinect(std::string configFile);
+    Grabber* createGrabberKinect(std::string configFile, Grabber::Mode mode);
 };
 
 using namespace putslam;
@@ -31,7 +32,7 @@ class KinectGrabber : public Grabber {
         KinectGrabber(void);
 
         /// Construction
-        KinectGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
+        KinectGrabber(std::string modelFilename, Mode _model) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, _model), model(modelFilename){
         }
 
         /// Name of the grabber
@@ -49,7 +50,13 @@ class KinectGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+        /// Return starting position of sensor
+        Eigen::Matrix4f getStartingSensorPose();
+
     private:
+        /// Sensor model
+        DepthSensorModel model;
+
 };
 
 #endif // KINECT_GRABBER_H_INCLUDED

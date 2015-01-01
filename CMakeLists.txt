@@ -28,6 +28,8 @@ option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO
 mark_as_advanced(BUILD_PUTSLAM_GRABBER_PTGREY)
 option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
+option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" YES)
+mark_as_advanced(BUILD_PUTSLAM_LDB)
 option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MATCHER)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
@@ -166,25 +168,25 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB GRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/depthSensorModel.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/kinect_grabber.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/file_grabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/kinectGrabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/fileGrabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgrey_grabber.cpp"
+                "${CMAKE_SOURCE_DIR}/src/Grabber/ptgreyGrabber.cpp"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/src/Grabber/template_grabber.cpp"
-            "${CMAKE_SOURCE_DIR}/src/Grabber/xtion_grabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/templateGrabber.cpp"
+            "${CMAKE_SOURCE_DIR}/src/Grabber/xtionGrabber.cpp"
         )
         file(GLOB GRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/depthSensorModel.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/kinect_grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/file_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/kinectGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgrey_grabber.h"
+                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgreyGrabber.h"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/include/Grabber/template_grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/xtion_grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/templateGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/Grabber/xtionGrabber.h"
         )
 
         ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
@@ -238,6 +240,26 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 ###############################################################################
 #
+# PUTSLAM LDB library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
+        file(GLOB LDB_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/LDB/*.cpp"
+        )
+        file(GLOB LDB_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/LDB/*.h"
+        )
+
+        ADD_LIBRARY(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
+        INSTALL(TARGETS LDB RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${LDB_HEADERS} DESTINATION include/putslam/LDB/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
+
+
+###############################################################################
+#
 # PUTSLAM Matcher library
 #
 ###############################################################################
@@ -251,7 +273,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         )
 
         ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst)
+        TARGET_LINK_LIBRARIES(TransformEst LDB)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
@@ -310,9 +332,9 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         )
 
         SET(DEMO_SOURCES ./main.cpp)
-        ADD_EXECUTABLE(Demo ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        INSTALL(TARGETS Demo RUNTIME DESTINATION bin)
+        ADD_EXECUTABLE(demo ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(demo tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        INSTALL(TARGETS demo RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
@@ -330,10 +352,10 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-        SET(DEMO_SOURCES ./demo_matching.cpp)
-        ADD_EXECUTABLE(Demo_matching ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(Demo_matching tinyxml2 Grabber Matcher TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        INSTALL(TARGETS Demo_matching RUNTIME DESTINATION bin)
+        SET(DEMO_SOURCES ./demoMatching.cpp)
+        ADD_EXECUTABLE(demoMatching ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph boost_system)
+        INSTALL(TARGETS demoMatching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
@@ -351,11 +373,11 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-        SET(DEMO_SOURCES ./demo_g2o.cpp)
-        ADD_EXECUTABLE(Demo_g2o ${DEMO_SOURCES})
-        add_dependencies(Demo_g2o g2o)
-        TARGET_LINK_LIBRARIES(Demo_g2o tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        INSTALL(TARGETS Demo_g2o RUNTIME DESTINATION bin)
+        SET(DEMO_SOURCES ./demoG2o.cpp)
+        ADD_EXECUTABLE(demoG2o ${DEMO_SOURCES})
+        add_dependencies(demoG2o g2o)
+        TARGET_LINK_LIBRARIES(demoG2o tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        INSTALL(TARGETS demoG2o RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
@@ -372,11 +394,11 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-        SET(DEMO_SOURCES ./demo_pruning.cpp)
-        ADD_EXECUTABLE(Demo_pruning ${DEMO_SOURCES})
-        add_dependencies(Demo_pruning g2o)
-        TARGET_LINK_LIBRARIES(Demo_pruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)
-        INSTALL(TARGETS Demo_pruning RUNTIME DESTINATION bin)
+        SET(DEMO_SOURCES ./demoPruning.cpp)
+        ADD_EXECUTABLE(demoPruning ${DEMO_SOURCES})
+        add_dependencies(demoPruning g2o)
+        TARGET_LINK_LIBRARIES(demoPruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)
+        INSTALL(TARGETS demoPruning RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
@@ -393,11 +415,11 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
-        SET(DEMO_SOURCES ./demo_grabber.cpp)
-        ADD_EXECUTABLE(Demo_grabber ${DEMO_SOURCES})
-        add_dependencies(Demo_grabber g2o)
-        TARGET_LINK_LIBRARIES(Demo_grabber tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
-        INSTALL(TARGETS Demo_grabber RUNTIME DESTINATION bin)
+        SET(DEMO_SOURCES ./demoGrabber.cpp)
+        ADD_EXECUTABLE(demoGrabber ${DEMO_SOURCES})
+        add_dependencies(demoGrabber g2o)
+        TARGET_LINK_LIBRARIES(demoGrabber tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
+        INSTALL(TARGETS demoGrabber RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
@@ -414,11 +436,11 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
-        SET(DEMO_SOURCES ./demo_kabsch.cpp)
-        ADD_EXECUTABLE(Demo_kabsch ${DEMO_SOURCES})
-        add_dependencies(Demo_kabsch g2o)
-        TARGET_LINK_LIBRARIES(Demo_kabsch tinyxml2 Grabber Tracker TransformEst Utilities ${OpenCV_LIBS} PoseGraph boost_system)
-        INSTALL(TARGETS Demo_kabsch RUNTIME DESTINATION bin)
+        SET(DEMO_SOURCES ./demoKabsch.cpp)
+        ADD_EXECUTABLE(demoKabsch ${DEMO_SOURCES})
+        add_dependencies(demoKabsch g2o)
+        TARGET_LINK_LIBRARIES(demoKabsch tinyxml2 Grabber Tracker TransformEst Utilities ${OpenCV_LIBS} PoseGraph boost_system)
+        INSTALL(TARGETS demoKabsch RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)

@@ -62,6 +62,9 @@ class PtgreyGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+        /// Return starting position of sensor
+        Eigen::Matrix4f getStartingSensorPose();
+
     protected:
     #ifdef WITH_PTGREY
         Error error;

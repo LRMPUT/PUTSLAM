@@ -1,6 +1,6 @@
 /** @file RANSAC.c
  *
- * \brief The robust estimation method to find transformation based on two sets of 3D features
+ * \brief The robust estimation method to find transformation based on two sets of 3f features
  * \author Michal Nowicki
  *
  */
@@ -12,12 +12,20 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	RANSACParams.verbose = _RANSACParameters.verbose;
 	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
 	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
+	RANSACParams.minimalInlierRatioThreshold = _RANSACParameters.minimalInlierRatioThreshold;
 
 	RANSACParams.iterationCount = computeRANSACIteration(0.20);
+
+	if (RANSACParams.verbose > 0)
+	{
+		std::cout<<"RANSACParams.verbose --> " <<RANSACParams.verbose<< std::endl;
+		std::cout<<"RANSACParams.usedPairs --> " << RANSACParams.usedPairs << std::endl;
+		std::cout<<"RANSACParams.inlierThreshold --> " << RANSACParams.inlierThreshold << std::endl;
+		std::cout<<"RANSACParams.minimalInlierRatioThreshold --> " << RANSACParams.minimalInlierRatioThreshold << std::endl;
+	}
 }
 
 // TODO: MISSING:
-// - model feasibility
 // - test of minimal inlierRatio of bestModel
 Eigen::Matrix4f RANSAC::estimateTransformation(
 		std::vector<Eigen::Vector3f> prevFeatures,
@@ -29,13 +37,13 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: randomly sampling ids of matches"
 					<< std::endl;
 		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
 		// Compute model based on those matches
-		if (RANSACParams.verbose)
+		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: computing model based on matches"
 					<< std::endl;
 		Eigen::Matrix4f transformationModel;
@@ -43,28 +51,41 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 				features, randomMatches, transformationModel);
 
 		// TODO: Check if the model is feasible ?
+		bool correctModel = checkModelFeasibility(transformationModel);
+		if (correctModel)
+		{
+			// Evaluate the model
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: evaluating the model" << std::endl;
+			float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
+					transformationModel);
 
-		// Evaluate the model
-		if (RANSACParams.verbose)
-			std::cout << "RANSAC: evaluating the model" << std::endl;
-		float inlierRatio = computeInlierRatio(prevFeatures, features, matches,
-				transformationModel);
+			// Save better model
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: saving best model" << std::endl;
+			saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
+					bestTransformationModel);
 
-		// Save better model
-		if (RANSACParams.verbose)
-			std::cout << "RANSAC: saving best model" << std::endl;
-		saveBetterModel(inlierRatio, transformationModel, bestInlierRatio,
-				bestTransformationModel);
-
-		// Print achieved result
-		if (RANSACParams.verbose)
-			std::cout << "RANSAC: best model inlier ratio : "
-					<< bestInlierRatio * 100.0 << "%" << std::endl;
+			// Print achieved result
+			if (RANSACParams.verbose > 1)
+				std::cout << "RANSAC: best model inlier ratio : "
+						<< bestInlierRatio * 100.0 << "%" << std::endl;
+		}
 
 	}
 
-	// Test for minimal inlierRatio of bestModel
+	// Test the number of inliers
+	if (bestInlierRatio < RANSACParams.minimalInlierRatioThreshold)
+	{
+		bestTransformationModel = Eigen::Matrix4f::Identity();
+	}
 
+	// Test for minimal inlierRatio of bestModel
+	if (RANSACParams.verbose > 0)
+	{
+		std::cout<<"RANSAC best model : inlierRatio = " << bestInlierRatio * 100.0 << "%" <<std::endl;
+		std::cout<<"RANSAC best model : " << std::endl << bestTransformationModel<<std::endl;
+	}
 	return bestTransformationModel;
 }
 
@@ -117,8 +138,8 @@ bool RANSAC::computeTransformationModel(
 	}
 
 	// Compute transformation
-	transformationModel = Eigen::umeyama(prevFeaturesMatrix.transpose(),
-			featuresMatrix.transpose(), false);
+	transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
+			prevFeaturesMatrix.transpose(), false);
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
@@ -127,6 +148,13 @@ bool RANSAC::computeTransformationModel(
 	}
 	return true;
 }
+
+// TODO: - model feasibility
+bool RANSAC::checkModelFeasibility(Eigen::Matrix4f transformationModel)
+{
+	return true;
+}
+
 
 float RANSAC::computeInlierRatio(
 		const std::vector<Eigen::Vector3f> prevFeatures,
@@ -142,11 +170,11 @@ float RANSAC::computeInlierRatio(
 	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
-		Eigen::Vector3f estimatedNewPosition = R * prevFeatures[it->queryIdx]
+		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx]
 				+ t;
 
 		// Compute residual error and compare it to inlier threshold
-		if ((estimatedNewPosition - features[it->trainIdx]).norm()
+		if ((estimatedNewPosition - prevFeatures[it->queryIdx]).norm()
 				< RANSACParams.inlierThreshold) {
 			inlierCount++;
 		}
