@@ -680,7 +680,7 @@ void LDB::compute( const Mat& _image,
 	int halfPatchSize = patchSize / 2;
 	int border = halfPatchSize*1.415 + 1;
 	if( _image.type() != CV_8UC1 )
-		cvtColor(_image, _image, CV_BGR2GRAY);
+        cvtColor(_image, _image, cv::COLOR_BGR2GRAY);
 	int levelsNum = 0;
 	for( size_t i = 0; i < _keypoints.size(); i++ )
 		levelsNum = std::max(levelsNum, std::max(_keypoints[i].octave, 0));
