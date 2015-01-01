@@ -9,7 +9,7 @@
 
 #include "grabber.h"
 #include "depthSensorModel.h"
-#include "../include/Grabber/xtion_grabber.h"
+#include "../include/Grabber/grabber.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <chrono>
@@ -33,8 +33,10 @@ class FileGrabber : public Grabber {
 
         /// Construction
         FileGrabber(void);
-        //FileGrabber(std::string modelFilename) : Grabber("Kinect Grabber", TYPE_PRIMESENSE), model(modelFilename){
-        //      }
+        FileGrabber(std::string configFilename);
+
+        ///
+        void initFileGrabber();
 
         /// Destructor
         ~FileGrabber(void);
@@ -60,12 +62,59 @@ class FileGrabber : public Grabber {
         /// Returns the current point cloud
         const PointCloud& getCloud(void) const;
 
-        ///Closing a device
+        /// Closing a device
         int grabberClose();
 
+        /// Return starting position of sensor
+        Eigen::Matrix4f getStartingSensorPose();
+
+        /// Class used to hold all parameters
+	class Parameters {
+	public:
+		Parameters() {
+		}
+		;
+		Parameters(std::string configFilename) {
+			tinyxml2::XMLDocument config;
+			std::string filename = "../../resources/" + configFilename;
+			config.LoadFile(filename.c_str());
+			if (config.ErrorID()) {
+				std::cout << "Unable to load File Grabber config file: "
+						<< configFilename << std::endl;
+			}
+			// Play parameters
+			config.FirstChildElement("playParameters")->QueryIntAttribute(
+											"verbose", &verbose);
+			config.FirstChildElement("playParameters")->QueryIntAttribute(
+					"playEveryNthFrame", &playEveryNth);
+			config.FirstChildElement("playParameters")->QueryBoolAttribute(
+								"realTime", &realTime);
+
+			// dataset path
+			tinyxml2::XMLElement *params = config.FirstChildElement("datasetPath");
+			basePath = params->Attribute("base");
+			datasetName = params->Attribute("datasetName");
+			fullPath = basePath + "/" + datasetName + "/";
+		}
+	public:
+		 /// path of the dataset
+		 std::string basePath, datasetName, fullPath;
+
+		 /// Play parameters
+		 int playEveryNth;
+		 bool realTime;
+
+		 /// Verbose
+		 int verbose;
+	};
+
     private:
-        /// start timestamp
-        std::chrono::high_resolution_clock::time_point startT;
+
+		// Convert to string with high numer of digits
+		std::string convertToHighPrecisionString(double timestamp, int precision = 20);
+
+		/// Parameters read from file
+		Parameters parameters;
 
         /// file prefix (images)
         std::string imageSeqPrefix;
@@ -81,6 +130,13 @@ class FileGrabber : public Grabber {
 
         /// timestamp file
         std::ifstream timestampFile;
+
+        /// timestamp at the start
+        std::chrono::high_resolution_clock::time_point startPlayTimestamp;
+        double startSeqTimestamp;
+        double lastSeqTimestamp;
+
+
 };
 
 #endif // FILE_GRABBER_H_INCLUDED

@@ -1,6 +1,7 @@
-/** @file matcherSURF.h
+/** @file matcherOpenCV.h
  *
- * implementation -
+ * \brief The matching methods implemented for detectors and descriptors in OpenCV
+ * \author Michal Nowicki
  *
  */
 
@@ -8,12 +9,6 @@
 #define MATCHERSURF_H_INCLUDED
 
 #include "matcher.h"
-/** @file matcherOpenCV.h
- *
- * \brief The matching methods implemented for detectors and descriptors in OpenCV
- * \author Michal Nowicki
- *
- */
 #include <iostream>
 #include <memory>
 
@@ -34,13 +29,14 @@ public:
 	/// Pointer
 	typedef std::unique_ptr<MatcherOpenCV> Ptr;
 
-	/// Construction
+	/// Constructors
 	MatcherOpenCV(void);
+	MatcherOpenCV(const std::string _parametersFile);
+	MatcherOpenCV(const std::string _name, const std::string _parametersFile);
 
-	/// Construction
-	MatcherOpenCV(const std::string _parametersFile) : Matcher("OpenCVMatcher", _parametersFile) {};
-	MatcherOpenCV(const std::string _name, const std::string _parametersFile) : Matcher(_name, _parametersFile) {};
 
+	// Destructor
+	~MatcherOpenCV(void);
 
 	/// Name of the matcher
 	virtual const std::string& getName() const;
@@ -60,11 +56,14 @@ public:
 //        /// Returns current set of features
 //        virtual const ImageFeature::Seq& getFeatures(void) const;
 //
-	/// Reset tracking and find new set of features
-	virtual void reset();
 
 private:
+	/// Detector and descriptor
+	cv::FeatureDetector *featureDetector;
+	cv::DescriptorExtractor *descriptorExtractor;
 
+	/// Method to initialize variables in all constructors
+	void initVariables();
 };
 
 #endif // MATCHERSURF_H_INCLUDED

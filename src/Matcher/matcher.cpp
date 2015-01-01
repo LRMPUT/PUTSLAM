@@ -13,51 +13,54 @@ using namespace putslam;
 void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 {
 	// Detect salient features
-	prevFeatures = detectFeatures(sensorData.image);
+	prevFeatures = detectFeatures(sensorData.rgbImage);
 
 	// Show detected features
-	//showFeatures(next_frame.image, prevFeatures);
+	if (matcherParameters.verbose > 1)
+		showFeatures(sensorData.rgbImage, prevFeatures);
 
 	// Remove features without depth
-	RGBD::removeFeaturesWithoutDepth(prevFeatures, sensorData.depth);
+	RGBD::removeFeaturesWithoutDepth(prevFeatures, sensorData.depthImage);
 
 	// Describe salient features
-	prevDescriptors = describeFeatures(sensorData.image, prevFeatures);
+	prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
 
 	// Associate depth
-	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, sensorData.depth);
+	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, sensorData.depthImage);
 
 	// Save rgb/depth images
-	prevRgbImage = sensorData.image.clone();
-	prevDepthImage = sensorData.depth.clone();
+	prevRgbImage = sensorData.rgbImage.clone();
+	prevDepthImage = sensorData.depthImage.clone();
 }
 
 
 bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation) {
 	// Detect salient features
-	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.image);
+	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
+
+	if (matcherParameters.verbose > 1)
+			showFeatures(sensorData.rgbImage, features);
 
 	// Remove features without depth
-	RGBD::removeFeaturesWithoutDepth(features, sensorData.depth);
+	RGBD::removeFeaturesWithoutDepth(features, sensorData.depthImage);
 
 	// Describe salient features
-	cv::Mat descriptors = describeFeatures(sensorData.image, features);
+	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, features);
 
 	// Perform matching
 	std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
 			descriptors);
 
 	// Associate depth
-	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, sensorData.depth);
+	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, sensorData.depthImage);
 
 	// Visualize matches
-	//showMatches(prevRgbImage, prevFeatures, next_frame.image, features, matches);
+	if (matcherParameters.verbose > 0)
+			showMatches(prevRgbImage, prevFeatures, sensorData.rgbImage, features, matches);
 
 	// RANSAC
-
 	RANSAC ransac(matcherParameters.RANSACParams);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D, features3D, matches);
-
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
@@ -65,8 +68,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 	cv::swap(descriptors, prevDescriptors);
 
 	// Save rgb/depth images
-	prevRgbImage = sensorData.image.clone();
-	prevDepthImage = sensorData.depth.clone();
+	prevRgbImage = sensorData.rgbImage;
+	prevDepthImage = sensorData.depthImage;
 
 	return false;
 }

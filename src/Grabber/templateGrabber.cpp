@@ -1,8 +1,8 @@
-#include "../include/Grabber/kinect_grabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
 #include <thread>
+#include "../../include/Grabber/kinectGrabber.h"
 
 using namespace putslam;
 
@@ -37,6 +37,11 @@ void KinectGrabber::calibrate(void) {
 
 int KinectGrabber::grabberClose(){
     return 0;
+}
+
+Eigen::Matrix4f KinectGrabber::getStartingSensorPose()
+{
+	Eigen::Matrix4f::Identity();
 }
 
 putslam::Grabber* putslam::createGrabberKinect(void) {

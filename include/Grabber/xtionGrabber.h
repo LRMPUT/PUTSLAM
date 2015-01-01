@@ -67,6 +67,9 @@ class XtionGrabber : public Grabber {
     ///Sensor uninitialize
     virtual int grabberClose();
 
+    /// Return starting position of sensor
+    Eigen::Matrix4f getStartingSensorPose();
+
 private:
 
     //Comments on variables

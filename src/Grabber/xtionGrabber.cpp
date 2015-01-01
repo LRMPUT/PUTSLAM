@@ -1,9 +1,10 @@
+
 // Undeprecate CRT functions
 #ifndef _CRT_SECURE_NO_DEPRECATE
     #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include "../include/Grabber/xtion_grabber.h"
+#include "../../include/Grabber/xtionGrabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -193,8 +194,8 @@ bool XtionGrabber::grab(void) {
 //    cloud.push_back(point);
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
       mtx.lock();
-      if(acquireDepthFrame(this->sensorFrame.depth)) throw 1;
-      if(acquireColorFrame(this->sensorFrame.image)) throw 2;
+      if(acquireDepthFrame(this->sensorFrame.depthImage)) throw 1;
+      if(acquireColorFrame(this->sensorFrame.rgbImage)) throw 2;
       else if (mode==MODE_BUFFER) {
           sensorFrames.push(sensorFrame);
       }
@@ -232,6 +233,11 @@ int XtionGrabber::listColorVideoMode(){
 /// run grabber thread
 void XtionGrabber::calibrate(void) {
 
+}
+
+Eigen::Matrix4f XtionGrabber::getStartingSensorPose()
+{
+	Eigen::Matrix4f::Identity();
 }
 
 putslam::Grabber* putslam::createGrabberXtion(void) {

@@ -15,3 +15,4 @@
   	<name>OpenCV</name>
   	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
   </Matcher>
+  

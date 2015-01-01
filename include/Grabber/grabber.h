@@ -68,10 +68,13 @@ namespace putslam {
             /// Calibrate sensor
             virtual void calibrate() = 0;
 
-            ///Clossing a device
+            /// Closing a device
             virtual int grabberClose() = 0;
 
-            /// Virtual descrutor
+            /// Return starting position of sensor
+            virtual Eigen::Matrix4f getStartingSensorPose() = 0;
+
+            /// Virtual destructor
             virtual ~Grabber() {}
 
         protected:

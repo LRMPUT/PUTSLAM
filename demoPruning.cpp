@@ -2,13 +2,13 @@
 #include <thread>
 #include "include/Defs/putslam_defs.h"
 #include "Utilities/CLParser.h"
-#include "Grabber/kinect_grabber.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "Tracker/trackerKLT.h"
 #include "3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <atomic>
+#include "include/Grabber/kinectGrabber.h"
 
 using namespace std;
 

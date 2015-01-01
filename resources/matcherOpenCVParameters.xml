@@ -1,20 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-	<!-- MatcherOpenCV parameters -->  
- 
- 	<Matcher>
+	<!-- MatcherOpenCV parameters 
+		verbose :	0 -> no debug
+					1 -> show matches
+					2 -> show matches + show detected features
+	
+	-->  
+ 	<Matcher verbose="0">
  		<!-- RANSAC settings
  			verbose : 	0 -> no debug
  						1 -> print final result
  						2 -> print every iteration
  			inlierThreshold : maximal error of inlier in RANSAC (in meters)
+ 			minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
  			usedPairs : numbers of pairs used to create model in RANSAC iteration
  		-->
-    	<RANSAC verbose="0" inlierThreshold="0.02" usedPairs="3"></RANSAC>
+    	<RANSAC verbose="0" inlierThreshold="0.02" minimalInlierRatioThreshold="0.1" usedPairs="3"></RANSAC>
     	
     	<!-- Matching settings
     		detector : 		FAST, ORB, SURF, SIFT
-    		descriptor :	BRIEF, ORB, SURF, SIFT    	
+    		descriptor :	BRIEF, ORB, LDB, SURF, SIFT
+    		
+    		Recommended configurations: FAST-BRIEF, ORB-ORB, ORB-LDB, SURF-SURF, SIFT-SIFT
+    		
+    		Used norms in matching:  Hamming (ORB, BRIEF, LDB), L2 (SURF, SIFT)
+    		
+    		TODO: LDB didn't compile due to LDB issues    	
     	-->
-    	<MatcherOpenCV detector="SURF" descriptor="SURF"> </MatcherOpenCV>
+    	<MatcherOpenCV detector="ORB" descriptor="ORB"> </MatcherOpenCV>
 	</Matcher>
