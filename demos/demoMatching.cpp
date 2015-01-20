@@ -1,9 +1,9 @@
 #include <iostream>
 #include <thread>
-#include "include/Defs/putslam_defs.h"
+#include "../include/Defs/putslam_defs.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
-#include "3rdParty/tinyXML/tinyxml2.h"
+#include "../3rdParty/tinyXML/tinyxml2.h"
 #include <opencv/highgui.h>
 #include <cmath>
 #include <ctime>
@@ -11,11 +11,11 @@
 #include <chrono>
 #include <fstream>
 
-#include "include/Grabber/fileGrabber.h"
-#include "include/Grabber/fileGrabber.h"
-#include "include/Grabber/kinectGrabber.h"
-#include "include/Grabber/xtionGrabber.h"
-#include "include/Matcher/matcherOpenCV.h"
+#include "../include/Grabber/fileGrabber.h"
+#include "../include/Grabber/fileGrabber.h"
+#include "../include/Grabber/kinectGrabber.h"
+#include "../include/Grabber/xtionGrabber.h"
+#include "../include/Matcher/matcherOpenCV.h"
 
 using namespace std;
 

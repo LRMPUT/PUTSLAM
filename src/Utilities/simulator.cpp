@@ -166,20 +166,6 @@ void Simulator::moveCamera(const std::vector<Mat34>& robotTrajectory, const Mat3
         cloudSeq.push_back(cloud);
         setIds.push_back(setId);
         //saveImageFeatures("../../resources/simulator/frame0.dat", sensorPose, cloudA, setAids, sensorModel, estimKabsch);
-        for (int j=0;j<uncertaintyCloud.size();j++){
-            if (uncertaintyCloud[j](0,0)>1){
-                std::cout << j << "dupa\n" << uncertaintyCloud[j] << "\n";
-                std::cout << "robot pose" << robotTrajectory[i].matrix() << "\n";
-                std::cout << "sens pose" << sensorPose.matrix() << "\n";
-                std::cout << "point" << cloud[j].x << ", " << cloud[j].y << ", " << cloud[j].z << ", " << "\n";
-                Eigen::Vector3d pp = sensorModel.inverseModel(cloud[j].x, cloud[j].y, cloud[j].z);
-                std::cout << "im point: \n" << pp << "\n";
-                Mat33 cov;
-                sensorModel.computeCov(pp(0),pp(1),pp(2),cov);
-                std::cout << "cov \n" << cov < "\n";
-                getchar();
-            }
-        }
         uncertaintySet.push_back(uncertaintyCloud);
         //trajectorySensor.push_back(sensorPose);
     }
@@ -188,4 +174,20 @@ void Simulator::moveCamera(const std::vector<Mat34>& robotTrajectory, const Mat3
 /// get environment
 PointCloud& Simulator::getEnvironment(void){
     return environment;
+}
+
+void Simulator::saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const DepthSensorModel& sensorModel, const Mat34& estimation){
+    std::ofstream file(filename);
+    file << "#sensor_x, sensor_y, sensor_z, sensor_qw, sensor_qx, sensor_qy, sensor_qz\n";
+    file << "#Relative motion (estimation) Est_x, Est_y, Est_z, Est_qw, Est_qx, Est_qy, Est_qz\n";
+    file << "#feature_id, feature_u, feature_v, depth\n";
+    Quaternion q(sensorPose.rotation());
+    Quaternion qKabsch(estimation.rotation());
+    file << sensorPose(0,3) << ", " << sensorPose(1,3) << ", " << sensorPose(2,3) << ", " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << "\n";
+    file << estimation(0,3) << ", " << estimation(1,3) << ", " << estimation(2,3) << ", " << qKabsch.w() << ", " << qKabsch.x() << ", " << qKabsch.y() << ", " << qKabsch.z() << "\n";
+    for (int i=0;i<cloud.size();i++){
+        Eigen::Vector3d cameraPoint = sensorModel.inverseModel(cloud[i].x, cloud[i].y, cloud[i].z);
+        file << setIds[i] << ", " << cameraPoint.x() << ", " << cameraPoint.y() << ", " << cameraPoint.z() << "\n";
+    }
+    file.close();
 }

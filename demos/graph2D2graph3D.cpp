@@ -1,11 +1,10 @@
 #include <iostream>
 #include <thread>
-#include "include/Defs/putslam_defs.h"
+#include "../include/Defs/putslam_defs.h"
 #include "PoseGraph/graph_g2o.h"
 #include "Utilities/CLParser.h"
-#include "3rdParty/tinyXML/tinyxml2.h"
+#include "../3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
-#include "include/Grabber/kinectGrabber.h"
 
 using namespace std;
 
