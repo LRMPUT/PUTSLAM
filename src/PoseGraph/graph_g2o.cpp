@@ -904,17 +904,17 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
             }
         }
     }
-    //std::cout << "Hessian:\n" << Hessian.block<12,12>(0,0) << "\n";
-    //getchar();
+    std::cout << "Hessian:\n" << Hessian.block<12,12>(0,0) << "\n";
+    getchar();
     Hessian=Hessian.inverse();
-    /*g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
+    g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
     if (!optimizer.computeMarginals(spinv,verts))
         std::cout << "not supported\n";
     else{
         std::cout << "Hessian supported\n";
     }
     std::cout << spinv.cols() << ", " << spinv.rows() <<"\n";
-*/
+getchar();
     //std::cout << "Hessian inv:\n" << Hessian.block<12,12>(0,0) << "\n";
     //getchar();
 

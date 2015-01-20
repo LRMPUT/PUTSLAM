@@ -27,11 +27,12 @@ public:
     bool matchClouds(const PointCloud& setAin, Eigen::MatrixXd& setAout, const std::vector<Mat33>& uncertaintyAin, std::vector<Mat33>& uncertaintyAout, const std::vector<int>& setAids, const PointCloud& setBin, Eigen::MatrixXd& setBout, const std::vector<Mat33>& uncertaintyBin, std::vector<Mat33>& uncertaintyBout, const std::vector<int>& setBids);
     /// get point cloud from current camera view
     std::vector<int> getCloud(const Mat34& sensorPose, DepthSensorModel& sensorModel, PointCloud& setPoints, std::vector<Mat33>& setUncertainty);
+    /// save set of image features to file
+    void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const DepthSensorModel& sensorModel, const Mat34& estimation);
 
 private:
     /// samples from multivariate gaussian
     Point3D sampleFromMultivariateGaussian(Eigen::Vector3d mean, Eigen::MatrixXd cov);
-
 
     /// simulation environment
     PointCloud environment;

@@ -1,17 +1,17 @@
 #include <iostream>
 #include <thread>
-#include "include/Defs/putslam_defs.h"
+#include "../include/Defs/putslam_defs.h"
 #include "Tracker/trackerKLT.h"
 #include "Utilities/simulator.h"
 #include "TransformEst/kabschEst.h"
 #include "TransformEst/g2oEst.h"
-#include "3rdParty/tinyXML/tinyxml2.h"
+#include "../3rdParty/tinyXML/tinyxml2.h"
 #include <g2o/types/slam3d/isometry3d_mappings.h>
 #include "PoseGraph/graph_g2o.h"
 #include <cmath>
 #include <Eigen/Dense>
-#include "include/Grabber/kinectGrabber.h"
-#include "include/Grabber/kinectGrabber.h"
+#include "../include/Grabber/kinectGrabber.h"
+#include "../include/Grabber/kinectGrabber.h"
 
 using namespace std;
 
@@ -210,22 +210,6 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
         tmp.push_back(point);
     }
     return tmp;
-}
-
-void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const DepthSensorModel& sensorModel, const Mat34& estimation){
-    std::ofstream file(filename);
-    file << "#sensor_x, sensor_y, sensor_z, sensor_qw, sensor_qx, sensor_qy, sensor_qz\n";
-    file << "#Kabsch_x, Kabsch_y, Kabsch_z, Kabsch_qw, Kabsch_qx, Kabsch_qy, Kabsch_qz\n";
-    file << "#feature_id, feature_u, feature_v, depth\n";
-    Quaternion q(sensorPose.rotation());
-    Quaternion qKabsch(estimation.rotation());
-    file << sensorPose(0,3) << ", " << sensorPose(1,3) << ", " << sensorPose(2,3) << ", " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << "\n";
-    file << estimation(0,3) << ", " << estimation(1,3) << ", " << estimation(2,3) << ", " << qKabsch.w() << ", " << qKabsch.x() << ", " << qKabsch.y() << ", " << qKabsch.z() << "\n";
-    for (int i=0;i<cloud.size();i++){
-        Eigen::Vector3d cameraPoint = sensorModel.inverseModel(cloud[i].x, cloud[i].y, cloud[i].z);
-        file << setIds[i] << ", " << cameraPoint.x() << ", " << cameraPoint.y() << ", " << cameraPoint.z() << "\n";
-    }
-    file.close();
 }
 
 void runExperiment(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, Simulator& simulator, TransformEst* transEst){
@@ -1082,8 +1066,8 @@ int main(int argc, char * argv[])
             Simulator simulator;
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
-            //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            simulator.createEnvironment(1000, 15, 15, 15);
+            simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
+            //simulator.createEnvironment(1000, 15, 15, 15);
             if (i==0) savePointCloud("../../resources/KabschUncertainty/room.m", simulator.getEnvironment());
 
             std::cout << "\n\n\nTrajectory test\n";
@@ -1104,7 +1088,7 @@ int main(int argc, char * argv[])
             Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((6.5-3.0)/float_type(motions),0.0, 0.0);
             */
             /// camera in direction of the motion
-            /*pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
+            pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
             pose(1,0) = 0; pose(1,1) = -1; pose(1,2) = 0;
             pose(2,0) = 1; pose(2,1) = 0; pose(2,2) = 0;
             pose(0,3)=(-6.5/2.0)+1.5; pose(1,3)=(-6.5/2.0)+1.5; pose(2,3) = 0.0;
@@ -1123,7 +1107,7 @@ int main(int argc, char * argv[])
                     pose.matrix() *= moveRot.matrix();
                     trajectory.push_back(pose);
                 }
-            }*/
+            }
             /*std::vector<Mat34> trajectorySec;
             //rectangular trajectory
             Mat34 poseSec = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
@@ -1151,7 +1135,7 @@ int main(int argc, char * argv[])
             // 0 -sin(2t)  -cos(2t)
             // i    j         k
             // -msin(2t)*k-2mcos^2(2t)*i-2msin^2(2t)*i+mcos(2t)*j
-            int trajectoryLength = 65;
+            /*int trajectoryLength = 65;
             for (int j=0;j<trajectoryLength;j++){
                 Mat34 pose;
                 double t = -3.14+j*(6.28/double(trajectoryLength));
@@ -1177,7 +1161,7 @@ int main(int argc, char * argv[])
                 //    std::cout << pose.rotation().determinant() << "\n";
                 //    getchar();
                 //}
-            }
+            }*/
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
             for (int iter = 0; iter<trajectory.size();iter++){
@@ -1321,6 +1305,15 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
             graph->save2file(filename);
 
+            Mat34 prevPos = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos.inverse() * trajectorySensor[tt];
+                std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos = trajectorySensor[tt];
+            }
+std::cout << "done kabsch\n";
+getchar();
 /*            graph->clear();
             runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
 
@@ -1356,7 +1349,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");
-            */
+*/
 /*
             //Strasdat
             graph->clear();
@@ -1400,6 +1393,16 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAident" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAident, "g");
 
+            prevPos = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos.inverse() * trajectoryBAident[tt];
+                std::string fileFrame= "../../resources/simulator/frameBAG2O" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos = trajectoryBAident[tt];
+            }
+            std::cout << "done g2o\n";
+            getchar();
+
             //Bundle Adjustment uncert
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -1420,6 +1423,17 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryBAuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAuncert" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAuncert, "b");
+
+            prevPos = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos.inverse() * trajectoryBAuncert[tt];
+                std::string fileFrame= "../../resources/simulator/frameBAG2Ouncert" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos = trajectoryBAuncert[tt];
+            }
+            std::cout << "done g2o\n";
+            getchar();
+
 //getchar();
 /*
             //Bundle Adjustment + pose ident
