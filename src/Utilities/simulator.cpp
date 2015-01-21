@@ -46,7 +46,7 @@ void Simulator::createEnvironment(size_t pointsNo, float_type width, float_type 
     std::uniform_real_distribution<double> distWidthPatch(-patchSize[0], patchSize[0]);
     std::uniform_real_distribution<double> distLengthPatch(-patchSize[1], patchSize[1]);
     std::uniform_real_distribution<double> distHeightPatch(-patchSize[2], patchSize[2]);
-    int patchNo=10;
+    int patchNo=4;
     for (size_t i = 0; i<pointsNo;i++){
         Point3D point;
         point.x = distributionWidth(generator); point.y = distributionLength(generator); point.z = distributionHeight(generator);
@@ -190,4 +190,31 @@ void Simulator::saveImageFeatures(std::string filename, const Mat34& sensorPose,
         file << setIds[i] << ", " << cameraPoint.x() << ", " << cameraPoint.y() << ", " << cameraPoint.z() << "\n";
     }
     file.close();
+}
+
+/// load trajectory from file (Freiburg notation)
+void Simulator::loadTrajectory(std::string filename){
+    std::string line;    std::ifstream myfile(filename);
+    if (myfile.is_open()) {
+        trajectory.clear();
+        Quaternion q; Vec3 pos;
+        unsigned int id;
+        Mat34 pose;
+        while ( getline (myfile,line) ) {
+            std::istringstream is(line);
+            is >> id >> pos.x() >> pos.y() >> pos.z() >> q.x() >> q.y() >> q.z() >> q.w();
+            for (int i=0;i<3;i++)
+                for (int j=0;j<3;j++)
+                    pose(i,j) = q.matrix()(i,j);
+            pose(0,3) = pos.x(); pose(1,3) = pos.y(); pose(2,3) = pos.z();
+            trajectory.push_back(pose);
+        }
+        myfile.close();
+    }
+    else std::cout << "Unable to open file";
+}
+
+/// get trajectory
+std::vector<Mat34>& Simulator::getTrajectory(void){
+    return trajectory;
 }
