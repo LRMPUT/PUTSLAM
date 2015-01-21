@@ -49,7 +49,10 @@ namespace putslam {
             virtual Mat34 getCurrentPose(void) = 0;
 
             /// start optimization thread
-            virtual void startOptimizationThread() = 0;
+            virtual void startOptimizationThread(unsigned int iterNo) = 0;
+
+            /// Wait for optimization thread to finish
+            virtual void finishOptimization() = 0;
 
         protected:
             /// Map type

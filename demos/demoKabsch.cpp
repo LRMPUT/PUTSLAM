@@ -11,7 +11,6 @@
 #include <cmath>
 #include <Eigen/Dense>
 #include "../include/Grabber/kinectGrabber.h"
-#include "../include/Grabber/kinectGrabber.h"
 
 using namespace std;
 
