@@ -742,8 +742,9 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
             std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
             simulator.matchClouds(cloudSeq[i-1], setA, uncertaintySet[i-1], setAUncertainty, setIds[i-1], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
             Mat34 trans;
+            std::cout << i << ".";
             if (setA.rows()>3){
-                std::cout << "matched: " << setA.rows() << "\n";
+                //std::cout << "matched: " << setA.rows() << "\n";
                 trans = transEst->computeTransformation(setB, setA);
                 //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                 sensorPose.matrix() = trajectorySensor2.back().matrix()*trans.matrix();
@@ -791,7 +792,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
         }
 
         //add features
-        std::cout << "View points1: " << cloudSeq[i].size() << "\n";
+        //std::cout << "View points1: " << cloudSeq[i].size() << "\n";
         for (int j=0; j<cloudSeq[i].size(); j++){
             Mat34 featurePose;
             Mat34 sensor2feature; sensor2feature.setIdentity();
@@ -1065,8 +1066,8 @@ int main(int argc, char * argv[])
             Simulator simulator;
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
-            simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            //simulator.createEnvironment(1000, 15, 15, 15);
+            //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
+            simulator.createEnvironment(1000, 15, 15, 15);
             if (i==0) savePointCloud("../../resources/KabschUncertainty/room.m", simulator.getEnvironment());
 
             std::cout << "\n\n\nTrajectory test\n";
@@ -1107,6 +1108,9 @@ int main(int argc, char * argv[])
                     trajectory.push_back(pose);
                 }
             }
+            simulator.loadTrajectory("../../resources/traj_living_room_2.txt");
+            trajectory = simulator.getTrajectory();
+
             /*std::vector<Mat34> trajectorySec;
             //rectangular trajectory
             Mat34 poseSec = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
@@ -1304,15 +1308,14 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
             graph->save2file(filename);
 
-            Mat34 prevPos = trajectorySensor[0];
+            /*Mat34 prevPos = trajectorySensor[0];
             for (int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos.inverse() * trajectorySensor[tt];
                 std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
                 prevPos = trajectorySensor[tt];
-            }
-std::cout << "done kabsch\n";
-getchar();
+            }*/
+
 /*            graph->clear();
             runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
 
@@ -1392,16 +1395,6 @@ getchar();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAident" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAident, "g");
 
-            prevPos = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
-                Mat34 estimKabsch = prevPos.inverse() * trajectoryBAident[tt];
-                std::string fileFrame= "../../resources/simulator/frameBAG2O" + std::to_string(tt) + ".dat";
-                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
-                prevPos = trajectoryBAident[tt];
-            }
-            std::cout << "done g2o\n";
-            getchar();
-
             //Bundle Adjustment uncert
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -1414,6 +1407,10 @@ getchar();
             std::cout << "optimization\n";
             std::thread tOpt5(optimize,70);
             tOpt5.join();
+            std::thread tOpt55(optimize,10);
+            tOpt55.join();
+            std::thread tOpt56(optimize,5);
+            tOpt56.join();
             std::cout << "end optimization BA uncerainty " << i << "\n";
 
             filename= "../../resources/KabschUncertainty/graphKabsch_g2o_BAuncert" + std::to_string(i) + ".g2o";
@@ -1422,16 +1419,6 @@ getchar();
             std::vector<Mat34> trajectoryBAuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAuncert" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAuncert, "b");
-
-            prevPos = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
-                Mat34 estimKabsch = prevPos.inverse() * trajectoryBAuncert[tt];
-                std::string fileFrame= "../../resources/simulator/frameBAG2Ouncert" + std::to_string(tt) + ".dat";
-                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
-                prevPos = trajectoryBAuncert[tt];
-            }
-            std::cout << "done g2o\n";
-            getchar();
 
 //getchar();
 /*

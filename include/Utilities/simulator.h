@@ -29,6 +29,10 @@ public:
     std::vector<int> getCloud(const Mat34& sensorPose, DepthSensorModel& sensorModel, PointCloud& setPoints, std::vector<Mat33>& setUncertainty);
     /// save set of image features to file
     void saveImageFeatures(std::string filename, const Mat34& sensorPose, const PointCloud& cloud, const std::vector<int>& setIds, const DepthSensorModel& sensorModel, const Mat34& estimation);
+    /// load trajectory from file (Freiburg notation)
+    void loadTrajectory(std::string filename);
+    /// get trajectory
+    std::vector<Mat34>& getTrajectory(void);
 
 private:
     /// samples from multivariate gaussian
@@ -38,4 +42,7 @@ private:
     PointCloud environment;
     ///random engine
     std::default_random_engine generator;
+    /// trajectory
+    std::vector<Mat34> trajectory;
+
 };
