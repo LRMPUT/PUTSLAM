@@ -49,6 +49,8 @@ option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_GRABBER)
 option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_KABSCH)
+option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" YES)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_MAP)
 option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 
@@ -315,6 +317,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
         )
 
         ADD_LIBRARY(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
+        TARGET_LINK_LIBRARIES(Map PoseGraph)
         INSTALL(TARGETS Map RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MAP_HEADERS} DESTINATION include/putslam/Map/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
@@ -460,3 +463,19 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
         INSTALL(TARGETS graph2D2graph3D RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
+
+###############################################################################
+#
+# PUTSLAM demo Features map
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demos/demoMap.cpp)
+        ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
+        add_dependencies(demoMap g2o)
+        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map ${OpenCV_LIBS} boost_system)
+        INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)

@@ -11,6 +11,7 @@
 #include "../PoseGraph/graph_g2o.h"
 #include <iostream>
 #include <memory>
+#include <atomic>
 
 namespace putslam {
     /// create a single Map
@@ -27,6 +28,9 @@ class FeaturesMap : public Map {
 
         /// Construction
         FeaturesMap(void);
+
+        /// Destruction
+        ~FeaturesMap(void);
 
         /// Name of the map
         const std::string& getName() const;
@@ -48,7 +52,10 @@ class FeaturesMap : public Map {
         Mat34 getCurrentPose(void);
 
         /// start optimization thread
-        void startOptimizationThread();
+        void startOptimizationThread(unsigned int iterNo);
+
+        /// Wait for optimization thread to finish
+        void finishOptimization();
 
     private:
         ///Set of features (map)
@@ -56,6 +63,15 @@ class FeaturesMap : public Map {
 
         ///Pose graph
         Graph * poseGraph;
+
+        /// Optimization thread
+        std::unique_ptr<std::thread> optimizationThr;
+
+        /// optimization flag
+        std::atomic<bool> continueOpt;
+
+        /// optimization thread
+        void optimize(unsigned int iterNo);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED
