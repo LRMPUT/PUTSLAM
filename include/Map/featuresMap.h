@@ -12,10 +12,15 @@
 #include <iostream>
 #include <memory>
 #include <atomic>
+#include "../include/Grabber/depthSensorModel.h"
+
+#define FATURES_START_ID 10000
 
 namespace putslam {
     /// create a single Map
     Map* createFeaturesMap(void);
+    /// create a single Map - overloaded
+    Map* createFeaturesMap(std::string sensorConfig);
 };
 
 using namespace putslam;
@@ -29,13 +34,16 @@ class FeaturesMap : public Map {
         /// Construction
         FeaturesMap(void);
 
+        /// Construction
+        FeaturesMap(std::string sensorConfig);
+
         /// Destruction
         ~FeaturesMap(void);
 
         /// Name of the map
         const std::string& getName() const;
 
-        /// Add new features and camera pose (initial guess) to the map
+        /// Add NEW features and a NEW camera pose (initial guess) to the map
         /// Position of features in relation to camera pose
         void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose);
 
@@ -59,16 +67,25 @@ class FeaturesMap : public Map {
 
     private:
         ///Set of features (map)
-        std::vector<MapFeature> features;
+        std::vector<MapFeature> featuresSet;
+
+        ///camera trajectory
+        std::vector<Mat34> camTrajectory;
 
         ///Pose graph
         Graph * poseGraph;
+
+        /// Depth sensor model
+        DepthSensorModel sensorModel;
 
         /// Optimization thread
         std::unique_ptr<std::thread> optimizationThr;
 
         /// optimization flag
         std::atomic<bool> continueOpt;
+
+        /// Number of features
+        unsigned int featureIdNo;
 
         /// optimization thread
         void optimize(unsigned int iterNo);

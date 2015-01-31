@@ -118,7 +118,7 @@ namespace putslam {
             ExtendedDescriptor(){};
 
             /// Constructor
-            ExtendedDescriptor(Quaternion& cameraOrient) : cameraOrientation(cameraOrient){};
+            ExtendedDescriptor(Quaternion& cameraOrient, cv::Mat& _descriptor) : cameraOrientation(cameraOrient), descriptor(_descriptor){};
     };
 
     class RGBDFeature{
@@ -127,26 +127,28 @@ namespace putslam {
             Vec3 position;
 
             /// set of descriptors
-            std::vector<ExtendedDescriptor> desciptors;
+            std::vector<ExtendedDescriptor> descriptors;
 
             RGBDFeature(void){};
 
-            RGBDFeature(Vec3& _position) : position(_position){
+            RGBDFeature(const Vec3& _position, const std::vector<ExtendedDescriptor>& _descriptors) : position(_position), descriptors(_descriptors){
+
             };
     };
 
-    class MapFeature : RGBDFeature{
-        /// id of the feature
-        unsigned int id;
+    class MapFeature : public RGBDFeature{
+        public:
+            /// id of the feature
+            unsigned int id;
 
-        /// Constructor
-        MapFeature(){};
+            /// Constructor
+            MapFeature(){};
 
-        /// Constructor
-        MapFeature(unsigned int _id, Vec3& _position) : RGBDFeature(_position), id(_id) {};
+            /// Constructor
+            MapFeature(unsigned int _id, const Vec3& _position, const std::vector<ExtendedDescriptor>& _descriptors) : RGBDFeature(_position, _descriptors), id(_id) {};
 
-        /// Constructor
-        MapFeature(unsigned int _id) : id(_id){};
+            /// Constructor
+            MapFeature(unsigned int _id) : id(_id){};
     };
 
     /// Key Point
@@ -169,7 +171,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline KeyPoint(Vec3& _depth) : depthFeature(_depth){
+            inline KeyPoint(const Vec3& _depth) : depthFeature(_depth){
             }
     };
 
@@ -190,7 +192,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline RobotPose(Vec3& _pos, Quaternion& _rot) : pos(_pos), rot(_rot){
+            inline RobotPose(const Vec3& _pos, const Quaternion& _rot) : pos(_pos), rot(_rot){
             }
     };
 
@@ -256,7 +258,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline Edge3D(Vec3& _trans, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+            inline Edge3D(const Vec3& _trans, const Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
                 Edge(EDGE_3D, _fromVertexId, _toVertexId),
                 trans(_trans),
                 info(_info){
@@ -361,7 +363,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline Vertex3D(uint_fast32_t _vertexId, Vec3& _pos) :
+            inline Vertex3D(uint_fast32_t _vertexId, const Vec3& _pos) :
                 Vertex(VERTEX3D, _vertexId),
                 keypoint(_pos){
             }
@@ -409,7 +411,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline VertexSE3(uint_fast32_t _vertexId, Vec3& _pos, Quaternion& _rot) :
+            inline VertexSE3(uint_fast32_t _vertexId, const Vec3& _pos, const Quaternion& _rot) :
                 Vertex(VERTEXSE3, _vertexId),
                 nodeSE3(_pos, _rot) {
             }

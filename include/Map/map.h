@@ -35,7 +35,7 @@ namespace putslam {
             /// get all visible features
             virtual std::vector<MapFeature>& getVisibleFeatures(const Mat34& cameraPose) = 0;
 
-            /// Add new features and camera pose (initial guess) to the map
+            /// Add NEW features and a NEW camera pose (initial guess) to the map
             /// Position of features in relation to camera pose
             virtual void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose) = 0;
 
