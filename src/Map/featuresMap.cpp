@@ -8,8 +8,13 @@ using namespace putslam;
 /// A single instance of Elevation Map
 FeaturesMap::Ptr map;
 
-FeaturesMap::FeaturesMap(void) : Map("Features Map", MAP_FEATURES) {
+FeaturesMap::FeaturesMap(void) : featureIdNo(FATURES_START_ID), Map("Features Map", MAP_FEATURES) {
     poseGraph = createPoseGraphG2O();
+}
+
+/// Construction
+FeaturesMap::FeaturesMap(std::string sensorConfig) : sensorModel(sensorConfig), Map("Features Map", MAP_FEATURES){
+
 }
 
 /// Destruction
@@ -20,10 +25,27 @@ const std::string& FeaturesMap::getName() const {
     return name;
 }
 
-/// Add new features and camera pose (initial guess) to the map
+/// Add NEW features and a NEW camera pose (initial guess) to the map
 /// Position of features in relation to camera pose
 void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose) {
+    //add camera pose
+    poseGraph->addVertexPose(VertexSE3(camTrajectory.size(),Vec3(cameraPose(0,3), cameraPose(1,3), cameraPose(2,3)), Quaternion(cameraPose.rotation())));
+    camTrajectory.push_back(cameraPose);
 
+    for (std::vector<RGBDFeature>::const_iterator it = features.begin(); it!=features.end();it++){
+        //add each feature to map structure...
+        featuresSet.push_back(MapFeature(featureIdNo, (*it).position, (*it).descriptors));
+        //.. and the graph
+        Mat34 featurePos((*it).position);
+        featurePos=cameraPose.matrix()*featurePos.matrix();
+        poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0,3),featurePos(1,3),featurePos(2,3))));
+        //add measurement
+        Mat33 info;
+        Edge3D e((*it).position,info,camTrajectory.size()-1,featureIdNo);
+        poseGraph->addEdge3D(e);
+        featureIdNo++;
+    }
+    //MapFeature.
 }
 
 /// Get all features
@@ -68,5 +90,10 @@ void FeaturesMap::optimize(unsigned int iterNo){
 
 putslam::Map* putslam::createFeaturesMap(void) {
     map.reset(new FeaturesMap());
+    return map.get();
+}
+
+putslam::Map* putslam::createFeaturesMap(std::string configSensor) {
+    map.reset(new FeaturesMap(configSensor));
     return map.get();
 }
