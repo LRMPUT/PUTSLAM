@@ -685,10 +685,12 @@ bool PoseGraphG2O::optimize(uint_fast32_t maxIterations, int verbose) {
     if (verbose>0)
         std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
+    mtxGraph.lock();
     optimizer.initializeOptimization();
     optimizer.computeInitialGuess();
     optimizer.optimize(maxIterations);
     optimizer.setVerbose(true);
+    mtxGraph.unlock();
 
     if (!std::isfinite(optimizer.chi2()))
         return false;
@@ -713,7 +715,7 @@ void PoseGraphG2O::updateEstimate(void){
       }
     }
 
-    mtxGraph.unlock();
+    mtxGraph.lock();
     for (std::set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
       g2o::OptimizableGraph::Vertex* v = *it;
       std::vector<double> estimate;
