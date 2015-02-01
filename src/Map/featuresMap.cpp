@@ -2,6 +2,7 @@
 #include "../include/PoseGraph/graph.h"
 #include <memory>
 #include <stdexcept>
+#include <chrono>
 
 using namespace putslam;
 
@@ -38,10 +39,10 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, const Ma
         //.. and the graph
         Mat34 featurePos((*it).position);
         featurePos=cameraPose.matrix()*featurePos.matrix();
-        poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0,3),featurePos(1,3),featurePos(2,3))));
         //add measurement
         Mat33 info;
         Edge3D e((*it).position,info,camTrajectory.size()-1,featureIdNo);
+        poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0,3),featurePos(1,3),featurePos(2,3))));
         poseGraph->addEdge3D(e);
         featureIdNo++;
     }
@@ -65,7 +66,7 @@ std::vector<MapFeature>& FeaturesMap::getVisibleFeatures(const Mat34& cameraPose
 
 /// get current pose of the sensor
 Mat34 FeaturesMap::getCurrentPose(void) {
-
+    return camTrajectory.back();
 }
 
 /// start optimization thread
@@ -84,7 +85,9 @@ void FeaturesMap::optimize(unsigned int iterNo){
     // graph optimization
     continueOpt = true;
     while (continueOpt){
+        std::cout << "start optimization\n";
         poseGraph->optimize(iterNo);
+        std::cout << "end optimization\n";
     }
 }
 

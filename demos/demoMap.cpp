@@ -22,8 +22,24 @@ int main(int argc, char * argv[])
 
         // create kabsch transform estimator
         Map* map = createFeaturesMap();
-        map->startOptimizationThread(3);
-        usleep(1000);
+        map->startOptimizationThread(1);
+
+        for (int i=0;i<1000;i++){
+            //add some data to the map
+            Mat34 cameraPose; cameraPose.setIdentity();
+            cameraPose(0,3) = i*0.01; cameraPose(1,3) = i*0.01;
+            std::vector<RGBDFeature> features;
+            for (int j=0;j<10;j++){
+                std::vector<ExtendedDescriptor> descriptors;
+                ExtendedDescriptor desc;
+                desc.cameraOrientation = Quaternion(1,0,0,0);
+                descriptors.push_back(desc);
+                RGBDFeature f(Vec3(i*0.01, j*0.01, 0), descriptors);
+                features.push_back(f);
+            }
+            map->addFeatures(features, cameraPose);
+        }
+        usleep(1000000);
         map->finishOptimization();//Don't forget to finish optimization thread!!
     }
     catch (const std::exception& ex) {
