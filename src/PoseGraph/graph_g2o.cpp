@@ -227,14 +227,12 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE2& v){
         std::stringstream currentLine;
         currentLine << v.pos.x() << ' ' << v.pos.y() << ' ' << v.theta;
         addVertexG2O(v.vertexId, currentLine, Vertex::VERTEXSE2);
-
-
         mtxGraph.unlock();
         return true;
     }
     else {
         mtxGraph.unlock();
-        return true;
+        return false;
     }
 }
 

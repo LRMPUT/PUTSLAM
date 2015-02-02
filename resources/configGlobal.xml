@@ -16,3 +16,7 @@
   	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
   </Matcher>
   
+  <Map>
+  	<name>FeaturesMap</name>
+  	<parametersFile>mapConfig.xml</parametersFile>
+  </Map>
