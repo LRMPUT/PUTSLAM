@@ -31,16 +31,18 @@ namespace putslam {
             /// Virtual descrutor
             virtual ~Map() {}
 
-
             /// get all visible features
-            virtual std::vector<MapFeature>& getVisibleFeatures(const Mat34& cameraPose) = 0;
+            virtual std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose) = 0;
 
             /// Add NEW features and a NEW camera pose (initial guess) to the map
             /// Position of features in relation to camera pose
             virtual void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose) = 0;
 
+            /// add measurements (features measured from the last camera pose)
+            virtual void addMeasurements(const std::vector<MapFeature>& features) = 0;
+
             /// Get all features
-            virtual std::vector<MapFeature>& getAllFeatures(void) = 0;
+            virtual std::vector<MapFeature> getAllFeatures(void) = 0;
 
             /// Get feature position
             virtual Vec3 getFeaturePosition(unsigned int id) = 0;

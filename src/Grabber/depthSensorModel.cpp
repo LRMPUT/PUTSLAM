@@ -33,3 +33,11 @@ void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, float_type d
     Ruvd(2,2) = (config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3])/3.0;
     cov=J*Ruvd*J.transpose();
 }
+
+/// compute information matrix
+Mat33 DepthSensorModel::informationMatrix(float_type x, float_type y, float_type z){
+    Mat33 info;
+    Eigen::Vector3d cam3D = inverseModel(x, y, z);
+    computeCov(cam3D(0), cam3D(1), cam3D(2), info);
+    return info.inverse();
+}

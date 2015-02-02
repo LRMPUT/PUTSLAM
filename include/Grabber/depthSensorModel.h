@@ -24,10 +24,14 @@ class DepthSensorModel {
 
     void getPoint(uint_fast16_t u, uint_fast16_t v, float_type depth, Eigen::Vector3d& point3D);
 
+    /// inverse model of the sensor
     Eigen::Vector3d inverseModel(float_type x, float_type y, float_type z) const;
 
     /// u,v [px], depth [m]
     void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov);
+
+    /// compute information matrix
+    Mat33 informationMatrix(float_type x, float_type y, float_type z);
 
     class Config{
       public:

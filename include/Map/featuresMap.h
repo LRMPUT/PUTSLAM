@@ -20,7 +20,7 @@ namespace putslam {
     /// create a single Map
     Map* createFeaturesMap(void);
     /// create a single Map - overloaded
-    Map* createFeaturesMap(std::string sensorConfig);
+    Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 };
 
 using namespace putslam;
@@ -35,7 +35,7 @@ class FeaturesMap : public Map {
         FeaturesMap(void);
 
         /// Construction
-        FeaturesMap(std::string sensorConfig);
+        FeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 
         /// Destruction
         ~FeaturesMap(void);
@@ -47,14 +47,17 @@ class FeaturesMap : public Map {
         /// Position of features in relation to camera pose
         void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose);
 
+        /// add measurements (features measured from the last camera pose)
+        void addMeasurements(const std::vector<MapFeature>& features);
+
         /// Get all features
-        std::vector<MapFeature>& getAllFeatures(void);
+        std::vector<MapFeature> getAllFeatures(void);
 
         /// Get feature position
         Vec3 getFeaturePosition(unsigned int id);
 
         /// get all visible features
-        std::vector<MapFeature>& getVisibleFeatures(const Mat34& cameraPose);
+        std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
         /// get current pose of the sensor
         Mat34 getCurrentPose(void);

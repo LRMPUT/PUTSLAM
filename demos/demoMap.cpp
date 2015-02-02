@@ -18,29 +18,32 @@ int main(int argc, char * argv[])
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
-        std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+        std::string configFileGrabber(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+        std::string configFileMap(config.FirstChildElement( "Map" )->FirstChildElement( "parametersFile" )->GetText());
 
         // create kabsch transform estimator
-        Map* map = createFeaturesMap();
+        Map* map = createFeaturesMap(configFileMap, configFileGrabber);
         map->startOptimizationThread(1);
 
-        for (int i=0;i<1000;i++){
+        for (int i=0;i<10;i++){
             //add some data to the map
-            Mat34 cameraPose; cameraPose.setIdentity();
-            cameraPose(0,3) = i*0.01; cameraPose(1,3) = i*0.01;
+            Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
             std::vector<RGBDFeature> features;
             for (int j=0;j<10;j++){
                 std::vector<ExtendedDescriptor> descriptors;
                 ExtendedDescriptor desc;
                 desc.cameraOrientation = Quaternion(1,0,0,0);
                 descriptors.push_back(desc);
-                RGBDFeature f(Vec3(i*0.01, j*0.01, 0), descriptors);
+                RGBDFeature f(Vec3(0.2, 0.3, 2.2), descriptors);
                 features.push_back(f);
             }
             map->addFeatures(features, cameraPose);
         }
-        usleep(1000000);
+        usleep(100000);
         map->finishOptimization();//Don't forget to finish optimization thread!!
+        Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
+        std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
+        std::cout << visibleFeatures.size() << "\n";
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
