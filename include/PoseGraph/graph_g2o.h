@@ -21,6 +21,7 @@
 
 #include "g2o/core/factory.h"
 #include "g2o/stuff/command_args.h"
+#include "g2o/core/eigen_types.h"
 
 #include <iostream>
 #include <memory>
