@@ -105,6 +105,7 @@ int main() {
 //	Graph * global_graph = createGlobalGraph();
 //	cout << "Current global graph: " << global_graph->getName() << std::endl;
 
+
 	// Reading robot starting pose
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
 
@@ -115,6 +116,7 @@ int main() {
 	bool ifStart = true;
 	// Main loop
 	while (true) {
+
 		bool middleOfSequence = grabber->grab(); // grab frame
 		if (!middleOfSequence)
 			break;
@@ -124,30 +126,29 @@ int main() {
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 			ifStart = false;
-			//break;
 		} else {
 			Eigen::Matrix4f transformation;
 			matcher->Matcher::match(currentSensorFrame, transformation);
 
 			// TODO: test it !
 			robotPose = robotPose * transformation;
-
 		}
+
+
 
 		// Save trajectory
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
-		//imshow("1",a.image);
-		//imshow("2",a.depth);
-		//cvWaitKey(500);
-	}
 
+
+//		cv::imshow("1",currentSensorFrame.rgbImage);
+//		cv::imshow("2",currentSensorFrame.depthImage);
+//		cvWaitKey(500);
+	}
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
 
-	delete matcher;
-	delete grabber;
 //	delete graph;
 //	delete global_graph;
 

@@ -44,14 +44,42 @@ MatcherOpenCV::MatcherOpenCV(const std::string _name, const std::string _paramet
 void MatcherOpenCV::initVariables() {
 	featureDetector = NULL;
 	descriptorExtractor = NULL;
+
+	// Initialize detection
+	if (matcherParameters.OpenCVParams.detector == "FAST")
+		featureDetector.reset(new cv::FastFeatureDetector());
+	else if (matcherParameters.OpenCVParams.detector == "ORB")
+		featureDetector.reset(new cv::OrbFeatureDetector());
+	else if (matcherParameters.OpenCVParams.detector == "SURF")
+		featureDetector.reset(new cv::SurfFeatureDetector());
+	else if (matcherParameters.OpenCVParams.detector == "SIFT")
+		featureDetector.reset(new cv::SiftFeatureDetector());
+	else
+		featureDetector.reset(new cv::SurfFeatureDetector());
+
+	// Initialize description
+	if (matcherParameters.OpenCVParams.descriptor == "BRIEF")
+		descriptorExtractor.reset(new cv::BriefDescriptorExtractor());
+	else if (matcherParameters.OpenCVParams.descriptor == "ORB")
+		descriptorExtractor.reset(new cv::OrbDescriptorExtractor());
+	else if (matcherParameters.OpenCVParams.descriptor == "SURF")
+		descriptorExtractor.reset(new cv::SurfDescriptorExtractor());
+	else if (matcherParameters.OpenCVParams.descriptor == "SIFT")
+		descriptorExtractor.reset(new cv::SiftDescriptorExtractor());
+
+	// Initialize matcher
+	// We are always using the cross-check option to remove false matches
+	// We are using L2 norm as descriptors are floating-point type
+	if (matcherParameters.OpenCVParams.descriptor == "SURF"
+			|| matcherParameters.OpenCVParams.descriptor == "SIFT")
+		matcher.reset(new cv::BFMatcher(cv::NORM_L2, true));
+	// In other case use Hamming distance as descriptors are binary
+	else
+		matcher.reset(new cv::BFMatcher(cv::NORM_HAMMING, true));
 }
 
 MatcherOpenCV::~MatcherOpenCV(void)
 {
-	if (featureDetector != NULL)
-		delete featureDetector;
-	if (descriptorExtractor != NULL)
-		delete descriptorExtractor;
 }
 
 const std::string& MatcherOpenCV::getName() const {
@@ -62,23 +90,14 @@ const std::string& MatcherOpenCV::getName() const {
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
 
-	if (matcherParameters.OpenCVParams.detector == "FAST")
-		featureDetector = new cv::FastFeatureDetector();
-	else if (matcherParameters.OpenCVParams.detector == "ORB")
-		featureDetector = new cv::OrbFeatureDetector();
-	else if (matcherParameters.OpenCVParams.detector == "SURF")
-		featureDetector = new cv::SurfFeatureDetector();
-	else if (matcherParameters.OpenCVParams.detector == "SIFT")
-		featureDetector = new cv::SiftFeatureDetector();
-	else
-		featureDetector = new cv::SurfFeatureDetector();
+
 
 	cv::Mat grayImage;
     cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-	featureDetector->detect(grayImage, raw_keypoints);
-	delete featureDetector;
+	featureDetector.get()->detect(grayImage, raw_keypoints);
+
 
 	return raw_keypoints;
 }
@@ -89,16 +108,6 @@ cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 
 	cv::Mat descriptors;
 
-	// inside OpenCV
-	if (matcherParameters.OpenCVParams.descriptor == "BRIEF")
-		descriptorExtractor = new cv::BriefDescriptorExtractor();
-	else if (matcherParameters.OpenCVParams.descriptor == "ORB")
-		descriptorExtractor = new cv::OrbDescriptorExtractor();
-	else if (matcherParameters.OpenCVParams.descriptor == "SURF")
-		descriptorExtractor = new cv::SurfDescriptorExtractor();
-	else if (matcherParameters.OpenCVParams.descriptor == "SIFT")
-		descriptorExtractor = new cv::SiftDescriptorExtractor();
-
 	// almost in OpenCV
 	if (matcherParameters.OpenCVParams.descriptor == "LDB")
 	{
@@ -106,7 +115,7 @@ cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 		//ldb.compute(x, features, descriptors, false);
 	}
 	else
-		descriptorExtractor->compute(rgbImage, features, descriptors);
+		descriptorExtractor.get()->compute(rgbImage, features, descriptors);
 
 
 	return descriptors;
@@ -116,19 +125,11 @@ cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 		cv::Mat descriptors) {
 
-	cv::BFMatcher *matcher;
-	// We are always using the cross-check option to remove false matches
-	// We are using L2 norm as descriptors are floating-point type
-	if ( matcherParameters.OpenCVParams.descriptor == "SURF" || matcherParameters.OpenCVParams.descriptor == "SIFT" )
-		matcher = new cv::BFMatcher(cv::NORM_L2, true);
-	// In other case use Hamming distance as descriptors are binary
-	else
-		matcher = new cv::BFMatcher(cv::NORM_HAMMING, true);
+
 
 	// We are doing the matching
 	std::vector<cv::DMatch> matches;
-	matcher->match(prevDescriptors, descriptors, matches);
-	delete matcher;
+	matcher.get()->match(prevDescriptors, descriptors, matches);
 
 	return matches;
 }

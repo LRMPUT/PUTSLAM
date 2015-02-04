@@ -57,13 +57,17 @@ bool FileGrabber::grab(void) {
 		// We save the position of last line in case we need to go back by one line
 		previousLinePlace = timestampFile.tellg();
 
+		std::cout<<"111" << std::endl;
 		// Consider timestamps from provided file
 		std::string timestampString;
 		std::getline(timestampFile, timestampString);
+		std::cout<<"222:" << timestampString.length() <<  std::endl;
 
 		// No more timestamps ---> we detected the end of sequence
 		if (timestampString.length() < 3)
 			return false;
+
+		std::cout<<timestampString<<std::endl;
 
 		// Compute the average of rgb and depth timestamps
 		double timestamp1 = atof(
