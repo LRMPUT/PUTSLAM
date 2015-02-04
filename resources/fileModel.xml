@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Map xmlns:xi="http://www.w3.org/2001/XInclude" srs="+init=epsg:4326" bgcolor="rgb(255,255,255)" >
 
   <!-- File Model-->
-  <!-- <Model>
+  <Model>
     <focalLength fx="582.64" fy="586.97"></focalLength>
     <focalAxis Cx="320.17" Cy="260.0"></focalAxis>
     <variance sigmaU="1.1046" sigmaV="0.64160"></variance>
     <varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>
-  </Model> -->
- 
- 
-  <xi:include href="cameraModelFreiburg1.xml" />
+  </Model> 
  
   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath>
  
