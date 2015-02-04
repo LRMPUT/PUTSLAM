@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Include xmlns:xi="http://www.w3.org/2001/XInclude">
+
+  <!-- Camera model Freiburg 1-->
+  <Model>
+    <focalLength fu="517.3" fv="516.5"></focalLength>
+    <focalAxis Cu="318.6" Cv="255.3"></focalAxis>
+    <distortionParameters k1="-0.0410" k2="0.3286" p1="0.0087" p2="0.0051" k3="-0.5643" k4="0" k5="0" k6="0"></distortionParameters>
+    <variance sigmaU="1.1046" sigmaV="0.64160"></variance>
+    <varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>
+  </Model>
+

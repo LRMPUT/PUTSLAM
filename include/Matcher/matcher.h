@@ -32,6 +32,9 @@ public:
 			name(_name), frame_id(0), matcherParameters(parametersFile) {
 	}
 
+	~Matcher() {
+	}
+
 	/// Name of the Matcher
 	virtual const std::string& getName() const = 0;
 

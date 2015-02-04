@@ -12,6 +12,7 @@ using namespace putslam;
 
 void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 {
+
 	// Detect salient features
 	prevFeatures = detectFeatures(sensorData.rgbImage);
 
