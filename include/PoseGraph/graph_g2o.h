@@ -120,6 +120,9 @@ class PoseGraphG2O : public Graph {
         /// Returns set of graph vertices
         PoseGraph::VertexSet getVertices(void);
 
+        /// Get 3D vertex
+        Point3D getVertex(unsigned int id);
+
         /// Returns set of graph edges
         PoseGraph::EdgeSet getEdges(void);
 
