@@ -1375,7 +1375,7 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt, "g");
 */
-            graph->clear();
+  /*          graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
 
@@ -1394,7 +1394,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");
-
+*/
 /*
             //Strasdat
             graph->clear();
