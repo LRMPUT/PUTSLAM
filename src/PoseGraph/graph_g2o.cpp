@@ -1043,6 +1043,21 @@ PoseGraph::VertexSet PoseGraphG2O::getVertices(void){
     return verticesTmp;
 }
 
+/// Get 3D vertex
+Point3D PoseGraphG2O::getVertex(unsigned int id){
+    Point3D point; point.x = -1; point.y = -1; point.z = -1;
+    for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
+        if (it->get()->type==Vertex::VERTEX3D){
+            if (it->get()->vertexId==id){
+                Vec3 pos = ((Vertex3D*)((Vertex3D*)it->get()))->keypoint.depthFeature;
+                point.x = pos.x();   point.y = pos.y();   point.z = pos.z();
+                return point;
+            }
+        }
+    }
+    return point;
+}
+
 /// Returns set of graph edges
 PoseGraph::EdgeSet PoseGraphG2O::getEdges(void){
     PoseGraph::EdgeSet edges;

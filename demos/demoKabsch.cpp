@@ -14,6 +14,8 @@
 
 using namespace std;
 
+#define INIT_VERTEX_ID 10000
+
 auto startT = std::chrono::high_resolution_clock::now();
 std::default_random_engine generator;
 
@@ -209,6 +211,17 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
         tmp.push_back(point);
     }
     return tmp;
+}
+
+/// compute mean squared error for the map
+float_type computeMapAccuracy(Graph* currentGraph, PointCloud& groundTruth){
+    float_type accuracy = 0;
+    for (int i=0;i<groundTruth.size();i++){
+        Point3D point = ((PoseGraphG2O*) currentGraph)->getVertex(i+INIT_VERTEX_ID);
+        if ((point.x!=-1)&&(point.y!=-1)) //if point exists in the map
+            accuracy+=pow(point.x - groundTruth[i].x,2.0) + pow(point.y - groundTruth[i].y,2.0) + pow(point.z - groundTruth[i].z,2.0);
+    }
+    return accuracy/float_type(groundTruth.size());
 }
 
 void runExperiment(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, Simulator& simulator, TransformEst* transEst){
@@ -725,11 +738,26 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
     }
 }
 
+void createMap(Graph* graph, const std::vector<Mat34>& trajectory, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<int> >& setIds){
+    for (int i=0;i<trajectory.size();i++){
+        for (int j=0; j<cloudSeq[i].size(); j++){
+            Mat34 featurePose;
+            Mat34 sensor2feature; sensor2feature.setIdentity();
+            sensor2feature(0,3) = cloudSeq[i][j].x; sensor2feature(1,3) = cloudSeq[i][j].y; sensor2feature(2,3) = cloudSeq[i][j].z;
+            featurePose.matrix() = trajectory[i].matrix() * sensor2feature.matrix();
+            Vec3 posFeature(featurePose(0,3), featurePose(1,3), featurePose(2,3));
+            Vertex3D vertexFeature(INIT_VERTEX_ID+setIds[i][j], posFeature);
+            if (!graph->addVertexFeature(vertexFeature))
+                std::cout << "error: vertex exists!\n";
+        }
+    }
+}
+
 void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, Simulator& simulator, TransformEst* transEst){
     Mat34 initPose;
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
-    int vertexId2 = 0; int vertexId = 10000;
+    int vertexId2 = 0; int vertexId = INIT_VERTEX_ID;
     trajectorySensor2.push_back(initPose);
 
     Mat34 sensorPose;
@@ -1060,6 +1088,11 @@ int main(int argc, char * argv[])
         //graph->plot2file(filename2);
         //std::cout << "fdf\n"; getchar();
 
+        std::vector<float_type> MSEKabsch;
+        std::vector<float_type> MSEBAnouncert;
+        std::vector<float_type> MSEBAuncert;
+        std::vector<float_type> MSEPerfectTraj;
+
         int trialsNo =100;
         for (int i=0;i<trialsNo;i++){
 
@@ -1068,7 +1101,8 @@ int main(int argc, char * argv[])
             float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
             simulator.createEnvironment(1000, 15, 15, 15);
-            if (i==0) savePointCloud("../../resources/KabschUncertainty/room.m", simulator.getEnvironment());
+            std::string filenameCloud= "../../resources/KabschUncertainty/refCloud" + std::to_string(i) + ".m";
+            savePointCloud(filenameCloud, simulator.getEnvironment());
 
             std::cout << "\n\n\nTrajectory test\n";
             //create reference trajectory
@@ -1108,7 +1142,7 @@ int main(int argc, char * argv[])
                     trajectory.push_back(pose);
                 }
             }
-            simulator.loadTrajectory("../../resources/traj_living_room_2.txt");
+            simulator.loadTrajectory("../../resources/traj_living_room_kt1.txt");
             trajectory = simulator.getTrajectory();
 
             /*std::vector<Mat34> trajectorySec;
@@ -1297,6 +1331,11 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");*/
 
+            /// create a map from perfect trajectory
+            graph->clear();
+            createMap(graph, trajectorySens, cloudSeq, setIds);
+            MSEPerfectTraj.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
+            std::cout << "Perfect traj. accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
 
             graph->clear();
             runExperiment(0, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
@@ -1307,6 +1346,10 @@ int main(int argc, char * argv[])
 
             filename= "../../resources/KabschUncertainty/graphSensor" + std::to_string(i) + ".g2o";
             graph->save2file(filename);
+
+            createMap(graph, trajectorySensor, cloudSeq, setIds);
+            MSEKabsch.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
+            std::cout << "Kabsch accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
 
             /*Mat34 prevPos = trajectorySensor[0];
             for (int tt=0;tt<trajectorySensor.size();tt++){
@@ -1395,6 +1438,10 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAident" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAident, "g");
 
+            std::cout << "BA nounc accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
+            MSEBAnouncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
+
+
             //Bundle Adjustment uncert
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -1419,6 +1466,9 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryBAuncert = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAuncert" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAuncert, "b");
+
+            std::cout << "BA unc accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
+            MSEBAuncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
 
 //getchar();
 /*
@@ -1505,6 +1555,11 @@ int main(int argc, char * argv[])
             std::cout << "g2o with uncertainty trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
             getchar();*/
         }
+
+        std::cout << "MSE perfect traj for the map: " << computeMean(MSEPerfectTraj) << ", std: " << computeStd(MSEPerfectTraj) << "\n";
+        std::cout << "Kabsch MSE for the map: " << computeMean(MSEKabsch) << ", std: " << computeStd(MSEKabsch) << "\n";
+        std::cout << "BA nouncert MSE for the map: " << computeMean(MSEBAnouncert) << ", std: " << computeStd(MSEBAnouncert) << "\n";
+        std::cout << "BA uncert MSE for the map: " << computeMean(MSEBAuncert) << ", std: " << computeStd(MSEBAuncert) << "\n";
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
