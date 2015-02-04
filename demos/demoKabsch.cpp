@@ -348,7 +348,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                     break;
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-                int efficientFeatures = 30;
+                int efficientFeatures = 15;
                 if (setA.rows()>efficientFeatures){
                     Mat34 trans;
                     if (expType==2){
@@ -687,7 +687,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
                     break;
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-                int efficientFeatures = 30;
+                int efficientFeatures = 15;
                 if (setA.rows()>efficientFeatures){
                     Mat34 trans = transEst->computeTransformation(setB, setA);
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
@@ -870,7 +870,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
                 Eigen::MatrixXd setB(1, 3);
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
-                int efficientFeatures = 30;
+                int efficientFeatures = 15;
                 if (setA.rows()>efficientFeatures){
                     Mat34 trans = transEst->computeTransformation(setB, setA);
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
@@ -1374,7 +1374,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt, "g");
-
+*/
             graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
@@ -1394,7 +1394,7 @@ int main(int argc, char * argv[])
             std::vector<Mat34> trajectoryOpt2 = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_uncertainty" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt2, "b");
-*/
+
 /*
             //Strasdat
             graph->clear();
