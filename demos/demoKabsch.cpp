@@ -1560,6 +1560,17 @@ int main(int argc, char * argv[])
         std::cout << "Kabsch MSE for the map: " << computeMean(MSEKabsch) << ", std: " << computeStd(MSEKabsch) << "\n";
         std::cout << "BA nouncert MSE for the map: " << computeMean(MSEBAnouncert) << ", std: " << computeStd(MSEBAnouncert) << "\n";
         std::cout << "BA uncert MSE for the map: " << computeMean(MSEBAuncert) << ", std: " << computeStd(MSEBAuncert) << "\n";
+
+        ofstream myfile ("../../resources/KabschUncertainty/MSE.txt");
+          if (myfile.is_open())
+          {
+            myfile << "MSE perfect traj for the map: " << computeMean(MSEPerfectTraj) << ", std: " << computeStd(MSEPerfectTraj) << "\n";
+            myfile << "Kabsch MSE for the map: " << computeMean(MSEKabsch) << ", std: " << computeStd(MSEKabsch) << "\n";
+            myfile << "BA nouncert MSE for the map: " << computeMean(MSEBAnouncert) << ", std: " << computeStd(MSEBAnouncert) << "\n";
+            myfile << "BA uncert MSE for the map: " << computeMean(MSEBAuncert) << ", std: " << computeStd(MSEBAuncert) << "\n";
+            myfile.close();
+          }
+          else cout << "Unable to open file";
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
