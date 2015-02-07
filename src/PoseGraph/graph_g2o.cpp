@@ -882,7 +882,7 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
     Hessian.setZero();
     g2o::OptimizableGraph::VertexContainer verts;
     for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
-        //std::cout << "cinh" << (*it)->colInHessian() << "\n";
+        std::cout << "cinh" << (*it)->colInHessian() << "\n";
         if ((*it)->id()==vertexId){
             std::vector<double> res;
             (*it)->getEstimateData(res);
@@ -895,8 +895,8 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
         }
         if ((*it)->colInHessian()>=0){
 
-            //std::cout << " dim " << (*it)->dimension() << "\n";
-            //std::cout << " colinhes " << (*it)->colInHessian() << "\n";
+            std::cout << " dim " << (*it)->dimension() << "\n";
+            std::cout << " colinhes " << (*it)->colInHessian() << "\n";
             for (int i=0;i<(*it)->dimension();i++){
                 for (int j=0;j<(*it)->dimension();j++){
                     Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
@@ -904,10 +904,12 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
             }
         }
     }
-    std::cout << "Hessian:\n" << Hessian.block<12,12>(0,0) << "\n";
-    getchar();
-    Hessian=Hessian.inverse();
+    std::cout << "Hessian:\n";// << Hessian.block<12,12>(0,0) << "\n";
+    //Hessian=Hessian.inverse();
+    optimizer.initializeOptimization();
+    optimizer.computeInitialGuess();
     g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
+    //optimizer.initializeOptimization(optimizer.VertexSet);
     if (!optimizer.computeMarginals(spinv,verts))
         std::cout << "not supported\n";
     else{

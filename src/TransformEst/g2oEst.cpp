@@ -147,7 +147,7 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
     }
 
 //    graph.save2file("singleTr.g2o");
-    graph.optimize(70);
+    //graph.optimize(70);
 
     uncertainty = graph.getHessian(1);
     //std::cout << "kabsch est: \n";
