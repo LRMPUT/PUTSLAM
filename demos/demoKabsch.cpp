@@ -343,13 +343,14 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
         //additional edges
         for (int i=2;i<trajectory.size();i++){
             //match and estimate transformation
-            for (int j=2;j<18;j++){
+            for (int j=2;j<trajectory.size();j++){
                 if (i-j<0)
                     break;
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
                 int efficientFeatures = 15;
-                if (setA.rows()>efficientFeatures){
+                int efficientFeaturesLC = 60;
+                if (((setA.rows()>efficientFeatures) && (j<18))||((setA.rows()>efficientFeaturesLC) && (j>50))){
                     Mat34 trans;
                     if (expType==2){
                         trans = transEst->computeTransformation(setB, setA);
@@ -1100,7 +1101,7 @@ int main(int argc, char * argv[])
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            simulator.createEnvironment(1000, 15, 15, 15);
+            simulator.createEnvironment(1500, 15, 15, 15);
             std::string filenameCloud= "../../resources/KabschUncertainty/refCloud" + std::to_string(i) + ".m";
             savePointCloud(filenameCloud, simulator.getEnvironment());
 
@@ -1359,7 +1360,7 @@ int main(int argc, char * argv[])
                 prevPos = trajectorySensor[tt];
             }*/
 
-/*            graph->clear();
+            graph->clear();
             runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
 
             //optimize
@@ -1373,9 +1374,9 @@ int main(int argc, char * argv[])
 
             std::vector<Mat34> trajectoryOpt = graph->getTrajectory();
             filename= "../../resources/KabschUncertainty/trajectory_g2o" + std::to_string(i) + ".m";
-            saveTrajectory(filename,trajectoryOpt, "g");
-*/
-  /*          graph->clear();
+            saveTrajectory(filename,trajectoryOpt, "y");
+
+/*            graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
 
