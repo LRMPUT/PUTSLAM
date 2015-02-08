@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
 
         // create kabsch transform estimator
         Map* map = createFeaturesMap(configFileMap, configFileGrabber);
-        map->startOptimizationThread(1);
+       // map->startOptimizationThread(1);
 
         for (int i=0;i<10;i++){
             //add some data to the map

@@ -357,7 +357,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(DEMO_SOURCES ./demos/demoMatching.cpp)
         ADD_EXECUTABLE(demoMatching ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph boost_system)
+        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Map Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph boost_system)
         INSTALL(TARGETS demoMatching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
