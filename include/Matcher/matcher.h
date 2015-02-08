@@ -19,6 +19,12 @@ namespace putslam {
 /// Grabber interface
 class Matcher {
 public:
+	struct featureSet {
+		std::vector<cv::KeyPoint> feature2D;
+		cv::Mat descriptors;
+		std::vector<Eigen::Vector3f> feature3D;
+	};
+
 	struct parameters {
 		std::string detector;
 		std::string descriptor;
@@ -41,9 +47,16 @@ public:
 	/// Load features at the start of the sequence
 	void loadInitFeatures(const SensorFrame& sensorData);
 
+	/// Get current set of features
+	Matcher::featureSet getFeatures();
+
 	/// Run single match
 	bool match(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation);
+
+	/// Run the match with map
+	bool match(std::vector<MapFeature> mapFeatures,
+			std::vector<MapFeature> &foundInlierMapFeatures);
 
 	/// Class used to hold all parameters
 	class Parameters {
@@ -122,6 +135,9 @@ protected:
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors) = 0;
 
+private:
+	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
+	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(std::vector<MapFeature> mapFeatures);
 };
 }
 ;
