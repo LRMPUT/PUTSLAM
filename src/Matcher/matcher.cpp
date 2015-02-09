@@ -143,8 +143,8 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures,
 		mapFeature.id = mapId;
 		mapFeature.position = Vec3(prevFeatures3D[currentPoseId].cast<double>());
 		// TODO: take into account the future orientation
-		ExtendedDescriptor featureExtendedDescriptor(Quaternion::Identity(), prevDescriptors.row(currentPoseId) );
-		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+        //ExtendedDescriptor featureExtendedDescriptor(Quaternion::Identity(), prevDescriptors.row(currentPoseId) );
+//		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 	}
 }
 

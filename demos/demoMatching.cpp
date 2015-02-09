@@ -143,17 +143,17 @@ int main() {
 			std::vector<RGBDFeature> mapFeatures;
 			for (int j = 0; j < features.feature3D.size(); j++) {
 				// Create an extended descriptor
-				ExtendedDescriptor desc(cameraOrient, features.descriptors.row(j));
+//				ExtendedDescriptor desc(cameraOrient, features.descriptors.row(j));
 
 				// In further processing we expect more descriptors
-				std::vector<ExtendedDescriptor> extDescriptors{desc};
+//				std::vector<ExtendedDescriptor> extDescriptors{desc};
 
 				// Convert translation
 				Eigen::Translation<double, 3> featurePosition(features.feature3D[j].cast<double>());
 
 				// Add to set addded later to map
-				RGBDFeature f(featurePosition, extDescriptors);
-				mapFeatures.push_back(f);
+//				RGBDFeature f(featurePosition, extDescriptors);
+//				mapFeatures.push_back(f);
 
 			}
 
