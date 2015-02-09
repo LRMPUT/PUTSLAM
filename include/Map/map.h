@@ -36,10 +36,13 @@ namespace putslam {
 
             /// Add NEW features and a NEW camera pose (initial guess) to the map
             /// Position of features in relation to camera pose
-            virtual void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose) = 0;
+            virtual void addFeatures(const std::vector<RGBDFeature>& features, unsigned int poseId = -1) = 0;
 
             /// add measurements (features measured from the last camera pose)
-            virtual void addMeasurements(const std::vector<MapFeature>& features) = 0;
+            virtual void addMeasurements(const std::vector<MapFeature>& features, unsigned int poseId = -1) = 0;
+
+            /// add new pose of the camera, returns id of the new pose
+            virtual int addNewPose(const Mat34& cameraPose, float_type timestamp) = 0;
 
             /// Get all features
             virtual std::vector<MapFeature> getAllFeatures(void) = 0;
@@ -47,8 +50,8 @@ namespace putslam {
             /// Get feature position
             virtual Vec3 getFeaturePosition(unsigned int id) = 0;
 
-            /// get current pose of the sensor
-            virtual Mat34 getCurrentPose(void) = 0;
+            /// get pose of the sensor (default: last pose)
+            virtual Mat34 getSensorPose(unsigned int poseId = -1) = 0;
 
             /// start optimization thread
             virtual void startOptimizationThread(unsigned int iterNo) = 0;
