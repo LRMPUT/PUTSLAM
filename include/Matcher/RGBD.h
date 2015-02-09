@@ -34,9 +34,9 @@ const double depthScale = 5000;
 //		std::vector<float> depth, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
 // Convert keypoints to 3D points using depth image
-std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
+std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage);
-std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
+std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
 // Rounds the (u,v) location to integer
