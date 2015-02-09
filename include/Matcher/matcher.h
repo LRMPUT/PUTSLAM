@@ -33,9 +33,22 @@ public:
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
 			name(_name), frame_id(0) {
+
+		// TODO: LOAD IT FROM FILE !!!
+		float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
+		float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
+						0, 1 } };
+		cameraMatrixMat = cv::Mat(3, 3, CV_32FC1, &cameraMatrix);
+		distortionCoeffsMat = cv::Mat(1, 5, CV_32FC1, &distortionCoeffs);
 	}
 	Matcher(const std::string _name, const std::string parametersFile) :
 			name(_name), frame_id(0), matcherParameters(parametersFile) {
+		// TODO: LOAD IT FROM FILE !!!
+		float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
+		float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, {
+				0, 0, 1 } };
+		cameraMatrixMat = cv::Mat(3, 3, CV_32FC1, &cameraMatrix);
+		distortionCoeffsMat = cv::Mat(1, 5, CV_32FC1, &distortionCoeffs);
 	}
 
 	~Matcher() {
@@ -136,6 +149,9 @@ protected:
 			cv::Mat descriptors) = 0;
 
 private:
+	cv::Mat cameraMatrixMat;
+	cv::Mat distortionCoeffsMat;
+
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
 	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(std::vector<MapFeature> mapFeatures);
 };

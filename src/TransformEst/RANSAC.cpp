@@ -39,6 +39,20 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
 	float bestInlierRatio = 0.0;
 
+	// Remove matches with features containing invalid depth
+	// TODO: It is slow due to the vector rebuilds
+	for(std::vector<cv::DMatch>::iterator it = matches.begin(); it!=matches.end();) {
+		int prevId = it->queryIdx, id = it->trainIdx;
+
+
+		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN())
+		{
+			it = matches.erase(it);
+		}
+		else
+			++it;
+	}
+
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
 		if (RANSACParams.verbose > 1)
@@ -56,7 +70,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 		// TODO: Check if the model is feasible ?
 		bool correctModel = checkModelFeasibility(transformationModel);
-		if (correctModel) {
+		if (correctModel && modelComputation) {
 			// Evaluate the model
 			if (RANSACParams.verbose > 1)
 				std::cout << "RANSAC: evaluating the model" << std::endl;

@@ -20,14 +20,20 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 	if (matcherParameters.verbose > 1)
 		showFeatures(sensorData.rgbImage, prevFeatures);
 
+	// Remove distortion
+	std::vector<cv::Point2f> prevFeaturesUndistorted =
+			RGBD::removeImageDistortion(prevFeatures, cameraMatrixMat, distortionCoeffsMat);
+
 	// Remove features without depth
-	RGBD::removeFeaturesWithoutDepth(prevFeatures, sensorData.depthImage);
+	// TODO: We might remove wrong features due to lack of undisort
+	//RGBD::removeFeaturesWithoutDepth(prevFeatures, sensorData.depthImage);
 
 	// Describe salient features
 	prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
 
 	// Associate depth
-	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, sensorData.depthImage);
+	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeatures, sensorData.depthImage,
+			cameraMatrixMat, distortionCoeffsMat);
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -52,7 +58,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 			showFeatures(sensorData.rgbImage, features);
 
 	// Remove features without depth
-	RGBD::removeFeaturesWithoutDepth(features, sensorData.depthImage);
+	// TODO: We might remove wrong features due to lack of undisort
+	//RGBD::removeFeaturesWithoutDepth(features, sensorData.depthImage);
 
 	// Describe salient features
 	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, features);
@@ -62,7 +69,8 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 			descriptors);
 
 	// Associate depth
-	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features, sensorData.depthImage);
+	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(features,
+			sensorData.depthImage, cameraMatrixMat, distortionCoeffsMat);
 
 	// Visualize matches
 	if (matcherParameters.verbose > 0)
