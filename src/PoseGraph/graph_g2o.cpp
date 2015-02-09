@@ -121,7 +121,7 @@ const PoseGraph::EdgeSet& PoseGraphG2O::edges() const{
 
 /// add vertex to g2o interface
 bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Vertex::Type type){
-   // g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id));
+	// g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id));
     g2o::HyperGraph::GraphElemBitset elemBitset;
     elemBitset[g2o::HyperGraph::HGET_PARAMETER] = 1;
     elemBitset.flip();
@@ -140,6 +140,8 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
     g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(element);
     vert->read(vertex);
     vert->setId(id);
+
+
     if (graph.vertices.size()==1){
         //std::cout << "set fixed\n";
         vert->setFixed(true);
