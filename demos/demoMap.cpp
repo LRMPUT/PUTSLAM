@@ -23,21 +23,19 @@ int main(int argc, char * argv[])
 
         // create kabsch transform estimator
         Map* map = createFeaturesMap(configFileMap, configFileGrabber);
-       // map->startOptimizationThread(1);
+        map->startOptimizationThread(1);
 
+        std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         for (int i=0;i<10;i++){
             //add some data to the map
             Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
             std::vector<RGBDFeature> features;
             for (int j=0;j<10;j++){
-                std::vector<ExtendedDescriptor> descriptors;
-                ExtendedDescriptor desc;
-                desc.cameraOrientation = Quaternion(1,0,0,0);
-                descriptors.push_back(desc);
-                RGBDFeature f(Vec3(0.2, 0.3, 2.2), descriptors);
+                RGBDFeature f(Vec3(0.2, 0.3, 2.2), 0, 0, std::vector<ExtendedDescriptor>());
                 features.push_back(f);
             }
-            map->addFeatures(features, cameraPose);
+            unsigned int id  = map->addNewPose(cameraPose, (std::chrono::high_resolution_clock::now() - startTime).count());
+            map->addFeatures(features, id);
         }
         usleep(100000);
         map->finishOptimization();//Don't forget to finish optimization thread!!

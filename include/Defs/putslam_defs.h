@@ -111,14 +111,14 @@ namespace putslam {
             /// OpenCV descriptor
             cv::Mat descriptor;
 
-            /// camera orientation
-            Quaternion cameraOrientation;
+            /// id of the the camera pose (vertex in the graph)
+            unsigned int poseId;
 
             /// Constructor
             ExtendedDescriptor(){};
 
             /// Constructor
-            ExtendedDescriptor(Quaternion cameraOrient, cv::Mat _descriptor) : cameraOrientation(cameraOrient), descriptor(_descriptor){};
+            ExtendedDescriptor(unsigned int _poseId, cv::Mat _descriptor) : poseId(_poseId), descriptor(_descriptor){};
     };
 
     class RGBDFeature{
@@ -126,12 +126,18 @@ namespace putslam {
             /// Position of the feature
             Vec3 position;
 
+            /// feature location on the rgb image
+            unsigned int u;
+
+            /// feature location on the rgb image
+            unsigned int v;
+
             /// set of descriptors
             std::vector<ExtendedDescriptor> descriptors;
 
             RGBDFeature(void){};
 
-            RGBDFeature(const Vec3& _position, const std::vector<ExtendedDescriptor>& _descriptors) : position(_position), descriptors(_descriptors){
+            RGBDFeature(const Vec3 _position, unsigned int u, unsigned int v, const std::vector<ExtendedDescriptor> _descriptors) : position(_position), descriptors(_descriptors){
 
             };
     };
@@ -141,11 +147,14 @@ namespace putslam {
             /// id of the feature
             unsigned int id;
 
+            /// poses ids
+            std::vector<unsigned int> posesIds;
+
             /// Constructor
             MapFeature(){};
 
             /// Constructor
-            MapFeature(unsigned int _id, const Vec3& _position, const std::vector<ExtendedDescriptor>& _descriptors) : RGBDFeature(_position, _descriptors), id(_id) {};
+            MapFeature(unsigned int _id, unsigned int u, unsigned int v, const Vec3 _position, const std::vector<unsigned int> _posesIds, const std::vector<ExtendedDescriptor> _descriptors) : RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(_posesIds) {};
 
             /// Constructor
             MapFeature(unsigned int _id) : id(_id){};
@@ -171,7 +180,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline KeyPoint(const Vec3& _depth) : depthFeature(_depth){
+            inline KeyPoint(const Vec3 _depth) : depthFeature(_depth){
             }
     };
 
@@ -192,7 +201,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline RobotPose(const Vec3& _pos, const Quaternion& _rot) : pos(_pos), rot(_rot){
+            inline RobotPose(const Vec3 _pos, const Quaternion _rot) : pos(_pos), rot(_rot){
             }
     };
 
@@ -258,7 +267,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline Edge3D(const Vec3& _trans, const Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+            inline Edge3D(const Vec3 _trans, const Mat33 _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
                 Edge(EDGE_3D, _fromVertexId, _toVertexId),
                 trans(_trans),
                 info(_info){
@@ -285,7 +294,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline EdgeSE2(Eigen::Vector2d& _trans, float_type _theta, Mat33& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+            inline EdgeSE2(Eigen::Vector2d _trans, float_type _theta, Mat33 _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
                 Edge(EDGE_SE2, _fromVertexId, _toVertexId),
                 theta(_theta),
                 trans(_trans),
@@ -310,7 +319,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline EdgeSE3(RobotPose& _trans, Mat66& _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+            inline EdgeSE3(RobotPose _trans, Mat66 _info, uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
                 trans(_trans),
                 Edge(EDGE_SE3, _fromVertexId, _toVertexId),
                 info(_info){
@@ -363,7 +372,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline Vertex3D(uint_fast32_t _vertexId, const Vec3& _pos) :
+            inline Vertex3D(uint_fast32_t _vertexId, const Vec3 _pos) :
                 Vertex(VERTEX3D, _vertexId),
                 keypoint(_pos){
             }
@@ -385,7 +394,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline VertexSE2(uint_fast32_t _vertexId, Eigen::Vector2d& _pos, float_type& _rot) :
+            inline VertexSE2(uint_fast32_t _vertexId, Eigen::Vector2d _pos, float_type _rot) :
                 Vertex(VERTEXSE2, _vertexId),
                 pos(_pos),
                 theta(_rot){
@@ -411,7 +420,7 @@ namespace putslam {
             }
 
             /// Overloaded constructor
-            inline VertexSE3(uint_fast32_t _vertexId, const Vec3& _pos, const Quaternion& _rot) :
+            inline VertexSE3(uint_fast32_t _vertexId, const Vec3 _pos, const Quaternion _rot) :
                 Vertex(VERTEXSE3, _vertexId),
                 nodeSE3(_pos, _rot) {
             }
