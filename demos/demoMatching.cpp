@@ -168,18 +168,21 @@ int main() {
 			robotPose = robotPose * transformation;
 
 			// Get the visible features
-			std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+			//std::vector<MapFeature> mapFeatures = map->getAllFeatures();
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
 			// TODO: Choosing descriptor based on orientation
-			std::vector<MapFeature> measurementList;
+			//std::vector<MapFeature> measurementList;
 			// TODO: Uncomment when error is corrected
 			//matcher->Matcher::match(mapFeatures, measurementList);
 
 			// Add the measurements of inliers
 			// TODO: Uncomment when error is corrected
 			//map->addMeasurements(measurementList);
+
+			// Add new features
+
 		}
 
 

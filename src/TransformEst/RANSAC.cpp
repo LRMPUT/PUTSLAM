@@ -46,12 +46,13 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 
 		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN())
-		{
 			it = matches.erase(it);
-		}
 		else
 			++it;
 	}
+
+	if (RANSACParams.verbose > 0)
+		std::cout<<"RANSAC: matches.size() = " << matches.size() << std::endl;
 
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
