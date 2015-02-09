@@ -44,11 +44,14 @@ class FeaturesMap : public Map {
         const std::string& getName() const;
 
         /// Add NEW features and a NEW camera pose (initial guess) to the map
-        /// Position of features in relation to camera pose
-        void addFeatures(const std::vector<RGBDFeature>& features, const Mat34& cameraPose);
+        /// Position of features in relation to camera pose, default: the last sensor pose
+        void addFeatures(const std::vector<RGBDFeature>& features, unsigned int poseId = -1);
 
-        /// add measurements (features measured from the last camera pose)
-        void addMeasurements(const std::vector<MapFeature>& features);
+        /// add measurements (features measured from the last camera pose) default: the last sensor pose
+        void addMeasurements(const std::vector<MapFeature>& features, unsigned int poseId = -1);
+
+        /// add new pose of the camera, returns id of the new pose
+        int addNewPose(const Mat34& cameraPose, float_type timestamp);
 
         /// Get all features
         std::vector<MapFeature> getAllFeatures(void);
@@ -59,8 +62,8 @@ class FeaturesMap : public Map {
         /// get all visible features
         std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
-        /// get current pose of the sensor
-        Mat34 getCurrentPose(void);
+        /// get pose of the sensor (default: last pose)
+        Mat34 getSensorPose(unsigned int poseId = -1);
 
         /// start optimization thread
         void startOptimizationThread(unsigned int iterNo);

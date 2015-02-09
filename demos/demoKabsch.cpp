@@ -419,11 +419,12 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                     if (!graph->addEdgeSE3(edge))
                         std::cout << "error: vertex doesn't exist!\n";
 
-                    if ((setA.rows()>efficientFeaturesLC) && (j>18))
+                    if ((setA.rows()>efficientFeaturesLC) && (j>18)) {
                         j+=5;
+                    }
                 }
                 else{
-                    std::cout << "could not add edge2\n";
+                    //std::cout << "could not add edge2\n";
                     //getchar();
                 }
             }
