@@ -16,6 +16,7 @@
 #include "../include/Grabber/kinectGrabber.h"
 #include "../include/Grabber/xtionGrabber.h"
 #include "../include/Matcher/matcherOpenCV.h"
+#include "../include/Map/featuresMap.h"
 
 using namespace std;
 
@@ -65,6 +66,12 @@ int main() {
 	config.LoadFile("../../resources/configGlobal.xml");
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
+
+	// Create map
+	std::string configFileGrabber(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
+	std::string configFileMap(config.FirstChildElement( "Map" )->FirstChildElement( "parametersFile" )->GetText());
+	Map* map = createFeaturesMap(configFileMap, configFileGrabber);
+
 	std::string grabberType(
 			config.FirstChildElement("Grabber")->FirstChildElement("name")->GetText());
 
@@ -100,11 +107,6 @@ int main() {
 
 	Matcher * matcher = createMatcherOpenCV(matcherParameters);
 	cout << "Current matcher: " << matcher->getName() << std::endl;
-//	Graph * graph = createPoseGraphG2O();
-//	cout << "Current graph: " << graph->getName() << std::endl;
-//	Graph * global_graph = createGlobalGraph();
-//	cout << "Current global graph: " << global_graph->getName() << std::endl;
-
 
 	// Reading robot starting pose
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
@@ -125,13 +127,59 @@ int main() {
 
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
+
+			///
+			/// Add the found feature to the map
+			///
+
+			// Getting observed features
+			Matcher::featureSet features = matcher->getFeatures();
+
+			// cameraPose as Eigen::Transform
+			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+			Quaternion cameraOrient = Quaternion(cameraPose.rotation());
+
+			// Convert to mapFeatures format
+			std::vector<RGBDFeature> mapFeatures;
+			for (int j = 0; j < features.feature3D.size(); j++) {
+				// Create an extended descriptor
+				ExtendedDescriptor desc(cameraOrient, features.descriptors.row(j));
+
+				// In further processing we expect more descriptors
+				std::vector<ExtendedDescriptor> extDescriptors{desc};
+
+				// Convert translation
+				Eigen::Translation<double, 3> featurePosition(features.feature3D[j].cast<double>());
+
+				// Add to set addded later to map
+				RGBDFeature f(featurePosition, extDescriptors);
+				mapFeatures.push_back(f);
+
+			}
+
+			// Finally, adding to map
+			// TODO: Uncomment when error is corrected
+			// map->addFeatures(mapFeatures, cameraPose);
 			ifStart = false;
 		} else {
 			Eigen::Matrix4f transformation;
 			matcher->Matcher::match(currentSensorFrame, transformation);
 
-			// TODO: test it !
 			robotPose = robotPose * transformation;
+
+			// Get the visible features
+			std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+
+			// Perform RANSAC matching and return measurements for found inliers in map compatible format
+			// Remember! The match returns the list of inlier features from current pose!
+			// TODO: Choosing descriptor based on orientation
+			std::vector<MapFeature> measurementList;
+			// TODO: Uncomment when error is corrected
+			//matcher->Matcher::match(mapFeatures, measurementList);
+
+			// Add the measurements of inliers
+			// TODO: Uncomment when error is corrected
+			//map->addMeasurements(measurementList);
 		}
 
 
@@ -140,17 +188,18 @@ int main() {
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
-
-
-//		cv::imshow("1",currentSensorFrame.rgbImage);
-//		cv::imshow("2",currentSensorFrame.depthImage);
-//		cvWaitKey(500);
 	}
+
+	// Optimize after trajectory
+	// TODO: Uncomment when error is corrected
+	//map->startOptimizationThread(1);
+
+	// Wait for optimization finish
+	// TODO: Uncomment when error is corrected
+	//map->finishOptimization();
+
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
-
-//	delete graph;
-//	delete global_graph;
 
 	return 0;
 }

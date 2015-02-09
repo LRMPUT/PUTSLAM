@@ -19,6 +19,12 @@ namespace putslam {
 /// Grabber interface
 class Matcher {
 public:
+	struct featureSet {
+		std::vector<cv::KeyPoint> feature2D;
+		cv::Mat descriptors;
+		std::vector<Eigen::Vector3f> feature3D;
+	};
+
 	struct parameters {
 		std::string detector;
 		std::string descriptor;
@@ -27,9 +33,22 @@ public:
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
 			name(_name), frame_id(0) {
+
+		// TODO: LOAD IT FROM FILE !!!
+		float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
+		float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
+						0, 1 } };
+		cameraMatrixMat = cv::Mat(3, 3, CV_32FC1, &cameraMatrix);
+		distortionCoeffsMat = cv::Mat(1, 5, CV_32FC1, &distortionCoeffs);
 	}
 	Matcher(const std::string _name, const std::string parametersFile) :
 			name(_name), frame_id(0), matcherParameters(parametersFile) {
+		// TODO: LOAD IT FROM FILE !!!
+		float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
+		float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, {
+				0, 0, 1 } };
+		cameraMatrixMat = cv::Mat(3, 3, CV_32FC1, &cameraMatrix);
+		distortionCoeffsMat = cv::Mat(1, 5, CV_32FC1, &distortionCoeffs);
 	}
 
 	~Matcher() {
@@ -41,9 +60,16 @@ public:
 	/// Load features at the start of the sequence
 	void loadInitFeatures(const SensorFrame& sensorData);
 
+	/// Get current set of features
+	Matcher::featureSet getFeatures();
+
 	/// Run single match
 	bool match(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation);
+
+	/// Run the match with map
+	bool match(std::vector<MapFeature> mapFeatures,
+			std::vector<MapFeature> &foundInlierMapFeatures);
 
 	/// Class used to hold all parameters
 	class Parameters {
@@ -122,6 +148,12 @@ protected:
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors) = 0;
 
+private:
+	cv::Mat cameraMatrixMat;
+	cv::Mat distortionCoeffsMat;
+
+	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
+	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(std::vector<MapFeature> mapFeatures);
 };
 }
 ;

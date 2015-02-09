@@ -118,7 +118,7 @@ namespace putslam {
             ExtendedDescriptor(){};
 
             /// Constructor
-            ExtendedDescriptor(Quaternion& cameraOrient, cv::Mat& _descriptor) : cameraOrientation(cameraOrient), descriptor(_descriptor){};
+            ExtendedDescriptor(Quaternion cameraOrient, cv::Mat _descriptor) : cameraOrientation(cameraOrient), descriptor(_descriptor){};
     };
 
     class RGBDFeature{
