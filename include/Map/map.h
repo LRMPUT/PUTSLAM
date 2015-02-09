@@ -57,7 +57,7 @@ namespace putslam {
             virtual void startOptimizationThread(unsigned int iterNo) = 0;
 
             /// Wait for optimization thread to finish
-            virtual void finishOptimization() = 0;
+            virtual void finishOptimization(std::string trajectoryFilename, std::string graphFilename) = 0;
 
         protected:
             /// Map type

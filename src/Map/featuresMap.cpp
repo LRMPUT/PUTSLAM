@@ -107,9 +107,10 @@ void FeaturesMap::startOptimizationThread(unsigned int iterNo){
 }
 
 /// Wait for optimization thread to finish
-void FeaturesMap::finishOptimization(){
+void FeaturesMap::finishOptimization(std::string trajectoryFilename, std::string graphFilename){
     continueOpt = false;
-    poseGraph->save2file("map.g2o");
+    poseGraph->export2RGBDSLAM(trajectoryFilename);
+    poseGraph->save2file(graphFilename);
     optimizationThr->join();
 }
 

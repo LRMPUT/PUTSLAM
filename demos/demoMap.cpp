@@ -38,7 +38,7 @@ int main(int argc, char * argv[])
             map->addFeatures(features, id);
         }
         usleep(100000);
-        map->finishOptimization();//Don't forget to finish optimization thread!!
+        map->finishOptimization("../../resources/trajectory.res", "../../resources/graph.g2o");//Don't forget to finish optimization thread!!
         Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
         std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
         std::cout << visibleFeatures.size() << "\n";

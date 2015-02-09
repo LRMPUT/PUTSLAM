@@ -633,7 +633,12 @@ void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     std::ofstream file(filename);
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
-            file << std::setprecision (std::numeric_limits<double>::digits10 + 1) << ((putslam::VertexSE3*)it->get())->timestamp << " " << std::setprecision (8) << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.z() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
+            std::ostringstream ossTimestamp;
+            ossTimestamp << std::setfill('0') << std::setprecision(17) << ((putslam::VertexSE3*)it->get())->timestamp;
+            file << ossTimestamp.str() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << " "
+                    << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << " "
+                    << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.z()
+                    << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
         }
     }
     file.close();
