@@ -33,10 +33,13 @@ public:
 	 * prevFeatures 	-- 	3D locations of features from the first set
 	 * features 		--	3D locations of features currently observed (2nd set)
 	 * matches			--	vector of indices of corresponding features
+	 * inlierMatches	--  vector of matches considered as inliers
 	 */
-	Eigen::Matrix4f estimateTransformation(std::vector<Eigen::Vector3f> prevFeatures,
-				std::vector<Eigen::Vector3f> features,
-				std::vector<cv::DMatch> matches);
+	Eigen::Matrix4f estimateTransformation(
+			std::vector<Eigen::Vector3f> prevFeatures,
+			std::vector<Eigen::Vector3f> features,
+			std::vector<cv::DMatch> matches,
+			std::vector<cv::DMatch> & bestInlierMatches);
 
 private:
 	parameters RANSACParams;
@@ -75,25 +78,31 @@ private:
 	 * features					--	second set of 3D features
 	 * matches					-- 	vector of matches to be determined as inliers or outliers
 	 * transformationModel		--	transformation used in evaluation
+	 * modelConsistentMatches	--  returns the matches that are considered inliers using currentle evaluated model
 	 */
 	float computeInlierRatio(const std::vector<Eigen::Vector3f> prevFeatures,
 			const std::vector<Eigen::Vector3f> features,
 			const std::vector<cv::DMatch> matches,
-			const Eigen::Matrix4f transformationModel);
+			const Eigen::Matrix4f transformationModel,
+			std::vector<cv::DMatch> &modelConsistentMatches);
 
 	/**
 	 * Method used to compare two transformation models and save better one
 	 *
 	 * inlierRatio 				--	inlier ratio of the model
 	 * transformationModel 		-- 	transformation as 4x4 matrix
+	 * modelConsistentMatches	--	feature matches that can be considered as inliers using provided transformation model
 	 * bestInlierRatio 			--	inlier ratio of the best model, place to save better inlierRatio
 	 * bestTransformationModel 	-- 	transformation as 4x4 matrix of the best model,
 	 * 								place to save better transformation
+	 * bestInlierMatches		-- 	feature matches that can be considered as inliers using bestTransformation model
 	 */
 
 	inline void saveBetterModel(const float inlierRatio,
-			const Eigen::Matrix4f transformationModel, float &bestInlierRatio,
-			Eigen::Matrix4f & bestTransformationModel);
+			const Eigen::Matrix4f transformationModel,
+			std::vector<cv::DMatch> modelConsistentMatches,
+			float &bestInlierRatio, Eigen::Matrix4f & bestTransformationModel,
+			std::vector<cv::DMatch> &bestInlierMatches);
 
 	/**
 	 * Method estimating needed number of iterations for RANSAC given:
@@ -102,7 +111,8 @@ private:
 	 * successProbability 	-- 	in most cases 0.95 or 0.98
 	 * numberOfPairs 		--	number of pairs used to create a transformation model
 	 */
-	inline int computeRANSACIteration(double inlierRatio, double successProbability = 0.98, int numberOfPairs = 3);
+	inline int computeRANSACIteration(double inlierRatio,
+			double successProbability = 0.98, int numberOfPairs = 3);
 
 };
 
