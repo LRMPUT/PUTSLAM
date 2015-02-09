@@ -111,7 +111,7 @@ void FeaturesMap::optimize(unsigned int iterNo){
     continueOpt = true;
     while (continueOpt){
         std::cout << "start optimization\n";
-        poseGraph->optimize(iterNo,1);
+        poseGraph->optimize(iterNo,0);
         std::cout << "end optimization\n";
     }
 }
