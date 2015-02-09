@@ -350,7 +350,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
                 int efficientFeatures = 15;
                 int efficientFeaturesLC = 60;
-                if (((setA.rows()>efficientFeatures) && (j<18))||((setA.rows()>efficientFeaturesLC) && (j>50))){
+                if (((setA.rows()>efficientFeatures) && (j<18))||((setA.rows()>efficientFeaturesLC) && (j>18))){
                     Mat34 trans;
                     if (expType==2){
                         trans = transEst->computeTransformation(setB, setA);
@@ -418,6 +418,9 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                     EdgeSE3 edge(measurement,infoMat,i-j,i);
                     if (!graph->addEdgeSE3(edge))
                         std::cout << "error: vertex doesn't exist!\n";
+
+                    if ((setA.rows()>efficientFeaturesLC) && (j>18))
+                        j+=5;
                 }
                 else{
                     std::cout << "could not add edge2\n";
@@ -1090,6 +1093,7 @@ int main(int argc, char * argv[])
         //std::cout << "fdf\n"; getchar();
 
         std::vector<float_type> MSEKabsch;
+        std::vector<float_type> MSEKabsch_g2o;
         std::vector<float_type> MSEBAnouncert;
         std::vector<float_type> MSEBAuncert;
         std::vector<float_type> MSEPerfectTraj;
@@ -1376,6 +1380,10 @@ int main(int argc, char * argv[])
             filename= "../../resources/KabschUncertainty/trajectory_g2o" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryOpt, "y");
 
+            createMap(graph, trajectoryOpt, cloudSeq, setIds);
+            MSEKabsch_g2o.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
+            std::cout << "g2o+LC accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
+
 /*            graph->clear();
             //move camera along reference trajectory and estimate trajectory
             runExperiment(2, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
@@ -1567,6 +1575,7 @@ int main(int argc, char * argv[])
           {
             myfile << "MSE perfect traj for the map: " << computeMean(MSEPerfectTraj) << ", std: " << computeStd(MSEPerfectTraj) << "\n";
             myfile << "Kabsch MSE for the map: " << computeMean(MSEKabsch) << ", std: " << computeStd(MSEKabsch) << "\n";
+            myfile << "Kabsch + g2o + LC MSE for the map: " << computeMean(MSEKabsch_g2o) << ", std: " << computeStd(MSEKabsch_g2o) << "\n";
             myfile << "BA nouncert MSE for the map: " << computeMean(MSEBAnouncert) << ", std: " << computeStd(MSEBAnouncert) << "\n";
             myfile << "BA uncert MSE for the map: " << computeMean(MSEBAuncert) << ", std: " << computeStd(MSEBAuncert) << "\n";
             myfile.close();
