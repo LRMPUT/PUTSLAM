@@ -69,7 +69,7 @@ class FeaturesMap : public Map {
         void startOptimizationThread(unsigned int iterNo);
 
         /// Wait for optimization thread to finish
-        void finishOptimization();
+        void finishOptimization(std::string trajectoryFilename, std::string graphFilename);
 
     private:
         ///Set of features (map)
