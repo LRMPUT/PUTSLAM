@@ -1106,7 +1106,7 @@ int main(int argc, char * argv[])
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            simulator.createEnvironment(1500, 15, 15, 15);
+            simulator.createEnvironment(1600, 15, 15, 15);
             std::string filenameCloud= "../../resources/KabschUncertainty/refCloud" + std::to_string(i) + ".m";
             savePointCloud(filenameCloud, simulator.getEnvironment());
 
