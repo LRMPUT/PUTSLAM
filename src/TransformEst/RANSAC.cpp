@@ -54,6 +54,12 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	if (RANSACParams.verbose > 0)
 		std::cout<<"RANSAC: matches.size() = " << matches.size() << std::endl;
 
+	// TODO: DO IT NICER!
+	if (matches.size() < 20)
+	{
+		return Eigen::Matrix4f::Identity();
+	}
+
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
 		// Randomly select matches
 		if (RANSACParams.verbose > 1)

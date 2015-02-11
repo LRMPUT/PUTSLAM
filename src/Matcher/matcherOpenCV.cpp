@@ -22,7 +22,8 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 	return matcher.get();
 }
 
-putslam::Matcher* putslam::createMatcherOpenCV(const std::string _parametersFile) {
+putslam::Matcher* putslam::createMatcherOpenCV(
+		const std::string _parametersFile) {
 	matcher.reset(new MatcherOpenCV(_parametersFile));
 	return matcher.get();
 }
@@ -33,35 +34,43 @@ MatcherOpenCV::MatcherOpenCV(void) :
 	initVariables();
 }
 
-MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile) : Matcher("OpenCVMatcher", _parametersFile)
-{
+MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile) :
+		Matcher("OpenCVMatcher", _parametersFile) {
 	initVariables();
-};
-MatcherOpenCV::MatcherOpenCV(const std::string _name, const std::string _parametersFile) : Matcher(_name, _parametersFile) {
+}
+;
+MatcherOpenCV::MatcherOpenCV(const std::string _name,
+		const std::string _parametersFile) :
+		Matcher(_name, _parametersFile) {
 	initVariables();
-};
+}
+;
 
 void MatcherOpenCV::initVariables() {
 	featureDetector = NULL;
 	descriptorExtractor = NULL;
 
-
 	// TODO: LOAD IT FROM FILE !!!
 	cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
 	distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
 
-	cameraMatrixMat.at<float>(0,0) = 517.3f;
-	cameraMatrixMat.at<float>(0,2) = 318.6f;
-	cameraMatrixMat.at<float>(1,1) = 516.5f;
-	cameraMatrixMat.at<float>(1,2) = 255.3f;
-	cameraMatrixMat.at<float>(2,2) = 1.0f;
+//	cameraMatrixMat.at<float>(0,0) = 517.3f;
+//	cameraMatrixMat.at<float>(0,2) = 318.6f;
+//	cameraMatrixMat.at<float>(1,1) = 516.5f;
+//	cameraMatrixMat.at<float>(1,2) = 255.3f;
+//	cameraMatrixMat.at<float>(2,2) = 1.0f;
+//
+//	distortionCoeffsMat.at<float>(0) = -0.0410;
+//	distortionCoeffsMat.at<float>(1) = 0.3286;
+//	distortionCoeffsMat.at<float>(2) = 0.0087;
+//	distortionCoeffsMat.at<float>(3) = 0.0051;
+//	distortionCoeffsMat.at<float>(4) = -0.5643;
 
-	distortionCoeffsMat.at<float>(0) = -0.0410;
-	distortionCoeffsMat.at<float>(1) = 0.3286;
-	distortionCoeffsMat.at<float>(2) = 0.0087;
-	distortionCoeffsMat.at<float>(3) = 0.0051;
-	distortionCoeffsMat.at<float>(4) = -0.5643;
-
+	cameraMatrixMat.at<float>(0, 0) = 480.6f;
+	cameraMatrixMat.at<float>(0, 2) = 319.5f;
+	cameraMatrixMat.at<float>(1, 1) = 480.6f;
+	cameraMatrixMat.at<float>(1, 2) = 239.5f;
+	cameraMatrixMat.at<float>(2, 2) = 1.0f;
 
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")
@@ -96,8 +105,7 @@ void MatcherOpenCV::initVariables() {
 		matcher.reset(new cv::BFMatcher(cv::NORM_HAMMING, true));
 }
 
-MatcherOpenCV::~MatcherOpenCV(void)
-{
+MatcherOpenCV::~MatcherOpenCV(void) {
 }
 
 const std::string& MatcherOpenCV::getName() const {
@@ -107,15 +115,11 @@ const std::string& MatcherOpenCV::getName() const {
 /// Detect features
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
-
-
-
 	cv::Mat grayImage;
-    cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
+	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
 	featureDetector.get()->detect(grayImage, raw_keypoints);
-
 
 	return raw_keypoints;
 }
@@ -127,14 +131,11 @@ cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 	cv::Mat descriptors;
 
 	// almost in OpenCV
-	if (matcherParameters.OpenCVParams.descriptor == "LDB")
-	{
+	if (matcherParameters.OpenCVParams.descriptor == "LDB") {
 		//LDB ldb;
 		//ldb.compute(x, features, descriptors, false);
-	}
-	else
+	} else
 		descriptorExtractor.get()->compute(rgbImage, features, descriptors);
-
 
 	return descriptors;
 }
@@ -142,8 +143,6 @@ cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
 /// Perform matching
 std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 		cv::Mat descriptors) {
-
-
 
 	// We are doing the matching
 	std::vector<cv::DMatch> matches;
