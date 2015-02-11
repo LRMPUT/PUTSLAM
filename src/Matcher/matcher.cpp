@@ -144,7 +144,7 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
 
 		MapFeature mapFeature;
-		mapFeature.id = mapId;
+		mapFeature.id = mapFeatures[mapId].id;
 		mapFeature.position = Vec3(prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
 		// TODO: take into account the future orientation
