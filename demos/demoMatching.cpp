@@ -161,7 +161,6 @@ int main() {
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
-//			Quaternion cameraOrient = Quaternion(cameraPose.rotation());
 
 			// Add new position to the map
 			int cameraPoseId = map->addNewPose(cameraPose, currentSensorFrame.timestamp);
@@ -212,7 +211,6 @@ int main() {
 			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList);
 
 			std::cout<<"Measurement list size : " << measurementList.size() << std::endl;
-			std::cout<<"Indices of measurement list : " << measurementList[0].posesIds[0] << " " << measurementList[0].id << std::endl;
 			// Add the measurements of inliers
 			map->addMeasurements(measurementList);
 

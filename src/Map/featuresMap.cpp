@@ -70,7 +70,7 @@ int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 	camTrajectory.push_back(cameraPose);
 	//add camera pose to the graph
 	poseGraph->addVertexPose(
-			VertexSE3(camTrajectory.size(),
+			VertexSE3(camTrajectory.size() - 1,
 					Vec3(cameraPose(0, 3), cameraPose(1, 3), cameraPose(2, 3)),
 					Quaternion(cameraPose.rotation()), timestamp));
 	return camTrajectory.size() - 1;
@@ -79,13 +79,11 @@ int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 		int poseId) {
-	std::cout<<"Ids "  << poseId <<  " " << (camTrajectory.size() - 1) << std::endl;
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajectory.size() - 1);
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 		//add measurement
 		Mat33 info;
-		std::cout<<"Compare ids : " << _poseId << " " << it->id << std::endl;
 		info = sensorModel.informationMatrix((*it).position.x(),
 				(*it).position.y(), (*it).position.z());
 		Edge3D e((*it).position, info, _poseId, (*it).id);
