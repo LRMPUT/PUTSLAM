@@ -21,6 +21,7 @@ class Matcher {
 public:
 	struct featureSet {
 		std::vector<cv::KeyPoint> feature2D;
+		std::vector<cv::Point2f> undistortedFeature2D;
 		cv::Mat descriptors;
 		std::vector<Eigen::Vector3f> feature3D;
 	};
@@ -55,7 +56,7 @@ public:
 			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Run the match with map
-	bool match(std::vector<MapFeature> mapFeatures,
+	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures);
 
 	/// Class used to hold all parameters
@@ -142,7 +143,8 @@ protected:
 
 private:
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
-	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(std::vector<MapFeature> mapFeatures);
+	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(
+			std::vector<MapFeature> mapFeatures);
 };
 }
 ;

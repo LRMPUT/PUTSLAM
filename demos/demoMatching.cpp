@@ -18,6 +18,7 @@
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
 
+
 using namespace std;
 
 std::unique_ptr<std::thread> thread_poseGraph;
@@ -58,6 +59,24 @@ void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
 			<< " " << Q.coeffs().w() << endl;
 }
 
+void saveFeaturesToFile(Matcher::featureSet features, double timestamp) {
+
+
+	int whatever = system("mkdir featuresDir");
+
+	std::ostringstream fileName;
+	fileName << std::setfill('0') << std::setprecision(17) << timestamp;
+	std::ofstream file("featuresDir/" + fileName.str() + ".features");
+
+	for (int i = 0; i < features.feature3D.size(); i++) {
+		file << features.undistortedFeature2D[i].x << " "
+				<< features.undistortedFeature2D[i].y << " "
+				<< features.feature3D[i](0) << " " << features.feature3D[i](1)
+				<< " " << features.feature3D[i](2) << std::endl;
+	}
+	file.close();
+}
+
 int main() {
 
 	using namespace putslam;
@@ -68,8 +87,11 @@ int main() {
 		std::cout << "unable to load config file.\n";
 
 	// Create map
-	std::string configFileGrabber(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
-	std::string configFileMap(config.FirstChildElement( "Map" )->FirstChildElement( "parametersFile" )->GetText());
+	std::string configFileGrabber(
+			config.FirstChildElement("Grabber")->FirstChildElement(
+					"calibrationFile")->GetText());
+	std::string configFileMap(
+			config.FirstChildElement("Map")->FirstChildElement("parametersFile")->GetText());
 	Map* map = createFeaturesMap(configFileMap, configFileGrabber);
 
 	std::string grabberType(
@@ -112,12 +134,14 @@ int main() {
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
 
 	// File to save trajectory
-	ofstream trajectoryFreiburgStream("result/estimatedTrajectory");
+	ofstream trajectoryFreiburgStream("result/estimatedTrajectory.res");
 
 	auto start = chrono::system_clock::now();
 	bool ifStart = true;
+
+	int ileIteracji = 5;
 	// Main loop
-	while (true) {
+	while (ileIteracji /*true*/) {
 
 		bool middleOfSequence = grabber->grab(); // grab frame
 		if (!middleOfSequence)
@@ -137,29 +161,34 @@ int main() {
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
-			Quaternion cameraOrient = Quaternion(cameraPose.rotation());
+//			Quaternion cameraOrient = Quaternion(cameraPose.rotation());
+
+			// Add new position to the map
+			int cameraPoseId = map->addNewPose(cameraPose, currentSensorFrame.timestamp);
+			std::cout<<"VERTEX ID : " << cameraPoseId << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeatures;
 			for (int j = 0; j < features.feature3D.size(); j++) {
 				// Create an extended descriptor
-//				ExtendedDescriptor desc(cameraOrient, features.descriptors.row(j));
+				ExtendedDescriptor desc(cameraPoseId, features.descriptors.row(j));
 
 				// In further processing we expect more descriptors
-//				std::vector<ExtendedDescriptor> extDescriptors{desc};
+				std::vector<ExtendedDescriptor> extDescriptors{desc};
 
 				// Convert translation
-				Eigen::Translation<double, 3> featurePosition(features.feature3D[j].cast<double>());
+				Eigen::Translation<double, 3> featurePosition(
+						features.feature3D[j].cast<double>());
 
-				// Add to set addded later to map
-//				RGBDFeature f(featurePosition, extDescriptors);
-//				mapFeatures.push_back(f);
-
+				// Add to set added later to map
+				RGBDFeature f(featurePosition,
+						features.undistortedFeature2D[j].x,
+						features.undistortedFeature2D[j].y, extDescriptors);
+				mapFeatures.push_back(f);
 			}
 
 			// Finally, adding to map
-			// TODO: Uncomment when error is corrected
-			// map->addFeatures(mapFeatures, cameraPose);
+			map->addFeatures(mapFeatures, cameraPoseId);
 			ifStart = false;
 		} else {
 			Eigen::Matrix4f transformation;
@@ -168,38 +197,49 @@ int main() {
 			robotPose = robotPose * transformation;
 
 			// Get the visible features
-			//std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+			std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+
+			// cameraPose as Eigen::Transform
+			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+
+			// Add new position to the map
+			int cameraPoseId = map->addNewPose(cameraPose, currentSensorFrame.timestamp);
+			std::cout<<"VERTEX ID : " << cameraPoseId << std::endl;
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
-			// TODO: Choosing descriptor based on orientation
-			//std::vector<MapFeature> measurementList;
-			// TODO: Uncomment when error is corrected
-			//matcher->Matcher::match(mapFeatures, measurementList);
+			std::vector<MapFeature> measurementList;
+			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList);
 
+			std::cout<<"Measurement list size : " << measurementList.size() << std::endl;
+			std::cout<<"Indices of measurement list : " << measurementList[0].posesIds[0] << " " << measurementList[0].id << std::endl;
 			// Add the measurements of inliers
-			// TODO: Uncomment when error is corrected
-			//map->addMeasurements(measurementList);
+			map->addMeasurements(measurementList);
 
 			// Add new features
 
 		}
 
-
+		// Saving features for Dominik
+		Matcher::featureSet features = matcher->getFeatures();
+		saveFeaturesToFile(features, currentSensorFrame.timestamp);
 
 		// Save trajectory
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
+		// Testing -> how many iterations
+		ileIteracji--;
 	}
 
 	// Optimize after trajectory
-	// TODO: Uncomment when error is corrected
-	//map->startOptimizationThread(1);
+	map->startOptimizationThread(1);
+
+	// Wait something
+	sleep(1);
 
 	// Wait for optimization finish
-	// TODO: Uncomment when error is corrected
-	//map->finishOptimization();
+	map->finishOptimization("graphEstimatedTrajectory.res", "graphFile.g2o");
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();

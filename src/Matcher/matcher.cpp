@@ -40,6 +40,7 @@ Matcher::featureSet Matcher::getFeatures()
 	featureSet returnSet;
 	returnSet.descriptors = prevDescriptors;
 	returnSet.feature2D = prevFeatures;
+	returnSet.undistortedFeature2D = prevFeaturesUndistorted;
 	returnSet.feature3D = prevFeatures3D;
 	return returnSet;
 }
@@ -109,7 +110,7 @@ std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(std::vector<Ma
 	return mapFeaturePositions3D;
 	}
 
-bool Matcher::match(std::vector<MapFeature> mapFeatures,
+bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures)
 {
 	// The current pose descriptors are renamed to make it less confusing
@@ -122,6 +123,14 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures,
 	// Perform matching
 	std::vector<cv::DMatch> matches = performMatching(mapDescriptors,
 			prevDescriptors);
+
+	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
+			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
+			<< prevDescriptors.cols << std::endl;
+
+	std::cout << "Matching to map: feature3D positions - " << mapFeaturePositions3D.size() << " "
+			<< prevFeatures3D.size() << std::endl;
+
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
@@ -137,9 +146,13 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures,
 		MapFeature mapFeature;
 		mapFeature.id = mapId;
 		mapFeature.position = Vec3(prevFeatures3D[currentPoseId].cast<double>());
+		mapFeature.posesIds.push_back(sensorPoseId);
 		// TODO: take into account the future orientation
-        //ExtendedDescriptor featureExtendedDescriptor(Quaternion::Identity(), prevDescriptors.row(currentPoseId) );
-//		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+        ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, prevDescriptors.row(currentPoseId) );
+		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+		// Add the measurement
+		foundInlierMapFeatures.push_back(mapFeature);
 	}
 }
 
