@@ -64,7 +64,8 @@ namespace putslam {
             virtual bool addEdgeSE2(const EdgeSE2& e) = 0;
 
             /// Optimize graph
-            virtual bool optimize(uint_fast32_t maxIterations, int verbose = 0) = 0;
+            // When maxIteration < 0, then the iteration runs as long as chi ratio chi2/prevChi2 < minimalChi2Ratio
+            virtual bool optimize(int_fast32_t maxIterations, int verbose = 0, double minimalChi2Ratio = 0.99) = 0;
 
             /// Save graph to file
             virtual void save2file(const std::string filename) const = 0;

@@ -685,16 +685,42 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
 }
 
 /// Optimize graph
-bool PoseGraphG2O::optimize(uint_fast32_t maxIterations, int verbose) {
+bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double minimalChi2Ratio) {
     (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     if (verbose>0)
         std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
+
+    // Lock the graph
     mtxGraph.lock();
+
     optimizer.initializeOptimization();
     optimizer.computeInitialGuess();
-    optimizer.optimize(maxIterations);
-    optimizer.setVerbose(true);
+    optimizer.setVerbose(verbose);
+
+    if (maxIterations >= 0)
+		optimizer.optimize(maxIterations);
+	else {
+		double prevChi2 = -1.0, chi2 = -1.0;
+		int iterationCounter = 0;
+		verbose = 1;
+		while (std::isfinite(chi2) && (prevChi2 < 0 || (prevChi2-chi2)/chi2 > minimalChi2Ratio) )
+    	{
+			prevChi2 = chi2;
+    		optimizer.optimize(1);
+    		chi2 = optimizer.chi2();
+    		iterationCounter ++;
+    		if ( verbose>0 ){
+    			std::cout << "Comparing chi2s : " << prevChi2 << " " << chi2 << std::endl;
+    			std::cout << "chi2 ratio = "
+						<< (prevChi2 - chi2)/chi2 << std::endl;
+    		}
+    	}
+		if ( verbose > 0)
+			std::cout<<"Final optimization iteration counter = " << iterationCounter << std::endl;
+    }
+
+    // Unlock the graph
     mtxGraph.unlock();
 
     if (!std::isfinite(optimizer.chi2()))

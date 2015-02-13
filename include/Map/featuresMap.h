@@ -69,7 +69,7 @@ public:
 	Mat34 getSensorPose(int poseId = -1);
 
 	/// start optimization thread
-	void startOptimizationThread(unsigned int iterNo);
+	void startOptimizationThread(unsigned int iterNo, int verbose = 0);
 
 	/// Wait for optimization thread to finish
 	void finishOptimization(std::string trajectoryFilename,
@@ -97,8 +97,11 @@ private:
 	/// Number of features
 	unsigned int featureIdNo;
 
+	/// boolean value informing if the features had been added to the map
+	bool emptyMap;
+
 	/// optimization thread
-	void optimize(unsigned int iterNo);
+	void optimize(unsigned int iterNo, int verbose);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

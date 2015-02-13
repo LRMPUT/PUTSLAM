@@ -18,7 +18,6 @@
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
 
-
 using namespace std;
 
 std::unique_ptr<std::thread> thread_poseGraph;
@@ -60,7 +59,6 @@ void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
 }
 
 void saveFeaturesToFile(Matcher::featureSet features, double timestamp) {
-
 
 	int whatever = system("mkdir featuresDir");
 
@@ -139,7 +137,10 @@ int main() {
 	auto start = chrono::system_clock::now();
 	bool ifStart = true;
 
-	int ileIteracji = 5;
+	// Optimize during trajectory acquisition
+	map->startOptimizationThread(1);
+
+	int ileIteracji = 13;
 	// Main loop
 	while (ileIteracji /*true*/) {
 
@@ -163,17 +164,18 @@ int main() {
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
-			int cameraPoseId = map->addNewPose(cameraPose, currentSensorFrame.timestamp);
-			std::cout<<"VERTEX ID : " << cameraPoseId << std::endl;
+			int cameraPoseId = map->addNewPose(cameraPose,
+					currentSensorFrame.timestamp);
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeatures;
 			for (int j = 0; j < features.feature3D.size(); j++) {
 				// Create an extended descriptor
-				ExtendedDescriptor desc(cameraPoseId, features.descriptors.row(j));
+				ExtendedDescriptor desc(cameraPoseId,
+						features.descriptors.row(j));
 
 				// In further processing we expect more descriptors
-				std::vector<ExtendedDescriptor> extDescriptors{desc};
+				std::vector<ExtendedDescriptor> extDescriptors { desc };
 
 				// Convert translation
 				Eigen::Translation<double, 3> featurePosition(
@@ -202,25 +204,54 @@ int main() {
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
-			int cameraPoseId = map->addNewPose(cameraPose, currentSensorFrame.timestamp);
-			std::cout<<"VERTEX ID : " << cameraPoseId << std::endl;
+			int cameraPoseId = map->addNewPose(cameraPose,
+					currentSensorFrame.timestamp);
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
 			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList);
 
-			std::cout<<"Measurement list size : " << measurementList.size() << std::endl;
+			std::cout << "Measurement list size : " << measurementList.size()
+					<< std::endl;
 			// Add the measurements of inliers
 			map->addMeasurements(measurementList);
 
 			// Add new features
+			if (measurementList.size() < 70) {
+				// Getting observed features
+				Matcher::featureSet features = matcher->getFeatures();
+
+				// Convert to mapFeatures format
+				std::vector<RGBDFeature> mapFeatures;
+				for (int j = 0; j < features.feature3D.size(); j++) {
+					// Create an extended descriptor
+					ExtendedDescriptor desc(cameraPoseId,
+							features.descriptors.row(j));
+
+					// In further processing we expect more descriptors
+					std::vector<ExtendedDescriptor> extDescriptors { desc };
+
+					// Convert translation
+					Eigen::Translation<double, 3> featurePosition(
+							features.feature3D[j].cast<double>());
+
+					// Add to set added later to map
+					RGBDFeature f(featurePosition,
+							features.undistortedFeature2D[j].x,
+							features.undistortedFeature2D[j].y, extDescriptors);
+					mapFeatures.push_back(f);
+				}
+
+				// Finally, adding to map
+				map->addFeatures(mapFeatures, cameraPoseId);
+			}
 
 		}
 
 		// Saving features for Dominik
-		Matcher::featureSet features = matcher->getFeatures();
-		saveFeaturesToFile(features, currentSensorFrame.timestamp);
+//		Matcher::featureSet features = matcher->getFeatures();
+//		saveFeaturesToFile(features, currentSensorFrame.timestamp);
 
 		// Save trajectory
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
@@ -229,12 +260,6 @@ int main() {
 		// Testing -> how many iterations
 		ileIteracji--;
 	}
-
-	// Optimize after trajectory
-	map->startOptimizationThread(1);
-
-	// Wait something
-	sleep(1);
 
 	// Wait for optimization finish
 	map->finishOptimization("graphEstimatedTrajectory.res", "graphFile.g2o");
