@@ -80,6 +80,7 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
+	undistortedFeatures2D.swap(prevFeaturesUndistorted);
 	features3D.swap(prevFeatures3D);
 	cv::swap(descriptors, prevDescriptors);
 
@@ -124,12 +125,12 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	std::vector<cv::DMatch> matches = performMatching(mapDescriptors,
 			prevDescriptors);
 
-	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
-			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
-			<< prevDescriptors.cols << std::endl;
-
-	std::cout << "Matching to map: feature3D positions - " << mapFeaturePositions3D.size() << " "
-			<< prevFeatures3D.size() << std::endl;
+//	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
+//			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
+//			<< prevDescriptors.cols << std::endl;
+//
+//	std::cout << "Matching to map: feature3D positions - " << mapFeaturePositions3D.size() << " "
+//			<< prevFeatures3D.size() << std::endl;
 
 
 	// RANSAC
