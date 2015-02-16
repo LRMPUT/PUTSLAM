@@ -19,6 +19,8 @@ public:
     void createRoom(size_t pointsNo, float_type width, float_type length, float_type height);
     /// create environment -- random patches
     void createEnvironment(size_t pointsNo, float_type width, float_type length, float_type height);
+    /// load environment from file
+    void loadEnvironment(std::string filename);
     /// run experiment and return a sequence of point clouds
     void moveCamera(const std::vector<Mat34>& robotTrajectory, const Mat34 sensorPose, DepthSensorModel& sensorModel, std::vector<PointCloud>& cloudSeq, std::vector< std::vector<int> >& setIds, std::vector< std::vector<Mat33> >& uncertaintySet);
     /// get environment

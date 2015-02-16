@@ -67,6 +67,23 @@ void Simulator::createEnvironment(size_t pointsNo, float_type width, float_type 
     }
 }
 
+/// load environment from file
+void Simulator::loadEnvironment(std::string filename){
+    std::string line;    std::ifstream myfile(filename);
+    Point3D point;
+    if (myfile.is_open()) {
+        Vec3 pos;
+        while ( getline (myfile,line) ) {
+            std::istringstream is(line);
+            is >> pos.x() >> pos.y() >> pos.z();
+            point.x = pos.x(); point.y = pos.y(); point.z = pos.z();
+            environment.push_back(point);
+        }
+        myfile.close();
+    }
+    else std::cout << "Unable to open file";
+}
+
 /// samples from multivariate gaussian
 Point3D Simulator::sampleFromMultivariateGaussian(Eigen::Vector3d mean, Eigen::MatrixXd cov){
 
