@@ -136,6 +136,9 @@ class PoseGraphG2O : public Graph {
         ///return Transform between origin and vertex
         Mat34 getTransform(int vertexId);
 
+        /// Fix all optimized vertices of the current graph
+        void fixOptimizedVertices(void);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -153,6 +156,10 @@ class PoseGraphG2O : public Graph {
         std::recursive_mutex mtxBuffGraph;
         /// camera offset
         g2o:: ParameterSE3Offset* cameraOffset;
+        /// set of new vertices
+        g2o::HyperGraph::VertexSet newVertices;
+        /// set of new vertices (after optimization they can be fixed)
+        g2o::HyperGraph::VertexSet newOptimizedVertices;
 
         /// Removes a vertex from the graph. Returns true on success
         bool removeVertex(unsigned int id);
