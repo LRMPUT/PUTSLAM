@@ -25,6 +25,9 @@ FeaturesMap::FeaturesMap(std::string configFileGrabber,
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
 	poseGraph = createPoseGraphG2O();
+
+	// set that map is currently empty
+	emptyMap = true;
 }
 
 /// Destruction
@@ -62,6 +65,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		poseGraph->addEdge3D(e);
 		featureIdNo++;
 	}
+
+	emptyMap = false;
 }
 
 /// add new pose of the camera, returns id of the new pose
@@ -70,22 +75,21 @@ int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 	camTrajectory.push_back(cameraPose);
 	//add camera pose to the graph
 	poseGraph->addVertexPose(
-			VertexSE3(camTrajectory.size(),
+			VertexSE3(camTrajectory.size() - 1,
 					Vec3(cameraPose(0, 3), cameraPose(1, 3), cameraPose(2, 3)),
 					Quaternion(cameraPose.rotation()), timestamp));
+	emptyMap = false;
 	return camTrajectory.size() - 1;
 }
 
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 		int poseId) {
-	std::cout<<"Ids "  << poseId <<  " " << (camTrajectory.size() - 1) << std::endl;
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajectory.size() - 1);
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 		//add measurement
 		Mat33 info;
-		std::cout<<"Compare ids : " << _poseId << " " << it->id << std::endl;
 		info = sensorModel.informationMatrix((*it).position.x(),
 				(*it).position.y(), (*it).position.z());
 		Edge3D e((*it).position, info, _poseId, (*it).id);
@@ -127,29 +131,42 @@ Mat34 FeaturesMap::getSensorPose(int poseId) {
 }
 
 /// start optimization thread
-void FeaturesMap::startOptimizationThread(unsigned int iterNo) {
+void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose) {
 	optimizationThr.reset(
-			new std::thread(&FeaturesMap::optimize, this, iterNo));
+			new std::thread(&FeaturesMap::optimize, this, iterNo, verbose));
 }
 
 /// Wait for optimization thread to finish
 void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
 	continueOpt = false;
+	optimizationThr->join();
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
-	optimizationThr->join();
 }
 
 /// optimization thread
-void FeaturesMap::optimize(unsigned int iterNo) {
+void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 	// graph optimization
 	continueOpt = true;
-	while (continueOpt) {
-//		std::cout << "start optimization\n";
-		poseGraph->optimize(iterNo, 0);
-//		std::cout << "end optimization\n";
+
+	// Wait for some information in map
+	while (continueOpt && emptyMap) {
+		 std::this_thread::sleep_for(  std::chrono::milliseconds( 200 ) );
 	}
+
+	while (continueOpt) {
+		if (verbose)
+			std::cout << "start optimization\n";
+		poseGraph->optimize(iterNo, verbose);
+		if (verbose)
+			std::cout << "end optimization\n";
+	}
+
+	// Final optimization
+	std::cout<<"Starting final after trajectory optimization"<<std::endl;
+	poseGraph->optimize(-1, verbose, 0.0001);
+
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

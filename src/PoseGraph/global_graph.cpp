@@ -130,7 +130,7 @@ bool GlobalGraph::importRGBDSLAM(const std::string filename){
 }
 
 /// Optimize graph
-bool GlobalGraph::optimize(uint_fast32_t maxIterations, int verbose) {
+bool GlobalGraph::optimize(int_fast32_t maxIterations, int verbose, double minimalChi2Ratio) {
     std::cout << "start global graph optimization (t = 0s)\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::cout << "finish global graph optimization (t = 0.2s)\n";
