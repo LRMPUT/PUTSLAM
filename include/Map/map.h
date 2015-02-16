@@ -61,7 +61,7 @@ public:
 	virtual Mat34 getSensorPose(int poseId = -1) = 0;
 
 	/// start optimization thread
-	virtual void startOptimizationThread(unsigned int iterNo) = 0;
+	virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0) = 0;
 
 	/// Wait for optimization thread to finish
 	virtual void finishOptimization(std::string trajectoryFilename,
