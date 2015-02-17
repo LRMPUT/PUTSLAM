@@ -33,6 +33,9 @@ class DepthSensorModel {
     /// compute information matrix
     Mat33 informationMatrix(float_type x, float_type y, float_type z);
 
+    /// compute information matrix using image coordinates
+    Mat33 informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z);
+
     class Config{
       public:
         Config() :
@@ -48,10 +51,10 @@ class DepthSensorModel {
             if (config.ErrorID())
                 std::cout << "unable to load Kinect config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
-            model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fx", &focalLength[0]);
-            model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fy", &focalLength[1]);
-            model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cx", &focalAxis[0]);
-            model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cy", &focalAxis[1]);
+            model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
+            model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fv", &focalLength[1]);
+            model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cu", &focalAxis[0]);
+            model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cv", &focalAxis[1]);
             model->FirstChildElement( "variance" )->QueryDoubleAttribute("sigmaU", &varU);
             model->FirstChildElement( "variance" )->QueryDoubleAttribute("sigmaV", &varV);
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c3", &distVarCoefs[0]);
