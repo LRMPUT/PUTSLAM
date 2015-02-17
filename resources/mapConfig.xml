@@ -2,4 +2,5 @@
   <!-- Sensor configuration -->
   <MapConfig>
   	<name>FeaturesMap</name>
+	<parameters useUncertainty="true"></parameters>
   </MapConfig>

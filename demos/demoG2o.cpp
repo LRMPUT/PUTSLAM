@@ -63,12 +63,6 @@ int main()
         std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
         DepthSensorModel sensorModel(configFile);
         graph = createPoseGraphG2O(sensorModel.config.pose);
-        graph->clear();
-        graph->load("../../resources/graphFileMN.g2o");
-        //graph->load("../../resources/KabschUncertainty/init_graph_g2o_BAuncert0.g2o");
-        optimize();
-        graph->save2file("../../resources/graphFileMN2.g2o");
-        getchar();
         cout << "Current graph: " << graph->getName() << std::endl;
 
         //add vertices - robot poses

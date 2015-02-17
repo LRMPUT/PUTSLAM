@@ -363,7 +363,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
         }
         else{
             std::cout << "could not add edge1\n";
-            getchar();
+            //getchar();
         }
     }
     if (expType>0){
@@ -536,7 +536,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
         }
         else{
             std::cout << "could not add edge1\n";
-            getchar();
+           // getchar();
         }
     }
     vertexId2 = 1;
@@ -593,7 +593,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
             }
             else{
                 std::cout << "could not add edge2\n";
-                getchar();
+                //getchar();
             }
         }
     }
@@ -707,7 +707,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
         }
         else{
             std::cout << "could not add edge1\n";
-            getchar();
+            //getchar();
         }
     }
     if (expType>0){
@@ -1180,14 +1180,14 @@ int main(int argc, char * argv[])
             simulator.loadTrajectory("../../resources/traj_living_room_kt1.txt");
             trajectory = simulator.getTrajectory();
 
-            /* //generate icl office environment
+  /*          //generate icl office environment
             PointCloud pcloffice;
             std::cout << "size: " << trajectory.size() << " \n";
             for (int k=0;k<trajectory.size();k++){
                 Mat34 tmppos;
                 tmppos.matrix() = trajectory[k].matrix()*sensorModel.config.pose.matrix();
                 /// load features from file
-                std::string fil1 = "../../resources/ICL_office_kt1/featuresDir/" + std::to_string(k) + ".features";
+                std::string fil1 = "../../resources/ICL_office_kt1_2/featuresDir/" + std::to_string(k) + ".features";
                 std::string line;    std::ifstream myfile(fil1);
                 if (myfile.is_open()) {
                     Vec3 pos; double u, v;
@@ -1207,7 +1207,7 @@ int main(int argc, char * argv[])
                         bool unique = true;
                         for (int itp=0;itp<pcloffice.size();itp++){
                              float_type dist = sqrt(pow(point.x-pcloffice[itp].x,2.0)+pow(point.y-pcloffice[itp].y,2.0)+pow(point.z-pcloffice[itp].z,2.0));
-                             if (dist<0.25){
+                             if (dist<0.35){
                                  unique = false;
                                  break;
                              }
@@ -1215,6 +1215,7 @@ int main(int argc, char * argv[])
                         if (unique)
                             pcloffice.push_back(point);
                         count++;
+                        if (count>1) break;
                     }
                     std::cout << k << " features no " << count << "\n";
                     myfile.close();
@@ -1226,6 +1227,7 @@ int main(int argc, char * argv[])
             std::cout << "done\n";
             getchar();
 */
+
             /*std::vector<Mat34> trajectorySec;
             //rectangular trajectory
             Mat34 poseSec = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
