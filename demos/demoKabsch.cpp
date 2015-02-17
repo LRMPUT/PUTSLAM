@@ -1207,7 +1207,7 @@ int main(int argc, char * argv[])
                         bool unique = true;
                         for (int itp=0;itp<pcloffice.size();itp++){
                              float_type dist = sqrt(pow(point.x-pcloffice[itp].x,2.0)+pow(point.y-pcloffice[itp].y,2.0)+pow(point.z-pcloffice[itp].z,2.0));
-                             if (dist<0.4){
+                             if (dist<0.35){
                                  unique = false;
                                  break;
                              }

@@ -95,7 +95,28 @@ public:
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
 
+    class Config{
+      public:
+        Config() :
+            useUncertainty(true){
+        }
+        Config(std::string configFilename){
+            tinyxml2::XMLDocument config;
+            std::string filename = "../../resources/" + configFilename;
+            config.LoadFile(filename.c_str());
+            if (config.ErrorID())
+                std::cout << "unable to load Map config file.\n";
+            tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
+            model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+        }
+        public:
+            bool useUncertainty;// 1 - use uncertainty model
+    };
+
 private:
+    ///Configuration of the module
+    Config config;
+
 	///camera trajectory
 	std::vector<Mat34> camTrajectory;
 
