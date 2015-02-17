@@ -15,12 +15,12 @@ FeaturesMap::FeaturesMap(void) :
 }
 
 /// Construction
-FeaturesMap::FeaturesMap(std::string configFileGrabber,
-		std::string sensorConfig) :
+FeaturesMap::FeaturesMap(std::string configMap,
+        std::string sensorConfig) : config(configMap),
 		featureIdNo(FATURES_START_ID), sensorModel(sensorConfig), Map(
 				"Features Map", MAP_FEATURES) {
 	tinyxml2::XMLDocument config;
-	std::string filename = "../../resources/" + configFileGrabber;
+    std::string filename = "../../resources/" + configMap;
 	config.LoadFile(filename.c_str());
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
@@ -58,10 +58,10 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 						std::vector<unsigned int>(), (*it).descriptors));
 
 
-		//add measurement
-		Mat33 info;
-		info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-						it->v, (*it).position.z());
+        //add measurement
+        Mat33 info(Mat33::Identity());
+        if (config.useUncertainty)
+            info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
 
 		Edge3D e((*it).position, info, camTrajectory.size() - 1, featureIdNo);
 		poseGraph->addVertexFeature(
