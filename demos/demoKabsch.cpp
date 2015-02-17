@@ -12,6 +12,10 @@
 #include <Eigen/Dense>
 #include "../include/Grabber/kinectGrabber.h"
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
+
 using namespace std;
 
 #define INIT_VERTEX_ID 10000
@@ -135,6 +139,30 @@ void savePointCloud(std::string filename, PointCloud& cloud){
     file.close();
 }
 
+PointCloud loadPointCloudTxt(std::string filename){
+    std::string line;    std::ifstream myfile(filename);
+    PointCloud pointcl; Point3D point;
+    if (myfile.is_open()) {
+        Vec3 pos;
+        while ( getline (myfile,line) ) {
+            std::istringstream is(line);
+            is >> pos.x() >> pos.y() >> pos.z();
+            point.x = pos.x(); point.y = pos.y(); point.z = pos.z();
+            pointcl.push_back(point);
+        }
+        myfile.close();
+    }
+    else std::cout << "Unable to open file";
+}
+
+void savePointCloudTxt(std::string filename, const PointCloud& cloud){
+    std::ofstream file(filename);
+    for (int i=0;i<cloud.size();i++){
+        file << cloud[i].x << " " << cloud[i].y << " " << cloud[i].z << "\n";
+    }
+    file.close();
+}
+
 void savePointCloud(std::string filename, PointCloud& cloud, std::vector<Mat33>& uncertainty) {
     std::ofstream file(filename);
     file << "close all; clear all;\n";
@@ -244,7 +272,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
 
         //match and estimate transformation
         std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
-        std::cout << "View points: " << cloudSeq[i-1].size() << "\n";
+        std::cout << i << " View points: " << cloudSeq[i-1].size() << "\n";
         simulator.matchClouds(cloudSeq[i-1], setA, uncertaintySet[i-1], setAUncertainty, setIds[i-1], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
         if (setA.rows()>3){
             std::cout << "matched: " << setA.rows() << "\n";
@@ -519,7 +547,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
 
             //match and estimate transformation
             std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
-            std::cout << "View points: " << cloudSeq2[i-1].size() << "\n";
+            std::cout << i << " View points: " << cloudSeq2[i-1].size() << "\n";
             simulator.matchClouds(cloudSeq2[i-1], setA, uncertaintySet2[i-1], setAUncertainty, setIds2[i-1], cloudSeq2[i], setB, uncertaintySet2[i], setBUncertainty, setIds2[i]);
             if (setA.rows()>3){
                 std::cout << "matched: " << setA.rows() << "\n";
@@ -857,10 +885,10 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
                 std::cout << "error: vertex doesn't exist!\n";
         }
         vertexId2++;
-        if ((i%5)==0){
+        /*if ((i%5)==0){
             std::thread tOpt4(optimize,5);
             tOpt4.join();
-        }
+        }*/
     }
 
     if (expType==2||expType==4){
@@ -1106,7 +1134,8 @@ int main(int argc, char * argv[])
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            simulator.createEnvironment(1600, 15, 15, 15);
+            //simulator.createEnvironment(1600, 15, 15, 15);
+            simulator.loadEnvironment("../../resources/cloudOffice.pcl");
             std::string filenameCloud= "../../resources/KabschUncertainty/refCloud" + std::to_string(i) + ".m";
             savePointCloud(filenameCloud, simulator.getEnvironment());
 
@@ -1151,6 +1180,52 @@ int main(int argc, char * argv[])
             simulator.loadTrajectory("../../resources/traj_living_room_kt1.txt");
             trajectory = simulator.getTrajectory();
 
+            /* //generate icl office environment
+            PointCloud pcloffice;
+            std::cout << "size: " << trajectory.size() << " \n";
+            for (int k=0;k<trajectory.size();k++){
+                Mat34 tmppos;
+                tmppos.matrix() = trajectory[k].matrix()*sensorModel.config.pose.matrix();
+                /// load features from file
+                std::string fil1 = "../../resources/ICL_office_kt1/featuresDir/" + std::to_string(k) + ".features";
+                std::string line;    std::ifstream myfile(fil1);
+                if (myfile.is_open()) {
+                    Vec3 pos; double u, v;
+                    int count = 0;
+                    while ( getline (myfile,line) ) {
+                        std::istringstream is(line);
+                        is >> u >> v >> pos.x() >> pos.y() >> pos.z();
+                        Mat34 pp; pp.setIdentity();
+                        //std::cout << "pos: \n" << tmppos.matrix() << "\n";
+                        pp(0,3)= pos.x(); pp(1,3)= pos.y(); pp(2,3)= pos.z();
+                        //std::cout << "feat: \n" << pp.matrix() << "\n";
+                        pp = tmppos*pp;
+                        Point3D point;
+                        //std::cout << "feat aft: \n" << pp.matrix() << "\n";
+                        //getchar();
+                        point.x = pp(0,3); point.y = pp(1,3); point.z = pp(2,3);
+                        bool unique = true;
+                        for (int itp=0;itp<pcloffice.size();itp++){
+                             float_type dist = sqrt(pow(point.x-pcloffice[itp].x,2.0)+pow(point.y-pcloffice[itp].y,2.0)+pow(point.z-pcloffice[itp].z,2.0));
+                             if (dist<0.25){
+                                 unique = false;
+                                 break;
+                             }
+                        }
+                        if (unique)
+                            pcloffice.push_back(point);
+                        count++;
+                    }
+                    std::cout << k << " features no " << count << "\n";
+                    myfile.close();
+                }
+                else std::cout << "Unable to open file";
+            }
+
+            savePointCloudTxt("../../resources/cloudOffice.pcl", pcloffice);
+            std::cout << "done\n";
+            getchar();
+*/
             /*std::vector<Mat34> trajectorySec;
             //rectangular trajectory
             Mat34 poseSec = quatFromEuler(0,0,0)*Eigen::Translation<double,3>(0,0,0);
