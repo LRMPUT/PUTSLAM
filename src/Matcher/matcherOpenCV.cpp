@@ -79,10 +79,10 @@ void MatcherOpenCV::initVariables() {
 		featureDetector.reset(new cv::OrbFeatureDetector());
 	else if (matcherParameters.OpenCVParams.detector == "SURF")
 	{
-		//featureDetector.reset(new cv::SurfFeatureDetector());
-		featureDetector.reset(
-				new cv::DynamicAdaptedFeatureDetector(
-						new cv::SurfAdjuster(3, true), 50, 150));
+        //featureDetector.reset(new cv::SurfFeatureDetector());
+        featureDetector.reset(
+                new cv::DynamicAdaptedFeatureDetector(
+                        new cv::SurfAdjuster(3, true), 50, 150));
 
 	}else if (matcherParameters.OpenCVParams.detector == "SIFT")
 		featureDetector.reset(new cv::SiftFeatureDetector());

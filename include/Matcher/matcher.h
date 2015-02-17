@@ -53,7 +53,8 @@ public:
 
 	/// Run single match
 	bool match(const SensorFrame& sensorData,
-			Eigen::Matrix4f &estimatedTransformation);
+			Eigen::Matrix4f &estimatedTransformation,
+			std::vector<cv::DMatch> &foundInlierMatches);
 
 	/// Run the match with map
 	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,

@@ -61,7 +61,7 @@ PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
 
 /// Destructor
 PoseGraphG2O::~PoseGraphG2O(void){
-    delete cameraOffset;
+    //delete cameraOffset;
 }
 
 const std::string& PoseGraphG2O::getName() const {
@@ -700,10 +700,9 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
     optimizer.initializeOptimization();
     //optimizer.computeInitialGuess();
 
-    //if (maxIterations >= 0)
-		optimizer.optimize(maxIterations);
-        std::cout << "chi2:\n " << optimizer.chi2() << "\n";
-    /*else {
+    if (maxIterations >= 0)
+        optimizer.optimize(maxIterations);
+    else {
 		double prevChi2 = -1.0, chi2 = -1.0;
 		int iterationCounter = 0;
 		verbose = 1;
@@ -725,7 +724,7 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 			std::cout<<"Final optimization iteration counter = " << iterationCounter << std::endl;
     }
     newOptimizedVertices.insert(newVertices.begin(), newVertices.end());
-    newVertices.clear();*/
+    newVertices.clear();
 
     // Unlock the graph
     mtxGraph.unlock();

@@ -75,6 +75,24 @@ void saveFeaturesToFile(Matcher::featureSet features, double timestamp) {
 	file.close();
 }
 
+void saveFeaturesToFile(Matcher::featureSet features, std::vector<cv::DMatch> inlierMatches, double timestamp) {
+
+	int whatever = system("mkdir featuresDir");
+
+	std::ostringstream fileName;
+	fileName << std::setfill('0') << std::setprecision(17) << timestamp;
+	std::ofstream file("featuresDir/" + fileName.str() + ".features", std::ofstream::out | std::ofstream::app);
+
+	for (int i = 0; i < inlierMatches.size(); i++) {
+		int id = inlierMatches[i].trainIdx;
+		file << features.undistortedFeature2D[id].x << " "
+				<< features.undistortedFeature2D[id].y << " "
+				<< features.feature3D[id](0) << " " << features.feature3D[id](1)
+				<< " " << features.feature3D[id](2) << std::endl;
+	}
+	file.close();
+}
+
 int main() {
 
 	using namespace putslam;
@@ -132,15 +150,15 @@ int main() {
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
 
 	// File to save trajectory
-	ofstream trajectoryFreiburgStream("result/estimatedTrajectory.res");
+	ofstream trajectoryFreiburgStream("VO_trajectory.res");
 
 	auto start = chrono::system_clock::now();
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	map->startOptimizationThread(1, 1);
+	map->startOptimizationThread(1, 0);
 
-	int ileIteracji = 50;
+	int ileIteracji = 1000;
 	// Main loop
 	while (ileIteracji /*true*/) {
 
@@ -169,8 +187,12 @@ int main() {
 		// The next pose in the sequence
 		else {
 			Eigen::Matrix4f transformation;
-			matcher->Matcher::match(currentSensorFrame, transformation);
+			std::vector<cv::DMatch> inlierMatches;
+			matcher->Matcher::match(currentSensorFrame, transformation, inlierMatches);
 
+			// Saving inliers for Dominic
+//			Matcher::featureSet features = matcher->getFeatures();
+//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
 			robotPose = robotPose * transformation;
 
@@ -253,7 +275,7 @@ int main() {
 	}
 
 // Wait for optimization finish
-	map->finishOptimization("graphEstimatedTrajectory.res", "graphFile.g2o");
+	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 // Close trajectory stream
 	trajectoryFreiburgStream.close();

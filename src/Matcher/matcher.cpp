@@ -46,7 +46,7 @@ Matcher::featureSet Matcher::getFeatures()
 }
 
 
-bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation) {
+bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation, std::vector<cv::DMatch> &inlierMatches) {
 	// Detect salient features
 	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
 
@@ -74,7 +74,6 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
-	std::vector<cv::DMatch> inlierMatches;
 	RANSAC ransac(matcherParameters.RANSACParams);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D, features3D, matches, inlierMatches);
 

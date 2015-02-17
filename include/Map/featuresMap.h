@@ -26,6 +26,7 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 using namespace putslam;
 
 class MapModifier{
+public:
     /// Features to update
     std::vector<MapFeature> features2update;
 
@@ -43,7 +44,7 @@ class MapModifier{
     inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
 
     /// mutex to lock access
-    std::recursive_mutex mtxMapVisualization;
+    std::recursive_mutex mtxBuffer;
 };
 
 /// Map implementation
@@ -95,7 +96,28 @@ public:
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
 
+    class Config{
+      public:
+        Config() :
+            useUncertainty(true){
+        }
+        Config(std::string configFilename){
+            tinyxml2::XMLDocument config;
+            std::string filename = "../../resources/" + configFilename;
+            config.LoadFile(filename.c_str());
+            if (config.ErrorID())
+                std::cout << "unable to load Map config file.\n";
+            tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
+            model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+        }
+        public:
+            bool useUncertainty;// 1 - use uncertainty model
+    };
+
 private:
+    ///Configuration of the module
+    Config config;
+
 	///camera trajectory
 	std::vector<Mat34> camTrajectory;
 
@@ -142,10 +164,13 @@ private:
     MapModifier bufferMapVisualization;
 
     /// Map management -- buffer
-    MapModifier bufferMapmanagement;
+    MapModifier bufferMapManagement;
 
 	/// optimization thread
 	void optimize(unsigned int iterNo, int verbose);
+
+    /// Update map
+    void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED
