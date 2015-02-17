@@ -138,9 +138,9 @@ int main() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	map->startOptimizationThread(1);
+	map->startOptimizationThread(1, 1);
 
-	int ileIteracji = 13;
+	int ileIteracji = 50;
 	// Main loop
 	while (ileIteracji /*true*/) {
 
@@ -150,62 +150,37 @@ int main() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
+		// cameraPose as Eigen::Transform
+		Mat34 cameraPose = Mat34(robotPose.cast<double>());
+
+		// Add new position to the map
+		int cameraPoseId = map->addNewPose(cameraPose,
+				currentSensorFrame.timestamp);
+
+		bool addFeatureToMap = false;
+
+		// The beginning of the sequence
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 
-			///
-			/// Add the found feature to the map
-			///
-
-			// Getting observed features
-			Matcher::featureSet features = matcher->getFeatures();
-
-			// cameraPose as Eigen::Transform
-			Mat34 cameraPose = Mat34(robotPose.cast<double>());
-
-			// Add new position to the map
-			int cameraPoseId = map->addNewPose(cameraPose,
-					currentSensorFrame.timestamp);
-
-			// Convert to mapFeatures format
-			std::vector<RGBDFeature> mapFeatures;
-			for (int j = 0; j < features.feature3D.size(); j++) {
-				// Create an extended descriptor
-				ExtendedDescriptor desc(cameraPoseId,
-						features.descriptors.row(j));
-
-				// In further processing we expect more descriptors
-				std::vector<ExtendedDescriptor> extDescriptors { desc };
-
-				// Convert translation
-				Eigen::Translation<double, 3> featurePosition(
-						features.feature3D[j].cast<double>());
-
-				// Add to set added later to map
-				RGBDFeature f(featurePosition,
-						features.undistortedFeature2D[j].x,
-						features.undistortedFeature2D[j].y, extDescriptors);
-				mapFeatures.push_back(f);
-			}
-
-			// Finally, adding to map
-			map->addFeatures(mapFeatures, cameraPoseId);
 			ifStart = false;
-		} else {
+			addFeatureToMap = true;
+		}
+		// The next pose in the sequence
+		else {
 			Eigen::Matrix4f transformation;
 			matcher->Matcher::match(currentSensorFrame, transformation);
 
-			robotPose = robotPose * transformation;
 
-			// Get the visible features
-			std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+			robotPose = robotPose * transformation;
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
-			// Add new position to the map
-			int cameraPoseId = map->addNewPose(cameraPose,
-					currentSensorFrame.timestamp);
+			// Get the visible features
+			std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+			std::cout << "Returned visible map feature size: "
+					<< mapFeatures.size() << std::endl;
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
@@ -217,14 +192,26 @@ int main() {
 			// Add the measurements of inliers
 			map->addMeasurements(measurementList);
 
-			// Add new features
-			if (measurementList.size() < 70) {
-				// Getting observed features
-				Matcher::featureSet features = matcher->getFeatures();
+			// Insufficient number of features -> time to add some features
+			if (mapFeatures.size() < 150 || measurementList.size () < 20) {
+				addFeatureToMap = true;
+			}
+		}
 
-				// Convert to mapFeatures format
-				std::vector<RGBDFeature> mapFeatures;
-				for (int j = 0; j < features.feature3D.size(); j++) {
+		// Should we add some features to the map?
+		if (addFeatureToMap) {
+			std::cout<<"Adding features to map " << std::endl;
+
+			// Getting observed features
+			Matcher::featureSet features = matcher->getFeatures();
+
+			// Convert to mapFeatures format
+			std::vector<RGBDFeature> mapFeatures;
+			int addedCounter = 0;
+			for (int j = 0; j < features.feature3D.size() && addedCounter < 100; j++) {
+
+				if ( features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0)
+				{
 					// Create an extended descriptor
 					ExtendedDescriptor desc(cameraPoseId,
 							features.descriptors.row(j));
@@ -241,12 +228,16 @@ int main() {
 							features.undistortedFeature2D[j].x,
 							features.undistortedFeature2D[j].y, extDescriptors);
 					mapFeatures.push_back(f);
-				}
 
-				// Finally, adding to map
-				map->addFeatures(mapFeatures, cameraPoseId);
+					addedCounter++;
+				}
 			}
 
+			std::cout<<"map->addFeatures -> adding " << addedCounter << " features" << std::endl;
+			// Finally, adding to map
+			map->addFeatures(mapFeatures, cameraPoseId);
+
+			addFeatureToMap = false;
 		}
 
 		// Saving features for Dominik
@@ -261,10 +252,10 @@ int main() {
 		ileIteracji--;
 	}
 
-	// Wait for optimization finish
+// Wait for optimization finish
 	map->finishOptimization("graphEstimatedTrajectory.res", "graphFile.g2o");
 
-	// Close trajectory stream
+// Close trajectory stream
 	trajectoryFreiburgStream.close();
 
 	return 0;

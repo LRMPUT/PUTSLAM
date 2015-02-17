@@ -135,10 +135,10 @@ public:
 	Vec3 position;
 
 	/// feature location on the rgb image
-	unsigned int u;
+	float_type u;
 
 	/// feature location on the rgb image
-	unsigned int v;
+	float_type v;
 
 	/// set of descriptors
 	std::vector<ExtendedDescriptor> descriptors;
@@ -147,9 +147,9 @@ public:
 	}
 	;
 
-	RGBDFeature(const Vec3 _position, unsigned int u, unsigned int v,
+	RGBDFeature(const Vec3 _position, float_type _u, float_type _v,
 			const std::vector<ExtendedDescriptor> _descriptors) :
-			position(_position), descriptors(_descriptors) {
+			position(_position), descriptors(_descriptors), u(_u), v(_v) {
 
 	}
 	;

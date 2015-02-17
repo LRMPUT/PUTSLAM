@@ -54,23 +54,23 @@ void MatcherOpenCV::initVariables() {
 	cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
 	distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
 
-//	cameraMatrixMat.at<float>(0,0) = 517.3f;
-//	cameraMatrixMat.at<float>(0,2) = 318.6f;
-//	cameraMatrixMat.at<float>(1,1) = 516.5f;
-//	cameraMatrixMat.at<float>(1,2) = 255.3f;
-//	cameraMatrixMat.at<float>(2,2) = 1.0f;
-//
-//	distortionCoeffsMat.at<float>(0) = -0.0410;
-//	distortionCoeffsMat.at<float>(1) = 0.3286;
-//	distortionCoeffsMat.at<float>(2) = 0.0087;
-//	distortionCoeffsMat.at<float>(3) = 0.0051;
-//	distortionCoeffsMat.at<float>(4) = -0.5643;
+	cameraMatrixMat.at<float>(0,0) = 517.3f;
+	cameraMatrixMat.at<float>(0,2) = 318.6f;
+	cameraMatrixMat.at<float>(1,1) = 516.5f;
+	cameraMatrixMat.at<float>(1,2) = 255.3f;
+	cameraMatrixMat.at<float>(2,2) = 1.0f;
 
-	cameraMatrixMat.at<float>(0, 0) = 480.6f;
-	cameraMatrixMat.at<float>(0, 2) = 319.5f;
-	cameraMatrixMat.at<float>(1, 1) = 480.6f;
-	cameraMatrixMat.at<float>(1, 2) = 239.5f;
-	cameraMatrixMat.at<float>(2, 2) = 1.0f;
+	distortionCoeffsMat.at<float>(0) = -0.0410;
+	distortionCoeffsMat.at<float>(1) = 0.3286;
+	distortionCoeffsMat.at<float>(2) = 0.0087;
+	distortionCoeffsMat.at<float>(3) = 0.0051;
+	distortionCoeffsMat.at<float>(4) = -0.5643;
+
+//	cameraMatrixMat.at<float>(0, 0) = 480.6f;
+//	cameraMatrixMat.at<float>(0, 2) = 319.5f;
+//	cameraMatrixMat.at<float>(1, 1) = 480.6f;
+//	cameraMatrixMat.at<float>(1, 2) = 239.5f;
+//	cameraMatrixMat.at<float>(2, 2) = 1.0f;
 
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")
@@ -78,8 +78,13 @@ void MatcherOpenCV::initVariables() {
 	else if (matcherParameters.OpenCVParams.detector == "ORB")
 		featureDetector.reset(new cv::OrbFeatureDetector());
 	else if (matcherParameters.OpenCVParams.detector == "SURF")
-		featureDetector.reset(new cv::SurfFeatureDetector());
-	else if (matcherParameters.OpenCVParams.detector == "SIFT")
+	{
+		//featureDetector.reset(new cv::SurfFeatureDetector());
+		featureDetector.reset(
+				new cv::DynamicAdaptedFeatureDetector(
+						new cv::SurfAdjuster(3, true), 50, 150));
+
+	}else if (matcherParameters.OpenCVParams.detector == "SIFT")
 		featureDetector.reset(new cv::SiftFeatureDetector());
 	else
 		featureDetector.reset(new cv::SurfFeatureDetector());
@@ -112,6 +117,7 @@ const std::string& MatcherOpenCV::getName() const {
 	return name;
 }
 
+
 /// Detect features
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
@@ -119,10 +125,40 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-	featureDetector.get()->detect(grayImage, raw_keypoints);
+	//featureDetector.get()->detect(grayImage, raw_keypoints);
+
+	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
+	int stripesCount = 6;
+	for (int i = 0; i < stripesCount; i++) {
+		std::vector<cv::KeyPoint> keypointsInROI;
+		cv::Mat roiBGR(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
+		cv::Mat roiD(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
+
+		featureDetector.get()->detect(roiBGR, keypointsInROI);
+
+		std::cout<<"Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
+
+		std::sort(keypointsInROI.begin(), keypointsInROI.end(), MatcherOpenCV::compare_response);
+		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
+			keypointsInROI[j].pt.y += i * grayImageHeight/stripesCount;
+			raw_keypoints.push_back(keypointsInROI[j]);
+		}
+	}
+
+
+
+
+	// It is better to have them sorted according to their response strength
+	std::cout<<"Keypoints size before sort " << raw_keypoints.size() << std::endl;
+	std::sort(raw_keypoints.begin(), raw_keypoints.end(), MatcherOpenCV::compare_response);
+	std::cout<<"Keypoints size after sort " << raw_keypoints.size() << std::endl;
+
+	if ( raw_keypoints.size() > 500)
+		raw_keypoints.resize(500);
 
 	return raw_keypoints;
 }
+
 
 /// Describe features
 cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
