@@ -26,6 +26,7 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 using namespace putslam;
 
 class MapModifier{
+public:
     /// Features to update
     std::vector<MapFeature> features2update;
 
@@ -43,7 +44,7 @@ class MapModifier{
     inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
 
     /// mutex to lock access
-    std::recursive_mutex mtxMapVisualization;
+    std::recursive_mutex mtxBuffer;
 };
 
 /// Map implementation
@@ -163,10 +164,13 @@ private:
     MapModifier bufferMapVisualization;
 
     /// Map management -- buffer
-    MapModifier bufferMapmanagement;
+    MapModifier bufferMapManagement;
 
 	/// optimization thread
 	void optimize(unsigned int iterNo, int verbose);
+
+    /// Update map
+    void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED
