@@ -46,6 +46,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 			(poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
+
 		//.. and the graph
 		Mat34 featurePos((*it).position);
 		featurePos = cameraPose.matrix() * featurePos.matrix();
@@ -107,20 +108,22 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 
 /// Get all features
 std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
+    std::vector<MapFeature> featuresSet(featuresMapFrontend);
 	return featuresSet;
 }
 
 /// Get feature position
 Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
-	return featuresSet[FATURES_START_ID + id].position;
+    Vec3 feature(featuresMapFrontend[FATURES_START_ID + id].position);
+    return feature;
 }
 
 /// get all visible features
 std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 		const Mat34& cameraPose) {
 	std::vector<MapFeature> visibleFeatures;
-	for (std::vector<MapFeature>::iterator it = featuresSet.begin();
-			it != featuresSet.end(); it++) {
+    for (std::vector<MapFeature>::iterator it = featuresMapFrontend.begin();
+            it != featuresMapFrontend.end(); it++) {
 		Mat34 featurePos((*it).position);
 		Mat34 featureCam = cameraPose.inverse() * featurePos;
 		Eigen::Vector3d pointCam = sensorModel.inverseModel(featureCam(0, 3),

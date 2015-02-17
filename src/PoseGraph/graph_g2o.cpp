@@ -61,6 +61,7 @@ PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
 
 /// Destructor
 PoseGraphG2O::~PoseGraphG2O(void){
+    delete cameraOffset;
 }
 
 const std::string& PoseGraphG2O::getName() const {
@@ -146,6 +147,8 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
         //std::cout << "set fixed\n";
         vert->setFixed(true);
     }
+    newVertices.insert(vert);
+
     if (!optimizer.addVertex(vert)) {
       std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
     }
@@ -273,9 +276,9 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     edge->setVertex(1, to);
     edge->read(edgeStream);
     edge->setId(id);
-    g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
+    //g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
     //rk->setDelta(1);
-    edge->setRobustKernel(rk);
+    //edge->setRobustKernel(rk);
     if (!optimizer.addEdge(edge)) {
         std::cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
@@ -686,7 +689,7 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
 
 /// Optimize graph
 bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double minimalChi2Ratio) {
-    (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
+    optimizer.setVerbose(verbose);
     if (verbose>0)
         std::cout << "start local graph optimization (t = 0s)\n";
     auto start = std::chrono::system_clock::now();
@@ -695,12 +698,12 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
     mtxGraph.lock();
 
     optimizer.initializeOptimization();
-    optimizer.computeInitialGuess();
-    optimizer.setVerbose(verbose);
+    //optimizer.computeInitialGuess();
 
-    if (maxIterations >= 0)
+    //if (maxIterations >= 0)
 		optimizer.optimize(maxIterations);
-	else {
+        std::cout << "chi2:\n " << optimizer.chi2() << "\n";
+    /*else {
 		double prevChi2 = -1.0, chi2 = -1.0;
 		int iterationCounter = 0;
 		verbose = 1;
@@ -721,6 +724,8 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 		if ( verbose > 0)
 			std::cout<<"Final optimization iteration counter = " << iterationCounter << std::endl;
     }
+    newOptimizedVertices.insert(newVertices.begin(), newVertices.end());
+    newVertices.clear();*/
 
     // Unlock the graph
     mtxGraph.unlock();
@@ -1112,4 +1117,10 @@ PoseGraph::EdgeSet PoseGraphG2O::getEdges(void){
     }
     mtxGraph.unlock();
     return edges;
+}
+
+/// Fix all vertices of the current graph
+void PoseGraphG2O::fixOptimizedVertices(void){
+    optimizer.setFixed(newOptimizedVertices, true);
+    newOptimizedVertices.clear();
 }

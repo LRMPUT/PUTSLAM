@@ -22,9 +22,29 @@ Map* createFeaturesMap(void);
 /// create a single Map - overloaded
 Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 }
-;
 
 using namespace putslam;
+
+class MapModifier{
+    /// Features to update
+    std::vector<MapFeature> features2update;
+
+    /// Features to remove
+    std::vector<int> removeIds;
+
+    /// Features to update
+    std::vector<MapFeature> features2add;
+
+    /// Update features?
+    inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
+    /// Remove feaures?
+    inline bool removeFeatures() { return (removeIds.size()>0) ?  true : false;};
+    /// add features?
+    inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
+
+    /// mutex to lock access
+    std::recursive_mutex mtxMapVisualization;
+};
 
 /// Map implementation
 class FeaturesMap: public Map {
@@ -76,9 +96,6 @@ public:
 			std::string graphFilename);
 
 private:
-	///Set of features (map)
-	std::vector<MapFeature> featuresSet;
-
 	///camera trajectory
 	std::vector<Mat34> camTrajectory;
 
@@ -99,6 +116,33 @@ private:
 
 	/// boolean value informing if the features had been added to the map
 	bool emptyMap;
+
+    ///Set of features (map for the front-end thread)
+    std::vector<MapFeature> featuresMapFrontend;
+
+    /// mutex for critical section - map frontend
+    std::recursive_mutex mtxMapFrontend;
+
+    ///Set of features (map for the visualization thread)
+    std::vector<MapFeature> featuresMapVisualization;
+
+    /// mutex for critical section - map visualization
+    std::recursive_mutex mtxMapVisualization;
+
+    ///Set of features (map for the map management thread)
+    std::vector<MapFeature> featuresMapManagement;
+
+    /// mutex for critical section - map management
+    std::recursive_mutex mtxMapManagemet;
+
+    /// Map frontend -- buffer
+    MapModifier bufferMapFrontend;
+
+    /// Map visualization -- buffer
+    MapModifier bufferMapVisualization;
+
+    /// Map management -- buffer
+    MapModifier bufferMapmanagement;
 
 	/// optimization thread
 	void optimize(unsigned int iterNo, int verbose);
