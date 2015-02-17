@@ -53,7 +53,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 		//add each feature to map structure...
 		Vec3 featurePositionInGlobal(featurePos.translation());
-		featuresSet.push_back(
+        featuresMapFrontend.push_back(
 				MapFeature(featureIdNo, 0, 0, featurePositionInGlobal,
 						std::vector<unsigned int>(), (*it).descriptors));
 
