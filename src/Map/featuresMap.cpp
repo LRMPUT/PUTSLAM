@@ -46,17 +46,23 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 			(poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
-		//add each feature to map structure...
-        featuresMapFrontend.push_back(
-				MapFeature(featureIdNo, 0, 0, (*it).position,
-						std::vector<unsigned int>(), (*it).descriptors));
+
 		//.. and the graph
 		Mat34 featurePos((*it).position);
 		featurePos = cameraPose.matrix() * featurePos.matrix();
+
+		//add each feature to map structure...
+		Vec3 featurePositionInGlobal(featurePos.translation());
+		featuresSet.push_back(
+				MapFeature(featureIdNo, 0, 0, featurePositionInGlobal,
+						std::vector<unsigned int>(), (*it).descriptors));
+
+
 		//add measurement
 		Mat33 info;
-		info = sensorModel.informationMatrix((*it).position.x(),
-				(*it).position.y(), (*it).position.z());
+		info = sensorModel.informationMatrixFromImageCoordinates(it->u,
+						it->v, (*it).position.z());
+
 		Edge3D e((*it).position, info, camTrajectory.size() - 1, featureIdNo);
 		poseGraph->addVertexFeature(
 				Vertex3D(featureIdNo,
@@ -78,7 +84,6 @@ int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 			VertexSE3(camTrajectory.size() - 1,
 					Vec3(cameraPose(0, 3), cameraPose(1, 3), cameraPose(2, 3)),
 					Quaternion(cameraPose.rotation()), timestamp));
-	emptyMap = false;
 	return camTrajectory.size() - 1;
 }
 
@@ -90,8 +95,12 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 			it != features.end(); it++) {
 		//add measurement
 		Mat33 info;
-		info = sensorModel.informationMatrix((*it).position.x(),
-				(*it).position.y(), (*it).position.z());
+
+//		info = sensorModel.informationMatrix((*it).position.x(),
+//				(*it).position.y(), (*it).position.z());
+		info = sensorModel.informationMatrixFromImageCoordinates(it->u,
+					it->v, (*it).position.z());
+
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
 	}
@@ -167,8 +176,9 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 
 	// Final optimization
 	std::cout<<"Starting final after trajectory optimization"<<std::endl;
-	poseGraph->optimize(-1, verbose, 0.0001);
-
+	//poseGraph->optimize(-1, verbose, 0.0001);
+	poseGraph->optimize(50, verbose);
+	poseGraph->optimize(100, verbose);
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

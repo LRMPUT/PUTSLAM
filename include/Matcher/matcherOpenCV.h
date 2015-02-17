@@ -65,6 +65,13 @@ private:
 
 	/// Method to initialize variables in all constructors
 	void initVariables();
+
+	/// Comparison method used when sorting keypoints by their response
+	// response comparison, for list sorting
+	static bool compare_response(const cv::KeyPoint &p1, const cv::KeyPoint &p2)
+	{
+		return p1.response > p2.response;
+	};
 };
 
 #endif // MATCHERSURF_H_INCLUDED

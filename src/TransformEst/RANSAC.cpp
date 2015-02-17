@@ -44,8 +44,9 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	for(std::vector<cv::DMatch>::iterator it = matches.begin(); it!=matches.end();) {
 		int prevId = it->queryIdx, id = it->trainIdx;
 
-
-		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN())
+		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
+				|| prevFeatures[prevId][2] < 0.1 || prevFeatures[prevId][2] > 6
+				|| features[id][2] < 0.1 || features[id][2] > 6)
 			it = matches.erase(it);
 		else
 			++it;

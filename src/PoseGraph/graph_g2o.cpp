@@ -706,17 +706,19 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 		double prevChi2 = -1.0, chi2 = -1.0;
 		int iterationCounter = 0;
 		verbose = 1;
-		while (std::isfinite(chi2) && (prevChi2 < 0 || (prevChi2-chi2)/chi2 > minimalChi2Ratio) )
+		int iteration = 150;
+		while (std::isfinite(chi2) && (iteration > 0 || prevChi2 < 0 || fabs(prevChi2-chi2)/chi2 > minimalChi2Ratio) )
     	{
 			prevChi2 = chi2;
     		optimizer.optimize(1);
-    		chi2 = optimizer.chi2();
+    		chi2 = optimizer.activeRobustChi2();
     		iterationCounter ++;
     		if ( verbose>0 ){
     			std::cout << "Comparing chi2s : " << prevChi2 << " " << chi2 << std::endl;
     			std::cout << "chi2 ratio = "
 						<< (prevChi2 - chi2)/chi2 << std::endl;
     		}
+    		iteration--;
     	}
 		if ( verbose > 0)
 			std::cout<<"Final optimization iteration counter = " << iterationCounter << std::endl;

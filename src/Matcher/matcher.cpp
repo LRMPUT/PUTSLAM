@@ -125,12 +125,12 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	std::vector<cv::DMatch> matches = performMatching(mapDescriptors,
 			prevDescriptors);
 
-//	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
-//			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
-//			<< prevDescriptors.cols << std::endl;
-//
-//	std::cout << "Matching to map: feature3D positions - " << mapFeaturePositions3D.size() << " "
-//			<< prevFeatures3D.size() << std::endl;
+	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
+			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
+			<< prevDescriptors.cols << std::endl;
+
+	std::cout << "Matching to map: feature3D positions - " << mapFeaturePositions3D.size() << " "
+			<< prevFeatures3D.size() << std::endl;
 
 
 	// RANSAC
@@ -158,10 +158,10 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 }
 
 
-void Matcher::showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features)
+void Matcher::showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> featuresToShow)
 {
 	cv::Mat imageToShow;
-	cv::drawKeypoints(rgbImage,prevFeatures,imageToShow);
+	cv::drawKeypoints(rgbImage,featuresToShow,imageToShow);
 
 	cv::imshow("Showing features", imageToShow);
 	cv::waitKey(10000);
