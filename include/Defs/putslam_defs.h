@@ -169,9 +169,9 @@ public:
 	;
 
 	/// Constructor
-	MapFeature(unsigned int _id, unsigned int u, unsigned int v,
-			const Vec3 _position, const std::vector<unsigned int> _posesIds,
-			const std::vector<ExtendedDescriptor> _descriptors) :
+	MapFeature(unsigned int _id, float_type u, float_type  v,
+			const Vec3 _position, std::vector<unsigned int> _posesIds,
+			std::vector<ExtendedDescriptor> _descriptors) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
 					_posesIds) {
 	}

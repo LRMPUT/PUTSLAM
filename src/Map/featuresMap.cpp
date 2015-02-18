@@ -51,11 +51,15 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
         Mat34 featurePos((*it).position);
         featurePos = cameraPose.matrix() * featurePos.matrix();
 
+        // Add pose id
+        std::vector<unsigned int> poseIds;
+        poseIds.push_back(poseId);
+
         //add each feature to map structure...
         Vec3 featurePositionInGlobal(featurePos.translation());
         bufferMapFrontend.features2add.push_back(
-                    MapFeature(featureIdNo, 0, 0, featurePositionInGlobal,
-                               std::vector<unsigned int>(), (*it).descriptors));
+                    MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
+                               poseIds, (*it).descriptors));
         //add measurement to the graph
         Mat33 info(Mat33::Identity());
         if (config.useUncertainty)
@@ -188,7 +192,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
         bufferMapFrontend.mtxBuffer.lock();
         bufferMapFrontend.features2update.insert(bufferMapFrontend.features2update.begin(), optimizedFeatures.begin(), optimizedFeatures.end());
         bufferMapFrontend.mtxBuffer.unlock();
-        std::cout<<"features 2 update1 " << bufferMapFrontend.features2update.size() <<"\n";
+//        std::cout<<"features 2 update1 " << bufferMapFrontend.features2update.size() <<"\n";
         //try to update the map
         updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
 
@@ -207,7 +211,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
     bufferMapFrontend.mtxBuffer.lock();
     bufferMapFrontend.features2update.insert(bufferMapFrontend.features2update.begin(), optimizedFeatures.begin(), optimizedFeatures.end());
     bufferMapFrontend.mtxBuffer.unlock();
-    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
+//    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
     //try to update the map
     updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
 }

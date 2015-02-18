@@ -210,7 +210,9 @@ int main() {
 			robotPose = robotPose * transformation;
 
 			// cameraPose as Eigen::Transform
-			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+			Eigen::Matrix4d x = map->getSensorPose().matrix() * transformation.cast<double>();
+			Mat34 cameraPose = Mat34(x);
+			//Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Get the visible features
 			mapFeatures = map->getVisibleFeatures(cameraPose);
@@ -316,6 +318,8 @@ int main() {
 
 // Wait for optimization finish
 	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+
+	map->save2file("createdMapFile.map", "optimizedGraphFile2.g2o");
 
 // Close trajectory stream
 	trajectoryFreiburgStream.close();
