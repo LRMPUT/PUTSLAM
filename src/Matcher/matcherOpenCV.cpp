@@ -136,7 +136,8 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
 		featureDetector.get()->detect(roiBGR, keypointsInROI);
 
-		std::cout<<"Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
+		if (matcherParameters.verbose>1)
+			std::cout<<"MatcherOpenCV: Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
 
 		std::sort(keypointsInROI.begin(), keypointsInROI.end(), MatcherOpenCV::compare_response);
 		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
@@ -149,9 +150,7 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
 
 	// It is better to have them sorted according to their response strength
-	std::cout<<"Keypoints size before sort " << raw_keypoints.size() << std::endl;
 	std::sort(raw_keypoints.begin(), raw_keypoints.end(), MatcherOpenCV::compare_response);
-	std::cout<<"Keypoints size after sort " << raw_keypoints.size() << std::endl;
 
 	if ( raw_keypoints.size() > 500)
 		raw_keypoints.resize(500);

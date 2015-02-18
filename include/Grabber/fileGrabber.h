@@ -82,13 +82,17 @@ class FileGrabber : public Grabber {
 				std::cout << "Unable to load File Grabber config file: "
 						<< configFilename << std::endl;
 			}
+
+
 			// Play parameters
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
-											"verbose", &verbose);
+					"verbose", &verbose);
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
 					"playEveryNthFrame", &playEveryNth);
 			config.FirstChildElement("playParameters")->QueryBoolAttribute(
-								"realTime", &realTime);
+					"realTime", &realTime);
+			config.FirstChildElement("playParameters")->QueryIntAttribute(
+					"maxNumberOfFrames", &maxNumberOfFrames);
 
 			// dataset path
 			tinyxml2::XMLElement *params = config.FirstChildElement("datasetPath");
@@ -103,6 +107,9 @@ class FileGrabber : public Grabber {
 		 /// Play parameters
 		 int playEveryNth;
 		 bool realTime;
+
+		 // Maximal number of frames
+		 int maxNumberOfFrames;
 
 		 /// Verbose
 		 int verbose;
@@ -126,7 +133,7 @@ class FileGrabber : public Grabber {
         std::string cloudSeqPrefix;
 
         /// file number
-        uint_fast32_t fileNo;
+        int fileNo, proccesingFileCounter;
 
         /// timestamp file
         std::ifstream timestampFile;
