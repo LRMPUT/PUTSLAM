@@ -139,6 +139,9 @@ class PoseGraphG2O : public Graph {
         /// Fix all optimized vertices of the current graph
         void fixOptimizedVertices(void);
 
+        /// get all optimized features
+        void getOptimizedFeatures(std::vector<MapFeature>& features);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -160,6 +163,10 @@ class PoseGraphG2O : public Graph {
         g2o::HyperGraph::VertexSet newVertices;
         /// set of new vertices (after optimization they can be fixed)
         g2o::HyperGraph::VertexSet newOptimizedVertices;
+        /// set of features modified since last optimization
+        std::map<int, Vec3> optimizedFeatures;
+        /// mutex for optimized features
+        std::mutex mtxOptFeatures;
 
         /// Removes a vertex from the graph. Returns true on success
         bool removeVertex(unsigned int id);

@@ -26,7 +26,7 @@ int main(int argc, char * argv[])
         map->startOptimizationThread(1,1);
 
         std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-        for (int i=0;i<10;i++){
+        for (int i=0;i<2;i++){
             //add some data to the map
             Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
             std::vector<RGBDFeature> features;
@@ -36,12 +36,25 @@ int main(int argc, char * argv[])
             }
             unsigned int id  = map->addNewPose(cameraPose, (std::chrono::high_resolution_clock::now() - startTime).count());
             map->addFeatures(features, id);
+            std::vector<MapFeature> mapFeatures = map->getAllFeatures();
+            std::vector<MapFeature> measurements;
+            for (std::vector<MapFeature>::iterator it = mapFeatures.begin(); it!=mapFeatures.end(); it++){
+                MapFeature feat;
+                feat.id = it->id;
+                Mat34 poseGlob (it->position);
+                Mat34 meas = cameraPose.inverse()*poseGlob;
+                feat.position.x() = meas(0,3)-0.01; feat.position.y() = meas(1,3)+0.01; feat.position.z() = meas(2,3);
+                if (feat.id<10000+i*10)
+                    measurements.push_back(feat);
+            }
+            map->addMeasurements(measurements);
         }
         usleep(100000);
         map->finishOptimization("../../resources/trajectory.res", "../../resources/graph.g2o");//Don't forget to finish optimization thread!!
         Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
         std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
         std::cout << visibleFeatures.size() << "\n";
+        map->save2file("../../resources/map.map", "../../resources/mapGraph.g2o");
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;

@@ -747,7 +747,9 @@ void PoseGraphG2O::updateEstimate(void){
       g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
       if (e->level() == 0) {
         for (std::vector<g2o::HyperGraph::Vertex*>::const_iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
-          verticesToCopy.insert(static_cast<g2o::OptimizableGraph::Vertex*>(*it));
+            g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(*it);
+            if (!v->fixed())
+                verticesToCopy.insert(static_cast<g2o::OptimizableGraph::Vertex*>(*it));
         }
       }
     }
@@ -762,6 +764,14 @@ void PoseGraphG2O::updateEstimate(void){
         ((Vertex3D*)itVertex->get())->keypoint.depthFeature.x() = estimate[0];
         ((Vertex3D*)itVertex->get())->keypoint.depthFeature.y() = estimate[1];
         ((Vertex3D*)itVertex->get())->keypoint.depthFeature.z() = estimate[2];
+        /// set of features modified since last optimization
+        std::pair<std::map<int,Vec3>::iterator,bool> ret;
+        mtxOptFeatures.lock();
+        ret =  optimizedFeatures.insert(std::pair<int,Vec3>(((Vertex3D*)itVertex->get())->vertexId, ((Vertex3D*)itVertex->get())->keypoint.depthFeature));
+        if (ret.second==false) {
+            ret.first->second = ((Vertex3D*)itVertex->get())->keypoint.depthFeature;
+        }
+        mtxOptFeatures.unlock();
       }
       if (itVertex->get()->type==Vertex::VERTEXSE2){
         ((VertexSE2*)itVertex->get())->pos.x() = estimate[0];
@@ -780,6 +790,19 @@ void PoseGraphG2O::updateEstimate(void){
     }
     mtxGraph.unlock();
     updateGraph();
+}
+
+/// get all optimized features
+void PoseGraphG2O::getOptimizedFeatures(std::vector<MapFeature>& features){
+    features.clear();
+    mtxOptFeatures.lock();
+    for (std::map<int,Vec3>::iterator it = optimizedFeatures.begin(); it!=optimizedFeatures.end(); ++it){
+        MapFeature feature;
+        feature.id = it->first; feature.position = it->second;
+        features.push_back(feature);
+    }
+    optimizedFeatures.clear();
+    mtxOptFeatures.unlock();
 }
 
 /// search for sub-graphs which aren't anchored and anchor them
