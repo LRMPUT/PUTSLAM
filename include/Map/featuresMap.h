@@ -96,6 +96,23 @@ public:
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
 
+	/// Get some parameters
+	int getAddFeaturesWhenMapSizeLessThan() {
+		return config.addFeaturesWhenMapSizeLessThan;
+	}
+	int getAddFeaturesWhenMeasurementSizeLessThan() {
+		return config.addFeaturesWhenMeasurementSizeLessThan;
+	}
+	int getMaxOnceFeatureAdd() {
+		return config.maxOnceFeatureAdd;
+	}
+	float getMinEuclideanDistanceOfFeatures() {
+		return config.minEuclideanDistanceOfFeatures;
+	}
+	int getAddNoFeaturesWhenMapSizeGreaterThan() {
+		return config.addNoFeaturesWhenMapSizeGreaterThan;
+	}
+
     class Config{
       public:
         Config() :
@@ -109,9 +126,41 @@ public:
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+			model->FirstChildElement("parameters")->QueryIntAttribute(
+					"addFeaturesWhenMapSizeLessThan",
+					&addFeaturesWhenMapSizeLessThan);
+			model->FirstChildElement("parameters")->QueryIntAttribute(
+					"addFeaturesWhenMeasurementSizeLessThan",
+					&addFeaturesWhenMeasurementSizeLessThan);
+			model->FirstChildElement("parameters")->QueryIntAttribute(
+								"maxOnceFeatureAdd",
+								&maxOnceFeatureAdd);
+			model->FirstChildElement("parameters")->QueryFloatAttribute(
+					"minEuclideanDistanceOfFeatures",
+					&minEuclideanDistanceOfFeatures);
+			model->FirstChildElement("parameters")->QueryIntAttribute(
+								"addNoFeaturesWhenMapSizeGreaterThan",
+								&addNoFeaturesWhenMapSizeGreaterThan);
+
+
         }
         public:
             bool useUncertainty;// 1 - use uncertainty model
+
+            // We perform adding to map if visible map is too small
+            int addFeaturesWhenMapSizeLessThan;
+
+            // We perform adding when we have less feature observations than
+            int addFeaturesWhenMeasurementSizeLessThan;
+
+            // We maximally can add this number of features from current frame
+            int maxOnceFeatureAdd;
+
+            // We do not add features closer to already existing ones than
+            float minEuclideanDistanceOfFeatures;
+
+            // If we observe many features, we do not add new
+            int addNoFeaturesWhenMapSizeGreaterThan;
     };
 
 private:

@@ -2,5 +2,17 @@
   <!-- Sensor configuration -->
   <MapConfig>
   	<name>FeaturesMap</name>
-	<parameters useUncertainty="true"></parameters>
+  	<!--
+  	addFeaturesWhenMapSizeLessThan 			-	we try to add more features if we observe less than features in current frame
+  	addFeaturesWhenMeasurementSizeLessThan 	-	we try to add more features if we have less than number of measurements in current frame
+  	maxOnceFeatureAdd						- 	we maximally add maxOnceFeatureAdd number of features from one frame
+  	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
+  	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
+  	-->
+	<parameters useUncertainty="true" 
+				addFeaturesWhenMapSizeLessThan="60" 
+				addFeaturesWhenMeasurementSizeLessThan="30" 
+				maxOnceFeatureAdd="40"
+				minEuclideanDistanceOfFeatures="0.05"
+				addNoFeaturesWhenMapSizeGreaterThan="300"></parameters>
   </MapConfig>

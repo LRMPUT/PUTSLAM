@@ -28,6 +28,7 @@ void FileGrabber::initFileGrabber() {
 	startSeqTimestamp = -1.0;
 	lastSeqTimestamp = -1;
 	fileNo = -1;
+	proccesingFileCounter = 0;
 
 	timestampFile.open(parameters.fullPath + "matched");
 }
@@ -39,6 +40,14 @@ bool FileGrabber::grab(void) {
 	// File was already fully read
 	if (timestampFile.eof())
 		return false;
+
+	if ( parameters.verbose > 0)
+		std::cout << "FileGrabber: proccesingFileCounter vs maxNumberOfFrames : " << proccesingFileCounter << " "
+			<< parameters.maxNumberOfFrames << std::endl;
+	// Check max number of frames
+	if ( proccesingFileCounter >= parameters.maxNumberOfFrames) {
+		return false;
+	}
 
 	// sensorFrame to read rgb image, depth image and timestamp
 	SensorFrame tmpSensorFrame;
@@ -108,8 +117,6 @@ bool FileGrabber::grab(void) {
 		}
 	}
 
-
-
 	if (parameters.verbose > 0)
 		std::cout << "Measurement timestamp : " << convertToHighPrecisionString(timestamp) << std::endl;
 	tmpSensorFrame.timestamp = timestamp;
@@ -134,7 +141,8 @@ bool FileGrabber::grab(void) {
        std::cout <<  "Could not open or find the image" << std::endl ;
     }
 
-
+    // New image had been processed
+    proccesingFileCounter++;
 
     // Add to queue
     mtx.lock();
