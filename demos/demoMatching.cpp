@@ -158,15 +158,25 @@ int main() {
 	// Optimize during trajectory acquisition
 	map->startOptimizationThread(1, 0);
 
-	int ileIteracji = 150;
+
+	/// TODO: MAKE IT NICER
+	int addFeaturesWhenMapSizeLessThan =
+			((FeaturesMap*) map)->getAddFeaturesWhenMapSizeLessThan();
+	int addFeaturesWhenMeasurementSizeLessThan =
+			((FeaturesMap*) map)->getAddFeaturesWhenMeasurementSizeLessThan();
+	int maxOnceFeatureAdd = ((FeaturesMap*) map)->getMaxOnceFeatureAdd();
+	float minEuclideanDistanceOfFeatures = ((FeaturesMap*) map)->getMinEuclideanDistanceOfFeatures();
+	int addNoFeaturesWhenMapSizeGreaterThan = ((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
+
 	// Main loop
-	while (ileIteracji /*true*/) {
+	while (true) {
 
 		bool middleOfSequence = grabber->grab(); // grab frame
 		if (!middleOfSequence)
 			break;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+
 
 		// cameraPose as Eigen::Transform
 		Mat34 cameraPose = Mat34(robotPose.cast<double>());
@@ -227,7 +237,9 @@ int main() {
 			map->addMeasurements(measurementList);
 
 			// Insufficient number of features -> time to add some features
-			if (mapFeatures.size() < 60 || measurementList.size () < 40) {
+			if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
+					|| (measurementList.size()
+							< addFeaturesWhenMeasurementSizeLessThan && mapFeatures.size() < addNoFeaturesWhenMapSizeGreaterThan)) {
 				addFeatureToMap = true;
 			}
 		}
@@ -242,7 +254,7 @@ int main() {
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeatures;
 			int addedCounter = 0;
-			for (int j = 0; j < features.feature3D.size() && addedCounter < 50; j++) {
+			for (int j = 0; j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd; j++) {
 
 				if ( features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0)
 				{
@@ -255,9 +267,8 @@ int main() {
 								mapFeatures[i].position.z());
 						float norm = (tmp - features.feature3D[j]).norm();
 
-						if (norm < 0.02) {
+						if (norm < minEuclideanDistanceOfFeatures) {
 							featureOk = false;
-							std::cout<<"REJECTED" << std::endl;
 							break;
 						}
 					}
@@ -301,8 +312,6 @@ int main() {
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
-		// Testing -> how many iterations
-		ileIteracji--;
 	}
 
 // Wait for optimization finish
