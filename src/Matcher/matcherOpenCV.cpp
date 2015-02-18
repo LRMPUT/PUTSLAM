@@ -54,23 +54,23 @@ void MatcherOpenCV::initVariables() {
 	cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
 	distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
 
-	cameraMatrixMat.at<float>(0,0) = 517.3f;
-	cameraMatrixMat.at<float>(0,2) = 318.6f;
-	cameraMatrixMat.at<float>(1,1) = 516.5f;
-	cameraMatrixMat.at<float>(1,2) = 255.3f;
-	cameraMatrixMat.at<float>(2,2) = 1.0f;
+//	cameraMatrixMat.at<float>(0,0) = 517.3f;
+//	cameraMatrixMat.at<float>(0,2) = 318.6f;
+//	cameraMatrixMat.at<float>(1,1) = 516.5f;
+//	cameraMatrixMat.at<float>(1,2) = 255.3f;
+//	cameraMatrixMat.at<float>(2,2) = 1.0f;
+//
+//	distortionCoeffsMat.at<float>(0) = -0.0410;
+//	distortionCoeffsMat.at<float>(1) = 0.3286;
+//	distortionCoeffsMat.at<float>(2) = 0.0087;
+//	distortionCoeffsMat.at<float>(3) = 0.0051;
+//	distortionCoeffsMat.at<float>(4) = -0.5643;
 
-	distortionCoeffsMat.at<float>(0) = -0.0410;
-	distortionCoeffsMat.at<float>(1) = 0.3286;
-	distortionCoeffsMat.at<float>(2) = 0.0087;
-	distortionCoeffsMat.at<float>(3) = 0.0051;
-	distortionCoeffsMat.at<float>(4) = -0.5643;
-
-//	cameraMatrixMat.at<float>(0, 0) = 480.6f;
-//	cameraMatrixMat.at<float>(0, 2) = 319.5f;
-//	cameraMatrixMat.at<float>(1, 1) = 480.6f;
-//	cameraMatrixMat.at<float>(1, 2) = 239.5f;
-//	cameraMatrixMat.at<float>(2, 2) = 1.0f;
+	cameraMatrixMat.at<float>(0, 0) = 480.6f;
+	cameraMatrixMat.at<float>(0, 2) = 319.5f;
+	cameraMatrixMat.at<float>(1, 1) = -480.6f;
+	cameraMatrixMat.at<float>(1, 2) = 239.5f;
+	cameraMatrixMat.at<float>(2, 2) = 1.0f;
 
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")

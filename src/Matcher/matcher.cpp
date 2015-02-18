@@ -156,6 +156,90 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	}
 }
 
+bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+		std::vector<MapFeature> &foundInlierMapFeatures)
+{
+
+	// The current pose descriptors are renamed to make it less confusing
+	cv::Mat currentPoseDescriptors(prevDescriptors);
+
+	// Perform matching
+	std::vector<cv::DMatch> matches ;
+
+
+	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
+	cv::Mat mapDescriptors = extractMapDescriptors(mapFeatures);
+	std::vector<Eigen::Vector3f> mapFeaturePositions3D = extractMapFeaturesPositions(mapFeatures);
+
+	int j = 0;
+	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
+			it != mapFeatures.end(); ++it, ++j) {
+
+		// Possible matches for considered feature
+		std::vector<int> possibleMatchId;
+
+		for (int i =0 ;i < prevFeatures3D.size(); i++) {
+
+			Eigen::Vector3f tmp((float)it->position.x(), (float)it->position.y(), (float)it->position.z());
+			float norm = (tmp - (prevFeatures3D[i])).norm();
+
+			if ( norm < 0.02 ) {
+				possibleMatchId.push_back(i);
+			}
+		}
+
+
+		int bestId = -1;
+		float bestVal = 9999;
+		for (int i=0;i<possibleMatchId.size();i++)
+		{
+			int id = possibleMatchId[i];
+
+			cv::Mat x = (it->descriptors[0].descriptor - prevDescriptors.row(id));
+			float value = norm(x, cv::NORM_L2);
+			if ( value < bestVal && value < 0.1) {
+				bestVal = value;
+				bestId = id;
+			}
+		}
+
+		if ( bestId != -1) {
+//			std::cout<<"BEST VALUE : " << bestVal << std::endl;
+			cv::DMatch tmpMatch;
+			tmpMatch.distance = bestVal;
+			tmpMatch.queryIdx = j;
+			tmpMatch.trainIdx = bestId;
+			matches.push_back(tmpMatch);
+		}
+	}
+
+	std::cout<<"MatchesXYZ - we found : " << matches.size() << std::endl;
+
+
+	// RANSAC
+	std::vector<cv::DMatch> inlierMatches;
+	RANSAC ransac(matcherParameters.RANSACParams);
+	Eigen::Matrix4f estimatedTransformation = ransac.estimateTransformation(
+			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
+
+	// for all inliers, convert them to map-compatible format
+	foundInlierMapFeatures.clear();
+	for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin(); it!=inlierMatches.end(); ++it) {
+		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
+
+		MapFeature mapFeature;
+		mapFeature.id = mapFeatures[mapId].id;
+		mapFeature.position = Vec3(prevFeatures3D[currentPoseId].cast<double>());
+		mapFeature.posesIds.push_back(sensorPoseId);
+		// TODO: take into account the future orientation
+        ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, prevDescriptors.row(currentPoseId) );
+		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+		// Add the measurement
+		foundInlierMapFeatures.push_back(mapFeature);
+	}
+}
+
 
 void Matcher::showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> featuresToShow)
 {

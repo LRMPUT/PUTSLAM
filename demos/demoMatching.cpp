@@ -158,7 +158,7 @@ int main() {
 	// Optimize during trajectory acquisition
 	map->startOptimizationThread(1, 0);
 
-	int ileIteracji = 1000;
+	int ileIteracji = 150;
 	// Main loop
 	while (ileIteracji /*true*/) {
 
@@ -176,6 +176,9 @@ int main() {
 				currentSensorFrame.timestamp);
 
 		bool addFeatureToMap = false;
+
+		// Variable to store map features
+		std::vector<MapFeature> mapFeatures;
 
 		// The beginning of the sequence
 		if (ifStart) {
@@ -200,14 +203,23 @@ int main() {
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Get the visible features
-			std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+			mapFeatures = map->getVisibleFeatures(cameraPose);
+
+			// Move mapFeatures to local coordinate system
+			for (std::vector<MapFeature>::iterator it = mapFeatures.begin(); it!=mapFeatures.end(); ++it) {
+				Mat34 featurePos((*it).position);
+				featurePos = (cameraPose.inverse()).matrix() * featurePos.matrix();
+				it->position = Vec3(featurePos(0, 3), featurePos(1, 3),
+                        featurePos(2, 3));
+			}
+
 			std::cout << "Returned visible map feature size: "
 					<< mapFeatures.size() << std::endl;
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
-			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList);
+			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList);
 
 			std::cout << "Measurement list size : " << measurementList.size()
 					<< std::endl;
@@ -215,7 +227,7 @@ int main() {
 			map->addMeasurements(measurementList);
 
 			// Insufficient number of features -> time to add some features
-			if (mapFeatures.size() < 150 || measurementList.size () < 20) {
+			if (mapFeatures.size() < 60 || measurementList.size () < 40) {
 				addFeatureToMap = true;
 			}
 		}
@@ -230,28 +242,47 @@ int main() {
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeatures;
 			int addedCounter = 0;
-			for (int j = 0; j < features.feature3D.size() && addedCounter < 100; j++) {
+			for (int j = 0; j < features.feature3D.size() && addedCounter < 50; j++) {
 
 				if ( features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0)
 				{
-					// Create an extended descriptor
-					ExtendedDescriptor desc(cameraPoseId,
-							features.descriptors.row(j));
 
-					// In further processing we expect more descriptors
-					std::vector<ExtendedDescriptor> extDescriptors { desc };
+					bool featureOk = true;
+					for (int i = 0; i < mapFeatures.size(); i++) {
 
-					// Convert translation
-					Eigen::Translation<double, 3> featurePosition(
-							features.feature3D[j].cast<double>());
+						Eigen::Vector3f tmp(mapFeatures[i].position.x(),
+								mapFeatures[i].position.y(),
+								mapFeatures[i].position.z());
+						float norm = (tmp - features.feature3D[j]).norm();
 
-					// Add to set added later to map
-					RGBDFeature f(featurePosition,
-							features.undistortedFeature2D[j].x,
-							features.undistortedFeature2D[j].y, extDescriptors);
-					mapFeatures.push_back(f);
+						if (norm < 0.02) {
+							featureOk = false;
+							std::cout<<"REJECTED" << std::endl;
+							break;
+						}
+					}
 
-					addedCounter++;
+					if (featureOk)
+					{
+						// Create an extended descriptor
+						ExtendedDescriptor desc(cameraPoseId,
+								features.descriptors.row(j));
+
+						// In further processing we expect more descriptors
+						std::vector<ExtendedDescriptor> extDescriptors { desc };
+
+						// Convert translation
+						Eigen::Translation<double, 3> featurePosition(
+								features.feature3D[j].cast<double>());
+
+						// Add to set added later to map
+						RGBDFeature f(featurePosition,
+								features.undistortedFeature2D[j].x,
+								features.undistortedFeature2D[j].y, extDescriptors);
+						mapFeatures.push_back(f);
+
+						addedCounter++;
+					}
 				}
 			}
 
