@@ -60,6 +60,11 @@ public:
 	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures);
 
+	/// Run the match with map considering feature map location
+	/// More like guided-matching
+	bool matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+			std::vector<MapFeature> &foundInlierMapFeatures);
+
 	/// Class used to hold all parameters
 	class Parameters {
 	public:
