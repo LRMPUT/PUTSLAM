@@ -203,7 +203,6 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 	// Final optimization
 	std::cout<<"Starting final after trajectory optimization"<<std::endl;
 	//poseGraph->optimize(-1, verbose, 0.0001);
-	poseGraph->optimize(50, verbose);
 	poseGraph->optimize(100, verbose);
 
     std::vector<MapFeature> optimizedFeatures;

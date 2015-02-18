@@ -183,7 +183,7 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			Eigen::Vector3f tmp((float)it->position.x(), (float)it->position.y(), (float)it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
-			if ( norm < 0.02 ) {
+			if ( norm < 0.03 ) {
 				possibleMatchId.push_back(i);
 			}
 		}
@@ -197,7 +197,7 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 			cv::Mat x = (it->descriptors[0].descriptor - prevDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
-			if ( value < bestVal && value < 0.1) {
+			if ( value < bestVal && value < 0.2) {
 				bestVal = value;
 				bestId = id;
 			}

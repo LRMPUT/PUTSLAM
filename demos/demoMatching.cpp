@@ -156,7 +156,7 @@ int main() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	map->startOptimizationThread(1, 0);
+	//map->startOptimizationThread(1, 0);
 
 
 	/// TODO: MAKE IT NICER
@@ -316,10 +316,16 @@ int main() {
 
 	}
 
-// Wait for optimization finish
+	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
+
+	map->startOptimizationThread(1, 0);
+
+	sleep(1);
+
+	// Wait for optimization finish
 	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
-	map->save2file("createdMapFile.map", "optimizedGraphFile2.g2o");
+
 
 // Close trajectory stream
 	trajectoryFreiburgStream.close();
