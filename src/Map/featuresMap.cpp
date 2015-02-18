@@ -183,6 +183,15 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 		if (verbose)
 			std::cout << "start optimization\n";
 		poseGraph->optimize(iterNo, verbose);
+        std::vector<MapFeature> optimizedFeatures;
+        ((PoseGraphG2O*)poseGraph)->getOptimizedFeatures(optimizedFeatures);
+        bufferMapFrontend.mtxBuffer.lock();
+        bufferMapFrontend.features2update.insert(bufferMapFrontend.features2update.begin(), optimizedFeatures.begin(), optimizedFeatures.end());
+        bufferMapFrontend.mtxBuffer.unlock();
+        std::cout<<"features 2 update1 " << bufferMapFrontend.features2update.size() <<"\n";
+        //try to update the map
+        updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+
 		if (verbose)
 			std::cout << "end optimization\n";
 	}
@@ -192,6 +201,15 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 	//poseGraph->optimize(-1, verbose, 0.0001);
 	poseGraph->optimize(50, verbose);
 	poseGraph->optimize(100, verbose);
+
+    std::vector<MapFeature> optimizedFeatures;
+    ((PoseGraphG2O*)poseGraph)->getOptimizedFeatures(optimizedFeatures);
+    bufferMapFrontend.mtxBuffer.lock();
+    bufferMapFrontend.features2update.insert(bufferMapFrontend.features2update.begin(), optimizedFeatures.begin(), optimizedFeatures.end());
+    bufferMapFrontend.mtxBuffer.unlock();
+    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
+    //try to update the map
+    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
 }
 
 /// Update map
@@ -202,9 +220,53 @@ void FeaturesMap::updateMap(MapModifier& modifier, std::vector<MapFeature>& feat
             featuresMap.insert(featuresMap.end(), modifier.features2add.begin(), modifier.features2add.end());
             modifier.features2add.clear();
         }
+        if (modifier.updateFeatures()){
+            for (std::vector<MapFeature>::iterator it = modifier.features2update.begin(); it!=modifier.features2update.end();it++){
+                updateFeature(featuresMap, *it);
+            }
+            modifier.features2update.clear();
+        }
         modifier.mtxBuffer.unlock();
         mutex.unlock();
     }
+}
+
+/// Update feature
+void FeaturesMap::updateFeature(std::vector<MapFeature>& featuresMap, MapFeature& newFeature){
+    for (std::vector<MapFeature>::iterator it = featuresMap.begin(); it!=featuresMap.end(); it++){
+        if (it->id == newFeature.id){
+            it->position = newFeature.position;
+        }
+    }
+}
+
+/// Save map to file
+void FeaturesMap::save2file(std::string mapFilename, std::string graphFilename){
+    poseGraph->save2file(graphFilename);
+    std::ofstream file(mapFilename);
+    mtxMapFrontend.lock();
+    file << " ";
+    for (std::vector<MapFeature>::iterator it = featuresMapFrontend.begin(); it!=featuresMapFrontend.end();it++){
+        //MapFeature.
+        file << "Feature " << it->id << " " << it->position.x() << " " << it->position.y() << " " << it->position.z() << " " << it->u << " " << it->v << "\n";
+        file << "FeaturePoseIds";
+        for (std::vector<unsigned int>::iterator iter = it->posesIds.begin(); iter!=it->posesIds.end(); iter++){
+            file << " " << *iter;
+        }
+        file << "\n";
+        file << "FeatureExtendedDescriptors ";
+        for (std::vector<ExtendedDescriptor>::iterator iter = it->descriptors.begin(); iter!=it->descriptors.end(); iter++){
+            file << iter->poseId;
+            for (int i=0;i<iter->descriptor.cols;i++)
+                for (int j=0;j<iter->descriptor.rows;j++){
+                    file << " " << iter->descriptor.at<double>(i,j);
+                }
+            file << "\n";
+        }
+        file << "\n";
+    }
+    mtxMapFrontend.unlock();
+    file.close();
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

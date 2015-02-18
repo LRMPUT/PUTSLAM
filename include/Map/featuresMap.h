@@ -96,6 +96,9 @@ public:
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
 
+    /// Save map to file
+    void save2file(std::string mapFilename, std::string graphFilename);
+
     class Config{
       public:
         Config() :
@@ -171,6 +174,9 @@ private:
 
     /// Update map
     void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);
+
+    /// Update feature
+    void updateFeature(std::vector<MapFeature>& featuresMap, MapFeature& newFeature);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

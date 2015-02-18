@@ -67,6 +67,9 @@ public:
 	virtual void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename) = 0;
 
+    /// Save map to file
+    virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;
+
 protected:
 	/// Map type
 	Type type;
