@@ -66,22 +66,22 @@ int main()
         cout << "Current graph: " << graph->getName() << std::endl;
 
         //add vertices - robot poses
-        VertexSE3 vertex1(0, Vec3(0.0, 0.0, 0.0), Quaternion (1, 0, 0, 0));
+        VertexSE3 vertex1(0, Mat34::Identity());
         vertex1.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex1))
             std::cout << "error: vertex exists!\n";
 
-        VertexSE3 vertex2(1, Vec3(0.0, 2.0, 0.0), Quaternion(1, 0, 0, 0));
+        VertexSE3 vertex2(1, Mat34(Vec3(0.0, 2.0, 0.0)*Quaternion(1, 0, 0, 0)));
         vertex2.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex2))
             std::cout << "error: vertex exists!\n";
 
-        VertexSE3 vertex3(2, Vec3(-2.0, 2.0, 0.0), Quaternion(1, 0, 0, 0));
+        VertexSE3 vertex3(2, Mat34(Vec3(-2.0, 2.0, 0.0) * Quaternion(1, 0, 0, 0)));
         vertex3.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex3))
             std::cout << "error: vertex exists!\n";
 
-        VertexSE3 vertex4(3, Vec3(-2.0, 0.0, 0.0), Quaternion(1, 0, 0, 0));
+        VertexSE3 vertex4(3, Mat34(Vec3(-2.0, 0.0, 0.0) * Quaternion(1, 0, 0, 0)));
         vertex4.timestamp = duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex4))
             std::cout << "error: vertex exists!\n";

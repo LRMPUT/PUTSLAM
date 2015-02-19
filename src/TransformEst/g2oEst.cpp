@@ -19,12 +19,11 @@ const std::string& G2OEst::getName() const {
 Mat34& G2OEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB){
     graph.clear();
     //add vertices - robot poses
-    Vec3 pos(0.0, 0.0, 0.0);  Quaternion rot(1, 0, 0, 0);
-    VertexSE3 vertex(0, pos, rot);
+    Mat34 pose(Mat34::Identity());
+    VertexSE3 vertex(0, pose);
     if (!graph.addVertexPose(vertex))
         std::cout << "error: vertex exists!\n";
-    Vec3 pos1(transformation(0,3), transformation(1,3), transformation(2,3));  Quaternion rot1(transformation.rotation());
-    VertexSE3 vertex1(1, pos1, rot1);
+    VertexSE3 vertex1(1, transformation);
     if (!graph.addVertexPose(vertex1))
         std::cout << "error: vertex exists!\n";
 
@@ -64,12 +63,10 @@ Mat34& G2OEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen::M
 Mat34& G2OEst::computeTransformation(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation){
     graph.clear();
     //add vertices - robot poses
-    Vec3 pos(0.0, 0.0, 0.0);  Quaternion rot(1, 0, 0, 0);
-    VertexSE3 vertex(0, pos, rot);
+    VertexSE3 vertex(0, Mat34::Identity());
     if (!graph.addVertexPose(vertex))
         std::cout << "error: vertex exists!\n";
-    Vec3 pos1(transformation(0,3), transformation(1,3), transformation(2,3));  Quaternion rot1(transformation.rotation());
-    VertexSE3 vertex1(1, pos1, rot1);
+    VertexSE3 vertex1(1, transformation);
     if (!graph.addVertexPose(vertex1))
         std::cout << "error: vertex exists!\n";
 
@@ -111,12 +108,10 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
 
     graph.clear();
     //add vertices - robot poses
-    Vec3 pos(0.0, 0.0, 0.0);  Quaternion rot(1, 0, 0, 0);
-    VertexSE3 vertex(0, pos, rot);
+    VertexSE3 vertex(0, Mat34::Identity());
     if (!graph.addVertexPose(vertex))
         std::cout << "error: vertex exists!\n";
-    Vec3 pos1(transformation(0,3), transformation(1,3), transformation(2,3));  Quaternion rot1(transformation.rotation());
-    VertexSE3 vertex1(1, pos1, rot1);
+    VertexSE3 vertex1(1, transformation);
     if (!graph.addVertexPose(vertex1))
         std::cout << "error: vertex exists!\n";
 

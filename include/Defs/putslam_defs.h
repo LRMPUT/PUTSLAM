@@ -442,7 +442,7 @@ public:
 	typedef std::vector<VertexSE3> Seq;
 
 	/// Vertex / node
-	RobotPose nodeSE3;
+    Mat34 pose;
 
 	/// Point cloud
 	PointCloud cloud;
@@ -456,15 +456,13 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline VertexSE3(uint_fast32_t _vertexId, const Vec3 _pos,
-			const Quaternion _rot) :
-			Vertex(VERTEXSE3, _vertexId), nodeSE3(_pos, _rot) {
+    inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose) :
+            Vertex(VERTEXSE3, _vertexId), pose(_pose) {
 	}
 
 	/// Overloaded constructor
-	inline VertexSE3(uint_fast32_t _vertexId, const Vec3 _pos,
-			const Quaternion _rot, float_type timestamp) :
-			Vertex(VERTEXSE3, _vertexId, timestamp), nodeSE3(_pos, _rot) {
+    inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose, float_type timestamp) :
+            Vertex(VERTEXSE3, _vertexId, timestamp), pose(_pose) {
 	}
 };
 

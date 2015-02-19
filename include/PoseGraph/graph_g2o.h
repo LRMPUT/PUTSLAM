@@ -167,6 +167,10 @@ class PoseGraphG2O : public Graph {
         std::map<int, Vec3> optimizedFeatures;
         /// mutex for optimized features
         std::mutex mtxOptFeatures;
+        /// set of camera poses modified since last optimization
+        std::map<int, Mat34> optimizedPoses;
+        /// mutex for optimized poses
+        std::mutex mtxOptPoses;
 
         /// Removes a vertex from the graph. Returns true on success
         bool removeVertex(unsigned int id);

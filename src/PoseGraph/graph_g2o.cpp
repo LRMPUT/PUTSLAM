@@ -209,7 +209,8 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
     if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
         graph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE3(v)));//update putslam structure
         std::stringstream currentLine;
-        currentLine << v.nodeSE3.pos.x() << ' ' << v.nodeSE3.pos.y() << ' ' << v.nodeSE3.pos.z() << ' ' << v.nodeSE3.rot.x() << ' ' << v.nodeSE3.rot.y() << ' ' << v.nodeSE3.rot.z() << ' ' << v.nodeSE3.rot.w();
+        Quaternion quat(v.pose.rotation());
+        currentLine << v.pose(0,3) << ' ' << v.pose(1,3) << ' ' << v.pose(2,3) << ' ' << quat.x() << ' ' << quat.y() << ' ' << quat.z() << ' ' << quat.w();
         addVertexG2O(v.vertexId, currentLine, Vertex::VERTEXSE3);
         mtxGraph.unlock();
         return true;
@@ -307,15 +308,15 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
     if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
         std::cout << "Warning: vertex does not exist. adding new vertex...\n";
         mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pos, rot));
+        Mat34 pose(Mat34::Identity());
+        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
         mtxGraph.lock();
     }
     if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
         std::cout << "Warning: vertex does not exist. adding new vertex...\n";
         mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
-        addVertexPose(putslam::VertexSE3(e.toVertexId, pos, rot));
+        Mat34 pose(Mat34::Identity());
+        addVertexPose(putslam::VertexSE3(e.toVertexId, pose));
         mtxGraph.lock();
     }
     e.id = graph.edges.size();
@@ -362,8 +363,8 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
     if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
         std::cout << "Warning: vertex does not exist. adding new vertex...\n";
         mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0); Eigen::Quaternion<double> rot(1, 0, 0, 0);
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pos, rot));
+        Mat34 pose(Mat34::Identity());
+        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
         mtxGraph.lock();
     }
     e.id = graph.edges.size();
@@ -535,8 +536,9 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             else if (lineType == "VERTEX_SE3:QUAT"){
                 unsigned int id;
                 is >> id >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
-                Vec3 position(pos[0], pos[1], pos[2]);  Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
-                putslam::VertexSE3 vertex(id, position, qrot);
+                Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
+                Mat34 pose(qrot); pose(0,3) = pos[0]; pose(1,3) = pos[1]; pose(2,3) = pos[2];
+                putslam::VertexSE3 vertex(id, pose);
                 if (!addVertexPose(vertex))
                     std::cout << "error: vertex exists!\n";
             }
@@ -619,8 +621,7 @@ std::vector<Mat34> PoseGraphG2O::getTrajectory(void) const{
     std::vector<Mat34> vertices;
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
-            Mat34 pose = ((putslam::VertexSE3*)it->get())->nodeSE3.pos * ((putslam::VertexSE3*)it->get())->nodeSE3.rot;
-            vertices.push_back(pose);
+            vertices.push_back(((putslam::VertexSE3*)it->get())->pose);
         }
         if (it->get()->type==Vertex::VERTEXSE2){
             Mat34 pose; pose.setIdentity();
@@ -639,11 +640,12 @@ void PoseGraphG2O::export2RGBDSLAM(const std::string filename) const{
     for (putslam::PoseGraph::VertexSet::const_iterator it = graph.vertices.begin(); it!=graph.vertices.end();it++){
         if (it->get()->type==Vertex::VERTEXSE3){
             std::ostringstream ossTimestamp;
+            Quaternion quat(((putslam::VertexSE3*)it->get())->pose.rotation());
             ossTimestamp << std::setfill('0') << std::setprecision(17) << ((putslam::VertexSE3*)it->get())->timestamp;
-            file << ossTimestamp.str() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.x() << " "
-                    << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.pos.z() << " "
-                    << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.x() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.y() << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.z()
-                    << " " << ((putslam::VertexSE3*)it->get())->nodeSE3.rot.w() << std::endl;
+            file << ossTimestamp.str() << " " << ((putslam::VertexSE3*)it->get())->pose(0,3) << " "
+                    << ((putslam::VertexSE3*)it->get())->pose(1,3) << " " << ((putslam::VertexSE3*)it->get())->pose(2,3) << " "
+                    << quat.x() << " " << quat.y() << " " << quat.z()
+                    << " " << quat.w() << std::endl;
         }
     }
     file.close();
@@ -662,15 +664,16 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
             float_type timestamp = 0;
             float_type pos[3], rot[4];
             is >> timestamp >> pos[0] >> pos[1] >> pos[2] >> rot[1] >> rot[2] >> rot[3] >> rot[0];
-            Vec3 pos1(pos[0], pos[1], pos[2]);  putslam::Quaternion rot1(rot[0], rot[1], rot[2], rot[3]);
-            putslam::VertexSE3 vertex(0, pos1, rot1);
+            Quaternion rot1(rot[0], rot[1], rot[2], rot[3]);
+            Mat34 pose(rot1.matrix()); pose(0,3) = pos[0]; pose(1,3) = pos[1]; pose(2,3) = pos[2];
+            putslam::VertexSE3 vertex(0, pose);
             vertex.timestamp = timestamp; vertex.vertexId = vertexId;
             if (addVertexPose(vertex)) //add vertex
                 vertexId++;
             else
                 return false;
             if (vertexId>1){ // add edge
-                putslam::Mat34 v3 = (vertex.nodeSE3.pos * vertex.nodeSE3.rot).inverse() * vertexPrev.nodeSE3.pos * vertexPrev.nodeSE3.rot;
+                putslam::Mat34 v3 = (vertex.pose).inverse() * vertexPrev.pose;
                 putslam::Quaternion q(v3.rotation()); putslam::Vec3 p(v3.translation());
                 RobotPose trans(p,q); Mat66 infoMat; infoMat.setIdentity();
                 EdgeSE3 edge(trans,infoMat,vertexId-2,vertexId-1);
@@ -779,13 +782,13 @@ void PoseGraphG2O::updateEstimate(void){
         ((VertexSE2*)itVertex->get())->theta = estimate[2];
       }
       else if (itVertex->get()->type==Vertex::VERTEXSE3){
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.x() = estimate[0];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.y() = estimate[1];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.pos.z() = estimate[2];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.x() = estimate[3];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.y() = estimate[4];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.z() = estimate[5];
-            ((putslam::VertexSE3*)itVertex->get())->nodeSE3.rot.w() = estimate[6];
+            ((putslam::VertexSE3*)itVertex->get())->pose(0,3) = estimate[0];
+            ((putslam::VertexSE3*)itVertex->get())->pose(1,3) = estimate[1];
+            ((putslam::VertexSE3*)itVertex->get())->pose(2,3) = estimate[2];
+            Quaternion quat(estimate[6],estimate[3],estimate[4],estimate[5]);
+            for (int k=0;k<3;k++)
+                for (int l=0;l<3;l++)
+                    ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);
       }
     }
     mtxGraph.unlock();

@@ -42,8 +42,11 @@ const std::string& FeaturesMap::getName() const {
 /// Position of features in relation to camera pose
 void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		int poseId) {
+    mtxCamTraj.lock();
+    int camTrajSize = camTrajectory.size();
 	Mat34 cameraPose =
 			(poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
+    mtxCamTraj.unlock();
 
     bufferMapFrontend.mtxBuffer.lock();
     for (std::vector<RGBDFeature>::const_iterator it = features.begin(); it != features.end(); it++) {//.. and the graph
@@ -65,7 +68,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
         if (config.useUncertainty)
             info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
 
-        Edge3D e((*it).position, info, camTrajectory.size() - 1, featureIdNo);
+        Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
         poseGraph->addVertexFeature(
                 Vertex3D(featureIdNo,
                         Vec3(featurePos(0, 3), featurePos(1, 3),
@@ -84,19 +87,22 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 /// add new pose of the camera, returns id of the new pose
 int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 	//add camera pose to the map
-	camTrajectory.push_back(cameraPose);
+    mtxCamTraj.lock();
+    camTrajectory.push_back(cameraPose);
 	//add camera pose to the graph
-	poseGraph->addVertexPose(
-			VertexSE3(camTrajectory.size() - 1,
-					Vec3(cameraPose(0, 3), cameraPose(1, 3), cameraPose(2, 3)),
-					Quaternion(cameraPose.rotation()), timestamp));
-	return camTrajectory.size() - 1;
+    int trajSize = camTrajectory.size() - 1;
+    mtxCamTraj.unlock();
+    poseGraph->addVertexPose( VertexSE3(trajSize, cameraPose, timestamp));
+    return trajSize;
 }
 
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 		int poseId) {
-	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajectory.size() - 1);
+    mtxCamTraj.lock();
+        int camTrajSize = camTrajectory.size();
+    mtxCamTraj.unlock();
+    unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 		//add measurement
@@ -155,7 +161,10 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 
 /// get pose of the sensor (default: last pose)
 Mat34 FeaturesMap::getSensorPose(int poseId) {
-	return (poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
+    mtxCamTraj.lock();
+    Mat34 pose = (poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
+    mtxCamTraj.unlock();
+    return pose;
 }
 
 /// start optimization thread

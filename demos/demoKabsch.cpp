@@ -257,8 +257,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
     int vertexId2 = 0;
-    Vec3 pos2(initPose(0,3), initPose(1,3), initPose(2,3));  Quaternion rot2(initPose.rotation());
-    VertexSE3 vertex2(vertexId2, pos2, rot2);
+    VertexSE3 vertex2(vertexId2, initPose);
     if (!graph->addVertexPose(vertex2))
         std::cout << "error: vertex exists!\n";
     vertexId2++;
@@ -297,9 +296,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
             //add vertex to the graph
             Vec3 pos;
             trajectorySensor2.push_back(sensorPose);
-            pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
-            Quaternion quatSensor(sensorPose.rotation());
-            VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
+            VertexSE3 vertexSensor(vertexId2, sensorPose);
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
             // add edge to the g2o graph
@@ -466,8 +463,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
     std::vector<Mat34> trajectorySensor2;
     trajectorySensor2.push_back(initPose);
     int vertexId2 = 0;
-    Vec3 pos2(initPose(0,3), initPose(1,3), initPose(2,3));  Quaternion rot2(initPose.rotation());
-    VertexSE3 vertex2(vertexId2, pos2, rot2);
+    VertexSE3 vertex2(vertexId2, initPose);
     if (!graph->addVertexPose(vertex2))
         std::cout << "error: vertex exists!\n";
     vertexId2++;
@@ -510,9 +506,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
             //add vertex to the graph
             Vec3 pos;
             trajectorySensor2.push_back(sensorPose);
-            pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
-            Quaternion quatSensor(sensorPose.rotation());
-            VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
+            VertexSE3 vertexSensor(vertexId2, sensorPose);
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
             // add edge to the g2o graph
@@ -816,15 +810,13 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
                 sensorPose.matrix() = trajectorySensor2.back().matrix()*ident.matrix();
             }
             trajectorySensor2.push_back(sensorPose);
-            Vec3 pos;
-            pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3); pos.z() = sensorPose(2,3);
-            Quaternion quatSensor(sensorPose.rotation());
-            VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
+            VertexSE3 vertexSensor(vertexId2, sensorPose);
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
 
             if (expType==2||expType==3||expType==4){
                 // add edge to the g2o graph
+                Vec3 pos;
                 pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
                 Quaternion quatMotion(trans.rotation());
                 RobotPose measurement(pos, quatMotion);
@@ -845,9 +837,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
         }
         else {
             sensorPose.matrix() = initPose.matrix();
-            Quaternion quatSensor(initPose.rotation());
-            Vec3 pos(initPose(0,3), initPose(1,3), initPose(2,3));
-            VertexSE3 vertexSensor(vertexId2, pos, quatSensor);
+            VertexSE3 vertexSensor(vertexId2, initPose);
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
         }
