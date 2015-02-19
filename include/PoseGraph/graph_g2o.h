@@ -142,6 +142,9 @@ class PoseGraphG2O : public Graph {
         /// get all optimized features
         void getOptimizedFeatures(std::vector<MapFeature>& features);
 
+        /// get all optimized poses
+        void getOptimizedPoses(std::vector<VertexSE3>& poses);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;

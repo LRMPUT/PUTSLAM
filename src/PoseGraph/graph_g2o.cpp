@@ -788,7 +788,14 @@ void PoseGraphG2O::updateEstimate(void){
             Quaternion quat(estimate[6],estimate[3],estimate[4],estimate[5]);
             for (int k=0;k<3;k++)
                 for (int l=0;l<3;l++)
-                    ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);
+                    ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);/// set of features modified since last optimization
+            std::pair<std::map<int,Mat34>::iterator,bool> ret;
+            mtxOptPoses.lock();
+            ret =  optimizedPoses.insert(std::pair<int,Mat34>(((VertexSE3*)itVertex->get())->vertexId, ((VertexSE3*)itVertex->get())->pose));
+            if (ret.second==false) {
+                ret.first->second = ((VertexSE3*)itVertex->get())->pose;
+            }
+            mtxOptPoses.unlock();
       }
     }
     mtxGraph.unlock();
@@ -806,6 +813,19 @@ void PoseGraphG2O::getOptimizedFeatures(std::vector<MapFeature>& features){
     }
     optimizedFeatures.clear();
     mtxOptFeatures.unlock();
+}
+
+/// get all optimized poses
+void PoseGraphG2O::getOptimizedPoses(std::vector<VertexSE3>& poses){
+    poses.clear();
+    mtxOptPoses.lock();
+    for (std::map<int,Mat34>::iterator it = optimizedPoses.begin(); it!=optimizedPoses.end(); ++it){
+        VertexSE3 pose;
+        pose.vertexId = it->first; pose.pose = it->second;
+        poses.push_back(pose);
+    }
+    optimizedPoses.clear();
+    mtxOptPoses.unlock();
 }
 
 /// search for sub-graphs which aren't anchored and anchor them

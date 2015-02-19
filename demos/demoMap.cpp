@@ -54,6 +54,7 @@ int main(int argc, char * argv[])
         Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
         std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
         std::cout << visibleFeatures.size() << "\n";
+        std::cout << "cameraPose:\n" << map->getSensorPose().matrix() << "\n";
         map->save2file("../../resources/map.map", "../../resources/mapGraph.g2o");
     }
     catch (const std::exception& ex) {
