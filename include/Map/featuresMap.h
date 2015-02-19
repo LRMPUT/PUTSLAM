@@ -169,7 +169,10 @@ private:
     Config config;
 
 	///camera trajectory
-	std::vector<Mat34> camTrajectory;
+    std::vector<VertexSE3> camTrajectory;
+
+    ///odometry -- transformations beetween camera poses
+    std::vector<Mat34> odoMeasurements;
 
     /// mutex for camera trajectory
     std::mutex mtxCamTraj;
@@ -219,6 +222,9 @@ private:
     /// Map management -- buffer
     MapModifier bufferMapManagement;
 
+    /// Last optimized pose
+    int lastOptimizedPose;
+
 	/// optimization thread
 	void optimize(unsigned int iterNo, int verbose);
 
@@ -227,6 +233,12 @@ private:
 
     /// Update feature
     void updateFeature(std::vector<MapFeature>& featuresMap, MapFeature& newFeature);
+
+    /// Update camera trajectory
+    void updateCamTrajectory(std::vector<VertexSE3>& poses2update);
+
+    /// Update pose
+    void updatePose(VertexSE3& newPose);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

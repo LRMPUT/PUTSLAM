@@ -10,14 +10,14 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-		featureIdNo(FATURES_START_ID), Map("Features Map", MAP_FEATURES) {
+        featureIdNo(FATURES_START_ID), lastOptimizedPose(0), Map("Features Map", MAP_FEATURES) {
 	poseGraph = createPoseGraphG2O();
 }
 
 /// Construction
 FeaturesMap::FeaturesMap(std::string configMap,
         std::string sensorConfig) : config(configMap),
-		featureIdNo(FATURES_START_ID), sensorModel(sensorConfig), Map(
+        featureIdNo(FATURES_START_ID), sensorModel(sensorConfig), lastOptimizedPose(0), Map(
 				"Features Map", MAP_FEATURES) {
 	tinyxml2::XMLDocument config;
     std::string filename = "../../resources/" + configMap;
@@ -45,7 +45,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     mtxCamTraj.lock();
     int camTrajSize = camTrajectory.size();
 	Mat34 cameraPose =
-			(poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
+            (poseId >= 0) ? camTrajectory[poseId].pose : camTrajectory.back().pose;
     mtxCamTraj.unlock();
 
     bufferMapFrontend.mtxBuffer.lock();
@@ -88,11 +88,16 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 int FeaturesMap::addNewPose(const Mat34& cameraPose, float_type timestamp) {
 	//add camera pose to the map
     mtxCamTraj.lock();
-    camTrajectory.push_back(cameraPose);
-	//add camera pose to the graph
-    int trajSize = camTrajectory.size() - 1;
+    int trajSize = camTrajectory.size();
+    if (trajSize==0)
+        odoMeasurements.push_back(Mat34::Identity());
+    else
+        odoMeasurements.push_back(camTrajectory.back().pose.inverse()*cameraPose);
+    VertexSE3 camPose(trajSize, cameraPose, timestamp);
+    camTrajectory.push_back(camPose);
     mtxCamTraj.unlock();
-    poseGraph->addVertexPose( VertexSE3(trajSize, cameraPose, timestamp));
+    //add camera pose to the graph
+    poseGraph->addVertexPose(camPose);
     return trajSize;
 }
 
@@ -162,7 +167,16 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 /// get pose of the sensor (default: last pose)
 Mat34 FeaturesMap::getSensorPose(int poseId) {
     mtxCamTraj.lock();
-    Mat34 pose = (poseId >= 0) ? camTrajectory[poseId] : camTrajectory.back();
+    Mat34 pose;
+    if (poseId<0) poseId = camTrajectory.size()-1;
+    if (poseId<lastOptimizedPose)
+        pose = camTrajectory[poseId].pose;
+    else {
+        pose=camTrajectory[lastOptimizedPose].pose;
+        for (int i=lastOptimizedPose+1;i<odoMeasurements.size();i++){
+            pose.matrix()=pose.matrix()*odoMeasurements[i].matrix();
+        }
+    }
     mtxCamTraj.unlock();
     return pose;
 }
@@ -201,10 +215,12 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
         bufferMapFrontend.mtxBuffer.lock();
         bufferMapFrontend.features2update.insert(bufferMapFrontend.features2update.begin(), optimizedFeatures.begin(), optimizedFeatures.end());
         bufferMapFrontend.mtxBuffer.unlock();
-//        std::cout<<"features 2 update1 " << bufferMapFrontend.features2update.size() <<"\n";
         //try to update the map
         updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-
+        //update camera trajectory
+        std::vector<VertexSE3> optimizedPoses;
+        ((PoseGraphG2O*)poseGraph)->getOptimizedPoses(optimizedPoses);
+        updateCamTrajectory(optimizedPoses);
 		if (verbose)
 			std::cout << "end optimization\n";
 	}
@@ -222,6 +238,10 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 //    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
     //try to update the map
     updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    //update camera trajectory
+    std::vector<VertexSE3> optimizedPoses;
+    ((PoseGraphG2O*)poseGraph)->getOptimizedPoses(optimizedPoses);
+    updateCamTrajectory(optimizedPoses);
 }
 
 /// Update map
@@ -252,23 +272,53 @@ void FeaturesMap::updateFeature(std::vector<MapFeature>& featuresMap, MapFeature
     }
 }
 
+/// Update camera trajectory
+void FeaturesMap::updateCamTrajectory(std::vector<VertexSE3>& poses2update){
+    for (std::vector<VertexSE3>::iterator it = poses2update.begin(); it!=poses2update.end();it++){
+        updatePose(*it);
+    }
+}
+
+/// Update pose
+void FeaturesMap::updatePose(VertexSE3& newPose){
+    if (newPose.vertexId>lastOptimizedPose)
+        lastOptimizedPose = newPose.vertexId;
+    mtxCamTraj.lock();
+    for (std::vector<VertexSE3>::iterator it = camTrajectory.begin(); it!=camTrajectory.end(); it++){
+        if (it->vertexId == newPose.vertexId){
+            it->pose = newPose.pose;
+        }
+    }
+    mtxCamTraj.unlock();
+}
+
 /// Save map to file
 void FeaturesMap::save2file(std::string mapFilename, std::string graphFilename){
     poseGraph->save2file(graphFilename);
     std::ofstream file(mapFilename);
     mtxMapFrontend.lock();
-    file << " ";
+    file << "#Legend:\n";
+    file << "#Pose pose_id pose(0,0) pose(1,0) ... pose(2,3)\n";
+    file << "#Feature feature_id feature_x feature_y feature_z feature_u feature_v\n";
+    file << "#FeaturePosesIds pose_id1 pose_id2 ...\n";
+    file << "#FeatureExtendedDescriptors size pose_id1 descriptor.cols descriptor.rows desc1(0,0) desc1(1,0)...\n";
+    for (std::vector<VertexSE3>::iterator it = camTrajectory.begin(); it!=camTrajectory.end();it++){
+        file << "Pose " << it->vertexId;
+        for (int i=0;i<3;i++)
+            for (int j=0;j<4;j++)
+                file << " " << it->pose(i,j);
+        file << "\n";
+    }
     for (std::vector<MapFeature>::iterator it = featuresMapFrontend.begin(); it!=featuresMapFrontend.end();it++){
-        //MapFeature.
         file << "Feature " << it->id << " " << it->position.x() << " " << it->position.y() << " " << it->position.z() << " " << it->u << " " << it->v << "\n";
         file << "FeaturePoseIds";
         for (std::vector<unsigned int>::iterator iter = it->posesIds.begin(); iter!=it->posesIds.end(); iter++){
             file << " " << *iter;
         }
         file << "\n";
-        file << "FeatureExtendedDescriptors ";
+        file << "FeatureExtendedDescriptors " << it->descriptors.size() << " ";
         for (std::vector<ExtendedDescriptor>::iterator iter = it->descriptors.begin(); iter!=it->descriptors.end(); iter++){
-            file << iter->poseId;
+            file << iter->poseId << " " << iter->descriptor.cols << " " << iter->descriptor.rows;
             for (int i=0;i<iter->descriptor.cols;i++)
                 for (int j=0;j<iter->descriptor.rows;j++){
                     file << " " << iter->descriptor.at<double>(i,j);
