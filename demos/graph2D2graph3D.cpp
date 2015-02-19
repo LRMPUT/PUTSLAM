@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
                 pose(1,0) = sin(((VertexSE2*)it->get())->theta);
                 pose(1,1) = cos(((VertexSE2*)it->get())->theta);
                 Quaternion rot(pose);
-                VertexSE3 vertex(vertexNo, pos, rot);
+                VertexSE3 vertex(vertexNo, Mat34(pos * rot));
                 if (!graph->addVertexPose(vertex))
                     std::cout << "error: vertex exists!\n";
                 vertexNo++;

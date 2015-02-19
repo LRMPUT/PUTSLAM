@@ -171,6 +171,9 @@ private:
 	///camera trajectory
 	std::vector<Mat34> camTrajectory;
 
+    /// mutex for camera trajectory
+    std::mutex mtxCamTraj;
+
 	///Pose graph
 	Graph * poseGraph;
 
