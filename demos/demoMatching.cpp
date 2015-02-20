@@ -156,7 +156,7 @@ int main() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	//map->startOptimizationThread(1, 0);
+	map->startOptimizationThread(1, 0);
 
 
 	/// TODO: MAKE IT NICER
@@ -254,14 +254,19 @@ int main() {
 			Matcher::featureSet features = matcher->getFeatures();
 
 			// Convert to mapFeatures format
-			std::vector<RGBDFeature> mapFeatures;
+			std::vector<RGBDFeature> mapFeaturesToAdd;
 			int addedCounter = 0;
+
+			// Lets process possible features to add
 			for (int j = 0; j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd; j++) {
 
+				// We only add features of proper depth
 				if ( features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0)
 				{
 
 					bool featureOk = true;
+
+					// Lets remove features to close to existing features
 					for (int i = 0; i < mapFeatures.size(); i++) {
 
 						Eigen::Vector3f tmp(mapFeatures[i].position.x(),
@@ -272,6 +277,22 @@ int main() {
 						if (norm < minEuclideanDistanceOfFeatures) {
 							featureOk = false;
 							break;
+						}
+					}
+
+					// Lets remove features to close to features to add :)
+					if (featureOk) {
+						for (int i = 0; i < mapFeaturesToAdd.size(); i++) {
+
+							Eigen::Vector3f tmp(mapFeaturesToAdd[i].position.x(),
+									mapFeaturesToAdd[i].position.y(),
+									mapFeaturesToAdd[i].position.z());
+							float norm = (tmp - features.feature3D[j]).norm();
+
+							if (norm < minEuclideanDistanceOfFeatures) {
+								featureOk = false;
+								break;
+							}
 						}
 					}
 
@@ -292,7 +313,7 @@ int main() {
 						RGBDFeature f(featurePosition,
 								features.undistortedFeature2D[j].x,
 								features.undistortedFeature2D[j].y, extDescriptors);
-						mapFeatures.push_back(f);
+						mapFeaturesToAdd.push_back(f);
 
 						addedCounter++;
 					}
@@ -301,7 +322,7 @@ int main() {
 
 			std::cout<<"map->addFeatures -> adding " << addedCounter << " features" << std::endl;
 			// Finally, adding to map
-			map->addFeatures(mapFeatures, cameraPoseId);
+			map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
 			addFeatureToMap = false;
 		}
@@ -318,9 +339,6 @@ int main() {
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
-	map->startOptimizationThread(1, 0);
-
-	sleep(1);
 
 	// Wait for optimization finish
 	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
