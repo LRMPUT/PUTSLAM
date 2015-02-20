@@ -6,6 +6,7 @@
     <focalAxis Cu="318.6" Cv="255.3"></focalAxis>
     <variance sigmaU="1.1046" sigmaV="0.64160"></variance>
     <varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>
+    <imageSize sizeU="640" sizeV="480"></imageSize>
   </Model> 
  
   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> 
