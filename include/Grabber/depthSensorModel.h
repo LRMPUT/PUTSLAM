@@ -60,8 +60,8 @@ class DepthSensorModel {
             model->FirstChildElement( "variance" )->QueryDoubleAttribute("sigmaV", &varV);
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c3", &distVarCoefs[0]);
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
-            model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c1", &distVarCoefs[2]);
-            model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c0", &distVarCoefs[3]);
+            model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeU", &imageSize[0]);
+            model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeV", &imageSize[1]);
             tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
             double query[4];
             posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
@@ -74,6 +74,7 @@ class DepthSensorModel {
             float_type focalAxis[2];
             float_type varU, varV;// variance u,v
             float_type distVarCoefs[4];
+            int imageSize[2];//[sizeU, sizeV]
             Mat34 pose; // kinect pose in robot's coordination frame
     };
 

@@ -115,9 +115,6 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		//add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
 	}
-
-
-
 	return trajSize;
 }
 
