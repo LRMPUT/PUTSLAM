@@ -75,7 +75,7 @@ public:
 			int poseId = -1);
 
 	/// add new pose of the camera, returns id of the new pose
-	int addNewPose(const Mat34& cameraPose, float_type timestamp);
+    int addNewPose(const Mat34& cameraPoseChange, float_type timestamp);
 
 	/// Get all features
 	std::vector<MapFeature> getAllFeatures(void);

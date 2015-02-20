@@ -49,7 +49,7 @@ public:
 			int poseId = -1) = 0;
 
 	/// add new pose of the camera, returns id of the new pose
-	virtual int addNewPose(const Mat34& cameraPose, float_type timestamp) = 0;
+    virtual int addNewPose(const Mat34& cameraPoseChange, float_type timestamp) = 0;
 
 	/// Get all features
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
