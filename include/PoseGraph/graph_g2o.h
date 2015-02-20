@@ -18,6 +18,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/solvers/pcg/linear_solver_pcg.h"
 #include "g2o/types/slam3d/parameter_se3_offset.h"
+#include "g2o/core/robust_kernel.h"
+#include "g2o/core/robust_kernel_factory.h"
 
 #include "g2o/core/factory.h"
 #include "g2o/stuff/command_args.h"
@@ -144,6 +146,12 @@ class PoseGraphG2O : public Graph {
 
         /// get all optimized poses
         void getOptimizedPoses(std::vector<VertexSE3>& poses);
+
+        /// set Robust Kernel
+        void setRobustKernel(std::string name, float_type delta);
+
+        /// disable Robust Kernel
+        void disableRobustKernel(void);
 
     private:
         /// Pose graph

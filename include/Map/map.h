@@ -61,7 +61,7 @@ public:
 	virtual Mat34 getSensorPose(int poseId = -1) = 0;
 
 	/// start optimization thread
-	virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0) = 0;
+    virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0) = 0;
 
 	/// Wait for optimization thread to finish
 	virtual void finishOptimization(std::string trajectoryFilename,
@@ -69,6 +69,12 @@ public:
 
     /// Save map to file
     virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;
+
+    /// set Robust Kernel
+    virtual void setRobustKernel(std::string name, float_type delta) = 0;
+
+    /// disable Robust Kernel
+    virtual void disableRobustKernel(void) = 0;
 
 protected:
 	/// Map type

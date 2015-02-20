@@ -277,13 +277,37 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
     edge->setVertex(1, to);
     edge->read(edgeStream);
     edge->setId(id);
-    //g2o::RobustKernelDCS * rk = new g2o::RobustKernelDCS;
+
+
+    //g2o::RobustKernelCauchy* rk = new g2o::RobustKernelCauchy;
     //rk->setDelta(1);
-    //edge->setRobustKernel(rk);
+
+    //g2o::RobustKernelCauchy* rk1 = edge->robustKernel();
+    //rk1->
+
     if (!optimizer.addEdge(edge)) {
         std::cerr << __PRETTY_FUNCTION__ << ": Unable to add edge \n";
         delete edge;
       //  delete rk;
+    }
+}
+
+/// set Robust Kernel
+void PoseGraphG2O::setRobustKernel(std::string name, float_type delta){
+    for (g2o::SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
+        g2o::SparseOptimizer::Edge* e = dynamic_cast<g2o::SparseOptimizer::Edge*>(*it);
+        g2o::AbstractRobustKernelCreator* creatorRK = g2o::RobustKernelFactory::instance()->creator(name);
+        e->setRobustKernel(creatorRK->construct());
+        g2o::RobustKernel* rk = e->robustKernel();
+        rk->setDelta(delta);
+    }
+}
+
+/// disable Robust Kernel
+void PoseGraphG2O::disableRobustKernel(void){
+    for (g2o::SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
+        g2o::SparseOptimizer::Edge* e = dynamic_cast<g2o::SparseOptimizer::Edge*>(*it);
+        e->setRobustKernel(0);
     }
 }
 
