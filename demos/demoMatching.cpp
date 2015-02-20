@@ -148,14 +148,17 @@ int main() {
 
 	// Reading robot starting pose
 	Eigen::Matrix4f robotPose = grabber->getStartingSensorPose();
+	Eigen::Matrix4f VoMapPose = robotPose;
 
 	// File to save trajectory
 	ofstream trajectoryFreiburgStream("VO_trajectory.res");
+	ofstream trajectoryVOMapStream("VOMap_trajectory.res");
 
 	auto start = chrono::system_clock::now();
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
+	//map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
 	map->startOptimizationThread(1, 0);
 
 
@@ -177,14 +180,7 @@ int main() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
-
-		// cameraPose as Eigen::Transform
-		Mat34 cameraPose = Mat34(robotPose.cast<double>());
-
-		// Add new position to the map
-		int cameraPoseId = map->addNewPose(cameraPose,
-				currentSensorFrame.timestamp);
-
+		int cameraPoseId  = 0;
 		bool addFeatureToMap = false;
 
 		// Variable to store map features
@@ -193,6 +189,14 @@ int main() {
 		// The beginning of the sequence
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
+
+
+			// cameraPose as Eigen::Transform
+			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+
+			// Add new position to the map
+			cameraPoseId = map->addNewPose(cameraPose,
+					currentSensorFrame.timestamp);
 
 			ifStart = false;
 			addFeatureToMap = true;
@@ -209,12 +213,16 @@ int main() {
 
 			robotPose = robotPose * transformation;
 
+
 			// cameraPose as Eigen::Transform
-			Eigen::Matrix4d x = map->getSensorPose().matrix() * transformation.cast<double>();
-			Mat34 cameraPose = Mat34(x);
-			//Mat34 cameraPose = Mat34(robotPose.cast<double>());
+			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
+
+			// Add new position to the map
+			cameraPoseId = map->addNewPose(cameraPoseIncrement,
+					currentSensorFrame.timestamp);
 
 			// Get the visible features
+			Mat34 cameraPose = map->getSensorPose();
 			mapFeatures = map->getVisibleFeatures(cameraPose);
 
 			// Move mapFeatures to local coordinate system
@@ -231,7 +239,12 @@ int main() {
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
-			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList);
+			Eigen::Matrix4f mapEstimatedTransformation;
+//			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+
+			// TESTING VO with map corrections
+			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
 			std::cout << "Measurement list size : " << measurementList.size()
 					<< std::endl;
@@ -335,6 +348,8 @@ int main() {
 		saveTrajectoryFreiburgFormat(robotPose, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
+		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
+						currentSensorFrame.timestamp);
 	}
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
@@ -347,6 +362,7 @@ int main() {
 
 // Close trajectory stream
 	trajectoryFreiburgStream.close();
+	trajectoryVOMapStream.close();
 
 	return 0;
 }

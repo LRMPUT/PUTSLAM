@@ -7,6 +7,9 @@
 
 #include "../include/Matcher/matcher.h"
 #include "../include/Matcher/RGBD.h"
+#include "../include/Matcher/dbscan.h"
+
+#include <chrono>
 
 using namespace putslam;
 
@@ -14,6 +17,10 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 {
 	// Detect salient features
 	prevFeatures = detectFeatures(sensorData.rgbImage);
+
+	// DBScan
+	DBScan dbscan(8, 2, 1);
+	dbscan.run(prevFeatures);
 
 	// Show detected features
 	if (matcherParameters.verbose > 1)
@@ -49,6 +56,10 @@ Matcher::featureSet Matcher::getFeatures()
 bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTransformation, std::vector<cv::DMatch> &inlierMatches) {
 	// Detect salient features
 	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
+
+	// DBScan
+	DBScan dbscan(8, 2, 1);
+	dbscan.run(features);
 
 	if (matcherParameters.verbose > 1)
 			showFeatures(sensorData.rgbImage, features);
@@ -111,7 +122,7 @@ std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(std::vector<Ma
 	}
 
 bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-		std::vector<MapFeature> &foundInlierMapFeatures)
+		std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation)
 {
 	// The current pose descriptors are renamed to make it less confusing
 	cv::Mat currentPoseDescriptors(prevDescriptors);
@@ -135,7 +146,7 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
 	RANSAC ransac(matcherParameters.RANSACParams);
-	Eigen::Matrix4f estimatedTransformation = ransac.estimateTransformation(
+	estimatedTransformation = ransac.estimateTransformation(
 			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
 
 	// for all inliers, convert them to map-compatible format
@@ -157,7 +168,7 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 }
 
 bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-		std::vector<MapFeature> &foundInlierMapFeatures)
+		std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation)
 {
 
 	// The current pose descriptors are renamed to make it less confusing
@@ -171,6 +182,8 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	cv::Mat mapDescriptors = extractMapDescriptors(mapFeatures);
 	std::vector<Eigen::Vector3f> mapFeaturePositions3D = extractMapFeaturesPositions(mapFeatures);
 
+
+	// For all features in the map
 	int j = 0;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
@@ -179,7 +192,6 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<int> possibleMatchId;
 
 		for (int i =0 ;i < prevFeatures3D.size(); i++) {
-
 			Eigen::Vector3f tmp((float)it->position.x(), (float)it->position.y(), (float)it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
@@ -235,7 +247,7 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
 	RANSAC ransac(matcherParameters.RANSACParams);
-	Eigen::Matrix4f estimatedTransformation = ransac.estimateTransformation(
+	estimatedTransformation = ransac.estimateTransformation(
 			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
 
 	// for all inliers, convert them to map-compatible format
