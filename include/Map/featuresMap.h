@@ -90,7 +90,7 @@ public:
 	Mat34 getSensorPose(int poseId = -1);
 
 	/// start optimization thread
-	void startOptimizationThread(unsigned int iterNo, int verbose = 0);
+    void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0);
 
 	/// Wait for optimization thread to finish
 	void finishOptimization(std::string trajectoryFilename,
@@ -115,6 +115,12 @@ public:
 	int getAddNoFeaturesWhenMapSizeGreaterThan() {
 		return config.addNoFeaturesWhenMapSizeGreaterThan;
 	}
+
+    /// set Robust Kernel
+    void setRobustKernel(std::string name, float_type delta);
+
+    /// disable Robust Kernel
+    void disableRobustKernel(void);
 
     class Config{
       public:
@@ -226,7 +232,7 @@ private:
     int lastOptimizedPose;
 
 	/// optimization thread
-	void optimize(unsigned int iterNo, int verbose);
+    void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);
 
     /// Update map
     void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);

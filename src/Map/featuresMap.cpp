@@ -182,9 +182,9 @@ Mat34 FeaturesMap::getSensorPose(int poseId) {
 }
 
 /// start optimization thread
-void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose) {
+void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose, std::string RobustKernelName, float_type kernelDelta) {
 	optimizationThr.reset(
-			new std::thread(&FeaturesMap::optimize, this, iterNo, verbose));
+            new std::thread(&FeaturesMap::optimize, this, iterNo, verbose, RobustKernelName, kernelDelta));
 }
 
 /// Wait for optimization thread to finish
@@ -197,7 +197,7 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 }
 
 /// optimization thread
-void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
+void FeaturesMap::optimize(unsigned int iterNo, int verbose, std::string RobustKernelName, float_type kernelDelta) {
 	// graph optimization
 	continueOpt = true;
 
@@ -209,6 +209,11 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 	while (continueOpt) {
 		if (verbose)
 			std::cout << "start optimization\n";
+        if (!RobustKernelName.empty()){
+            setRobustKernel(RobustKernelName, kernelDelta);
+        }
+        else
+            disableRobustKernel();
 		poseGraph->optimize(iterNo, verbose);
         std::vector<MapFeature> optimizedFeatures;
         ((PoseGraphG2O*)poseGraph)->getOptimizedFeatures(optimizedFeatures);
@@ -226,6 +231,10 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose) {
 	}
 
 	// Final optimization
+    if (!RobustKernelName.empty())
+        setRobustKernel(RobustKernelName, kernelDelta);
+    else
+        disableRobustKernel();
 	std::cout<<"Starting final after trajectory optimization"<<std::endl;
 	//poseGraph->optimize(-1, verbose, 0.0001);
 	poseGraph->optimize(100, verbose);
@@ -329,6 +338,16 @@ void FeaturesMap::save2file(std::string mapFilename, std::string graphFilename){
     }
     mtxMapFrontend.unlock();
     file.close();
+}
+
+/// set Robust Kernel
+void FeaturesMap::setRobustKernel(std::string name, float_type delta){
+    ((PoseGraphG2O*)poseGraph)->setRobustKernel(name, delta);
+}
+
+/// disable Robust Kernel
+void FeaturesMap::disableRobustKernel(void){
+    ((PoseGraphG2O*)poseGraph)->disableRobustKernel();
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {
