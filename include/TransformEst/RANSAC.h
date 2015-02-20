@@ -44,6 +44,10 @@ public:
 private:
 	parameters RANSACParams;
 
+	enum TransfEstimationType {
+		UMEYAMA, G2O
+	};
+
 	/**
 	 * Method used to return randomly sampled parameters.usedPairs matches out of all matches.
 	 *
@@ -58,12 +62,14 @@ private:
 	 * features					--	second set of 3D features
 	 * matches					-- 	vector of matches used in model creation
 	 * transformationModel		-- 	computed transformation saved as a 4x4 matrix
+	 * usedType					-- 	algorithm used in transformation estimation
 	 */
 	bool computeTransformationModel(
 			const std::vector<Eigen::Vector3f> prevFeatures,
 			const std::vector<Eigen::Vector3f> features,
 			const std::vector<cv::DMatch> matches,
-			Eigen::Matrix4f &transformationModel);
+			Eigen::Matrix4f &transformationModel,
+			TransfEstimationType usedType = UMEYAMA);
 
 	/**
 	 * Method used to check if the found transformation does not exceed sensible constrains:

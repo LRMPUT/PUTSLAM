@@ -183,7 +183,7 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			Eigen::Vector3f tmp((float)it->position.x(), (float)it->position.y(), (float)it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
-			if ( norm < 0.03 ) {
+			if ( norm < 0.10 ) {
 				possibleMatchId.push_back(i);
 			}
 		}
@@ -197,20 +197,36 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 			cv::Mat x = (it->descriptors[0].descriptor - prevDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
-			if ( value < bestVal && value < 0.2) {
+			if ( value < bestVal ) {
 				bestVal = value;
 				bestId = id;
 			}
 		}
 
-		if ( bestId != -1) {
-//			std::cout<<"BEST VALUE : " << bestVal << std::endl;
-			cv::DMatch tmpMatch;
-			tmpMatch.distance = bestVal;
-			tmpMatch.queryIdx = j;
-			tmpMatch.trainIdx = bestId;
-			matches.push_back(tmpMatch);
+		for (int i = 0; i < possibleMatchId.size(); i++) {
+			int id = possibleMatchId[i];
+
+			cv::Mat x =
+					(it->descriptors[0].descriptor - prevDescriptors.row(id));
+			float value = norm(x, cv::NORM_L2);
+			if (0.7 * value < bestVal ) {
+				cv::DMatch tmpMatch;
+				tmpMatch.distance = value;
+				tmpMatch.queryIdx = j;
+				tmpMatch.trainIdx = id;
+				matches.push_back(tmpMatch);
+			}
 		}
+
+
+//		if ( bestId != -1) {
+////			std::cout<<"BEST VALUE : " << bestVal << std::endl;
+//			cv::DMatch tmpMatch;
+//			tmpMatch.distance = bestVal;
+//			tmpMatch.queryIdx = j;
+//			tmpMatch.trainIdx = bestId;
+//			matches.push_back(tmpMatch);
+//		}
 	}
 
 	std::cout<<"MatchesXYZ - we found : " << matches.size() << std::endl;

@@ -5,6 +5,7 @@
  *
  */
 #include "../include/TransformEst/RANSAC.h"
+#include "../include/TransformEst/g2oEst.h"
 
 RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 	srand(time(0));
@@ -56,7 +57,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		std::cout<<"RANSAC: matches.size() = " << matches.size() << std::endl;
 
 	// TODO: DO IT NICER!
-	if (matches.size() < 20)
+	if (matches.size() < 8)
 	{
 		return Eigen::Matrix4f::Identity();
 	}
@@ -100,6 +101,14 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		}
 
 	}
+
+	// Reestimate from inliers
+	computeTransformationModel(prevFeatures, features,
+				bestInlierMatches, bestTransformationModel, UMEYAMA);
+	std::vector<cv::DMatch> newBestInlierMatches;
+	computeInlierRatio(prevFeatures, features,
+			bestInlierMatches, bestTransformationModel, newBestInlierMatches);
+	newBestInlierMatches.swap(bestInlierMatches);
 
 	// Test the number of inliers
 	if (bestInlierRatio < RANSACParams.minimalInlierRatioThreshold) {
@@ -153,20 +162,34 @@ bool RANSAC::computeTransformationModel(
 		const std::vector<Eigen::Vector3f> prevFeatures,
 		const std::vector<Eigen::Vector3f> features,
 		const std::vector<cv::DMatch> matches,
-		Eigen::Matrix4f &transformationModel) {
-	Eigen::MatrixXf prevFeaturesMatrix(RANSACParams.usedPairs, 3),
-			featuresMatrix(RANSACParams.usedPairs, 3);
+		Eigen::Matrix4f &transformationModel,
+		TransfEstimationType usedType) {
+
+	Eigen::MatrixXf prevFeaturesMatrix(matches.size(), 3),
+			featuresMatrix(matches.size(), 3);
 
 	// Create matrices
-	for (int j = 0; j < RANSACParams.usedPairs; j++) {
+	for (int j = 0; j < matches.size(); j++) {
 		cv::DMatch p = matches[j];
 		prevFeaturesMatrix.block<1, 3>(j, 0) = prevFeatures[p.queryIdx];
 		featuresMatrix.block<1, 3>(j, 0) = features[p.trainIdx];
 	}
 
 	// Compute transformation
-	transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
-			prevFeaturesMatrix.transpose(), false);
+	if (usedType == UMEYAMA) {
+		transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
+					prevFeaturesMatrix.transpose(), false);
+	}
+	else if (usedType == G2O) {
+		putslam::TransformEst* g2oEst = createG2OEstimator();
+			Mat34 transformation = g2oEst->computeTransformation(
+					featuresMatrix.cast<double>().transpose(), prevFeaturesMatrix.cast<double>().transpose());
+			transformationModel = transformation.cast<float>().matrix();
+	}
+	else {
+		std::cout<<"RANSAC: unrecognized transformation estimation" << std::endl;
+	}
+
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
