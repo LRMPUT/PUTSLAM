@@ -87,15 +87,15 @@ int main()
             std::cout << "error: vertex exists!\n";
 
         //add edges of the graph - eg. odometry measurements
-        EdgeSE3 edge1(RobotPose(Vec3(0.01, 1.06, 0.0), Quaternion(0.999902, -0.0107791, 0.00867285, -0.00190021)), Mat66::Identity(),0,1);
+        EdgeSE3 edge1(Mat34(Vec3(0.01, 1.06, 0.0) * Quaternion(0.999902, -0.0107791, 0.00867285, -0.00190021)), Mat66::Identity(),0,1);
         if (!graph->addEdgeSE3(edge1))
             std::cout << "error: vertex doesn't exist!\n";
 
-        EdgeSE3 edge2(RobotPose(Vec3(-1.15, -0.09, 0.0), Quaternion(0.999989, 0.00272799, -0.000777724, 0.00363979)), Mat66::Identity(),1,2);
+        EdgeSE3 edge2(Mat34(Vec3(-1.15, -0.09, 0.0) * Quaternion(0.999989, 0.00272799, -0.000777724, 0.00363979)), Mat66::Identity(),1,2);
         if (!graph->addEdgeSE3(edge2))
             std::cout << "error: vertex doesn't exist!\n";
 
-        EdgeSE3 edge3(RobotPose (Vec3(0.12, -1.02, 0.0), Quaternion (0.99976, -0.00251893, -0.015912, 0.0148755)), Mat66::Identity(),2,3);
+        EdgeSE3 edge3(Mat34 (Vec3(0.12, -1.02, 0.0) * Quaternion (0.99976, -0.00251893, -0.015912, 0.0148755)), Mat66::Identity(),2,3);
         if (!graph->addEdgeSE3(edge3))
             std::cout << "error: vertex doesn't exist!\n";
 
