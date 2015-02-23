@@ -1193,3 +1193,12 @@ void PoseGraphG2O::fixOptimizedVertices(void){
     optimizer.setFixed(newOptimizedVertices, true);
     newOptimizedVertices.clear();
 }
+
+/// Release fixed vertices (except the firts one)
+void PoseGraphG2O::releaseFixedVertices(void){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()!=0)//except the first one
+            (*it)->setFixed(false);
+    }
+}

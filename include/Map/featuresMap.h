@@ -135,6 +135,7 @@ public:
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+            model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 					"addFeaturesWhenMapSizeLessThan",
 					&addFeaturesWhenMapSizeLessThan);
@@ -152,7 +153,11 @@ public:
 								&addNoFeaturesWhenMapSizeGreaterThan);
         }
         public:
-            bool useUncertainty;// 1 - use uncertainty model
+            // Use uncertinty model of the camera to determine information matrix in the graph
+            bool useUncertainty;// true - use uncertainty model
+
+            // fix all optimized vertices after optimization
+            bool fixVertices;
 
             // We perform adding to map if visible map is too small
             int addFeaturesWhenMapSizeLessThan;

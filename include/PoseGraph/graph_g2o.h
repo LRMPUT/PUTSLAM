@@ -141,6 +141,9 @@ class PoseGraphG2O : public Graph {
         /// Fix all optimized vertices of the current graph
         void fixOptimizedVertices(void);
 
+        /// Release fixed vertices (except the firts one)
+        void releaseFixedVertices(void);
+
         /// get all optimized features
         void getOptimizedFeatures(std::vector<MapFeature>& features);
 

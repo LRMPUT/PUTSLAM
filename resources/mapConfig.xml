@@ -3,6 +3,8 @@
   <MapConfig>
   	<name>FeaturesMap</name>
   	<!--
+	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
+	fixVertices				- fix all optimized vertices after optimization
   	addFeaturesWhenMapSizeLessThan 			-	we try to add more features if we observe less than features in current frame
   	addFeaturesWhenMeasurementSizeLessThan 	-	we try to add more features if we have less than number of measurements in current frame
   	maxOnceFeatureAdd						- 	we maximally add maxOnceFeatureAdd number of features from one frame
@@ -10,6 +12,7 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
 	<parameters useUncertainty="true" 
+				fixVertices = "true"
 				addFeaturesWhenMapSizeLessThan="60" 
 				addFeaturesWhenMeasurementSizeLessThan="30" 
 				maxOnceFeatureAdd="40"
