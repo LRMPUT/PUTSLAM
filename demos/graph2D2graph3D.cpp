@@ -68,7 +68,7 @@ int main(int argc, char * argv[])
                 pose(1,0) = sin(((VertexSE2*)it->get())->theta);
                 pose(1,1) = cos(((VertexSE2*)it->get())->theta);
                 Quaternion quat(pose);
-                RobotPose trans(pos, quat);
+                Mat34 trans(pos* quat);
                 Mat66 infoMat; infoMat.setIdentity();
                 infoMat(0,0) = ((EdgeSE2*)it->get())->info(0,0);
                 infoMat(0,1) = ((EdgeSE2*)it->get())->info(0,1);

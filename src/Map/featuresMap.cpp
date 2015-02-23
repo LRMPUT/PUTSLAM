@@ -142,6 +142,12 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	}
 }
 
+/// add measurement between two poses
+void FeaturesMap::addMeasurement(int poseFrom, int poseTo, Mat34 transformation){
+    EdgeSE3 e(transformation, Mat66::Identity(), poseFrom, poseTo);
+    poseGraph->addEdgeSE3(e);
+}
+
 /// Get all features
 std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 	mtxMapFrontend.lock();

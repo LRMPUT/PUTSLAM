@@ -9,8 +9,8 @@
     <imageSize sizeU="640" sizeV="480"></imageSize>
   </Model> 
  
-  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> 
-  <!-- <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj1_loop"></datasetPath> -->
+<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath>  -->
+  <datasetPath base="Datasets" datasetName="office_room_traj1_loop"></datasetPath>
  
  
  

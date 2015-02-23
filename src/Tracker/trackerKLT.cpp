@@ -38,7 +38,7 @@ bool TrackerKLT::track(const SensorFrame& next_frame) {
 }
 
 /// Compute homogenous transformation
-const RobotPose& TrackerKLT::computeTransform(void) {
+const Mat34& TrackerKLT::computeTransform(void) {
     std::cout << "KLT: compute transformation\n";
     return transformation;
 }

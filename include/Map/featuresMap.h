@@ -72,7 +72,10 @@ public:
 
 	/// add measurements (features measured from the last camera pose) default: the last sensor pose
 	void addMeasurements(const std::vector<MapFeature>& features,
-			int poseId = -1);
+            int poseId = -1);
+
+    /// add measurement between two poses
+    void addMeasurement(int poseFrom, int poseTo, Mat34 transformation);
 
 	/// add new pose of the camera, returns id of the new pose
     int addNewPose(const Mat34& cameraPoseChange, float_type timestamp);
