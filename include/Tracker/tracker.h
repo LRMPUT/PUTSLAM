@@ -32,7 +32,7 @@ namespace putslam {
             virtual bool track(const SensorFrame& next_frame) = 0;
 
             /// Compute homogenous transformation
-            virtual const RobotPose& computeTransform(void) = 0;
+            virtual const Mat34& computeTransform(void) = 0;
 
             /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
             virtual const VertexSE3& getVertex(void) = 0;
@@ -51,7 +51,7 @@ namespace putslam {
             uint_fast32_t frame_id;
 
             /// Computed homogenous transformation
-            RobotPose transformation;
+            Mat34 transformation;
 
             /// keypoint: robot/sensor pose + point cloud + features
             VertexSE3 keypoint;

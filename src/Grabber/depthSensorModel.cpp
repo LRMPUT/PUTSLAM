@@ -18,7 +18,7 @@ void DepthSensorModel::getPoint(uint_fast16_t u, uint_fast16_t v, float_type dep
 Eigen::Vector3d DepthSensorModel::inverseModel(float_type x, float_type y,
 		float_type z) const {
     Eigen::Vector3d point(((config.focalLength[0]*x)/z)+config.focalAxis[0], ((config.focalLength[1]*y)/z)+config.focalAxis[1], z);
-    if (point(0)<0||point(0)>640||point(1)<0||point(1)>480||z<0.8||z>6.0){
+    if (point(0)<0||point(0)>config.imageSize[0]||point(1)<0||point(1)>config.imageSize[1]||z<0.8||z>6.0){
         point(0) = -1; point(1) = -1; point(2) = -1;
     }
     return point;
