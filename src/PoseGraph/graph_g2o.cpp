@@ -346,8 +346,9 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
     e.id = graph.edges.size();
     graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
     std::stringstream currentLine;
-    currentLine << e.trans.pos.x() << ' ' << e.trans.pos.y() << ' ' << e.trans.pos.z()
-                << ' ' << e.trans.rot.x() << ' ' << e.trans.rot.y() << ' ' << e.trans.rot.z() << ' ' << e.trans.rot.w()
+    Quaternion quat(e.trans.rotation());
+    currentLine << e.trans(0,3) << ' ' << e.trans(1,3) << ' ' << e.trans(2,3)
+                << ' ' << quat.x() << ' ' << quat.y() << ' ' << quat.z() << ' ' << quat.w()
                 << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2) << ' ' << e.info(0,3) << ' ' << e.info(0,4) << ' ' << e.info(0,5)
                 << ' ' << e.info(1,1) << ' ' << e.info(1,2) << ' ' << e.info(1,3) << ' ' << e.info(1,4) << ' ' << e.info(1,5)
                 << ' ' << e.info(2,2) << ' ' << e.info(2,3) << ' ' << e.info(2,4) << ' ' << e.info(2,5)
@@ -591,7 +592,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
                 is >> from >> to >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
                 for (int i=0;i<21;i++) is >> info[i];
                 Vec3 position(pos[0], pos[1], pos[2]); Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
-                RobotPose trans(position, qrot);
+                Mat34 trans(position * qrot);
                 Mat66 infoMat;
                 infoMat(0,0) = info[0]; infoMat(0,1) = info[1]; infoMat(0,2) = info[2]; infoMat(0,3) = info[3]; infoMat(0,4) = info[4]; infoMat(0,5) = info[5];
                 infoMat(1,0) = info[1]; infoMat(1,1) = info[6]; infoMat(1,2) = info[7]; infoMat(1,3) = info[8]; infoMat(1,4) = info[9]; infoMat(1,5) = info[10];
@@ -697,9 +698,8 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
             else
                 return false;
             if (vertexId>1){ // add edge
-                putslam::Mat34 v3 = (vertex.pose).inverse() * vertexPrev.pose;
-                putslam::Quaternion q(v3.rotation()); putslam::Vec3 p(v3.translation());
-                RobotPose trans(p,q); Mat66 infoMat; infoMat.setIdentity();
+                putslam::Mat34 trans = (vertex.pose).inverse() * vertexPrev.pose;
+                Mat66 infoMat; infoMat.setIdentity();
                 EdgeSE3 edge(trans,infoMat,vertexId-2,vertexId-1);
                 if (!addEdgeSE3(edge))
                     return false;
@@ -1192,4 +1192,13 @@ PoseGraph::EdgeSet PoseGraphG2O::getEdges(void){
 void PoseGraphG2O::fixOptimizedVertices(void){
     optimizer.setFixed(newOptimizedVertices, true);
     newOptimizedVertices.clear();
+}
+
+/// Release fixed vertices (except the firts one)
+void PoseGraphG2O::releaseFixedVertices(void){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()!=0)//except the first one
+            (*it)->setFixed(false);
+    }
 }

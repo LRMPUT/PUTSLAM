@@ -115,9 +115,6 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		//add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
 	}
-
-
-
 	return trajSize;
 }
 
@@ -135,13 +132,20 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 
 //		info = sensorModel.informationMatrix((*it).position.x(),
 //				(*it).position.y(), (*it).position.z());
-		if (config.useUncertainty)
+        if (config.useUncertainty){
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
+        }
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
 	}
+}
+
+/// add measurement between two poses
+void FeaturesMap::addMeasurement(int poseFrom, int poseTo, Mat34 transformation){
+    EdgeSE3 e(transformation, Mat66::Identity(), poseFrom, poseTo);
+    poseGraph->addEdgeSE3(e);
 }
 
 /// Get all features
@@ -251,6 +255,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
 		updateCamTrajectory(optimizedPoses);
+        if (config.fixVertices)
+            ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
 		if (verbose)
 			std::cout << "end optimization\n";
 	}
@@ -261,6 +267,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 	else
 		disableRobustKernel();
 	std::cout << "Starting final after trajectory optimization" << std::endl;
+    if (config.fixVertices)
+        ((PoseGraphG2O*)poseGraph)->releaseFixedVertices();
 	//poseGraph->optimize(-1, verbose, 0.0001);
 	poseGraph->optimize(100, verbose);
 

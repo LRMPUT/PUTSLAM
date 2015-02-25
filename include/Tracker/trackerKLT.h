@@ -43,7 +43,7 @@ class TrackerKLT : public Tracker {
         virtual bool track(const SensorFrame& next_frame);
 
         /// Compute homogenous transformation
-        virtual const RobotPose& computeTransform(void);
+        virtual const Mat34& computeTransform(void);
 
         /// get Vertex: set of Keypoints/ point Cloud and sensor/robot pose
         virtual const VertexSE3& getVertex(void);

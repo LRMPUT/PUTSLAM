@@ -209,28 +209,6 @@ public:
 	}
 };
 
-/// Robot pose
-class RobotPose {
-public:
-	/// set of keypoints
-	typedef std::vector<RobotPose> Seq;
-
-	/// Position
-	Vec3 pos;
-
-	/// Orientation
-	Quaternion rot;
-
-	/// Default constructor
-	inline RobotPose() {
-	}
-
-	/// Overloaded constructor
-	inline RobotPose(const Vec3 _pos, const Quaternion _rot) :
-			pos(_pos), rot(_rot) {
-	}
-};
-
 /// Edge of a graph
 class Edge {
 public:
@@ -337,7 +315,7 @@ public:
 	typedef std::vector<EdgeSE3> Seq;
 
 	/// translation and rotation between nodes
-	RobotPose trans;
+    Mat34 trans;
 
 	/// Information matrix
 	Mat66 info;
@@ -348,7 +326,7 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline EdgeSE3(RobotPose _trans, Mat66 _info, uint_fast32_t _fromVertexId,
+    inline EdgeSE3(Mat34 _trans, Mat66 _info, uint_fast32_t _fromVertexId,
 			uint_fast32_t _toVertexId) :
 			trans(_trans), Edge(EDGE_SE3, _fromVertexId, _toVertexId), info(
 					_info) {

@@ -300,9 +300,9 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
             // add edge to the g2o graph
-            pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-            Quaternion quatMotion(trans.rotation());
-            RobotPose measurement(pos, quatMotion);
+            //pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+            //Quaternion quatMotion(trans.rotation());
+            //RobotPose measurement(pos, quatMotion);
             Mat66 infoMat;
             if (expType==0||expType==1)
                 infoMat.setIdentity();
@@ -353,7 +353,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                 uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
                 infoMat = uncertainty;//.inverse();
             }
-            EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
+            EdgeSE3 edge(trans,infoMat,vertexId2-1,vertexId2);
             if (!graph->addEdgeSE3(edge))
                 std::cout << "error: vertex doesn't exist!\n";
             vertexId2++;
@@ -393,10 +393,10 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                     //trans(0,0) = 1;
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     // add edge to the g2o graph
-                    Vec3 pos;
-                    pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                    Quaternion quatMotion(trans.rotation());
-                    RobotPose measurement(pos, quatMotion);
+                    //Vec3 pos;
+                    //pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+                    //Quaternion quatMotion(trans.rotation());
+                    //RobotPose measurement(pos, quatMotion);
                     Mat66 infoMat;
                     if (expType==1)
                         infoMat.setIdentity();
@@ -440,7 +440,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                         uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
                         infoMat = uncertainty;//.inverse();
                     }
-                    EdgeSE3 edge(measurement,infoMat,i-j,i);
+                    EdgeSE3 edge(trans,infoMat,i-j,i);
                     if (!graph->addEdgeSE3(edge))
                         std::cout << "error: vertex doesn't exist!\n";
 
@@ -510,9 +510,9 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
             if (!graph->addVertexPose(vertexSensor))
                 std::cout << "error: vertex exists!\n";
             // add edge to the g2o graph
-            pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-            Quaternion quatMotion(trans.rotation());
-            RobotPose measurement(pos, quatMotion);
+            //pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+            //Quaternion quatMotion(trans.rotation());
+            //RobotPose measurement(pos, quatMotion);
             Mat66 infoMat;
             if (expType==4){
                 uncertainty = transEst->computeUncertaintyG2O(setB, setBUncertainty, setA, setAUncertainty, trans);
@@ -523,7 +523,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
             }
             else
                 infoMat.setIdentity();
-            EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
+            EdgeSE3 edge(trans,infoMat,vertexId2-1,vertexId2);
             if (!graph->addEdgeSE3(edge))
                 std::cout << "error: vertex doesn't exist!\n";
             vertexId2++;
@@ -561,8 +561,8 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
                 trans.matrix()(0,0) = rott(0,0); trans.matrix()(0,1) = rott(0,1); trans.matrix()(0,2) = rott(0,2);
                 trans.matrix()(1,0) = rott(1,0); trans.matrix()(1,1) = rott(1,1); trans.matrix()(1,2) = rott(1,2);
                 trans.matrix()(2,0) = rott(2,0); trans.matrix()(2,1) = rott(2,1); trans.matrix()(2,2) = rott(2,2);
-                Quaternion quatMotion(rott);
-                RobotPose measurement(pos, quatMotion);
+                //Quaternion quatMotion(rott);
+                //RobotPose measurement(pos, quatMotion);
                 Mat66 infoMat;
                 if (expType==4){
                     uncertainty = transEst->computeUncertaintyG2O(setB, setBUncertainty, setA, setAUncertainty, trans);
@@ -580,7 +580,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
                 }
                 else
                     infoMat.setIdentity();
-                EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
+                EdgeSE3 edge(trans,infoMat,vertexId2-1,vertexId2);
                 if (!graph->addEdgeSE3(edge))
                     std::cout << "error: vertex doesn't exist!\n";
                 vertexId2++;
@@ -816,10 +816,10 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
 
             if (expType==2||expType==3||expType==4){
                 // add edge to the g2o graph
-                Vec3 pos;
-                pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                Quaternion quatMotion(trans.rotation());
-                RobotPose measurement(pos, quatMotion);
+                //Vec3 pos;
+                //pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+                //Quaternion quatMotion(trans.rotation());
+                //RobotPose measurement(pos, quatMotion);
                 Mat66 infoMat;
                 Mat66 uncertaintyPose;
                 if (expType==2)
@@ -830,7 +830,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
                 }
                 std::cout << "add edge se3\n";
                 //getchar();
-                EdgeSE3 edge(measurement,infoMat,vertexId2-1,vertexId2);
+                EdgeSE3 edge(trans,infoMat,vertexId2-1,vertexId2);
                 if (!graph->addEdgeSE3(edge))
                     std::cout << "error: vertex doesn't exist!\n";
             }
@@ -898,17 +898,17 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
                     Mat34 trans = transEst->computeTransformation(setB, setA);
                     //uncertainty = transEst->ConvertUncertaintyEuler2quat(uncertainty, trans);
                     // add edge to the g2o graph
-                    Vec3 pos;
-                    pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
-                    Quaternion quatMotion(trans.rotation());
-                    RobotPose measurement(pos, quatMotion);
+                    //Vec3 pos;
+                    //pos.x() = trans(0,3); pos.y() = trans(1,3); pos.z() = trans(2,3);
+                    //Quaternion quatMotion(trans.rotation());
+                    //RobotPose measurement(pos, quatMotion);
                     Mat66 infoMat;
                     Mat66 uncertaintyPose;
                     uncertaintyPose = transEst->computeUncertaintyG2O(setA, setAUncertainty, setB, setBUncertainty, trans);
                     infoMat = uncertaintyPose.inverse();
                     std::cout << "add edge se3\n";
                     //getchar();
-                    EdgeSE3 edge(measurement,infoMat,i-j,i);
+                    EdgeSE3 edge(trans,infoMat,i-j,i);
                     if (!graph->addEdgeSE3(edge))
                         std::cout << "error: vertex doesn't exist!\n";
                     // add edge to the g2o graph

@@ -72,7 +72,10 @@ public:
 
 	/// add measurements (features measured from the last camera pose) default: the last sensor pose
 	void addMeasurements(const std::vector<MapFeature>& features,
-			int poseId = -1);
+            int poseId = -1);
+
+    /// add measurement between two poses
+    void addMeasurement(int poseFrom, int poseTo, Mat34 transformation);
 
 	/// add new pose of the camera, returns id of the new pose
     int addNewPose(const Mat34& cameraPoseChange, float_type timestamp);
@@ -135,6 +138,7 @@ public:
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+            model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 					"addFeaturesWhenMapSizeLessThan",
 					&addFeaturesWhenMapSizeLessThan);
@@ -152,7 +156,11 @@ public:
 								&addNoFeaturesWhenMapSizeGreaterThan);
         }
         public:
-            bool useUncertainty;// 1 - use uncertainty model
+            // Use uncertinty model of the camera to determine information matrix in the graph
+            bool useUncertainty;// true - use uncertainty model
+
+            // fix all optimized vertices after optimization
+            bool fixVertices;
 
             // We perform adding to map if visible map is too small
             int addFeaturesWhenMapSizeLessThan;
