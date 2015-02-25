@@ -125,7 +125,7 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-	//featureDetector.get()->detect(grayImage, raw_keypoints);
+//	featureDetector.get()->detect(grayImage, raw_keypoints);
 
 	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
 	int stripesCount = 6;

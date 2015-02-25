@@ -107,10 +107,10 @@ void DBScan::run(std::vector<cv::KeyPoint> & clusteringSet) {
 		{
 			if (clusterChosenCount[clusterId] > featuresFromCluster - 1)
 			{
-				if (clusteringSet[i].response < 0)
+				if (clusteringSet[i].octave == -5)
 					std::cout
-							<< "DBScan issue : SHIT :/ Minus response - need to find another way of marking to erase" << std::endl;
-				clusteringSet[i].response = -10;
+							<< "DBScan issue : SHIT :/ Octave == -5 -> need to find another way of marking to erase" << std::endl;
+				clusteringSet[i].octave = -5;
 			} else
 				clusterChosenCount[clusterId]++;
 		}
@@ -119,5 +119,5 @@ void DBScan::run(std::vector<cv::KeyPoint> & clusteringSet) {
 	// Remove those bad elements
 	clusteringSet.erase(
 			std::remove_if(clusteringSet.begin(), clusteringSet.end(),
-					[] (cv::KeyPoint &kp) {return kp.response < 0;}), clusteringSet.end());
+					[] (cv::KeyPoint &kp) {return kp.octave == -5;}), clusteringSet.end());
 }

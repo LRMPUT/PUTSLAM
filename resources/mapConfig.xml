@@ -10,9 +10,9 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
 	<parameters useUncertainty="true" 
-				addFeaturesWhenMapSizeLessThan="60" 
+				addFeaturesWhenMapSizeLessThan="100" 
 				addFeaturesWhenMeasurementSizeLessThan="30" 
-				maxOnceFeatureAdd="40"
+				maxOnceFeatureAdd="50"
 				minEuclideanDistanceOfFeatures="0.05"
-				addNoFeaturesWhenMapSizeGreaterThan="300"></parameters>
+				addNoFeaturesWhenMapSizeGreaterThan="500"></parameters>
   </MapConfig>
