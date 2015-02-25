@@ -114,23 +114,17 @@ int main() {
 			config.FirstChildElement("Grabber")->FirstChildElement("name")->GetText());
 
 	Grabber* grabber;
+	std::string grabberConfigFile(
+					config.FirstChildElement("Grabber")->FirstChildElement(
+							"calibrationFile")->GetText());
 	if (grabberType == "Kinect") {
-		std::string configFile(
-				config.FirstChildElement("Grabber")->FirstChildElement(
-						"calibrationFile")->GetText());
-		grabber = createGrabberKinect(configFile, Grabber::MODE_BUFFER);
+		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
 	} else if (grabberType == "Xtion") {
-		std::string configFile(
-				config.FirstChildElement("Grabber")->FirstChildElement(
-						"calibrationFile")->GetText());
-		grabber = createGrabberXtion(configFile, Grabber::MODE_BUFFER);
+		grabber = createGrabberXtion(grabberConfigFile, Grabber::MODE_BUFFER);
 	}
 	/// Still do not take into account the config file
 	else if (grabberType == "File") {
-		std::string configFile(
-				config.FirstChildElement("Grabber")->FirstChildElement(
-						"calibrationFile")->GetText());
-		grabber = createGrabberFile(configFile);
+		grabber = createGrabberFile(grabberConfigFile);
 	} else if (grabberType == "MesaImaging")
 		grabber = createGrabberKinect();
 	else
@@ -143,7 +137,7 @@ int main() {
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFile")->GetText();
 
-	Matcher * matcher = createMatcherOpenCV(matcherParameters);
+	Matcher * matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
 	cout << "Current matcher: " << matcher->getName() << std::endl;
 
 	// Reading robot starting pose

@@ -57,20 +57,18 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage) {
 
 	// Assume standard distortion
-	float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
 	float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
 			0, 1 } };
 
 	// Call method with additional parameters
 	return keypoints2Dto3D(undistortedFeatures2D, depthImage,
-			cv::Mat(3, 3, CV_32FC1, &cameraMatrix),
-			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
+			cv::Mat(3, 3, CV_32FC1, &cameraMatrix));
 }
 
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage,
-		cv::Mat cameraMatrix, cv::Mat distCoeffs) {
+		cv::Mat cameraMatrix) {
 
 	// Lets create 3D points
 	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size());
