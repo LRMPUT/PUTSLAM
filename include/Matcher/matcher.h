@@ -35,9 +35,12 @@ public:
 	Matcher(const std::string _name) :
 			name(_name), frame_id(0) {
 	}
-	Matcher(const std::string _name, const std::string parametersFile) :
-			name(_name), frame_id(0), matcherParameters(parametersFile) {
-	}
+//	Matcher(const std::string _name, const std::string parametersFile) :
+//			name(_name), frame_id(0), matcherParameters(parametersFile) {
+//	}
+	Matcher(const std::string _name, const std::string parametersFile, const std::string grabberParametersFile) :
+				name(_name), frame_id(0), matcherParameters(parametersFile, grabberParametersFile) {
+		}
 
 	~Matcher() {
 	}
@@ -66,12 +69,14 @@ public:
 			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
 
 	/// Class used to hold all parameters
-	class Parameters {
+	class MatcherParameters {
 	public:
-		Parameters() {
+		MatcherParameters() {
+			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
+			distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
 		}
 		;
-		Parameters(std::string configFilename) {
+		MatcherParameters(std::string configFilename, std::string cameraConfigFileName) {
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());
@@ -100,12 +105,58 @@ public:
 					params->FirstChildElement("MatcherOpenCV")->Attribute(
 							"descriptor");
 
+			// Camera parameters
+			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
+			distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
+
+			config.Clear();
+			filename = "../../resources/" + cameraConfigFileName;
+			config.LoadFile(filename.c_str());
+			if (config.ErrorID()) {
+				std::cout << "Unable to load camera config file: "
+						<< configFilename << std::endl;
+			}
+			tinyxml2::XMLElement * params2 = config.FirstChildElement("Model");
+
+			params2->FirstChildElement("focalLength")->QueryFloatAttribute(
+					"fu", &cameraMatrixMat.at<float>(0, 0));
+			params2->FirstChildElement("focalLength")->QueryFloatAttribute(
+					"fv", &cameraMatrixMat.at<float>(1, 1));
+
+			params2->FirstChildElement("focalAxis")->QueryFloatAttribute("Cu",
+														&cameraMatrixMat.at<float>(0,2));
+			params2->FirstChildElement("focalAxis")->QueryFloatAttribute("Cv",
+																	&cameraMatrixMat.at<float>(1,2));
+			cameraMatrixMat.at<float>(2,2) = 1.0f;
+
+			params2->FirstChildElement(
+					"rgbDistortion")->QueryFloatAttribute("k1",
+					&distortionCoeffsMat.at<float>(0));
+			params2->FirstChildElement(
+					"rgbDistortion")->QueryFloatAttribute("k2",
+					&distortionCoeffsMat.at<float>(1));
+			params2->FirstChildElement(
+					"rgbDistortion")->QueryFloatAttribute("p1",
+					&distortionCoeffsMat.at<float>(2));
+			params2->FirstChildElement(
+					"rgbDistortion")->QueryFloatAttribute("p2",
+					&distortionCoeffsMat.at<float>(3));
+			params2->FirstChildElement(
+					"rgbDistortion")->QueryFloatAttribute("k3",
+					&distortionCoeffsMat.at<float>(4));
+
+
+			//std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
 		}
 	public:
 		int verbose;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
+
+		cv::Mat cameraMatrixMat;
+		cv::Mat distortionCoeffsMat;
 	};
+
 
 protected:
 
@@ -122,12 +173,8 @@ protected:
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
 
-	/// Camera parameters
-	cv::Mat cameraMatrixMat;
-	cv::Mat distortionCoeffsMat;
-
 	/// Parameters
-	Parameters matcherParameters;
+	MatcherParameters matcherParameters;
 
 	/// Methods used to visualize results/data
 	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);

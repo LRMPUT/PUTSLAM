@@ -22,9 +22,15 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 	return matcher.get();
 }
 
+//putslam::Matcher* putslam::createMatcherOpenCV(
+//		const std::string _parametersFile) {
+//	matcher.reset(new MatcherOpenCV(_parametersFile));
+//	return matcher.get();
+//}
+
 putslam::Matcher* putslam::createMatcherOpenCV(
-		const std::string _parametersFile) {
-	matcher.reset(new MatcherOpenCV(_parametersFile));
+		const std::string _parametersFile, const std::string _grabberParametersFile) {
+	matcher.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
 	return matcher.get();
 }
 
@@ -34,25 +40,25 @@ MatcherOpenCV::MatcherOpenCV(void) :
 	initVariables();
 }
 
-MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile) :
-		Matcher("OpenCVMatcher", _parametersFile) {
+//MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile) :
+//		Matcher("OpenCVMatcher", _parametersFile) {
+//	initVariables();
+//}
+
+MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile,
+		const std::string _grabberParametersFile) :
+		Matcher("OpenCVMatcher",_parametersFile, _grabberParametersFile) {
 	initVariables();
 }
-;
-MatcherOpenCV::MatcherOpenCV(const std::string _name,
-		const std::string _parametersFile) :
-		Matcher(_name, _parametersFile) {
-	initVariables();
-}
-;
+
 
 void MatcherOpenCV::initVariables() {
 	featureDetector = NULL;
 	descriptorExtractor = NULL;
 
 	// TODO: LOAD IT FROM FILE !!!
-	cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
-	distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
+//	cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
+//	distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
 
 //	cameraMatrixMat.at<float>(0,0) = 517.3f;
 //	cameraMatrixMat.at<float>(0,2) = 318.6f;
@@ -66,11 +72,11 @@ void MatcherOpenCV::initVariables() {
 //	distortionCoeffsMat.at<float>(3) = 0.0051;
 //	distortionCoeffsMat.at<float>(4) = -0.5643;
 
-	cameraMatrixMat.at<float>(0, 0) = 480.6f;
-	cameraMatrixMat.at<float>(0, 2) = 319.5f;
-	cameraMatrixMat.at<float>(1, 1) = -480.6f;
-	cameraMatrixMat.at<float>(1, 2) = 239.5f;
-	cameraMatrixMat.at<float>(2, 2) = 1.0f;
+//	cameraMatrixMat.at<float>(0, 0) = 480.6f;
+//	cameraMatrixMat.at<float>(0, 2) = 319.5f;
+//	cameraMatrixMat.at<float>(1, 1) = -480.6f;
+//	cameraMatrixMat.at<float>(1, 2) = 239.5f;
+//	cameraMatrixMat.at<float>(2, 2) = 1.0f;
 
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")

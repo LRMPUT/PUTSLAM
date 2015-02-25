@@ -37,7 +37,7 @@ const double depthScale = 5000;
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage);
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
-		cv::Mat depthImage, cv::Mat cameraMatrix, cv::Mat distCoeffs);
+		cv::Mat depthImage, cv::Mat cameraMatrix);
 
 // Rounds the (u,v) location to integer
 int roundSize(double x, int size);

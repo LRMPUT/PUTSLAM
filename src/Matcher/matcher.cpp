@@ -31,11 +31,11 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData)
 
 	// Remove distortion
 	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
-			cameraMatrixMat, distortionCoeffsMat);
+			matcherParameters.cameraMatrixMat, matcherParameters.distortionCoeffsMat);
 
 	// Associate depth
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted, sensorData.depthImage,
-			cameraMatrixMat, distortionCoeffsMat);
+			matcherParameters.cameraMatrixMat);
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -73,11 +73,11 @@ bool Matcher::match(const SensorFrame& sensorData, Eigen::Matrix4f &estimatedTra
 
 	// Find 2D positions without distortion
 	std::vector<cv::Point2f> undistortedFeatures2D = RGBD::removeImageDistortion(
-			features, cameraMatrixMat, distortionCoeffsMat);
+			features, matcherParameters.cameraMatrixMat, matcherParameters.distortionCoeffsMat);
 
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
-			sensorData.depthImage, cameraMatrixMat, distortionCoeffsMat);
+			sensorData.depthImage, matcherParameters.cameraMatrixMat);
 
 	// Visualize matches
 	if (matcherParameters.verbose > 0)
