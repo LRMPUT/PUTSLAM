@@ -65,7 +65,6 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 			cv::Mat(3, 3, CV_32FC1, &cameraMatrix));
 }
 
-
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage,
 		cv::Mat cameraMatrix) {
@@ -73,8 +72,8 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 	// Lets create 3D points
 	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size());
 	int i = 0;
-	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin(); it!=undistortedFeatures2D.end(); ++it)
-	{
+	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin();
+			it != undistortedFeatures2D.end(); ++it) {
 		// Feature are extracted with subpixel precision, so find closest pixel
 		int uRounded = roundSize(it->x, depthImage.cols);
 		int vRounded = roundSize(it->y, depthImage.rows);
@@ -84,8 +83,10 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 				/ RGBD::depthScale;
 
 		// Compute the feature position in normalized image coordinates
-		float u = (it->x - cameraMatrix.at<float>(0, 2)) / cameraMatrix.at<float>(0, 0);
-		float v = (it->y - cameraMatrix.at<float>(1, 2)) / cameraMatrix.at<float>(1, 1);
+		float u = (it->x - cameraMatrix.at<float>(0, 2))
+				/ cameraMatrix.at<float>(0, 0);
+		float v = (it->y - cameraMatrix.at<float>(1, 2))
+				/ cameraMatrix.at<float>(1, 1);
 
 		// Create 3D feature
 		features3D[i] = Eigen::Vector3f(u * Z, v * Z, Z);
@@ -102,6 +103,27 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 			std::remove_if(features.begin(), features.end(),
 					[depthImage](cv::KeyPoint kp) {
 						if (depthImage.at<uint16_t>(kp.pt) / RGBD::depthScale > 0.0) {
+							return false;
+						}
+						return true;
+					});
+	features.erase(it, features.end());
+}
+
+void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
+		cv::Mat depthImage, float additionalDistance) {
+	// Lambda expression
+	auto it =
+			std::remove_if(features.begin(), features.end(),
+					[depthImage, additionalDistance](MapFeature point) {
+
+						// Feature are extracted with subpixel precision, so find closest pixel
+						int uRounded = roundSize(point.u, depthImage.cols);
+						int vRounded = roundSize(point.v, depthImage.rows);
+//						std::cout<<"uRounded, vRounded: " << uRounded << " " << vRounded << " " << depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))/ RGBD::depthScale<<
+//								" " << additionalDistance << " " <<point.position.z()  << std::endl;
+
+						if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded)) / RGBD::depthScale > point.position.z() - additionalDistance) {
 							return false;
 						}
 						return true;

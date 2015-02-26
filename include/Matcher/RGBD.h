@@ -22,6 +22,10 @@
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
 
+
+// Out types
+#include "../include/Map/featuresMap.h"
+
 namespace RGBD {
 
 /// Depth image scale
@@ -45,6 +49,9 @@ int roundSize(double x, int size);
 // Remove features without depth
 void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage);
+
+void removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
+		cv::Mat depthImage, float additionalDistance);
 
 std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,

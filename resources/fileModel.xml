@@ -4,9 +4,9 @@
   <Model>
   	
   	<!-- ICL -->
-  	<focalLength fu="480.6" fv="-480.6"></focalLength> 
-	<focalAxis Cu="319.5" Cv="239.5"></focalAxis> 	
-    <rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion>
+<!--  	<focalLength fu="480.6" fv="-480.6"></focalLength> -->
+<!--	<focalAxis Cu="319.5" Cv="239.5"></focalAxis> 	-->
+<!--    <rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion>-->
   
 	<!-- freiburg1/desk freiburg1/room -->
 <!--	<focalLength fu="517.3" fv="516.5"></focalLength> -->
@@ -14,9 +14,9 @@
 <!--	<rgbDistortion k1="-0.0410" k2="0.3286" p1="0.0087" p2="0.0051" k3="-0.5643"></rgbDistortion>-->
     
 	<!-- freiburg3/long_household -->
-<!--	<focalLength fu="535.4" fv="539.2"></focalLength> -->
-<!--  	<focalAxis Cu="320.1" Cv="247.6"></focalAxis>-->
-<!--	<rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion>-->
+	<focalLength fu="535.4" fv="539.2"></focalLength> 
+  	<focalAxis Cu="320.1" Cv="247.6"></focalAxis>
+	<rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion>
 
 	
 <!--	DB experimentally found	-->
@@ -24,26 +24,26 @@
 <!--	<varianceDepth c3="6.9*(10^-6)" c2="0" c1="0" c0="0"></varianceDepth>-->
 
 <!-- 	Park model 	-->
-<!--	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>-->
-<!--	<varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>-->
+	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>
+	<varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>
 
 <!--		PS mode-->
-	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>
-	<varianceDepth c3="0.0" c2="1.38e-5" c1="1.02e-6" c0="0.0"></varianceDepth>
+<!--	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>-->
+<!--	<varianceDepth c3="0.0" c2="1.38e-5" c1="1.02e-6" c0="0.0"></varianceDepth>-->
     
     	
     <imageSize sizeU="640" sizeV="480"></imageSize>
   </Model> 
 
   <!-- ICL -->
-  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj2_loop"></datasetPath>
+<!--  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj1_loop"></datasetPath>-->
 <!--  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj2_loop"></datasetPath>-->
 
   <!-- freiburg1/desk -->
 <!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath>-->
  
   <!-- freiburg3/long_household -->
-<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath-->
+   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath>
  
 	
   <!-- Parameters defining the way the data is played from files:

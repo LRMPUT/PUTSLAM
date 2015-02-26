@@ -11,10 +11,10 @@
   	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
-	<parameters useUncertainty="true" 
+	<parameters useUncertainty="false" 
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
-				addFeaturesWhenMeasurementSizeLessThan="60" 
+				addFeaturesWhenMeasurementSizeLessThan="20" 
 				maxOnceFeatureAdd="30"
 				minEuclideanDistanceOfFeatures="0.05"
 				minImageDistanceOfFeatures="8"
