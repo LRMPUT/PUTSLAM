@@ -5,6 +5,7 @@
   	<!--
 	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
 	weakFeatureThr				- before final optimization remove features with measuremets less than threshold (-1 disabbled)
+	edges3DPrunningThreshold		- 3D edges pruning
 	fixVertices				- fix all optimized vertices after optimization
   	addFeaturesWhenMapSizeLessThan 			-	we try to add more features if we observe less than features in current frame
   	addFeaturesWhenMeasurementSizeLessThan 	-	we try to add more features if we have less than number of measurements in current frame
@@ -14,6 +15,7 @@
   	-->
 	<parameters useUncertainty="false"
 				weakFeatureThr="-1"
+				edges3DPrunningThreshold="10"
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
 				addFeaturesWhenMeasurementSizeLessThan="20" 
