@@ -147,6 +147,7 @@ public:
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("weakFeatureThr", &weakFeatureThr);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 					"addFeaturesWhenMapSizeLessThan",
 					&addFeaturesWhenMapSizeLessThan);
@@ -169,6 +170,9 @@ public:
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
             bool useUncertainty;// true - use uncertainty model
+
+            // before final optimization remove features with measuremets less than threshold
+            int weakFeatureThr;
 
             // fix all optimized vertices after optimization
             bool fixVertices;

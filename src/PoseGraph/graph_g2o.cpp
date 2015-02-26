@@ -85,6 +85,13 @@ bool PoseGraphG2O::removeVertex(unsigned int id){
 bool PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
     PoseGraph::EdgeSet::iterator e = findEdge(id);
+    g2o::OptimizableGraph::EdgeContainer edges = optimizer.activeEdges();
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = edges.begin(); it!=edges.end(); it++){
+        if ((*it)->id()==id){
+            optimizer.removeEdge(*it);
+        }
+    }
+
     if (e != graph.edges.end()) {
         graph.prunedEdges.push_back(std::move(*e));
         graph.edges.erase(e);
@@ -1084,6 +1091,28 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
     std::cout << "end\n";
     return true;
     //g2o::OptimizableGraph::Edge e; e.id();
+}
+
+/// remove weak features (if measurements number is smaller than threshold)
+void PoseGraphG2O::removeWeakFeatures(int threshold){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        //std::cout << (*it)->elementType() << "\n";
+        PoseGraph::VertexSet::iterator vert = findVertex((*it)->id());//Todo waek solution
+        if (vert->get()->type == Vertex::VERTEX3D) {
+            std::vector<unsigned int> incomingEdges = findIncominEdges((*it)->id());
+            if (incomingEdges.size()<threshold){
+                for (std::vector<unsigned int>::iterator iter = incomingEdges.begin(); iter!=incomingEdges.end(); iter++){
+                    removeEdge(*iter);
+                }
+                //removeVertex((*it)->id());
+                std::cout << "removed\n";
+            }
+            else{
+                std::cout << "not removed\n";
+            }
+        }
+    }
 }
 
 /**
