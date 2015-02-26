@@ -144,7 +144,7 @@ public:
 			params2->FirstChildElement(
 					"rgbDistortion")->QueryFloatAttribute("k3",
 					&distortionCoeffsMat.at<float>(4));
-
+			config.Clear();
 
 			//std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
 		}

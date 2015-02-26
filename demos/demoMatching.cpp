@@ -163,6 +163,7 @@ int main() {
 			((FeaturesMap*) map)->getAddFeaturesWhenMeasurementSizeLessThan();
 	int maxOnceFeatureAdd = ((FeaturesMap*) map)->getMaxOnceFeatureAdd();
 	float minEuclideanDistanceOfFeatures = ((FeaturesMap*) map)->getMinEuclideanDistanceOfFeatures();
+	float minImageDistanceOfFeatures = ((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
 	int addNoFeaturesWhenMapSizeGreaterThan = ((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
 
 	// Main loop
@@ -234,16 +235,28 @@ int main() {
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
 			Eigen::Matrix4f mapEstimatedTransformation;
-//			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
-			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
 			std::cout << "Measurement list size : " << measurementList.size()
 					<< std::endl;
-			// Add the measurements of inliers
-			map->addMeasurements(measurementList);
+
+			// Compare VO and VOMap estimate -> decide whether to add measurements to map
+			float distanceDiff = mapEstimatedTransformation.block<3,1>(0,3).norm();
+			std::cout<<"Difference between VO i Map : " << distanceDiff << " meters" <<std::endl;
+
+			if ( distanceDiff < 0.05)
+			{
+				// Add the measurements of inliers
+				map->addMeasurements(measurementList);
+			}
+			else {
+//				addFeatureToMap = true;
+				map->addMeasurement(cameraPoseId-1, cameraPoseId, cameraPoseIncrement);
+			}
 
 			// Insufficient number of features -> time to add some features
 			if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
@@ -276,6 +289,7 @@ int main() {
 					// Lets remove features to close to existing features
 					for (int i = 0; i < mapFeatures.size(); i++) {
 
+						// Euclidean norm
 						Eigen::Vector3f tmp(mapFeatures[i].position.x(),
 								mapFeatures[i].position.y(),
 								mapFeatures[i].position.z());
@@ -285,6 +299,22 @@ int main() {
 							featureOk = false;
 							break;
 						}
+
+						// Image error
+					    Eigen::Vector3d projectedMapPoint = map->getDepthSensorModel().inverseModel(mapFeatures[i].position.x(),
+								mapFeatures[i].position.y(),
+								mapFeatures[i].position.z());
+
+					    cv::Point2f point(projectedMapPoint[0], projectedMapPoint[1]);
+						float imageNorm = cv::norm(point - features.undistortedFeature2D[j]);
+
+						// 5 pixels is a minimum distance
+						if ( imageNorm < minImageDistanceOfFeatures )
+						{
+							featureOk = false;
+							break;
+						}
+
 					}
 
 					// Lets remove features to close to features to add :)
@@ -300,11 +330,21 @@ int main() {
 								featureOk = false;
 								break;
 							}
+
+							cv::Point2f point(mapFeaturesToAdd[i].u,
+									mapFeaturesToAdd[i].v);
+							float imageNorm = cv::norm(
+									point - features.undistortedFeature2D[j]);
+
+							// 5 pixels is a minimum distance
+							if (imageNorm < minImageDistanceOfFeatures ) {
+								featureOk = false;
+								break;
+							}
 						}
 					}
 
-					if (featureOk)
-					{
+					if (featureOk) {
 						// Create an extended descriptor
 						ExtendedDescriptor desc(cameraPoseId,
 								features.descriptors.row(j));

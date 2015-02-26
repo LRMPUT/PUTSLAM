@@ -51,6 +51,7 @@ class DepthSensorModel {
             config.LoadFile(filename.c_str());
             if (config.ErrorID())
                 std::cout << "unable to load Kinect config file: error = " << config.ErrorID() << std::endl;;
+
             tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fv", &focalLength[1]);

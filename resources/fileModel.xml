@@ -18,23 +18,32 @@
 <!--  	<focalAxis Cu="320.1" Cv="247.6"></focalAxis>-->
 <!--	<rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion>-->
 
+	
+<!--	DB experimentally found	-->
+<!--	<variance sigmaU="0.6446" sigmaV="0.64160"></variance>-->
+<!--	<varianceDepth c3="6.9*(10^-6)" c2="0" c1="0" c0="0"></varianceDepth>-->
+
+<!-- 	Park model 	-->
+<!--	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>-->
+<!--	<varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>-->
+
+<!--		PS mode-->
 	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>
-	<varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth> 
-    <!--<varianceDepth c3="0.0" c2="1.38e-5" c1="1.02e-6" c0="0.0"></varianceDepth>-->
+	<varianceDepth c3="0.0" c2="1.38e-5" c1="1.02e-6" c0="0.0"></varianceDepth>
     
     	
     <imageSize sizeU="640" sizeV="480"></imageSize>
   </Model> 
 
   <!-- ICL -->
-  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj1_loop"></datasetPath>
-<!--  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj2_loop"></datasetPath-->
+  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj2_loop"></datasetPath>
+<!--  <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="office_room_traj2_loop"></datasetPath>-->
 
   <!-- freiburg1/desk -->
-<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath-->
+<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath>-->
  
   <!-- freiburg3/long_household -->
-<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath-->	
+<!--   <datasetPath base="/home/michalnowicki/Projects/Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath-->
  
 	
   <!-- Parameters defining the way the data is played from files:
@@ -42,6 +51,6 @@
   			playEveryNthFrame 	-> only every Nth frame is used in motion estimation
   			realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
  			maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
-  <playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="5000"></playParameters>
+  <playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="6000"></playParameters>
  
   <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"></pose>
