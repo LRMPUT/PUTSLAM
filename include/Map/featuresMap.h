@@ -92,6 +92,11 @@ public:
 	/// get pose of the sensor (default: last pose)
 	Mat34 getSensorPose(int poseId = -1);
 
+	/// getDepthSensorModel
+	DepthSensorModel getDepthSensorModel() {
+		return sensorModel;
+	}
+
 	/// start optimization thread
     void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0);
 
@@ -114,6 +119,9 @@ public:
 	}
 	float getMinEuclideanDistanceOfFeatures() {
 		return config.minEuclideanDistanceOfFeatures;
+	}
+	float getMinImageDistanceOfFeatures() {
+		return config.minImageDistanceOfFeatures;
 	}
 	int getAddNoFeaturesWhenMapSizeGreaterThan() {
 		return config.addNoFeaturesWhenMapSizeGreaterThan;
@@ -151,6 +159,9 @@ public:
 			model->FirstChildElement("parameters")->QueryFloatAttribute(
 					"minEuclideanDistanceOfFeatures",
 					&minEuclideanDistanceOfFeatures);
+			model->FirstChildElement("parameters")->QueryFloatAttribute(
+								"minImageDistanceOfFeatures",
+								&minImageDistanceOfFeatures);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 								"addNoFeaturesWhenMapSizeGreaterThan",
 								&addNoFeaturesWhenMapSizeGreaterThan);
@@ -173,6 +184,7 @@ public:
 
             // We do not add features closer to already existing ones than
             float minEuclideanDistanceOfFeatures;
+            float minImageDistanceOfFeatures;
 
             // If we observe many features, we do not add new
             int addNoFeaturesWhenMapSizeGreaterThan;

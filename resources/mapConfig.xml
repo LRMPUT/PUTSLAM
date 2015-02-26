@@ -13,9 +13,10 @@
   	-->
 	<parameters useUncertainty="true" 
 				fixVertices = "false"
-				addFeaturesWhenMapSizeLessThan="60" 
-				addFeaturesWhenMeasurementSizeLessThan="30" 
-				maxOnceFeatureAdd="50"
+				addFeaturesWhenMapSizeLessThan="80" 
+				addFeaturesWhenMeasurementSizeLessThan="60" 
+				maxOnceFeatureAdd="30"
 				minEuclideanDistanceOfFeatures="0.05"
-				addNoFeaturesWhenMapSizeGreaterThan="500"></parameters>
+				minImageDistanceOfFeatures="8"
+				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
   </MapConfig>

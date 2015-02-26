@@ -10,6 +10,7 @@
 #include "../Defs/putslam_defs.h"
 #include <string>
 #include <vector>
+#include "../include/Grabber/depthSensorModel.h"
 
 namespace putslam {
 /// Map interface
@@ -48,6 +49,10 @@ public:
 	virtual void addMeasurements(const std::vector<MapFeature>& features,
 			int poseId = -1) = 0;
 
+	/// add measurement between two poses
+	virtual void addMeasurement(int poseFrom, int poseTo,
+			Mat34 transformation) = 0;
+
 	/// add new pose of the camera, returns id of the new pose
     virtual int addNewPose(const Mat34& cameraPoseChange, float_type timestamp) = 0;
 
@@ -59,6 +64,9 @@ public:
 
 	/// get pose of the sensor (default: last pose)
 	virtual Mat34 getSensorPose(int poseId = -1) = 0;
+
+	/// getDepthSensorModel
+	virtual DepthSensorModel getDepthSensorModel() = 0;
 
 	/// start optimization thread
     virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0) = 0;
