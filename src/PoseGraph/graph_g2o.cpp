@@ -1137,7 +1137,7 @@ bool PoseGraphG2O::prune3Dedges(float_type threshold){
     g2o::OptimizableGraph::EdgeContainer activeEdges = optimizer.activeEdges();
     mtxGraph.lock();
     int removed=0;
-    std::cout << "active edges " << activeEdges.size() << "\n";
+    std::cout << "active edges: " << activeEdges.size() << "\n";
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
         //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
         PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
@@ -1165,7 +1165,7 @@ bool PoseGraphG2O::prune3Dedges(float_type threshold){
             }
         }
     }
-    //std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning " << removed << " edges\n";
+    std::cout << "pruned: " << removed << " edges\n";
     mtxGraph.unlock();
     return true;
 }
