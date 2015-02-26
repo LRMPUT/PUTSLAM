@@ -63,10 +63,15 @@ void MatcherOpenCV::initVariables() {
 		featureDetector.reset(new cv::OrbFeatureDetector());
 	else if (matcherParameters.OpenCVParams.detector == "SURF")
 	{
-        //featureDetector.reset(new cv::SurfFeatureDetector());
-        featureDetector.reset(
-                new cv::DynamicAdaptedFeatureDetector(
-                        new cv::SurfAdjuster(3, true), 50, 150));
+//        featureDetector.reset(new cv::SurfFeatureDetector());
+//        featureDetector.reset(
+//                new cv::DynamicAdaptedFeatureDetector(
+//                        new cv::SurfAdjuster(2, true), 50, 150));
+
+		 int maxFeatures = 500;
+		 int rows = 5;
+		 int columns = 5;
+		 featureDetector.reset(new cv::GridAdaptedFeatureDetector(new cv::SurfAdjuster(5.0, true), maxFeatures, rows, columns));
 
 	}else if (matcherParameters.OpenCVParams.detector == "SIFT")
 		featureDetector.reset(new cv::SiftFeatureDetector());
@@ -109,26 +114,26 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-//	featureDetector.get()->detect(grayImage, raw_keypoints);
+	featureDetector.get()->detect(grayImage, raw_keypoints);
 
-	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
-	int stripesCount = 6;
-	for (int i = 0; i < stripesCount; i++) {
-		std::vector<cv::KeyPoint> keypointsInROI;
-		cv::Mat roiBGR(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
-		cv::Mat roiD(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
-
-		featureDetector.get()->detect(roiBGR, keypointsInROI);
-
-		if (matcherParameters.verbose>1)
-			std::cout<<"MatcherOpenCV: Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
-
-		std::sort(keypointsInROI.begin(), keypointsInROI.end(), MatcherOpenCV::compare_response);
-		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
-			keypointsInROI[j].pt.y += i * grayImageHeight/stripesCount;
-			raw_keypoints.push_back(keypointsInROI[j]);
-		}
-	}
+//	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
+//	int stripesCount = 6;
+//	for (int i = 0; i < stripesCount; i++) {
+//		std::vector<cv::KeyPoint> keypointsInROI;
+//		cv::Mat roiBGR(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
+//		cv::Mat roiD(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
+//
+//		featureDetector.get()->detect(roiBGR, keypointsInROI);
+//
+//		if (matcherParameters.verbose>1)
+//			std::cout<<"MatcherOpenCV: Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
+//
+//		std::sort(keypointsInROI.begin(), keypointsInROI.end(), MatcherOpenCV::compare_response);
+//		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
+//			keypointsInROI[j].pt.y += i * grayImageHeight/stripesCount;
+//			raw_keypoints.push_back(keypointsInROI[j]);
+//		}
+//	}
 
 
 

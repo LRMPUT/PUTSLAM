@@ -17,6 +17,7 @@
 #include "../include/Grabber/xtionGrabber.h"
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
+#include "../include/Matcher/RGBD.h"
 
 using namespace std;
 
@@ -75,13 +76,15 @@ void saveFeaturesToFile(Matcher::featureSet features, double timestamp) {
 	file.close();
 }
 
-void saveFeaturesToFile(Matcher::featureSet features, std::vector<cv::DMatch> inlierMatches, double timestamp) {
+void saveFeaturesToFile(Matcher::featureSet features,
+		std::vector<cv::DMatch> inlierMatches, double timestamp) {
 
 	int whatever = system("mkdir featuresDir");
 
 	std::ostringstream fileName;
 	fileName << std::setfill('0') << std::setprecision(17) << timestamp;
-	std::ofstream file("featuresDir/" + fileName.str() + ".features", std::ofstream::out | std::ofstream::app);
+	std::ofstream file("featuresDir/" + fileName.str() + ".features",
+			std::ofstream::out | std::ofstream::app);
 
 	for (int i = 0; i < inlierMatches.size(); i++) {
 		int id = inlierMatches[i].trainIdx;
@@ -115,8 +118,8 @@ int main() {
 
 	Grabber* grabber;
 	std::string grabberConfigFile(
-					config.FirstChildElement("Grabber")->FirstChildElement(
-							"calibrationFile")->GetText());
+			config.FirstChildElement("Grabber")->FirstChildElement(
+					"calibrationFile")->GetText());
 	if (grabberType == "Kinect") {
 		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
 	} else if (grabberType == "Xtion") {
@@ -137,7 +140,8 @@ int main() {
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFile")->GetText();
 
-	Matcher * matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
+	Matcher * matcher = createMatcherOpenCV(matcherParameters,
+			grabberConfigFile);
 	cout << "Current matcher: " << matcher->getName() << std::endl;
 
 	// Reading robot starting pose
@@ -148,13 +152,12 @@ int main() {
 	ofstream trajectoryFreiburgStream("VO_trajectory.res");
 	ofstream trajectoryVOMapStream("VOMap_trajectory.res");
 
-	auto start = chrono::system_clock::now();
+	auto start = chrono::high_resolution_clock::now();
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
 	//map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
 	map->startOptimizationThread(1, 0);
-
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
@@ -162,9 +165,12 @@ int main() {
 	int addFeaturesWhenMeasurementSizeLessThan =
 			((FeaturesMap*) map)->getAddFeaturesWhenMeasurementSizeLessThan();
 	int maxOnceFeatureAdd = ((FeaturesMap*) map)->getMaxOnceFeatureAdd();
-	float minEuclideanDistanceOfFeatures = ((FeaturesMap*) map)->getMinEuclideanDistanceOfFeatures();
-	float minImageDistanceOfFeatures = ((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
-	int addNoFeaturesWhenMapSizeGreaterThan = ((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
+	float minEuclideanDistanceOfFeatures =
+			((FeaturesMap*) map)->getMinEuclideanDistanceOfFeatures();
+	float minImageDistanceOfFeatures =
+			((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
+	int addNoFeaturesWhenMapSizeGreaterThan =
+			((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
 
 	// Main loop
 	while (true) {
@@ -175,7 +181,7 @@ int main() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
-		int cameraPoseId  = 0;
+		int cameraPoseId = 0;
 		bool addFeatureToMap = false;
 
 		// Variable to store map features
@@ -184,7 +190,6 @@ int main() {
 		// The beginning of the sequence
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
-
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
@@ -200,14 +205,19 @@ int main() {
 		else {
 			Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
-			matcher->Matcher::match(currentSensorFrame, transformation, inlierMatches);
+
+			auto start = std::chrono::high_resolution_clock::now();
+			matcher->Matcher::match(currentSensorFrame, transformation,
+					inlierMatches);
+			auto duration = std::chrono::duration_cast< std::chrono::microseconds	 >(
+			            std::chrono::high_resolution_clock::now() - start);
+			std::cout<<"---->Time:\t VO matching: " << duration.count() / 1000.0 << " ms" << std::endl;
 
 			// Saving inliers for Dominic
 //			Matcher::featureSet features = matcher->getFeatures();
 //			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
 			robotPose = robotPose * transformation;
-
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
@@ -218,15 +228,42 @@ int main() {
 
 			// Get the visible features
 			Mat34 cameraPose = map->getSensorPose();
+			start = std::chrono::high_resolution_clock::now();
 			mapFeatures = map->getVisibleFeatures(cameraPose);
+			duration = std::chrono::duration_cast< std::chrono::microseconds	 >(
+						            std::chrono::high_resolution_clock::now() - start);
+			std::cout<<"---->Time:\t Map get visible features: " << duration.count() / 1000.0 << " ms" << std::endl;
 
 			// Move mapFeatures to local coordinate system
-			for (std::vector<MapFeature>::iterator it = mapFeatures.begin(); it!=mapFeatures.end(); ++it) {
+			start = std::chrono::high_resolution_clock::now();
+			for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
+					it != mapFeatures.end(); ++it) {
 				Mat34 featurePos((*it).position);
-				featurePos = (cameraPose.inverse()).matrix() * featurePos.matrix();
+				featurePos = (cameraPose.inverse()).matrix()
+						* featurePos.matrix();
 				it->position = Vec3(featurePos(0, 3), featurePos(1, 3),
-                        featurePos(2, 3));
+						featurePos(2, 3));
+
+//				 Compute image position
+				Eigen::Vector3d projectedMapPoint =
+						map->getDepthSensorModel().inverseModel(
+								featurePos(0, 3), featurePos(1, 3),
+								featurePos(2, 3));
+				it->u = projectedMapPoint[0];
+				it->v = projectedMapPoint[1];
 			}
+			duration = std::chrono::duration_cast< std::chrono::microseconds	 >(
+									            std::chrono::high_resolution_clock::now() - start);
+			std::cout<<"---->Time:\t Features to local coordinate system: " << duration.count() / 1000.0 << " ms" << std::endl;
+
+
+			std::cout
+					<< "Returned visible map feature size before if not cover test: "
+					<< mapFeatures.size() << std::endl;
+
+			// Now lets check if those features are not behind sth
+			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+					currentSensorFrame.depthImage, 0.1f);
 
 			std::cout << "Returned visible map feature size: "
 					<< mapFeatures.size() << std::endl;
@@ -235,7 +272,12 @@ int main() {
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
 			Eigen::Matrix4f mapEstimatedTransformation;
-			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+			start = std::chrono::high_resolution_clock::now();
+			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
+					measurementList, mapEstimatedTransformation);
+			duration = std::chrono::duration_cast < std::chrono::microseconds
+					> (std::chrono::high_resolution_clock::now() - start);
+			std::cout << "---->Time:\t Map matching time: " << duration.count() / 1000.0 << " ms" << std::endl;
 //			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 
 			// TESTING VO with map corrections
@@ -245,30 +287,33 @@ int main() {
 					<< std::endl;
 
 			// Compare VO and VOMap estimate -> decide whether to add measurements to map
-			float distanceDiff = mapEstimatedTransformation.block<3,1>(0,3).norm();
-			std::cout<<"Difference between VO i Map : " << distanceDiff << " meters" <<std::endl;
+			float distanceDiff =
+					mapEstimatedTransformation.block<3, 1>(0, 3).norm();
+			std::cout << "Difference between VO i Map : " << distanceDiff
+					<< " meters" << std::endl;
 
-			if ( distanceDiff < 0.05)
-			{
+			if (distanceDiff < 0.05) {
 				// Add the measurements of inliers
 				map->addMeasurements(measurementList);
-			}
-			else {
+			} else {
 //				addFeatureToMap = true;
-				map->addMeasurement(cameraPoseId-1, cameraPoseId, cameraPoseIncrement);
+				map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+						cameraPoseIncrement);
 			}
 
 			// Insufficient number of features -> time to add some features
 			if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
 					|| (measurementList.size()
-							< addFeaturesWhenMeasurementSizeLessThan && mapFeatures.size() < addNoFeaturesWhenMapSizeGreaterThan)) {
+							< addFeaturesWhenMeasurementSizeLessThan
+							&& mapFeatures.size()
+									< addNoFeaturesWhenMapSizeGreaterThan)) {
 				addFeatureToMap = true;
 			}
 		}
 
 		// Should we add some features to the map?
 		if (addFeatureToMap) {
-			std::cout<<"Adding features to map " << std::endl;
+			std::cout << "Adding features to map " << std::endl;
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
@@ -277,12 +322,15 @@ int main() {
 			std::vector<RGBDFeature> mapFeaturesToAdd;
 			int addedCounter = 0;
 
+			auto start = std::chrono::high_resolution_clock::now();
 			// Lets process possible features to add
-			for (int j = 0; j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd; j++) {
+			for (int j = 0;
+					j < features.feature3D.size()
+							&& addedCounter < maxOnceFeatureAdd; j++) {
 
 				// We only add features of proper depth
-				if ( features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0)
-				{
+				if (features.feature3D[j][2] > 0.8
+						&& features.feature3D[j][2] < 6.0) {
 
 					bool featureOk = true;
 
@@ -301,16 +349,19 @@ int main() {
 						}
 
 						// Image error
-					    Eigen::Vector3d projectedMapPoint = map->getDepthSensorModel().inverseModel(mapFeatures[i].position.x(),
-								mapFeatures[i].position.y(),
-								mapFeatures[i].position.z());
+						Eigen::Vector3d projectedMapPoint =
+								map->getDepthSensorModel().inverseModel(
+										mapFeatures[i].position.x(),
+										mapFeatures[i].position.y(),
+										mapFeatures[i].position.z());
 
-					    cv::Point2f point(projectedMapPoint[0], projectedMapPoint[1]);
-						float imageNorm = cv::norm(point - features.undistortedFeature2D[j]);
+						cv::Point2f point(projectedMapPoint[0],
+								projectedMapPoint[1]);
+						float imageNorm = cv::norm(
+								point - features.undistortedFeature2D[j]);
 
 						// 5 pixels is a minimum distance
-						if ( imageNorm < minImageDistanceOfFeatures )
-						{
+						if (imageNorm < minImageDistanceOfFeatures) {
 							featureOk = false;
 							break;
 						}
@@ -321,7 +372,8 @@ int main() {
 					if (featureOk) {
 						for (int i = 0; i < mapFeaturesToAdd.size(); i++) {
 
-							Eigen::Vector3f tmp(mapFeaturesToAdd[i].position.x(),
+							Eigen::Vector3f tmp(
+									mapFeaturesToAdd[i].position.x(),
 									mapFeaturesToAdd[i].position.y(),
 									mapFeaturesToAdd[i].position.z());
 							float norm = (tmp - features.feature3D[j]).norm();
@@ -337,7 +389,7 @@ int main() {
 									point - features.undistortedFeature2D[j]);
 
 							// 5 pixels is a minimum distance
-							if (imageNorm < minImageDistanceOfFeatures ) {
+							if (imageNorm < minImageDistanceOfFeatures) {
 								featureOk = false;
 								break;
 							}
@@ -359,7 +411,8 @@ int main() {
 						// Add to set added later to map
 						RGBDFeature f(featurePosition,
 								features.undistortedFeature2D[j].x,
-								features.undistortedFeature2D[j].y, extDescriptors);
+								features.undistortedFeature2D[j].y,
+								extDescriptors);
 						mapFeaturesToAdd.push_back(f);
 
 						addedCounter++;
@@ -367,7 +420,12 @@ int main() {
 				}
 			}
 
-			std::cout<<"map->addFeatures -> adding " << addedCounter << " features" << std::endl;
+			auto duration = std::chrono::duration_cast < std::chrono::microseconds
+					> (std::chrono::high_resolution_clock::now() - start);
+			std::cout << "---->Time:\t Considering features for map add: " << duration.count() / 1000.0 << " ms" << std::endl;
+
+			std::cout << "map->addFeatures -> adding " << addedCounter
+					<< " features" << std::endl;
 			// Finally, adding to map
 			map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
@@ -383,16 +441,13 @@ int main() {
 				currentSensorFrame.timestamp);
 
 		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
-						currentSensorFrame.timestamp);
+				currentSensorFrame.timestamp);
 	}
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
-
 	// Wait for optimization finish
 	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
-
-
 
 // Close trajectory stream
 	trajectoryFreiburgStream.close();
