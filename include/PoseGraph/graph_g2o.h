@@ -160,6 +160,9 @@ class PoseGraphG2O : public Graph {
         /// remove weak features (if measurements number is smaller than threshold)
         void removeWeakFeatures(int threshold);
 
+        /// Prune 3D edges (measurements to features)
+        bool prune3Dedges(float_type threshold);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -194,7 +197,7 @@ class PoseGraphG2O : public Graph {
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
 
         /// removes an edge from the graph. Returns true on success
-        bool removeEdge(unsigned int id);
+        PoseGraph::EdgeSet::iterator removeEdge(unsigned int id);
 
         /**
          * update graph: adds vertices and edges to the graph.
