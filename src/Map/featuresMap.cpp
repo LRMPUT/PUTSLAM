@@ -266,7 +266,9 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		setRobustKernel(RobustKernelName, kernelDelta);
 	else
 		disableRobustKernel();
-	std::cout << "Starting final after trajectory optimization" << std::endl;
+    std::cout << "Starting final after trajectory optimization" << std::endl;
+    if (config.weakFeatureThr>0)
+        ((PoseGraphG2O*)poseGraph)->removeWeakFeatures(config.weakFeatureThr);
     if (config.fixVertices)
         ((PoseGraphG2O*)poseGraph)->releaseFixedVertices();
 	//poseGraph->optimize(-1, verbose, 0.0001);

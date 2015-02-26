@@ -20,6 +20,7 @@
 #include "g2o/types/slam3d/parameter_se3_offset.h"
 #include "g2o/core/robust_kernel.h"
 #include "g2o/core/robust_kernel_factory.h"
+#include "g2o/core/g2o_core_api.h"
 
 #include "g2o/core/factory.h"
 #include "g2o/stuff/command_args.h"
@@ -155,6 +156,9 @@ class PoseGraphG2O : public Graph {
 
         /// disable Robust Kernel
         void disableRobustKernel(void);
+
+        /// remove weak features (if measurements number is smaller than threshold)
+        void removeWeakFeatures(int threshold);
 
     private:
         /// Pose graph
