@@ -148,6 +148,7 @@ public:
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("weakFeatureThr", &weakFeatureThr);
+            model->FirstChildElement( "parameters" )->QueryFloatAttribute("edges3DPrunningThreshold", &edges3DPrunningThreshold);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 					"addFeaturesWhenMapSizeLessThan",
 					&addFeaturesWhenMapSizeLessThan);
@@ -173,6 +174,9 @@ public:
 
             // before final optimization remove features with measuremets less than threshold
             int weakFeatureThr;
+
+            /// 3D edges pruning
+            float edges3DPrunningThreshold;
 
             // fix all optimized vertices after optimization
             bool fixVertices;

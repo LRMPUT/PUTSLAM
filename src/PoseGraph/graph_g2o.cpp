@@ -1165,7 +1165,7 @@ bool PoseGraphG2O::prune3Dedges(float_type threshold){
             }
         }
     }
-    std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning " << removed << " edges\n";
+    //std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning " << removed << " edges\n";
     mtxGraph.unlock();
     return true;
 }

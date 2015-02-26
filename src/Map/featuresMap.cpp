@@ -273,7 +273,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         ((PoseGraphG2O*)poseGraph)->releaseFixedVertices();
     //poseGraph->optimize(-1, verbose, 0.0001);
 
-    ((PoseGraphG2O*) poseGraph)->prune3Dedges(10);//pruning
+    if (config.edges3DPrunningThreshold>0)
+        ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
     poseGraph->optimize(100, verbose);
 
 	std::vector<MapFeature> optimizedFeatures;
