@@ -68,30 +68,49 @@ const std::string& PoseGraphG2O::getName() const {
     return name;
 }
 
+/// removes vertex from the g2o graph. Returns true on success
+bool PoseGraphG2O::removeVertexG2O(unsigned int id){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()==id){
+            optimizer.removeVertex(*it);
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Removes a vertex from the graph. Returns true on success
-bool PoseGraphG2O::removeVertex(unsigned int id){
+PoseGraph::VertexSet::iterator PoseGraphG2O::removeVertex(unsigned int id){
     mtxGraph.lock();
+    if (!removeVertexG2O(id))
+        return graph.vertices.end();
     PoseGraph::VertexSet::iterator v = findVertex(id);
     if (v != graph.vertices.end()) {
-        graph.vertices.erase(v);
-        mtxGraph.unlock();
-        return true;
+        v = graph.vertices.erase(v);
     }
+    return v;
     mtxGraph.unlock();
+}
+
+/// removes an edge from the g2o graph. Returns true on success
+bool PoseGraphG2O::removeEdgeG2O(unsigned int id){
+    g2o::OptimizableGraph::EdgeContainer edges = optimizer.activeEdges();
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = edges.begin(); it!=edges.end(); it++){
+        if ((*it)->id()==id){
+            optimizer.removeEdge(*it);
+            return true;
+        }
+    }
     return false;
 }
 
 /// removes an edge from the graph. Returns true on success
 bool PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
+    if (!removeEdgeG2O(id))
+        return false;
     PoseGraph::EdgeSet::iterator e = findEdge(id);
-    g2o::OptimizableGraph::EdgeContainer edges = optimizer.activeEdges();
-    for (g2o::OptimizableGraph::EdgeContainer::iterator it = edges.begin(); it!=edges.end(); it++){
-        if ((*it)->id()==id){
-            optimizer.removeEdge(*it);
-        }
-    }
-
     if (e != graph.edges.end()) {
         graph.prunedEdges.push_back(std::move(*e));
         graph.edges.erase(e);
@@ -1105,11 +1124,7 @@ void PoseGraphG2O::removeWeakFeatures(int threshold){
                 for (std::vector<unsigned int>::iterator iter = incomingEdges.begin(); iter!=incomingEdges.end(); iter++){
                     removeEdge(*iter);
                 }
-                //removeVertex((*it)->id());
-                std::cout << "removed\n";
-            }
-            else{
-                std::cout << "not removed\n";
+                removeVertex((*it)->id());
             }
         }
     }

@@ -191,7 +191,7 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
 
         /// Removes a vertex from the graph. Returns true on success
-        bool removeVertex(unsigned int id);
+        PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
 
         /// removes an edge from the graph. Returns true on success
         bool removeEdge(unsigned int id);
@@ -265,6 +265,11 @@ class PoseGraphG2O : public Graph {
         /// checks if the edge is the single edge outgoing from the vertex fromVertex
         bool isSingleOutgoingEdge(unsigned int edgeId);
 
+        /// removes an edge from the g2o graph. Returns true on success
+        bool removeEdgeG2O(unsigned int id);
+
+        /// removes vertex from the g2o graph. Returns true on success
+        bool removeVertexG2O(unsigned int id);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED

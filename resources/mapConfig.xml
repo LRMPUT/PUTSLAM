@@ -13,7 +13,7 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
 	<parameters useUncertainty="false"
-				weakFeatureThr="3"
+				weakFeatureThr="-1"
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
 				addFeaturesWhenMeasurementSizeLessThan="20" 
