@@ -14,8 +14,8 @@
 	<parameters useUncertainty="false" 
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
-				addFeaturesWhenMeasurementSizeLessThan="20" 
-				maxOnceFeatureAdd="30"
+				addFeaturesWhenMeasurementSizeLessThan="30" 
+				maxOnceFeatureAdd="40"
 				minEuclideanDistanceOfFeatures="0.05"
 				minImageDistanceOfFeatures="8"
 				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
