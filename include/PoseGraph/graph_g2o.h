@@ -20,6 +20,7 @@
 #include "g2o/types/slam3d/parameter_se3_offset.h"
 #include "g2o/core/robust_kernel.h"
 #include "g2o/core/robust_kernel_factory.h"
+#include "g2o/core/g2o_core_api.h"
 
 #include "g2o/core/factory.h"
 #include "g2o/stuff/command_args.h"
@@ -156,6 +157,12 @@ class PoseGraphG2O : public Graph {
         /// disable Robust Kernel
         void disableRobustKernel(void);
 
+        /// remove weak features (if measurements number is smaller than threshold)
+        void removeWeakFeatures(int threshold);
+
+        /// Prune 3D edges (measurements to features)
+        bool prune3Dedges(float_type threshold);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -187,10 +194,10 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
 
         /// Removes a vertex from the graph. Returns true on success
-        bool removeVertex(unsigned int id);
+        PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
 
         /// removes an edge from the graph. Returns true on success
-        bool removeEdge(unsigned int id);
+        PoseGraph::EdgeSet::iterator removeEdge(unsigned int id);
 
         /**
          * update graph: adds vertices and edges to the graph.
@@ -261,6 +268,11 @@ class PoseGraphG2O : public Graph {
         /// checks if the edge is the single edge outgoing from the vertex fromVertex
         bool isSingleOutgoingEdge(unsigned int edgeId);
 
+        /// removes an edge from the g2o graph. Returns true on success
+        bool removeEdgeG2O(unsigned int id);
+
+        /// removes vertex from the g2o graph. Returns true on success
+        bool removeVertexG2O(unsigned int id);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED
