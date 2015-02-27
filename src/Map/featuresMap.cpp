@@ -241,7 +241,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 			setRobustKernel(RobustKernelName, kernelDelta);
 		} else
 			disableRobustKernel();
-		poseGraph->optimize(iterNo, verbose);
+        poseGraph->optimize(iterNo, verbose);
 		std::vector<MapFeature> optimizedFeatures;
 		((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
 		bufferMapFrontend.mtxBuffer.lock();
@@ -266,11 +266,16 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		setRobustKernel(RobustKernelName, kernelDelta);
 	else
 		disableRobustKernel();
-	std::cout << "Starting final after trajectory optimization" << std::endl;
+    std::cout << "Starting final after trajectory optimization" << std::endl;
+    if (config.weakFeatureThr>0)
+        ((PoseGraphG2O*)poseGraph)->removeWeakFeatures(config.weakFeatureThr);
     if (config.fixVertices)
         ((PoseGraphG2O*)poseGraph)->releaseFixedVertices();
-	//poseGraph->optimize(-1, verbose, 0.0001);
-	poseGraph->optimize(100, verbose);
+    //poseGraph->optimize(-1, verbose, 0.0001);
+
+    if (config.edges3DPrunningThreshold>0)
+        ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
+    poseGraph->optimize(100, verbose);
 
 	std::vector<MapFeature> optimizedFeatures;
 	((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);

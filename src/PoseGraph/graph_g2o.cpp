@@ -68,31 +68,56 @@ const std::string& PoseGraphG2O::getName() const {
     return name;
 }
 
+/// removes vertex from the g2o graph. Returns true on success
+bool PoseGraphG2O::removeVertexG2O(unsigned int id){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()==id){
+            optimizer.removeVertex(*it);
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Removes a vertex from the graph. Returns true on success
-bool PoseGraphG2O::removeVertex(unsigned int id){
+PoseGraph::VertexSet::iterator PoseGraphG2O::removeVertex(unsigned int id){
     mtxGraph.lock();
     PoseGraph::VertexSet::iterator v = findVertex(id);
     if (v != graph.vertices.end()) {
-        graph.vertices.erase(v);
-        mtxGraph.unlock();
-        return true;
+        v = graph.vertices.erase(v);
+    }
+    return v;
+    mtxGraph.unlock();
+}
+
+/// removes an edge from the g2o graph. Returns true on success
+bool PoseGraphG2O::removeEdgeG2O(unsigned int id){
+    mtxGraph.lock();
+    g2o::OptimizableGraph::EdgeContainer edges = optimizer.activeEdges();
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = edges.begin(); it!=edges.end(); it++){
+        if ((*it)->id()==id){
+            optimizer.removeEdge(*it);
+            mtxGraph.unlock();
+            return true;
+        }
     }
     mtxGraph.unlock();
     return false;
 }
 
 /// removes an edge from the graph. Returns true on success
-bool PoseGraphG2O::removeEdge(unsigned int id){
+PoseGraph::EdgeSet::iterator PoseGraphG2O::removeEdge(unsigned int id){
     mtxGraph.lock();
     PoseGraph::EdgeSet::iterator e = findEdge(id);
     if (e != graph.edges.end()) {
         graph.prunedEdges.push_back(std::move(*e));
-        graph.edges.erase(e);
+        e = graph.edges.erase(e);
         mtxGraph.unlock();
-        return true;
+        return e;
     }
     mtxGraph.unlock();
-    return false;
+    return graph.edges.end();
 }
 
 /// clears the graph and empties all structures.
@@ -1068,7 +1093,7 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
                         if (!optimizer.removeEdge(*outlierIt))
                             std::cout << "g2o: Could not remove the edge.\n";
                         std::cout << "removed g2o\n";
-                        if (!removeEdge((*outlierIt)->id()))
+                        if (removeEdge((*outlierIt)->id())==graph.edges.end())
                             std::cout << "putslam: Could not remove the edge.\n";
                         //it+=(*outlierIt)->id() - (*it)->id();
                         it = activeEdges.erase(outlierIt);
@@ -1084,6 +1109,65 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
     std::cout << "end\n";
     return true;
     //g2o::OptimizableGraph::Edge e; e.id();
+}
+
+/// remove weak features (if measurements number is smaller than threshold)
+void PoseGraphG2O::removeWeakFeatures(int threshold){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        //std::cout << (*it)->elementType() << "\n";
+        PoseGraph::VertexSet::iterator vert = findVertex((*it)->id());//Todo waek solution
+        if (vert->get()->type == Vertex::VERTEX3D) {
+            std::vector<unsigned int> incomingEdges = findIncominEdges((*it)->id());
+            if (incomingEdges.size()<threshold){
+                for (std::vector<unsigned int>::iterator iter = incomingEdges.begin(); iter!=incomingEdges.end(); iter++){
+                    removeEdge(*iter);
+                    removeEdgeG2O(*iter);
+                }
+                removeVertex((*it)->id());
+                removeVertexG2O((*it)->id());
+            }
+        }
+    }
+}
+
+/// Prune 3D edges (measurements to features)
+bool PoseGraphG2O::prune3Dedges(float_type threshold){
+    optimizer.computeActiveErrors();
+    g2o::OptimizableGraph::EdgeContainer activeEdges = optimizer.activeEdges();
+    mtxGraph.lock();
+    int removed=0;
+    std::cout << "active edges: " << activeEdges.size() << "\n";
+    for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
+        //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
+        PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
+        PoseGraph::VertexSet::iterator vert = findVertex(edg->get()->toVertexId);
+        if (vert->get()->type==Vertex::VERTEX3D){
+            //std::cout << "id1: " << vert->get()->vertexId << "\n";
+            std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
+            if (closeSet.size()>0){
+                g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
+                //std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning\n" << (*it)->chi2() << "\n\n\n";
+                if ((outlierIt!=activeEdges.end())&&(!isSingleOutgoingEdge((*outlierIt)->id()))){
+                //if ((*it)->chi2()>threshold){
+                    //if ((it!=activeEdges.end())&&(!isSingleOutgoingEdge((*it)->id()))){
+                        //removeEdge((*it)->id());
+                        //std::cout << "\n\n\n\n\n\n\n\n\nto big chi2\n";
+                    if ((outlierIt!=activeEdges.end())&&(!isSingleOutgoingEdge((*outlierIt)->id()))){
+                        removeEdgeG2O((*outlierIt)->id());
+                        it = activeEdges.erase(outlierIt);
+                        //std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning\n";
+                        if (it==activeEdges.end())
+                            it = activeEdges.begin();
+                        removed++;
+                    }
+                }
+            }
+        }
+    }
+    std::cout << "pruned: " << removed << " edges\n";
+    mtxGraph.unlock();
+    return true;
 }
 
 /**
@@ -1116,7 +1200,7 @@ bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIt
                         if (!optimizer.removeEdge(*outlierIt))
                             std::cout << "g2o: Could not remove the edge.\n";
                         std::cout << "removed g2o\n";
-                        if (!removeEdge((*outlierIt)->id()))
+                        if (removeEdge((*outlierIt)->id())==graph.edges.end())
                             std::cout << "putslam: Could not remove the edge.\n";
                         //it+=(*outlierIt)->id() - (*it)->id();
                         it = activeEdges.erase(outlierIt);
