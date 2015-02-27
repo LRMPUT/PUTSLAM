@@ -106,7 +106,7 @@ bool Matcher::match(const SensorFrame& sensorData,
 			> (std::chrono::high_resolution_clock::now() - start);
 	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
 			<< " ms" << std::endl;
-	;
+
 
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
