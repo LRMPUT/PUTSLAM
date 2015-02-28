@@ -15,10 +15,10 @@
   	-->
 	<parameters useUncertainty="false"
 				weakFeatureThr="-1"
-				edges3DPrunningThreshold="10"
+				edges3DPrunningThreshold="100"
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
-				addFeaturesWhenMeasurementSizeLessThan="30" 
+				addFeaturesWhenMeasurementSizeLessThan="25" 
 				maxOnceFeatureAdd="40"
 				minEuclideanDistanceOfFeatures="0.05"
 				minImageDistanceOfFeatures="8"
