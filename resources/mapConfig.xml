@@ -13,9 +13,9 @@
   	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
-	<parameters useUncertainty="false"
+	<parameters useUncertainty="true"
 				weakFeatureThr="-1"
-				edges3DPrunningThreshold="100"
+				edges3DPrunningThreshold="2"
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
 				addFeaturesWhenMeasurementSizeLessThan="25" 

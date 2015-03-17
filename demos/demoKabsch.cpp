@@ -1124,8 +1124,8 @@ int main(int argc, char * argv[])
             size_t pointsNo = 5000;
             float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
-            //simulator.createEnvironment(1600, 15, 15, 15);
-            simulator.loadEnvironment("../../resources/cloudOffice.pcl");
+            simulator.createEnvironment(450, 15, 15, 15);
+            //simulator.loadEnvironment("../../resources/cloudOffice.pcl");
             std::string filenameCloud= "../../resources/KabschUncertainty/refCloud" + std::to_string(i) + ".m";
             savePointCloud(filenameCloud, simulator.getEnvironment());
 
@@ -1167,7 +1167,7 @@ int main(int argc, char * argv[])
                     trajectory.push_back(pose);
                 }
             }
-            simulator.loadTrajectory("../../resources/traj_living_room_kt1.txt");
+            simulator.loadTrajectory("../../resources/traj_living_room_kt3.txt");
             trajectory = simulator.getTrajectory();
 
   /*          //generate icl office environment
@@ -1424,13 +1424,13 @@ int main(int argc, char * argv[])
             MSEKabsch.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
             std::cout << "Kabsch accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
 
-            /*Mat34 prevPos = trajectorySensor[0];
+            Mat34 prevPos = trajectorySensor[0];
             for (int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos.inverse() * trajectorySensor[tt];
                 std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
                 prevPos = trajectorySensor[tt];
-            }*/
+            }
 
             graph->clear();
             runExperiment(1, trajectory, sensorModel, cloudSeq, uncertaintySet, setIds, simulator, transEst);
@@ -1451,6 +1451,14 @@ int main(int argc, char * argv[])
             createMap(graph, trajectoryOpt, cloudSeq, setIds);
             MSEKabsch_g2o.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
             std::cout << "g2o+LC accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
+
+            Mat34 prevPos1 = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos1.inverse() * trajectoryOpt[tt];
+                std::string fileFrame= "../../resources/simulator/frameG2O" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos1 = trajectorySensor[tt];
+            }
 
 /*            graph->clear();
             //move camera along reference trajectory and estimate trajectory
@@ -1518,6 +1526,13 @@ int main(int argc, char * argv[])
             std::cout << "BA nounc accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
             MSEBAnouncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
 
+            Mat34 prevPos2 = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos2.inverse() * trajectoryBAident[tt];
+                std::string fileFrame= "../../resources/simulator/frameBAG2O" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos2 = trajectorySensor[tt];
+            }
 
             //Bundle Adjustment uncert
             graph->clear();
@@ -1547,7 +1562,15 @@ int main(int argc, char * argv[])
             std::cout << "BA unc accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
             MSEBAuncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
 
-//getchar();
+            Mat34 prevPos3 = trajectorySensor[0];
+            for (int tt=0;tt<trajectorySensor.size();tt++){
+                Mat34 estimKabsch = prevPos3.inverse() * trajectoryBAuncert[tt];
+                std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
+                simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
+                prevPos3 = trajectorySensor[tt];
+            }
+            std::cout << "konec\n";
+getchar();
 /*
             //Bundle Adjustment + pose ident
             graph->clear();
