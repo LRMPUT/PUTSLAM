@@ -251,6 +251,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		bufferMapFrontend.mtxBuffer.unlock();
 		//try to update the map
 		updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+        if (config.edges3DPrunningThreshold>0)
+            ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
 		//update camera trajectory
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
@@ -275,7 +277,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 
     if (config.edges3DPrunningThreshold>0)
         ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
-    poseGraph->optimize(100, verbose);
+    poseGraph->optimize(10, verbose);
 
 	std::vector<MapFeature> optimizedFeatures;
 	((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);

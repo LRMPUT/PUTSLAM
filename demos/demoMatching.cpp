@@ -157,7 +157,7 @@ int main() {
 
 	// Optimize during trajectory acquisition
     //map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
-    map->startOptimizationThread(1, 0);
+    map->startOptimizationThread(1, 1);
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
