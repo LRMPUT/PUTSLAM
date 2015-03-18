@@ -4,7 +4,11 @@
 
 int main() {
 
-	PUTSLAM putslam;
+	std::unique_ptr<PUTSLAM> putslam;
+	putslam.reset(new PUTSLAM);
+
+	putslam.get()->startProcessing();
+
 
 	return 0;
 }
