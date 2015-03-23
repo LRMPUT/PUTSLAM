@@ -326,7 +326,26 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
 
 ###############################################################################
 #
-# PUTSLAM DEMO executables
+# PUTSLAM library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM)
+        file(GLOB LIBPUTSLAM_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/PUTSLAM/*.cpp"
+        )
+        file(GLOB LIBPUTSLAM_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/PUTSLAM/*.h"
+        )
+        ADD_LIBRARY(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
+        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher TransformEst ${OpenCV_LIBS})
+        INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${LIBPUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
+endif(BUILD_PUTSLAM)
+
+###############################################################################
+#
+# PUTSLAM DEMO executableslanguage
 #
 ###############################################################################
 
@@ -357,9 +376,9 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-        SET(DEMO_SOURCES ./src/PUTSLAM.cpp ./demos/demoMatching.cpp)
+        SET(DEMO_SOURCES ./demos/demoMatching.cpp)
         ADD_EXECUTABLE(demoMatching ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Map Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph boost_system)
+        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 Grabber Map Matcher TransformEst LDB ${OpenCV_LIBS} PoseGraph LIBPUTSLAM boost_system)
         INSTALL(TARGETS demoMatching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
