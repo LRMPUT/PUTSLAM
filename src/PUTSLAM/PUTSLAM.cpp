@@ -1,4 +1,4 @@
-#include "../include/PUTSLAM.h"
+#include "../include/PUTSLAM/PUTSLAM.h"
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
