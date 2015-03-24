@@ -163,6 +163,9 @@ class PoseGraphG2O : public Graph {
         /// Prune 3D edges (measurements to features)
         bool prune3Dedges(float_type threshold);
 
+        /// returns measured positions and uncertainty of the feature in global coordinates
+        void getMeasurements(int featureId, std::vector<Edge3D>& features, Vec3& estimation);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
