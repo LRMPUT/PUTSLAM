@@ -67,10 +67,12 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 				MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
 						poseIds, (*it).descriptors));
 		//add measurement to the graph
-		Mat33 info(Mat33::Identity());
+        Mat33 info(Mat33::Identity());
 		if (config.useUncertainty)
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
+        std::cout << "(dodawanie cechy jest ok) feature: " << featureIdNo << " " << it->u << " " << it->v << " " << (*it).position.z() << "\n";
+        std::cout << "info: \n" << info << "\n";
 
 		Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
@@ -80,6 +82,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		poseGraph->addEdge3D(e);
 		featureIdNo++;
 	}
+    std::cout<< "Press enter\n";
+    getchar();
 	bufferMapFrontend.mtxBuffer.unlock();
 
 	//try to update the map
@@ -136,10 +140,14 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
         }
+        std::cout << "(tutaj u i v sa rowne 0) feature measurements (id, u, v, z): " << (*it).id << " "  << (*it).u << " " << it->v << " " << (*it).position.z() << "\n";
+        std::cout << "info meas: \n" << info << "\n";
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
-	}
+    }
+    std::cout<< "Press enter\n";
+    getchar();
 }
 
 /// add measurement between two poses
@@ -221,6 +229,7 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 	optimizationThr->join();
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
+    plotFeatures("../../resources/map.m");
 }
 
 /// optimization thread
@@ -399,6 +408,29 @@ void FeaturesMap::save2file(std::string mapFilename,
 	}
 	mtxMapFrontend.unlock();
 	file.close();
+}
+
+/// plot all features
+void FeaturesMap::plotFeatures(std::string filename){
+    std::ofstream file(filename);
+    file << "close all;\nclear all;\nhold on;\n";
+    for (int i=0;i<featureIdNo;i++){
+        std::vector<Edge3D> features;
+        Vec3 estimation;
+        ((PoseGraphG2O*)poseGraph)->getMeasurements(FATURES_START_ID+i, features, estimation);
+        file << "%feature no " << FATURES_START_ID+i << "\n";
+        file << "plot3(" << estimation.x() << "," << estimation.y() << "," << estimation.z() << ",'ro');\n";
+        for (int j=0;j<features.size();j++){
+            file << "plot3(" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << ",'bx');\n";
+        }
+        for (int j=0;j<features.size();j++){
+            Mat33 unc = features[j].info.inverse();
+            file << "C = [" << unc(0,0) << ", " << unc(0,1) << ", " << unc(0,2) << "; " << unc(1,0) << ", " << unc(1,1) << ", " << unc(1,2) << "; " << unc(2,0) << ", " << unc(2,1) << ", " << unc(2,2) << ", " << "];\n";
+            file << "M = [" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << "];\n";
+            file << "error_ellipse(C, M);\n";
+        }
+    }
+    file.close();
 }
 
 /// set Robust Kernel

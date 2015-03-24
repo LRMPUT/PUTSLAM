@@ -15,7 +15,7 @@
   	-->
 	<parameters useUncertainty="true"
 				weakFeatureThr="-1"
-				edges3DPrunningThreshold="2"
+				edges3DPrunningThreshold="-1"
 				fixVertices = "false"
 				addFeaturesWhenMapSizeLessThan="80" 
 				addFeaturesWhenMeasurementSizeLessThan="25" 
