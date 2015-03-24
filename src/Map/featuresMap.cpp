@@ -71,8 +71,6 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		if (config.useUncertainty)
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
-        std::cout << "(dodawanie cechy jest ok) feature: " << featureIdNo << " " << it->u << " " << it->v << " " << (*it).position.z() << "\n";
-        std::cout << "info: \n" << info << "\n";
 
 		Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
@@ -82,8 +80,6 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		poseGraph->addEdge3D(e);
 		featureIdNo++;
 	}
-    std::cout<< "Press enter\n";
-    getchar();
 	bufferMapFrontend.mtxBuffer.unlock();
 
 	//try to update the map
@@ -140,14 +136,10 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
         }
-        std::cout << "(tutaj u i v sa rowne 0) feature measurements (id, u, v, z): " << (*it).id << " "  << (*it).u << " " << it->v << " " << (*it).position.z() << "\n";
-        std::cout << "info meas: \n" << info << "\n";
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
     }
-    std::cout<< "Press enter\n";
-    getchar();
 }
 
 /// add measurement between two poses
