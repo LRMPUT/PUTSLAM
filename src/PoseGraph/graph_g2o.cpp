@@ -880,25 +880,29 @@ void PoseGraphG2O::getOptimizedPoses(std::vector<VertexSE3>& poses){
 /// returns measured positions and uncertainty of the feature in global coordinates
 void PoseGraphG2O::getMeasurements(int featureId, std::vector<Edge3D>& features, Vec3& estimation){
     PoseGraph::VertexSet::iterator vertIt = findVertex(featureId);
-    // find the estimated value
-    estimation = ((Vertex3D*)vertIt->get())->keypoint.depthFeature;
-    std::vector<unsigned int> closeSet = findIncominEdges(featureId);
-    features.clear();
-    // compute position and uncertainty of each 'guess'
-    for (std::vector<unsigned int>::iterator it = closeSet.begin(); it!=closeSet.end();it++){
-        PoseGraph::EdgeSet::iterator edgeIt = findEdge(*it);
-        PoseGraph::VertexSet::iterator camIt = findVertex(edgeIt->get()->fromVertexId);
-        Mat34 camPose = ((VertexSE3*)camIt->get())->pose;
-        Mat34 featureInCam(Mat34::Identity());
-        featureInCam(0,3) = ((Edge3D*)edgeIt->get())->trans.x();
-        featureInCam(1,3) = ((Edge3D*)edgeIt->get())->trans.y();
-        featureInCam(2,3) = ((Edge3D*)edgeIt->get())->trans.z();
-        //compute feature position in global frame
-        Mat34 featureGlobal = camPose * featureInCam;
-        //compute information matrix in global frame J*unc*J'
-        Mat33 info = ((Edge3D*)edgeIt->get())->info;
-        info = camPose.rotation() * info * camPose.rotation().transpose();
-        features.push_back(Edge3D(Vec3(featureGlobal(0,3), featureGlobal(1,3), featureGlobal(2,3)),info,0,0));
+    if (vertIt!=graph.vertices.end()){
+        // find the estimated value
+        estimation = ((Vertex3D*)vertIt->get())->keypoint.depthFeature;
+        std::vector<unsigned int> closeSet = findIncominEdges(featureId);
+        features.clear();
+        // compute position and uncertainty of each 'guess'
+        for (std::vector<unsigned int>::iterator it = closeSet.begin(); it!=closeSet.end();it++){
+            PoseGraph::EdgeSet::iterator edgeIt = findEdge(*it);
+            PoseGraph::VertexSet::iterator camIt = findVertex(edgeIt->get()->fromVertexId);
+            if ((edgeIt!=graph.edges.end()) && (camIt!=graph.vertices.end())){
+                Mat34 camPose = ((VertexSE3*)camIt->get())->pose;
+                Mat34 featureInCam(Mat34::Identity());
+                featureInCam(0,3) = ((Edge3D*)edgeIt->get())->trans.x();
+                featureInCam(1,3) = ((Edge3D*)edgeIt->get())->trans.y();
+                featureInCam(2,3) = ((Edge3D*)edgeIt->get())->trans.z();
+                //compute feature position in global frame
+                Mat34 featureGlobal = camPose * featureInCam;
+                //compute information matrix in global frame J*unc*J'
+                Mat33 info = ((Edge3D*)edgeIt->get())->info;
+                info = camPose.rotation() * info * camPose.rotation().transpose();
+                features.push_back(Edge3D(Vec3(featureGlobal(0,3), featureGlobal(1,3), featureGlobal(2,3)),info,0,0));
+            }
+        }
     }
 }
 

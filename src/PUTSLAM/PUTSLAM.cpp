@@ -1,4 +1,5 @@
 #include "../include/PUTSLAM/PUTSLAM.h"
+#include "../include/Utilities/simulator.h"
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
@@ -141,6 +142,11 @@ void PUTSLAM::startProcessing() {
 	int addNoFeaturesWhenMapSizeGreaterThan =
 			((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
 
+    ///for inverse SLAM problem
+    //Simulator simulator;
+    //simulator.loadTrajectory("../../resources/traj_fr1_desk.txt");
+    //std::vector<Mat34> traj = simulator.getTrajectory();
+
 	// Main loop
 	while (true) {
 
@@ -160,7 +166,7 @@ void PUTSLAM::startProcessing() {
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 
-			// cameraPose as Eigen::Transform
+            // cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
@@ -169,16 +175,17 @@ void PUTSLAM::startProcessing() {
 
 			ifStart = false;
 			addFeatureToMap = true;
-		}
+
+        }
 		// The next pose in the sequence
-		else {
-			Eigen::Matrix4f transformation;
+        else {
+            Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-			matcher->Matcher::match(currentSensorFrame, transformation,
-					inlierMatches);
+            matcher->Matcher::match(currentSensorFrame, transformation,
+                    inlierMatches);
 
-			// Saving inliers for Dominic
+            // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
@@ -289,7 +296,7 @@ void PUTSLAM::startProcessing() {
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// Wait for optimization finish
-	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+    map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
