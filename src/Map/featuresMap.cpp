@@ -218,7 +218,7 @@ void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
 	continueOpt = false;
-    //optimizationThr->join();
+    optimizationThr->join();
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
     std::cout << "save map to file\n";
