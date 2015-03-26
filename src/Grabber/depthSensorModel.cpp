@@ -31,7 +31,7 @@ void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, float_type d
     J << depth/config.focalLength[0], 0, ((u/config.focalLength[0])-(config.focalAxis[0]/config.focalLength[0])),
          0, depth/config.focalLength[1], ((v/config.focalLength[1])-(config.focalAxis[1]/config.focalLength[1])),
          0, 0, 1;
-    Ruvd(2,2) = (config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3])/3.0;
+    Ruvd(2,2) = config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3];
     cov=J*Ruvd*J.transpose();
 }
 
