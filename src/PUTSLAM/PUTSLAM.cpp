@@ -1,4 +1,5 @@
 #include "../include/PUTSLAM/PUTSLAM.h"
+#include "../include/Utilities/simulator.h"
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
@@ -126,7 +127,7 @@ void PUTSLAM::startProcessing() {
 
 	// Optimize during trajectory acquisition
 	//map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
-    map->startOptimizationThread(1, 0);
+    //map->startOptimizationThread(1, 0);
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
@@ -140,6 +141,11 @@ void PUTSLAM::startProcessing() {
 			((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
 	int addNoFeaturesWhenMapSizeGreaterThan =
 			((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
+
+    Simulator simulator;
+    simulator.loadTrajectory("../../resources/traj_fr1_desk.txt");
+    std::vector<Mat34> traj = simulator.getTrajectory();
+    int trajIt=0;
 
 	// Main loop
 	while (true) {
@@ -160,7 +166,8 @@ void PUTSLAM::startProcessing() {
 		if (ifStart) {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 
-			// cameraPose as Eigen::Transform
+            robotPose =traj[0].cast<float>().matrix();
+            // cameraPose as Eigen::Transform
 			Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
@@ -169,15 +176,38 @@ void PUTSLAM::startProcessing() {
 
 			ifStart = false;
 			addFeatureToMap = true;
+
+            PointCloud cloud2save;
+            grabber->convert2cloud(map->getDepthSensorModel(), cloud2save);
+            std::ofstream file("../../resources/depthPatch.m");
+            for (int i=0;i<cloud2save.size();i++){
+                Mat34 point(Mat34::Identity());
+                point(0,3) = cloud2save[i].x; point(1,3) = cloud2save[i].y; point(2,3) = cloud2save[i].z;
+                Mat34 pointGlob = cameraPose * point;
+                //std::cout << "x y z " << pointGlob(0,3) << " " << pointGlob(1,3) << " " << pointGlob(2,3) << "\n";
+                if (pointGlob(0,3)>0.3&&pointGlob(0,3)<0.45){
+                    if (pointGlob(1,3)>0.1&&pointGlob(1,3)<0.3){
+                        if (pointGlob(2,3)>0.8&&pointGlob(2,3)<1.1){
+                            file << "plot3(" << pointGlob(0,3) << ", " << pointGlob(1,3) << ", "<< pointGlob(2,3) << ",'.','markerfacecolor',["<<cloud2save[i].r/255.0 << ", " << cloud2save[i].g/255.0 << ", " << cloud2save[i].b/255.0 << "],'markeredgecolor',["<<cloud2save[i].r/255.0 << ", " << cloud2save[i].g/255.0 << ", " << cloud2save[i].b/255.0 << "]);\n";
+                        }
+                    }
+                }
+            }
+            file.close();
+            getchar();
+            trajIt++;
 		}
 		// The next pose in the sequence
-		else {
-			Eigen::Matrix4f transformation;
+        else {
+            Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-			matcher->Matcher::match(currentSensorFrame, transformation,
+            matcher->Matcher::match(currentSensorFrame, transformation,
 					inlierMatches);
-
+            Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+            transformation = transReal.cast<float>().matrix();
+std::cout << "iteration: " << trajIt << "\n";
+            trajIt++;
 			// Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
@@ -216,7 +246,7 @@ void PUTSLAM::startProcessing() {
 			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
 					measurementList, mapEstimatedTransformation);
 			//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
-
+mapEstimatedTransformation = transformation;
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
@@ -289,7 +319,7 @@ void PUTSLAM::startProcessing() {
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// Wait for optimization finish
-	map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+    map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();

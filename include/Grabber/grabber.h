@@ -9,6 +9,7 @@
 
 #include "../Defs/putslam_defs.h"
 #include "calibration.h"
+#include "depthSensorModel.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -60,6 +61,28 @@ namespace putslam {
                     mtx.unlock();
                 }
                 return sensorFrame;
+            }
+
+            /// Create point cloud from current RGB and depth image
+            virtual void convert2cloud(const DepthSensorModel& model, PointCloud& cloud) {
+                cloud.clear();
+                if (type==TYPE_PRIMESENSE){
+                    for (int i=0;i<sensorFrame.rgbImage.rows;i++){
+                        for (int j=0;j<sensorFrame.rgbImage.cols;j++){
+                            cv::Point3_ <uchar>* p = sensorFrame.rgbImage.ptr<cv::Point3_<uchar> >(i,j);
+                            pcl::PointXYZRGBA point;
+                            Eigen::Vector3d pointxyz;
+                            model.getPoint(j,i, (double)sensorFrame.depthImage.at<uint16_t>(i, j)/5000.0, pointxyz);//5000 - depth scale
+                            point.x = pointxyz(0); point.y = pointxyz(1); point.z = pointxyz(2);
+                            point.r = p->z; point.g = p->y; point.b = p->x;
+                            cloud.push_back(point);
+                            //getchar();
+                        }
+                    }
+                }
+                else{
+                    std::cout << "convert to cloud: sensor type not supported.\n";
+                }
             }
 
             /// Grab image and/or point cloud
