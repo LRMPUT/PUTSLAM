@@ -3,6 +3,91 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <Eigen/Eigen>
+#include <chrono>
+
+
+std::vector<uint8_t> computePatch (cv::Mat img, float x, float y, int patchSize) {
+	std::vector<uint8_t> patch;
+
+	// subpix precision
+	const float xLeft = int(x), yLeft = int(y);
+	const float xSub = x - xLeft, ySub = y - yLeft;
+
+	// From wiki: http://upload.wikimedia.org/math/9/b/4/9b4e1064436ecccd069ea238b656c063.png
+	const float topLeft = (1.0 - xSub) * (1.0 - ySub);
+	const float topRight = xSub * (1.0 - ySub);
+	const float bottomLeft = (1.0 - xSub) * ySub;
+	const float bottomRight = xSub * ySub;
+
+	// compute patch
+	unsigned char *input = (unsigned char*) (img.data);
+
+	// Speed-up considerations
+	const int halfPatchSize = (patchSize - 1) / 2;
+	const int yEnd = y + halfPatchSize;
+	const int xEnd = x + halfPatchSize;
+
+	for (int i = y - halfPatchSize; i <= yEnd; i++) {
+		for (int j = x - halfPatchSize; j <= xEnd;
+				j++) {
+
+			float value = topLeft * input[img.step * i + j]
+					+ topRight * input[img.step * (i) + j + 1]
+					+ bottomLeft * input[img.step * (i+1) + j]
+					+ bottomRight * input[img.step * (i+1) + j + 1];
+
+			patch.push_back(value);
+		}
+	}
+
+	return patch;
+}
+
+
+void computeGradient(cv::Mat img, float x, float y, int patchSize,
+		Eigen::Matrix3f &InvHessian, std::vector<float> &gradientX,
+		std::vector<float> &gradientY) {
+	// compute patch
+		unsigned char *input = (unsigned char*) (img.data);
+
+		// Speed-up considerations
+		const int halfPatchSize = (patchSize - 1) / 2;
+		const int yEnd = y + halfPatchSize;
+		const int xEnd = x + halfPatchSize;
+
+		Eigen::Matrix3f Hessian = Eigen::Matrix3f::Zero();
+
+		for (int i = y - halfPatchSize; i <= yEnd; i++) {
+			for (int j = x - halfPatchSize; j <= xEnd; j++) {
+
+				Eigen::Vector3f J;
+				J[0] = 0.5
+						* (input[img.step * i + j +1 ]
+								- input[img.step * i + j -1]);
+				J[1] = 0.5
+						* (input[img.step * (i+1) + j]
+								- input[img.step * (i-1) + j]);
+				J[2] = 1.0;
+				Hessian += J * J.transpose();
+
+				gradientX.push_back(J[0]);
+				gradientY.push_back(J[1]);
+			}
+		}
+		InvHessian = Hessian.inverse();
+}
+
+inline void evaluatePatches(const std::vector<uint8_t> newPatch,
+		const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,
+		const std::vector<float> gradientX,
+		const std::vector<float> gradientY, const int patchSize) {
+	for (int i = 0; i < patchSize * patchSize; i++) {
+		float diff = newPatch[i] - oldPatch[i]; // + mean;
+		tmpJ[0] = tmpJ[0] - diff * gradientX[i];
+		tmpJ[1] = tmpJ[1] - diff * gradientY[i];
+		tmpJ[2] = tmpJ[2] - diff;
+	}
+}
 
 int main()
 {
@@ -13,7 +98,7 @@ int main()
 	cv::cvtColor(img, dst, CV_RGB2GRAY);
 
 	// Select random feature
-	float x = 150.0f, y = 253.0f;
+	float x = 150.3f, y = 253.1f;
 
 	// Visualize point
 //	cv::circle(img, cv::Point2f(x,y), 5, cv::Scalar(0, 0 ,255));
@@ -28,87 +113,45 @@ int main()
 	// Patch size 9x9
 	const int patchSize = 9;
 
-	// Old Patch -> non-effective way
+	// Compute old patch
 	std::vector<uint8_t> oldPatch;
-	for (int i= y - (patchSize-1)/2 ; i<= y + (patchSize-1)/2 ; i++ )
-		for (int j= x - (patchSize-1)/2 ; j<= x + (patchSize-1)/2 ; j++ )
-			oldPatch.push_back(dst.at<uint8_t>(cv::Point2f(j,i)) );
+	oldPatch = computePatch(dst, x, y, patchSize);
 
 	// Jacobian and hessian of old patch
-	Eigen::Matrix3f Hessian = Eigen::Matrix3f::Zero();
 	std::vector<float> gradientX, gradientY;
-	for (int i = y - (patchSize - 1) / 2; i <= y + (patchSize - 1) / 2; i++)
-	{
-		for (int j = x - (patchSize - 1) / 2; j <= x + (patchSize - 1) / 2; j++)
-		{
-			Eigen::Vector3f J;
-			J[0] = 0.5 * (dst.at<uint8_t>(cv::Point2f(j+1, i)) - dst.at<uint8_t>(cv::Point2f(j-1, i)));
-			J[1] = 0.5 * (dst.at<uint8_t>(cv::Point2f(j, i+1)) - dst.at<uint8_t>(cv::Point2f(j, i-1)));
-			J[2] = 1.0;
-			//std::cout<<"J" << J << std::endl;
-			Hessian += J*J.transpose();
-
-			gradientX.push_back(J[0]);
-			gradientY.push_back(J[1]);
-
-			oldPatch.push_back(dst.at<uint8_t>(cv::Point2f(j, i)));
-		}
-	}
-	Eigen::Matrix3f InvHessian = Hessian.inverse();
-
-//	std::cout<<"Hessian: " << std::endl << Hessian << std::endl;
-//	std::cout<<"InvHessian: " << std::endl << InvHessian << std::endl;
+	Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+	computeGradient(dst, x, y, patchSize, InvHessian, gradientX, gradientY);
 
 	// Iterations of Gauss-Newton
-	const int iterCount = 15;
 	float mean = 0;
-	for (int iter = 0 ; iter < iterCount; iter++)
+	int maxIter = 20;
+	const float minSqrtIncrement = 0.04;
+	for (int iter = 0; iter < maxIter ; iter++)
 	{
 		// Print some info
 		std::cout<<"ITER: " << iter << " | " << newX << " " << newY <<  " Mean: " << mean << std::endl;
 
-		// tmps
-		float xLeft = int(newX), yLeft = int(newY);
-		float xSub = newX - xLeft, ySub = newY - yLeft;
-
-		// From wiki: http://upload.wikimedia.org/math/9/b/4/9b4e1064436ecccd069ea238b656c063.png
-		float topLeft = (1.0 - xSub) * (1.0 - ySub);
-		float topRight = xSub * (1.0 - ySub);
-		float bottomLeft = (1.0 - xSub) * ySub;
-		float bottomRight = xSub * ySub;
-
-		std::cout << "\ttopLeft: " << (1.0 - xSub) << " " << (1.0 - ySub)
-				<< std::endl;
-		std::cout << "\ttopRight: " << xSub << " " << (1.0 - ySub) << std::endl;
-		std::cout << "\tbottomLeft: " << (1.0 - xSub) << " " << ySub
-				<< std::endl;
-		std::cout << "\tbottomRight: " << xSub << " " << ySub << std::endl;
-
-		// New Patch
-		std::vector<uint8_t> newPatch;
-		for (int i = newY - (patchSize - 1) / 2; i <= newY + (patchSize - 1) / 2; i++)
-		{
-			for (int j = newX - (patchSize - 1) / 2; j <= newX + (patchSize - 1) / 2; j++)
-			{
-				float value = topLeft * dst.at<uint8_t>(cv::Point2f(j,i)) + topRight * dst.at<uint8_t>(cv::Point2f(j+1, i))
-						+ bottomLeft * dst.at<uint8_t>(cv::Point2f(j, i+1)) + bottomRight * dst.at<uint8_t>(cv::Point2f(j+1,i+1));
-				newPatch.push_back(value);
-			}
-		}
+		// Compute newPatch
+		std::vector<uint8_t> newPatch = computePatch (dst, newX, newY, patchSize);
 
 		// Evaluate patches
 		Eigen::Vector3f tmpJ = Eigen::Vector3f::Zero();
-		for (int i=0;i<patchSize*patchSize;i++) {
-			float diff = newPatch[i] - oldPatch[i];// + mean;
-			tmpJ[0] = tmpJ[0] - diff * gradientX[i];
-			tmpJ[1] = tmpJ[1] - diff * gradientY[i];
-			tmpJ[2] = tmpJ[2] - diff;
-		}
+		evaluatePatches(newPatch, oldPatch, tmpJ, gradientX, gradientY,
+				patchSize);
 
 		// Compute step
 		Eigen::Vector3f increment = InvHessian * tmpJ;
 		newX += increment[0];
 		newY += increment[1];
 		mean += increment[2];
+
+		// Ending condition
+		if (increment[0]*increment[0] + increment[1] * increment[1] < minSqrtIncrement) {
+			break;
+		}
 	}
+
+	// Print final result
+	std::cout<<std::endl<<"FINAL: " << newX << " " << newY <<  " Mean: " << mean << std::endl;
+
 }
