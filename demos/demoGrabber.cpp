@@ -34,11 +34,11 @@ int main()
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberKinect(configFile, Grabber::MODE_BUFFER);
         }
-        if (grabberType == "Xtion") {
+        else if (grabberType == "Xtion") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberXtion(configFile, Grabber::MODE_BUFFER);
         }
-        if (grabberType == "Ptgrey") {
+        else if (grabberType == "Ptgrey") {
             std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());
             grabber = createGrabberPtgrey(configFile, Grabber::MODE_BUFFER);
         }
