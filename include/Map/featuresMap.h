@@ -273,6 +273,9 @@ private:
 
     /// Update pose
     void updatePose(VertexSE3& newPose);
+
+    /// plot all features
+    void plotFeatures(std::string filename);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

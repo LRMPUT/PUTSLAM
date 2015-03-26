@@ -200,6 +200,12 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
+
+
+		// TODO: Test corrections after Dominic question
+		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
+		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
+
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
@@ -301,6 +307,12 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
+
+		// TODO: Test corrections after Dominic question
+		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
+		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
+
+
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
