@@ -215,7 +215,7 @@ void Simulator::loadTrajectory(std::string filename){
     if (myfile.is_open()) {
         trajectory.clear();
         Quaternion q; Vec3 pos;
-        unsigned int id;
+        double id;
         Mat34 pose;
         while ( getline (myfile,line) ) {
             std::istringstream is(line);

@@ -32,8 +32,8 @@ class PUTSLAM {
 	ofstream trajectoryFreiburgStream;
 	ofstream trajectoryVOMapStream;
 
-	Eigen::Matrix4f robotPose;
-	Eigen::Matrix4f VoMapPose;
+    Eigen::Matrix4f robotPose;
+    Eigen::Matrix4f VoMapPose;
 
 public:
 
