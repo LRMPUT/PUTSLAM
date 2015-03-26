@@ -33,7 +33,7 @@
 <!--	<varianceDepth c3="-8.9997e-6" c2="3.069e-3" c1="3.6512e-6" c0="-0.0017512e-3"></varianceDepth>-->
 
 	 <variance sigmaU="0.6446" sigmaV="0.64160"></variance>-->
-    <varianceDepth c3="0" c2="0.75e-5" c1="0" c0="0"></varianceDepth>-->
+         <varianceDepth c3="1000" c2="1000" c1="1000" c0="1000"></varianceDepth>-->
     
 <!--		PS mode-->
 <!--	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>-->
@@ -41,7 +41,7 @@
     
     	
     <imageSize sizeU="640" sizeV="480"></imageSize>
-  </Model> 
+  
 
   <!-- ICL -->
 <!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj1_loop"></datasetPath>-->
@@ -50,8 +50,8 @@
   <!-- freiburg1/desk -->
 <!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> -->
 <!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_room"></datasetPath> -->   
-<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_360"></datasetPath>-->
-	<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg2_desk"></datasetPath> 
+<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_360"></datasetPath> -->
+ 	<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> 
     
   <!-- freiburg3/long_household -->
   <!--    <datasetPath base="../../../Projects/Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath> -->
@@ -62,6 +62,7 @@
   			playEveryNthFrame 	-> only every Nth frame is used in motion estimation
   			realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
  			maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
-  <playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="20000"></playParameters>
+  <playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="200"></playParameters>
  
   <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"></pose>
+  </Model> 
