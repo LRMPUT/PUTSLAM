@@ -90,9 +90,12 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 /// add new pose of the camera, returns id of the new pose
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
-		float_type timestamp) {
+        float_type timestamp, cv::Mat image, cv::Mat depthImage) {
 	//add camera pose to the map
-	mtxCamTraj.lock();
+    mtxCamTraj.lock();
+    imageSeq.push_back(image);
+    depthSeq.push_back(depthImage);
+
 	int trajSize = camTrajectory.size();
 	if (trajSize == 0) {
 		odoMeasurements.push_back(Mat34::Identity());
@@ -116,6 +119,14 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		poseGraph->addVertexPose(camPose);
 	}
 	return trajSize;
+}
+
+/// get n-th image and depth image from the sequence
+void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
+    if (poseNo<imageSeq.size()){
+        image = imageSeq[poseNo];
+        depthImage = depthSeq[poseNo];
+    }
 }
 
 /// add measurements (features measured from the last camera pose)

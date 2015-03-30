@@ -54,7 +54,7 @@ public:
 			Mat34 transformation) = 0;
 
 	/// add new pose of the camera, returns id of the new pose
-    virtual int addNewPose(const Mat34& cameraPoseChange, float_type timestamp) = 0;
+    virtual int addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat()) = 0;
 
 	/// Get all features
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
@@ -83,6 +83,9 @@ public:
 
     /// disable Robust Kernel
     virtual void disableRobustKernel(void) = 0;
+
+    /// get n-th image and depth image from the sequence
+    virtual void getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage) = 0;
 
 protected:
 	/// Map type
