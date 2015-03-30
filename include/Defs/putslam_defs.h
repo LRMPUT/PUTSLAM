@@ -144,15 +144,13 @@ public:
 	std::vector<ExtendedDescriptor> descriptors;
 
 	RGBDFeature(void) {
-	}
-	;
+    };
 
 	RGBDFeature(const Vec3 _position, float_type _u, float_type _v,
 			const std::vector<ExtendedDescriptor> _descriptors) :
 			position(_position), descriptors(_descriptors), u(_u), v(_v) {
 
-	}
-	;
+    };
 };
 
 class MapFeature: public RGBDFeature {
@@ -165,8 +163,7 @@ public:
 
 	/// Constructor
 	MapFeature() {
-	}
-	;
+    };
 
 	/// Constructor
 	MapFeature(unsigned int _id, float_type u, float_type  v,
@@ -174,14 +171,12 @@ public:
 			std::vector<ExtendedDescriptor> _descriptors) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
 					_posesIds) {
-	}
-	;
+    };
 
 	/// Constructor
 	MapFeature(unsigned int _id) :
 			id(_id) {
-	}
-	;
+    };
 };
 
 /// Key Point
