@@ -147,6 +147,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
         }
+        featuresMapFrontend[it->id-FATURES_START_ID].posesIds.push_back(_poseId);
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
@@ -172,7 +173,7 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 /// Get feature position
 Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
 	mtxMapFrontend.lock();
-	Vec3 feature(featuresMapFrontend[FATURES_START_ID + id].position);
+    Vec3 feature(featuresMapFrontend[id-FATURES_START_ID].position);
 	mtxMapFrontend.unlock();
 	return feature;
 }
@@ -197,6 +198,36 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
 	return visibleFeatures;
+}
+
+/// find nearest id of the image frame taking into acount the current angle of view and the view from the history
+void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds){
+    Mat34 currentCameraPose = getSensorPose();
+    imageIds.resize(features.size(),-1);
+    for (size_t i = 0; i<features.size();i++){
+        if (features[i].posesIds.size()==1)
+            imageIds[i] = features[i].posesIds[0];
+        else{
+            //compute position of feature in current camera pose
+            Mat34 featureGlob(Vec3(features[i].position.x(), features[i].position.y(), features[i].position.z())*Quaternion(1,0,0,0));
+            Mat34 featureInCamCurr = featureGlob.inverse()*currentCameraPose;
+            Eigen::Vector3f featureViewCurr(featureInCamCurr(0,2), featureInCamCurr(1,2), featureInCamCurr(2,2));
+            float_type maxProduct=-1; int idMax;
+            //find the smallest angle between two views (max dot product)
+            for (size_t j=0; j<features[i].posesIds.size();j++){
+                //compute position of feature in the camera pose
+                Mat34 camPose = getSensorPose(features[i].posesIds[j]);
+                Mat34 featureInCam = featureGlob.inverse()*camPose;
+                Eigen::Vector3f featureView(featureInCam(0,2), featureInCam(1,2), featureInCam(2,2));
+                float_type dotProduct = featureView.dot(featureViewCurr);
+                if (dotProduct>maxProduct){
+                    maxProduct = dotProduct;
+                    idMax = j;
+                }
+            }
+            imageIds[i] = idMax;
+        }
+    }
 }
 
 /// get pose of the sensor (default: last pose)

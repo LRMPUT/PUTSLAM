@@ -200,7 +200,10 @@ void PUTSLAM::startProcessing() {
 
 			// Get the visible features
 			Mat34 cameraPose = map->getSensorPose();
-			mapFeatures = map->getVisibleFeatures(cameraPose);
+            mapFeatures = map->getVisibleFeatures(cameraPose);
+
+            //std::vector<int> frameIds;
+            //map->findNearestFrame(mapFeatures, frameIds);
 
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);

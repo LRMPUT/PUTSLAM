@@ -4,11 +4,11 @@
     <!-- <name>Kinect</name> -->
     <!-- <calibrationFile>KinectModel.xml</calibrationFile> -->
     
-    <!-- <name>File</name> -->
-    <!-- <calibrationFile>fileModel.xml</calibrationFile> -->
+    <name>File</name>
+    <calibrationFile>fileModel.xml</calibrationFile>
     
-     <name>Xtion</name> 
-     <calibrationFile>XtionModel.xml</calibrationFile> 
+<!--      <name>Xtion</name>  -->
+<!--      <calibrationFile>XtionModel.xml</calibrationFile>  -->
 	<!-- <name>Ptgrey</name> -->
 	<!-- <calibrationFile>PtgreyModel.xml</calibrationFile> -->
   </Grabber>
