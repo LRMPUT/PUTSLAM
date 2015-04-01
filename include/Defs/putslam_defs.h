@@ -117,16 +117,18 @@ public:
 	/// id of the the camera pose (vertex in the graph)
 	unsigned int poseId;
 
+    /// feature location on the rgb image
+    float_type u;
+
+    /// feature location on the rgb image
+    float_type v;
+
 	/// Constructor
-	ExtendedDescriptor() {
-	}
-	;
+    ExtendedDescriptor() {};
 
 	/// Constructor
 	ExtendedDescriptor(unsigned int _poseId, cv::Mat _descriptor) :
-			poseId(_poseId), descriptor(_descriptor) {
-	}
-	;
+            poseId(_poseId), descriptor(_descriptor) {};
 };
 
 class RGBDFeature {
