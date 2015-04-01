@@ -89,6 +89,9 @@ public:
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
+    /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
+    void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds);
+
 	/// get pose of the sensor (default: last pose)
 	Mat34 getSensorPose(int poseId = -1);
 

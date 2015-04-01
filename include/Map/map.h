@@ -40,6 +40,9 @@ public:
 	virtual std::vector<MapFeature> getVisibleFeatures(
 			const Mat34& cameraPose) = 0;
 
+    /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
+    virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds) = 0;
+
 	/// Add NEW features and a NEW camera pose (initial guess) to the map
 	/// Position of features in relation to camera pose
 	virtual void addFeatures(const std::vector<RGBDFeature>& features,
