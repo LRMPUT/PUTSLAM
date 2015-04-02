@@ -202,6 +202,8 @@ void PUTSLAM::startProcessing() {
 			Mat34 cameraPose = map->getSensorPose();
             mapFeatures = map->getVisibleFeatures(cameraPose);
 
+            //map->removeDistantFeatures(mapFeatures, 500, 10.01);
+
             //std::vector<int> frameIds;
             //map->findNearestFrame(mapFeatures, frameIds);
 

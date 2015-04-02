@@ -172,7 +172,7 @@ public:
 			const Vec3 _position, std::vector<unsigned int> _posesIds,
 			std::vector<ExtendedDescriptor> _descriptors) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
-					_posesIds) {
+                    _posesIds) {
     };
 
 	/// Constructor

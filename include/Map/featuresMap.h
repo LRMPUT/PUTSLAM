@@ -89,6 +89,9 @@ public:
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
+    /// removes features which are too far from current camera pose (distant in graph)
+    void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0);
+
     /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
     void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds);
 

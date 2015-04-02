@@ -129,6 +129,9 @@ namespace putslam {
             /// Returns set of graph vertices
             virtual PoseGraph::VertexSet getVertices(void) = 0;
 
+            /// find all neighboring vertices for which distance is smaller than threshold
+            virtual bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 
@@ -170,9 +173,11 @@ namespace putslam {
             std::vector<unsigned int> findIncominEdges(unsigned int toVertexId){
                 std::vector<unsigned int> edgeIds;
                 for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
+                    std::cout << it->get()->toVertexId << ", ";
                     if (it->get()->toVertexId == toVertexId)
                         edgeIds.push_back(it->get()->id);
                 }
+                std::cout << "\n";
                 return edgeIds;
             }
     };

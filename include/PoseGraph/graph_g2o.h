@@ -166,6 +166,9 @@ class PoseGraphG2O : public Graph {
         /// returns measured positions and uncertainty of the feature in global coordinates
         void getMeasurements(int featureId, std::vector<Edge3D>& features, Vec3& estimation);
 
+        /// find all neighboring vertices for which distance is smaller than threshold (not checked)
+        bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;

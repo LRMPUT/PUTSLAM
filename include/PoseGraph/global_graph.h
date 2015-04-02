@@ -99,6 +99,9 @@ class GlobalGraph : public Graph {
         /// Returns set of graph edges
         PoseGraph::EdgeSet getEdges(void);
 
+        /// find all neighboring vertices for which distance is smaller than threshold
+        bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds);
+
 	private:
 		PoseGraph graph;	
 

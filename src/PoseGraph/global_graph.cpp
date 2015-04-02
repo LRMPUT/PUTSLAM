@@ -155,3 +155,8 @@ PoseGraph::VertexSet GlobalGraph::getVertices(void){
 PoseGraph::EdgeSet GlobalGraph::getEdges(void){
 
 }
+
+/// find all neighboring vertices for which distance is smaller than threshold
+bool GlobalGraph::findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds){
+
+}
