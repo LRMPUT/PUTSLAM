@@ -59,7 +59,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 		// Add pose id
 		std::vector<unsigned int> poseIds;
-		poseIds.push_back(poseId);
+        poseIds.push_back(poseId);
 
 		//add each feature to map structure...
 		Vec3 featurePositionInGlobal(featurePos.translation());
@@ -104,7 +104,7 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 
 		mtxCamTraj.unlock();
 
-		//add camera pose to the graph
+        //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
 
 	} else {
@@ -115,7 +115,7 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 
 		mtxCamTraj.unlock();
 
-		//add camera pose to the graph
+        //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
 	}
 	return trajSize;
@@ -138,7 +138,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
-		//add measurement
+        //add measurement
 		Mat33 info(Mat33::Identity());
 
 //		info = sensorModel.informationMatrix((*it).position.x(),
@@ -147,6 +147,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
 					it->v, (*it).position.z());
         }
+
         featuresMapFrontend[it->id-FATURES_START_ID].posesIds.push_back(_poseId);
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
@@ -226,6 +227,49 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
                 }
             }
             imageIds[i] = idMax;
+        }
+    }
+}
+
+/// removes features which are too far from current camera pose (distant in graph)
+void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold, float_type distanceThreshold){
+    std::vector<int> neighborsIds;
+    //we don't have to use graph since SE3 vertex have nly one following vertex (all vertices create camera trajectory)
+    //poseGraph->findNearestNeighbors(camTrajectory.size()-1, graphDepthThreshold, neighborsIds);
+    for (int i=camTrajectory.size()-1;i>=0;i--){
+        if (i>=int(camTrajectory.size()-graphDepthThreshold)||graphDepthThreshold==-1)
+            neighborsIds.push_back(i);
+        else
+            break;
+    }
+    Mat34 currPose = getSensorPose();
+    distanceThreshold = pow(distanceThreshold,2.0);
+    // Euclidean distance threshold
+    for (std::vector<int>::iterator it = neighborsIds.begin();it!=neighborsIds.end();){
+        Mat34 sensorPose = getSensorPose(*it);
+        float_type dist = pow(currPose(0,3)-sensorPose(0,3),2.0) + pow(currPose(1,3)-sensorPose(1,3),2.0) + pow(currPose(2,3)-sensorPose(2,3),2.0);
+        if (dist>distanceThreshold){
+            it = neighborsIds.erase(it);
+        }
+        else
+            it++;
+    }
+    // Remove features which are not connnected to poses in neighborsIds
+    for (std::vector<MapFeature>::iterator it = mapFeatures.begin(); it!=mapFeatures.end();){
+        bool keep = false;
+        for (std::vector<unsigned int>::iterator featurePoseIt = (*it).posesIds.begin(); featurePoseIt != (*it).posesIds.end(); featurePoseIt++){
+            for (std::vector<int>::iterator poseIt = neighborsIds.begin();poseIt!=neighborsIds.end();poseIt++){
+                if (*featurePoseIt == *poseIt){
+                    keep=true;
+                    break;
+                }
+            }
+            if (keep) break;
+        }
+        if (keep)
+            it++;
+        else {
+            it = mapFeatures.erase(it);
         }
     }
 }

@@ -906,6 +906,23 @@ void PoseGraphG2O::getMeasurements(int featureId, std::vector<Edge3D>& features,
     }
 }
 
+/// find all neighboring vertices for which distance is smaller than threshold (not checked)
+bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds){
+    if (depth<1) return false;
+    std::vector<unsigned int> incomingEdges = findIncominEdges(vertexId);
+    std::vector<int> incomingVertices;
+    for (std::vector<unsigned int>::iterator it = incomingEdges.begin(); it!=incomingEdges.end(); it++){
+        incomingVertices.push_back(graph.edges[(*it)]->fromVertexId);
+    }
+    neighborsIds.insert(neighborsIds.end(),incomingVertices.begin(), incomingVertices.end());
+    for (std::vector<int>::iterator it = incomingVertices.begin(); it!=incomingVertices.end(); it++){
+        if (!findNearestNeighbors(*it,depth-1,neighborsIds))
+            return false;
+        else
+            return true;
+    }
+}
+
 /// search for sub-graphs which aren't anchored and anchor them
 void PoseGraphG2O::anchorVertices(void){
     std::vector<int> vertices;
