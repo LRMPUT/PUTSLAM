@@ -512,7 +512,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
         SET(DEMO_SOURCES ./demos/demoPatches.cpp)
         ADD_EXECUTABLE(demoPatches ${DEMO_SOURCES})
         add_dependencies(demoPatches g2o)
-        TARGET_LINK_LIBRARIES(demoPatches tinyxml2 Utilities PoseGraph Map LDB ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(demoPatches tinyxml2 Utilities PoseGraph Map Matcher LDB ${OpenCV_LIBS} boost_system)
         INSTALL(TARGETS demoPatches RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
