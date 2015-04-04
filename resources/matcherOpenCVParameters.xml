@@ -27,7 +27,11 @@
     		
     	Used norms in matching:  Hamming (ORB, BRIEF, LDB), L2 (SURF, SIFT)
     		
-    	TODO: LDB didn't compile due to LDB issues    	
+    	TODO: LDB didn't compile due to LDB issues
+     
+     
+		TODO: Create description for tracking parameters    
+    	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF"> </MatcherOpenCV>
+    <MatcherOpenCV detector="SURF" descriptor="SURF" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
 </Matcher>

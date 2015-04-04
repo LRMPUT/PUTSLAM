@@ -29,7 +29,8 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 //}
 
 putslam::Matcher* putslam::createMatcherOpenCV(
-		const std::string _parametersFile, const std::string _grabberParametersFile) {
+		const std::string _parametersFile,
+		const std::string _grabberParametersFile) {
 	matcher.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
 	return matcher.get();
 }
@@ -47,10 +48,9 @@ MatcherOpenCV::MatcherOpenCV(void) :
 
 MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile,
 		const std::string _grabberParametersFile) :
-		Matcher("OpenCVMatcher",_parametersFile, _grabberParametersFile) {
+		Matcher("OpenCVMatcher", _parametersFile, _grabberParametersFile) {
 	initVariables();
 }
-
 
 void MatcherOpenCV::initVariables() {
 	featureDetector = NULL;
@@ -61,19 +61,18 @@ void MatcherOpenCV::initVariables() {
 		featureDetector.reset(new cv::FastFeatureDetector());
 	else if (matcherParameters.OpenCVParams.detector == "ORB")
 		featureDetector.reset(new cv::OrbFeatureDetector());
-	else if (matcherParameters.OpenCVParams.detector == "SURF")
-	{
-        featureDetector.reset(new cv::SurfFeatureDetector());
-        featureDetector.reset(
-                new cv::DynamicAdaptedFeatureDetector(
-                        new cv::SurfAdjuster(2, true), 50, 150));
+	else if (matcherParameters.OpenCVParams.detector == "SURF") {
+		featureDetector.reset(new cv::SurfFeatureDetector());
+		featureDetector.reset(
+				new cv::DynamicAdaptedFeatureDetector(
+						new cv::SurfAdjuster(2, true), 50, 150));
 
 //		 int maxFeatures = 500;
 //		 int rows = 5;
 //		 int columns = 5;
 //		 featureDetector.reset(new cv::GridAdaptedFeatureDetector(new cv::SurfAdjuster(5.0, true), maxFeatures, rows, columns));
 
-	}else if (matcherParameters.OpenCVParams.detector == "SIFT")
+	} else if (matcherParameters.OpenCVParams.detector == "SIFT")
 		featureDetector.reset(new cv::SiftFeatureDetector());
 	else
 		featureDetector.reset(new cv::SurfFeatureDetector());
@@ -106,7 +105,6 @@ const std::string& MatcherOpenCV::getName() const {
 	return name;
 }
 
-
 /// Detect features
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
@@ -120,33 +118,36 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	int stripesCount = 6;
 	for (int i = 0; i < stripesCount; i++) {
 		std::vector<cv::KeyPoint> keypointsInROI;
-		cv::Mat roiBGR(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
-		cv::Mat roiD(grayImage, cv::Rect(0, i * grayImageHeight/stripesCount, grayImageHeight, grayImageHeight/stripesCount));
+		cv::Mat roiBGR(grayImage,
+				cv::Rect(0, i * grayImageHeight / stripesCount, grayImageHeight,
+						grayImageHeight / stripesCount));
+		cv::Mat roiD(grayImage,
+				cv::Rect(0, i * grayImageHeight / stripesCount, grayImageHeight,
+						grayImageHeight / stripesCount));
 
 		featureDetector.get()->detect(roiBGR, keypointsInROI);
 
-		if (matcherParameters.verbose>1)
-			std::cout<<"MatcherOpenCV: Stripe " << i << " : " << keypointsInROI.size() << " keypoints" << std::endl;
+		if (matcherParameters.verbose > 1)
+			std::cout << "MatcherOpenCV: Stripe " << i << " : "
+					<< keypointsInROI.size() << " keypoints" << std::endl;
 
-		std::sort(keypointsInROI.begin(), keypointsInROI.end(), MatcherOpenCV::compare_response);
+		std::sort(keypointsInROI.begin(), keypointsInROI.end(),
+				MatcherOpenCV::compare_response);
 		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
-			keypointsInROI[j].pt.y += i * grayImageHeight/stripesCount;
+			keypointsInROI[j].pt.y += i * grayImageHeight / stripesCount;
 			raw_keypoints.push_back(keypointsInROI[j]);
 		}
 	}
 
-
-
-
 	// It is better to have them sorted according to their response strength
-	std::sort(raw_keypoints.begin(), raw_keypoints.end(), MatcherOpenCV::compare_response);
+	std::sort(raw_keypoints.begin(), raw_keypoints.end(),
+			MatcherOpenCV::compare_response);
 
-	if ( raw_keypoints.size() > 500)
+	if (raw_keypoints.size() > 500)
 		raw_keypoints.resize(500);
 
 	return raw_keypoints;
 }
-
 
 /// Describe features
 cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
@@ -172,5 +173,42 @@ std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 	std::vector<cv::DMatch> matches;
 	matcher.get()->match(prevDescriptors, descriptors, matches);
 
+	return matches;
+}
+
+/// Perform tracking
+std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
+		cv::Mat img, std::vector<cv::Point2f> prevFeatures,
+		std::vector<cv::Point2f> &features) {
+
+	std::vector<uchar> status;
+	std::vector<float> err;
+	cv::TermCriteria termcrit(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS,
+			matcherParameters.OpenCVParams.maxIter,
+			matcherParameters.OpenCVParams.eps);
+
+	int initialFlow = 0;
+	if (matcherParameters.OpenCVParams.useInitialFlow > 0)
+		initialFlow = cv::OPTFLOW_USE_INITIAL_FLOW;
+
+	// Calculating movement of features
+	cv::calcOpticalFlowPyrLK(prevImg, img, features, prevFeatures, status, err,
+			cv::Size(matcherParameters.OpenCVParams.winSize,
+					matcherParameters.OpenCVParams.winSize),
+			matcherParameters.OpenCVParams.maxLevels, termcrit,
+			initialFlow);
+
+	// Returning result in matching-compatible format
+	int i = 0;
+	std::vector<cv::DMatch> matches;
+	for (std::vector<uchar>::iterator it = status.begin(); it != status.end();
+			++it, i++) {
+		// Tracking succeded
+		if (*it != 0) {
+			matches.push_back(cv::DMatch(i, i, 0));
+		}
+	}
+
+	// Return result
 	return matches;
 }
