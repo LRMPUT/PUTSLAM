@@ -29,6 +29,12 @@ public:
 	struct parameters {
 		std::string detector;
 		std::string descriptor;
+
+		int useInitialFlow;
+		int winSize;
+		int maxLevels;
+		int maxIter;
+		float eps;
 	};
 
 	/// Overloaded constructor
@@ -53,6 +59,12 @@ public:
 
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
+
+	/// Rung single KLT tracking
+	bool trackKLT(const SensorFrame& sensorData,
+			Eigen::Matrix4f &estimatedTransformation,
+			std::vector<cv::DMatch> &inlierMatches);
+
 
 	/// Run single match
 	bool match(const SensorFrame& sensorData,
@@ -104,6 +116,22 @@ public:
 			OpenCVParams.descriptor =
 					params->FirstChildElement("MatcherOpenCV")->Attribute(
 							"descriptor");
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"useInitialFlow", &OpenCVParams.useInitialFlow);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"winSize", &OpenCVParams.winSize);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"maxLevels", &OpenCVParams.maxLevels);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"maxIter", &OpenCVParams.maxIter);
+			params->FirstChildElement("MatcherOpenCV")->QueryFloatAttribute(
+					"eps", &OpenCVParams.eps);
+
+
 
 			// Camera parameters
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -193,6 +221,11 @@ protected:
 	/// Perform matching
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors) = 0;
+
+	// Perform tracking
+	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
+			cv::Mat img, std::vector<cv::Point2f> prevFeatures,
+			std::vector<cv::Point2f> &features) = 0;
 
 private:
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);

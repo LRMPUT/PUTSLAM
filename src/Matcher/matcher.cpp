@@ -51,61 +51,92 @@ Matcher::featureSet Matcher::getFeatures() {
 	return returnSet;
 }
 
+bool Matcher::trackKLT(const SensorFrame& sensorData,
+		Eigen::Matrix4f &estimatedTransformation,
+		std::vector<cv::DMatch> &inlierMatches)
+{
+	// Tracking features and creating potential matches
+	std::vector<cv::Point2f> undistortedFeatures2D;
+	std::vector<cv::DMatch> matches = performTracking(prevRgbImage,
+			sensorData.rgbImage, prevFeaturesUndistorted, undistortedFeatures2D);
+
+	// Associate depth
+	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
+			undistortedFeatures2D, sensorData.depthImage,
+			matcherParameters.cameraMatrixMat);
+
+	// RANSAC
+	// - neglect inlierMatches if you do not need them
+	RANSAC ransac(matcherParameters.RANSACParams);
+	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
+			features3D, matches, inlierMatches);
+
+	// Save computed values for next iteration
+	undistortedFeatures2D.swap(prevFeaturesUndistorted);
+	features3D.swap(prevFeatures3D);
+
+	// Save rgb/depth images
+	prevRgbImage = sensorData.rgbImage;
+	prevDepthImage = sensorData.depthImage;
+
+}
+
+
 bool Matcher::match(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
 	// Detect salient features
-	auto start = std::chrono::high_resolution_clock::now();
+//	auto start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
-	auto duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
+//	auto duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 
 	// DBScan
 	DBScan dbscan(8, 2, 1);
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	dbscan.run(features);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
-			<< std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
+//			<< std::endl;
 
 
 	if (matcherParameters.verbose > 1)
 		showFeatures(sensorData.rgbImage, features);
 
 	// Describe salient features
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, features);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 
 	// Perform matching
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
 			descriptors);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Matching: " << duration.count() / 1000.0 << " ms"
-			<< std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Matching: " << duration.count() / 1000.0 << " ms"
+//			<< std::endl;
 
 
 	// Find 2D positions without distortion
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::Point2f> undistortedFeatures2D =
 			RGBD::removeImageDistortion(features,
 					matcherParameters.cameraMatrixMat,
 					matcherParameters.distortionCoeffsMat);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 
 	// Associate depth
@@ -121,13 +152,13 @@ bool Matcher::match(const SensorFrame& sensorData,
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
 	RANSAC ransac(matcherParameters.RANSACParams);
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-				> (std::chrono::high_resolution_clock::now() - start);
-		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
-				<< " ms" << std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//				> (std::chrono::high_resolution_clock::now() - start);
+//		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
+//				<< " ms" << std::endl;
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
