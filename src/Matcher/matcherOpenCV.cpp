@@ -192,22 +192,39 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 		initialFlow = cv::OPTFLOW_USE_INITIAL_FLOW;
 
 	// Calculating movement of features
-	cv::calcOpticalFlowPyrLK(prevImg, img, features, prevFeatures, status, err,
+	cv::calcOpticalFlowPyrLK(prevImg, img, prevFeatures, features, status, err,
 			cv::Size(matcherParameters.OpenCVParams.winSize,
 					matcherParameters.OpenCVParams.winSize),
-			matcherParameters.OpenCVParams.maxLevels, termcrit,
-			initialFlow);
+			matcherParameters.OpenCVParams.maxLevels, termcrit, initialFlow);
 
 	// Returning result in matching-compatible format
-	int i = 0;
+	int i = 0, j = 0;
 	std::vector<cv::DMatch> matches;
-	for (std::vector<uchar>::iterator it = status.begin(); it != status.end();
-			++it, i++) {
-		// Tracking succeded
+
+	std::vector<cv::Point2f>::iterator itFeatures = features.begin();
+	std::vector<uchar>::iterator it = status.begin();
+	for (; it != status.end(); ++it, i++) {
+
+		// Tracking succeed
 		if (*it != 0) {
-			matches.push_back(cv::DMatch(i, i, 0));
+			matches.push_back(cv::DMatch(i, j, 0));
+			j++;
+			++itFeatures;
+		}
+		// Tracking failed -- we remove those features
+		else {
+			itFeatures = features.erase(itFeatures);
 		}
 	}
+
+	std::cout << "TEEET: " << prevFeatures.size() << " " << features.size()
+			<< std::endl;
+
+	if (matcherParameters.verbose > 0)
+		std::cout << "MatcherOpenCV::performTracking -- features tracked "
+				<< matches.size() << " ("
+				<< matches.size() * 100.0 / prevFeatures.size() << "%)"
+				<< std::endl;
 
 	// Return result
 	return matches;

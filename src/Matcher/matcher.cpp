@@ -55,6 +55,10 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches)
 {
+	// TODO:
+	// - if no motion than skip frame
+	// - tracking ids !!! There might be issues with that
+
 	// Tracking features and creating potential matches
 	std::vector<cv::Point2f> undistortedFeatures2D;
 	std::vector<cv::DMatch> matches = performTracking(prevRgbImage,
@@ -70,6 +74,26 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	RANSAC ransac(matcherParameters.RANSACParams);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
+
+	// If the number of tracked features falls below certain number, we detect new features are merge them together
+	// TODO: Parameter
+	int minimalTrackingFeatures = 100;
+	if ( undistortedFeatures2D.size() < minimalTrackingFeatures ) {
+		// Detect salient features
+		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(sensorData.rgbImage);
+
+		// DBScan on detected
+		DBScan dbscan(8, 2, 1);
+		dbscan.run(featuresSandbox);
+
+		// Find 2D positions without distortion
+		std::vector<cv::Point2f> featuresSandBoxUndistorted =
+				RGBD::removeImageDistortion(featuresSandbox,
+						matcherParameters.cameraMatrixMat,
+						matcherParameters.distortionCoeffsMat);
+
+		// TODO: MERGE THEM INTELLIGENTLY
+	}
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
