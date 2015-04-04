@@ -66,6 +66,11 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		bufferMapFrontend.features2add.push_back(
 				MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
 						poseIds, (*it).descriptors));
+        bufferMapManagement.mtxBuffer.lock();
+        bufferMapManagement.features2add.push_back(
+                MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
+                        poseIds, (*it).descriptors));
+        bufferMapManagement.mtxBuffer.unlock();
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
 		if (config.useUncertainty)
@@ -82,8 +87,10 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 	}
 	bufferMapFrontend.mtxBuffer.unlock();
 
+    bufferMapManagement.mtxBuffer.unlock();
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
 	emptyMap = false;
 }
@@ -168,6 +175,7 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 	mtxMapFrontend.unlock();
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 	return featuresSet;
 }
 
@@ -198,6 +206,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 	mtxMapFrontend.unlock();
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 	return visibleFeatures;
 }
 
@@ -300,6 +309,12 @@ void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 					RobustKernelName, kernelDelta));
 }
 
+/// start map management thread
+void FeaturesMap::startMapManagerThread(int verbose){
+    managementThr.reset(
+            new std::thread(&FeaturesMap::manage, this, verbose));
+}
+
 /// Wait for optimization thread to finish
 void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
@@ -310,6 +325,47 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
     std::cout << "save map to file\n";
     plotFeatures("../../resources/map.m");
     std::cout << "save map to file end\n";
+}
+
+/// Wait for map management thread to finish
+void FeaturesMap::finishManagementThr(void){
+    continueManagement = false;
+    managementThr->join();
+}
+
+/// map management method
+void FeaturesMap::manage(int verbose){
+    // graph optimization
+    continueManagement = true;
+
+    // Wait for some information in map
+    while (continueManagement && featuresMapManagement.size()==0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+    // Wait for some information in map
+    while (continueManagement) {
+        auto start = std::chrono::system_clock::now();
+        if (verbose>0){
+            std::cout << "Graph management: start new iteration\n";
+        }
+        mtxMapManagement.lock();
+        //compute Euclidean distance
+        for (std::vector<MapFeature>::iterator itFeature1 = featuresMapManagement.begin(); itFeature1!=featuresMapManagement.end(); itFeature1++){
+            for (std::vector<MapFeature>::iterator itFeature2 = featuresMapManagement.begin(); itFeature2!=featuresMapManagement.end(); itFeature2++){
+                if (itFeature1!=itFeature2){
+                    float_type dist = sqrt(pow(itFeature1->position.x()-itFeature2->position.x(),2.0) + pow(itFeature1->position.y()-itFeature2->position.y(),2.0) + pow(itFeature1->position.z()-itFeature2->position.z(),2.0));
+                    if (dist<config.distThreshold)
+                        std::cout << "features " << itFeature1->id << " and " << itFeature2->id << " are too close\n";
+                }
+            }
+        }
+        mtxMapManagement.unlock();
+        if (verbose>0) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+            std::cout << "Graph management finished (t = " << elapsed.count() << "ms)\n";
+        }
+    }
 }
 
 /// optimization thread
@@ -333,13 +389,19 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         poseGraph->optimize(iterNo, verbose);
 		std::vector<MapFeature> optimizedFeatures;
 		((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
-		bufferMapFrontend.mtxBuffer.lock();
+        bufferMapFrontend.mtxBuffer.lock(); // update frontend buffer
 		bufferMapFrontend.features2update.insert(
-				bufferMapFrontend.features2update.begin(),
+                bufferMapFrontend.features2update.end(),
 				optimizedFeatures.begin(), optimizedFeatures.end());
 		bufferMapFrontend.mtxBuffer.unlock();
+        bufferMapManagement.mtxBuffer.lock(); // update management buffer
+        bufferMapManagement.features2update.insert(
+                bufferMapManagement.features2update.end(),
+                optimizedFeatures.begin(), optimizedFeatures.end());
+        bufferMapManagement.mtxBuffer.unlock();
 		//try to update the map
 		updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
         if (config.edges3DPrunningThreshold>0)
             ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
 		//update camera trajectory
@@ -371,13 +433,18 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 	std::vector<MapFeature> optimizedFeatures;
 	((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
 	bufferMapFrontend.mtxBuffer.lock();
-	bufferMapFrontend.features2update.insert(
-			bufferMapFrontend.features2update.begin(),
+    bufferMapFrontend.features2update.insert( // update buffer frontend
+            bufferMapFrontend.features2update.end(),
 			optimizedFeatures.begin(), optimizedFeatures.end());
 	bufferMapFrontend.mtxBuffer.unlock();
+    bufferMapManagement.features2update.insert( //update buffer management
+            bufferMapManagement.features2update.end(),
+            optimizedFeatures.begin(), optimizedFeatures.end());
+    bufferMapManagement.mtxBuffer.unlock();
 //    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 	//update camera trajectory
 	std::vector<VertexSE3> optimizedPoses;
 	((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);

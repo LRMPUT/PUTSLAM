@@ -77,9 +77,15 @@ public:
 	/// start optimization thread
     virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0) = 0;
 
+    /// start map management thread
+    virtual void startMapManagerThread(int verbose = 0) = 0;
+
 	/// Wait for optimization thread to finish
 	virtual void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename) = 0;
+
+    /// Wait for map management thread to finish
+    virtual void finishManagementThr(void) = 0;
 
     /// Save map to file
     virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;

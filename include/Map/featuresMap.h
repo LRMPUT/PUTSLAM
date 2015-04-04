@@ -106,9 +106,15 @@ public:
 	/// start optimization thread
     void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0);
 
+    /// start map management thread
+    void startMapManagerThread(int verbose = 0);
+
 	/// Wait for optimization thread to finish
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
+
+    /// Wait for map management thread to finish
+    void finishManagementThr(void);
 
     /// Save map to file
     void save2file(std::string mapFilename, std::string graphFilename);
@@ -176,6 +182,7 @@ public:
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 								"addNoFeaturesWhenMapSizeGreaterThan",
 								&addNoFeaturesWhenMapSizeGreaterThan);
+            model->FirstChildElement( "mapManager" )->QueryFloatAttribute("distThreshold", &distThreshold);
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
@@ -205,6 +212,9 @@ public:
 
             // If we observe many features, we do not add new
             int addNoFeaturesWhenMapSizeGreaterThan;
+
+            /// MapManagement: distance threshold
+            float distThreshold;
     };
 
 private:
@@ -235,8 +245,14 @@ private:
 	/// Optimization thread
 	std::unique_ptr<std::thread> optimizationThr;
 
+    /// Optimization thread
+    std::unique_ptr<std::thread> managementThr;
+
 	/// optimization flag
 	std::atomic<bool> continueOpt;
+
+    /// map management thread flag
+    std::atomic<bool> continueManagement;
 
 	/// Number of features
 	unsigned int featureIdNo;
@@ -260,7 +276,7 @@ private:
     std::vector<MapFeature> featuresMapManagement;
 
     /// mutex for critical section - map management
-    std::recursive_mutex mtxMapManagemet;
+    std::recursive_mutex mtxMapManagement;
 
     /// Map frontend -- buffer
     MapModifier bufferMapFrontend;
@@ -274,8 +290,11 @@ private:
     /// Last optimized pose
     int lastOptimizedPose;
 
-	/// optimization thread
+    /// optimization method
     void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);
+
+    /// map management method
+    void manage(int verbose);
 
     /// Update map
     void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);

@@ -128,6 +128,7 @@ void PUTSLAM::startProcessing() {
 	// Optimize during trajectory acquisition
 	//map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
     map->startOptimizationThread(1, 0);
+    //map->startMapManagerThread(1);
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
@@ -300,8 +301,10 @@ void PUTSLAM::startProcessing() {
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
-	// Wait for optimization finish
+    // Wait for optimization thread to finish
     map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+    // Wait for management thread to finish
+    //map->finishManagementThr();
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
