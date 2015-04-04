@@ -183,8 +183,10 @@ void PUTSLAM::startProcessing() {
             Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-            matcher->Matcher::match(currentSensorFrame, transformation,
-                    inlierMatches);
+			// TODO: Just for test
+//            matcher->Matcher::match(currentSensorFrame, transformation,
+//                    inlierMatches);
+			matcher->Matcher::trackKLT(currentSensorFrame, transformation, inlierMatches);
 
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
