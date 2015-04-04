@@ -23,4 +23,6 @@
 				minEuclideanDistanceOfFeatures="0.05"
 				minImageDistanceOfFeatures="8"
 				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
+	
+	<mapManager distThreshold="0.03"></mapManager>
   </MapConfig>
