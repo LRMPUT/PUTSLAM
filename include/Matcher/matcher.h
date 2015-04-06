@@ -201,8 +201,11 @@ protected:
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
 
+	//TODO: TEMPORARILY
+public:
 	/// Parameters
 	MatcherParameters matcherParameters;
+protected:
 
 	/// Methods used to visualize results/data
 	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);
@@ -228,9 +231,19 @@ protected:
 			std::vector<cv::Point2f> &features) = 0;
 
 private:
+	// We need to extract values in OpenCV types from classes/strcutures
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
+
+	//TODO: CHANGE IT LATER TO PRIVATE
+public:
 	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(
 			std::vector<MapFeature> mapFeatures);
+
+private:
+	// Method used to combine old tracking features with new features
+	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
+			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+			float euclideanDistance);
 };
 }
 ;

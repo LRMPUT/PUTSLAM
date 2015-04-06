@@ -8,12 +8,6 @@
 #include "../include/Matcher/MatchingOnPatches.h"
 
 
-
-
-
-
-
-
 int main()
 {
 	// Just reading random image
@@ -23,7 +17,7 @@ int main()
 	cv::cvtColor(img, dst, CV_RGB2GRAY);
 
 	// Select random feature
-	float x = 150.3f, y = 253.1f;
+	putslam::float_type x = 150.3f, y = 253.1f;
 
 	// Visualize point
 //	cv::circle(img, cv::Point2f(x,y), 5, cv::Scalar(0, 0 ,255));
@@ -31,7 +25,7 @@ int main()
 //	cv::waitKey(5000);
 
 	// Distruption to point
-	float newX = x + (rand()%100)/20.0, newY = y + (rand()%100)/20.0;
+	putslam::float_type newX = x + (rand()%100)/20.0, newY = y + (rand()%100)/20.0;
 	std::cout<<"x, y = " << x << " " << y << std::endl;
 	std::cout<<"newX, newY = " << newX << " " << newY <<std::endl;
 

@@ -43,6 +43,7 @@ std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistorte
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage, cv::Mat cameraMatrix, int startingID = 0);
 
+
 // Rounds the (u,v) location to integer
 int roundSize(double x, int size);
 

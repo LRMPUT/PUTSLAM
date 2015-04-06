@@ -217,9 +217,6 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 		}
 	}
 
-	std::cout << "TEEET: " << prevFeatures.size() << " " << features.size()
-			<< std::endl;
-
 	if (matcherParameters.verbose > 0)
 		std::cout << "MatcherOpenCV::performTracking -- features tracked "
 				<< matches.size() << " ("

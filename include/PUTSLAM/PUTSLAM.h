@@ -20,6 +20,7 @@
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
 #include "../include/Matcher/RGBD.h"
+#include "../include/Matcher/MatchingOnPatches.h"
 
 using namespace std;
 using namespace putslam;

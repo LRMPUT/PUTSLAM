@@ -7,6 +7,8 @@
 #include <vector>
 #include <Eigen/Eigen>
 
+#include "../Defs/putslam_defs.h"
+
 class MatchingOnPatches {
 
 public:
@@ -16,18 +18,21 @@ public:
 	// 	-	maxIter		-> max iterations of Gauss-Newton optimization
 	// 	-	minSqrtIncrement	-> Optimization threshold - lower step update than this value indicates convergence
 	//  - 	verbose		-> verbose level (0 or 1)
-	MatchingOnPatches(int _patchSize, int _maxIter = 20, float _minSqrtIncrement = 0.04, int _verbose = 0);
+	MatchingOnPatches(int _patchSize, int _maxIter = 20,
+			float _minSqrtIncrement = 0.04, int _verbose = 0);
 
 	// Computes the patch on image "img" at location (x,y)
-	std::vector<uint8_t> computePatch (cv::Mat img, float x, float y);
+	std::vector<uint8_t> computePatch(cv::Mat img, putslam::float_type x,
+			putslam::float_type y);
 
 	// Method used to compute the gradient on the old image for optimization purposes. Takes:
 	// 	-	oldImg		-> old image used to compute old patch
 	// 	-	x, y		-> location around we compute the gradients and hessian
 	//	- 	gradientX, gradientY -> gradients of the patch on the old image
 	//	-	InvHessian	-> inverse of hessian of the patch on the old image
-	void computeGradient(cv::Mat img, float x, float y,	Eigen::Matrix3f &InvHessian, std::vector<float> &gradientX,
-			std::vector<float> &gradientY);
+	void computeGradient(cv::Mat img, putslam::float_type x,
+			putslam::float_type y, Eigen::Matrix3f &InvHessian,
+			std::vector<float> &gradientX, std::vector<float> &gradientY);
 
 	// Gauss-Newton optimization used to find the new position of feature. Takes:
 	// 	-	oldImg		-> old image used to compute old patch
@@ -37,17 +42,17 @@ public:
 	//	- 	gradientX, gradientY -> precomputed gradients of the patch on the old image
 	//	-	InvHessian	-> precomputed inverse of hessian of the patch on the old image
 	bool optimizeLocation(cv::Mat oldImg, std::vector<uint8_t> oldPatch,
-			cv::Mat newImg, float &newX, float &newY,
-			std::vector<float> gradientX, std::vector<float> gradientY,
-			Eigen::Matrix3f &InvHessian);
+			cv::Mat newImg, putslam::float_type &newX,
+			putslam::float_type &newY, std::vector<float> gradientX,
+			std::vector<float> gradientY, Eigen::Matrix3f &InvHessian);
 
 private:
 
 	// Method used to compute the Jacobian of optimization
 	inline void evaluatePatches(const std::vector<uint8_t> newPatch,
-				const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,
-				const std::vector<float> gradientX,
-				const std::vector<float> gradientY);
+			const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,
+			const std::vector<float> gradientX,
+			const std::vector<float> gradientY);
 
 	// Vebose level - 0 or 1
 	int verbose;
@@ -60,7 +65,6 @@ private:
 
 	// Optimization threshold - lower step update than this value indicates convergence
 	float minSqrtIncrement;
-
 
 };
 

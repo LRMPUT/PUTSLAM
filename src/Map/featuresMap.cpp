@@ -323,7 +323,7 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
     std::cout << "save map to file\n";
-    plotFeatures("../../resources/map.m");
+   // plotFeatures("../../resources/map.m");
     std::cout << "save map to file end\n";
 }
 
