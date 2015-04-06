@@ -232,8 +232,8 @@ void PUTSLAM::startProcessing() {
 					<< mapFeatures.size() << std::endl;
 
 			// Now lets check if those features are not behind sth
-			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
-					currentSensorFrame.depthImage, 0.1f);
+//			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+//					currentSensorFrame.depthImage, 0.1f);
 
 			std::cout << "Returned visible map feature size: "
 					<< mapFeatures.size() << std::endl;
@@ -248,13 +248,13 @@ void PUTSLAM::startProcessing() {
 //
 
 			// Create matching on patches of size 9x9, verbose = 0
-			MatchingOnPatches matchingOnPatches(9, 20, 0.04, 1);
+			MatchingOnPatches matchingOnPatches(9, 20, 0.04, 0);
 
 
 			// Optimize patch locations
 			std::vector<cv::Point2f> optimizedLocations;
 			std::vector<cv::DMatch> matches;
-			for (int i=0;i<mapFeatures.size();i++)
+			for (int i=0, goodFeaturesIndex = 0;i<mapFeatures.size();i++)
 			{
 				float uMap=-1,vMap=-1;
 				for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
@@ -270,6 +270,8 @@ void PUTSLAM::startProcessing() {
 
 				cv::Mat rgbImageMap, depthImageMap;
 				map->getImages(frameIds[i], rgbImageMap, depthImageMap);
+
+				// TODO: PERFORM WARPING !!!
 
 				// Compute old patch
 				std::vector<uint8_t> patchMap;
@@ -291,10 +293,13 @@ void PUTSLAM::startProcessing() {
 				// Print information
 				std::cout<<"Patches: " << success << " " << mapFeatures[i].u << " " << mapFeatures[i].v << std::endl;
 
-				// TODO: We should only do 3D projection of successfully optimized features
-				optimizedLocations.push_back(cv::Point2f( mapFeatures[i].u, mapFeatures[i].v));
-				if ( success )
-					matches.push_back(cv::DMatch(i,i,0));
+				// Save a good match
+				if ( success ) {
+					matches.push_back(cv::DMatch(i,goodFeaturesIndex,0));
+					optimizedLocations.push_back(cv::Point2f( mapFeatures[i].u, mapFeatures[i].v));
+					goodFeaturesIndex++;
+				}
+
 			}
 
 			// Project optimized features into 3D features
