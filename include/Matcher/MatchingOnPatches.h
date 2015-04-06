@@ -46,6 +46,10 @@ public:
 			putslam::float_type &newY, std::vector<float> gradientX,
 			std::vector<float> gradientY, Eigen::Matrix3f &InvHessian);
 
+	// Getters
+	int getPatchSize();
+	int getHalfPatchSize();
+
 private:
 
 	// Method used to compute the Jacobian of optimization

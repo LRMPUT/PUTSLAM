@@ -121,6 +121,13 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 	return false;
 }
 
+int MatchingOnPatches::getPatchSize(){
+	return patchSize;
+}
+int MatchingOnPatches::getHalfPatchSize() {
+	return halfPatchSize;
+}
+
 inline void MatchingOnPatches::evaluatePatches(
 		const std::vector<uint8_t> newPatch,
 		const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,

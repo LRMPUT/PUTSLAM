@@ -249,11 +249,13 @@ void PUTSLAM::startProcessing() {
 
 			// Prepare set of images
 			std::vector<cv::Mat> mapRgbImages(frameIds.size()), mapDepthImages(frameIds.size());
+			std::vector<putslam::Mat34> cameraPoses(frameIds.size());
 			for (int i=0;i<frameIds.size();i++) {
 				map->getImages(frameIds[i], mapRgbImages[i], mapDepthImages[i]);
+				cameraPoses[i] = map->getSensorPose(frameIds[i]);
 			}
 
-			matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId, frameIds,
+			matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId, cameraPose, frameIds, cameraPoses,
 					mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
 
 
