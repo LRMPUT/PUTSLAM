@@ -75,16 +75,21 @@ public:
 
 	/// Run the match with map
 	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
 	bool matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	// Matching to map with patch computation
-	bool matchToMapUsingPatches(std::vector<MapFeature> mapFeatures, int sensorPoseId, std::vector<int> frameIds,
-			std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
+	bool matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+			int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
+			std::vector<putslam::Mat34> cameraPoses,
+			std::vector<cv::Mat> mapRgbImages,
+			std::vector<cv::Mat> mapDepthImages,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation);
 
