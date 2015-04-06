@@ -3,6 +3,7 @@
 MatchingOnPatches::MatchingOnPatches(int _patchSize, int _maxIter,
 		float _minSqrtIncrement, int _verbose) {
 	patchSize = _patchSize;
+	halfPatchSize = (patchSize - 1) / 2;
 	verbose = _verbose;
 
 	maxIter = _maxIter;
@@ -27,7 +28,6 @@ std::vector<uint8_t> MatchingOnPatches::computePatch(cv::Mat img,
 	unsigned char *input = (unsigned char*) (img.data);
 
 	// Speed-up considerations
-	const int halfPatchSize = (patchSize - 1) / 2;
 	const int yEnd = y + halfPatchSize;
 	const int xEnd = x + halfPatchSize;
 
@@ -53,7 +53,6 @@ void MatchingOnPatches::computeGradient(cv::Mat img, putslam::float_type x,
 	unsigned char *input = (unsigned char*) (img.data);
 
 	// Speed-up considerations
-	const int halfPatchSize = (patchSize - 1) / 2;
 	const int yEnd = y + halfPatchSize;
 	const int xEnd = x + halfPatchSize;
 
@@ -107,6 +106,11 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 		newX += increment[0];
 		newY += increment[1];
 		mean += increment[2];
+
+		if (std::isnan(newX) || std::isnan(newY) || std::isnan(mean)
+				|| newX < halfPatchSize || newX > oldImg.cols - halfPatchSize
+				|| newY < halfPatchSize || newY > oldImg.rows - halfPatchSize)
+			return false;
 
 		// Ending condition
 		if (increment[0] * increment[0] + increment[1] * increment[1]

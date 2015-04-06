@@ -58,7 +58,7 @@ private:
 	int verbose;
 
 	// Patch size in pixels and equal in row and column size
-	int patchSize;
+	int patchSize, halfPatchSize;
 
 	// Max iterations of Gauss-Newton optimization
 	int maxIter;
