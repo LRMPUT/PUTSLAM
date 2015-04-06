@@ -51,13 +51,33 @@ Matcher::featureSet Matcher::getFeatures() {
 	return returnSet;
 }
 
+void Matcher::mergeTrackedFeatures(
+		std::vector<cv::Point2f>& undistortedFeatures2D,
+		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+		float euclideanDistance) {
+	// Merging features - rejecting feature too close to existing ones
+	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
+		bool addFeature = true;
+		for (int j = 0; j < undistortedFeatures2D.size(); j++) {
+			if (cv::norm(
+					featuresSandBoxUndistorted[i] - undistortedFeatures2D[j])
+					< euclideanDistance) {
+				addFeature = false;
+				break;
+			}
+		}
+		if (addFeature) {
+			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
+		}
+	}
+}
+
 bool Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches)
 {
 	// TODO:
 	// - if no motion than skip frame
-	// - tracking ids !!! There might be issues with that
 
 	// Tracking features and creating potential matches
 	std::vector<cv::Point2f> undistortedFeatures2D;
@@ -76,7 +96,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 			features3D, matches, inlierMatches);
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
-	// TODO: Parameter
+	// TODO: Parameters
 	int minimalTrackingFeatures = 100;
 	float euclideanDistance = 4;
 	if ( undistortedFeatures2D.size() < minimalTrackingFeatures ) {
@@ -94,18 +114,9 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 						matcherParameters.distortionCoeffsMat);
 
 		// Merging features - rejecting feature too close to existing ones
-		for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
-			bool addFeature = true;
-			for (int j = 0; j < undistortedFeatures2D.size(); j++) {
-				if (cv::norm(featuresSandBoxUndistorted[i] - undistortedFeatures2D[j]) < euclideanDistance) {
-					addFeature = false;
-					break;
-				}
-			}
-			if (addFeature) {
-				undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
-			}
-		}
+		// Parameters: (existing features and vector to add new features, new features, minimal euclidean distance between features)
+		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted,
+				euclideanDistance);
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(

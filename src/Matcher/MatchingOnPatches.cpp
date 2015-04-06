@@ -9,8 +9,8 @@ MatchingOnPatches::MatchingOnPatches(int _patchSize, int _maxIter,
 	minSqrtIncrement = _minSqrtIncrement;
 }
 
-std::vector<uint8_t> MatchingOnPatches::computePatch(cv::Mat img, float x,
-		float y) {
+std::vector<uint8_t> MatchingOnPatches::computePatch(cv::Mat img,
+		putslam::float_type x, putslam::float_type y) {
 	std::vector<uint8_t> patch;
 
 	// subpix precision
@@ -46,9 +46,9 @@ std::vector<uint8_t> MatchingOnPatches::computePatch(cv::Mat img, float x,
 	return patch;
 }
 
-void MatchingOnPatches::computeGradient(cv::Mat img, float x, float y,
-		Eigen::Matrix3f &InvHessian, std::vector<float> &gradientX,
-		std::vector<float> &gradientY) {
+void MatchingOnPatches::computeGradient(cv::Mat img, putslam::float_type x,
+		putslam::float_type y, Eigen::Matrix3f &InvHessian,
+		std::vector<float> &gradientX, std::vector<float> &gradientY) {
 	// compute patch
 	unsigned char *input = (unsigned char*) (img.data);
 
@@ -81,7 +81,8 @@ void MatchingOnPatches::computeGradient(cv::Mat img, float x, float y,
 }
 
 bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
-		std::vector<uint8_t> oldPatch, cv::Mat newImg, float &newX, float &newY,
+		std::vector<uint8_t> oldPatch, cv::Mat newImg,
+		putslam::float_type &newX, putslam::float_type &newY,
 		std::vector<float> gradientX, std::vector<float> gradientY,
 		Eigen::Matrix3f &InvHessian) {
 	// Jacobian and hessian of old patch
@@ -110,9 +111,10 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 		// Ending condition
 		if (increment[0] * increment[0] + increment[1] * increment[1]
 				< minSqrtIncrement) {
-			break;
+			return true;
 		}
 	}
+	return false;
 }
 
 inline void MatchingOnPatches::evaluatePatches(

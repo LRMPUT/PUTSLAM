@@ -24,6 +24,9 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		const std::vector<MapFeature>& mapFeatures,
 		float minEuclideanDistanceOfFeatures, float minImageDistanceOfFeatures,
 		int cameraPoseId, std::vector<RGBDFeature>& mapFeaturesToAdd) {
+
+	std::cout << "COMPARE 2D and 3D sizes: "
+			<< features.undistortedFeature2D.size() << " vs " << features.feature3D.size() << std::endl;
 	// Lets process possible features to add
 	for (int j = 0;
 			j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd;
@@ -34,7 +37,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 			bool featureOk = true;
 
-			// Lets remove features to close to existing features
+			// Lets remove features too close to existing features
 			for (int i = 0; i < mapFeatures.size(); i++) {
 
 				// Euclidean norm
@@ -67,7 +70,8 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 			}
 
-			// Lets remove features to close to features to add :)
+			// Lets remove features too close to features to add :)
+			// TODO: code is repeated -> extract method
 			if (featureOk) {
 				for (int i = 0; i < mapFeaturesToAdd.size(); i++) {
 
@@ -95,9 +99,16 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 			}
 
 			if (featureOk) {
+//				std::cout << "Adding feature of (u,v) = ("
+//						<< features.undistortedFeature2D[j].x << ", "
+//						<< features.undistortedFeature2D[j].y << ")"
+//						<< std::endl;
+
 				// Create an extended descriptor
 				ExtendedDescriptor desc(cameraPoseId,
-						features.descriptors.row(j));
+						features.undistortedFeature2D[j].x,
+						features.undistortedFeature2D[j].y,
+						cv::Mat()); // TODO: change between descriptor based and descriptor free versions - features.descriptors.row(j)
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
@@ -172,7 +183,8 @@ void PUTSLAM::startProcessing() {
 
 			// Add new position to the map
 			cameraPoseId = map->addNewPose(cameraPose,
-					currentSensorFrame.timestamp);
+					currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+					currentSensorFrame.depthImage);
 
 			ifStart = false;
 			addFeatureToMap = true;
@@ -183,7 +195,7 @@ void PUTSLAM::startProcessing() {
             Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-			// TODO: Just for test
+			// TODO: Just for test - make it a parameter
 //            matcher->Matcher::match(currentSensorFrame, transformation,
 //                    inlierMatches);
 			matcher->Matcher::trackKLT(currentSensorFrame, transformation, inlierMatches);
@@ -199,7 +211,8 @@ void PUTSLAM::startProcessing() {
 
 			// Add new position to the map
 			cameraPoseId = map->addNewPose(cameraPoseIncrement,
-					currentSensorFrame.timestamp);
+					currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+					currentSensorFrame.depthImage);
 
 			// Get the visible features
 			Mat34 cameraPose = map->getSensorPose();
@@ -207,8 +220,9 @@ void PUTSLAM::startProcessing() {
 
             //map->removeDistantFeatures(mapFeatures, 500, 10.01);
 
-            //std::vector<int> frameIds;
-            //map->findNearestFrame(mapFeatures, frameIds);
+            // Find the ids of frames for which feature observations have the most similar angle
+            std::vector<int> frameIds;
+            map->findNearestFrame(mapFeatures, frameIds);
 
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
@@ -228,9 +242,112 @@ void PUTSLAM::startProcessing() {
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
 			Eigen::Matrix4f mapEstimatedTransformation;
-			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
-					measurementList, mapEstimatedTransformation);
-			//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+//			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
+//					measurementList, mapEstimatedTransformation);
+//			//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+//
+
+			// Create matching on patches of size 9x9, verbose = 0
+			MatchingOnPatches matchingOnPatches(9, 20, 0.04, 1);
+
+
+			// Optimize patch locations
+			std::vector<cv::Point2f> optimizedLocations;
+			std::vector<cv::DMatch> matches;
+			for (int i=0;i<mapFeatures.size();i++)
+			{
+				float uMap=-1,vMap=-1;
+				for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
+					std::cout << "FRAME IDS: "
+							<< mapFeatures[i].descriptors[j].poseId << " "
+							<< frameIds[i] << std::endl;
+					if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
+						uMap = mapFeatures[i].descriptors[j].u;
+						vMap = mapFeatures[i].descriptors[j].v;
+						break;
+					}
+				}
+
+				cv::Mat rgbImageMap, depthImageMap;
+				map->getImages(frameIds[i], rgbImageMap, depthImageMap);
+
+				// Compute old patch
+				std::vector<uint8_t> patchMap;
+				patchMap = matchingOnPatches.computePatch(rgbImageMap, uMap, vMap);
+
+				// Compute gradient
+				std::vector<float> gradientX, gradientY;
+				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+				matchingOnPatches.computeGradient(rgbImageMap, uMap, vMap, InvHessian, gradientX, gradientY);
+
+				// Print infromation
+				std::cout<<"Patches preoptimization: " << mapFeatures[i].u << " " << mapFeatures[i].v << std::endl;
+
+				// Optimize position of the feature
+				bool success = matchingOnPatches.optimizeLocation(rgbImageMap, patchMap,
+						currentSensorFrame.rgbImage, mapFeatures[i].u,
+						mapFeatures[i].v, gradientX, gradientY, InvHessian);
+
+				// Print information
+				std::cout<<"Patches: " << success << " " << mapFeatures[i].u << " " << mapFeatures[i].v << std::endl;
+
+				// TODO: We should only do 3D projection of successfully optimized features
+				optimizedLocations.push_back(cv::Point2f( mapFeatures[i].u, mapFeatures[i].v));
+				if ( success )
+					matches.push_back(cv::DMatch(i,i,0));
+			}
+
+			// Project optimized features into 3D features
+			std::vector<Eigen::Vector3f> optimizedMapLocations3D =
+					RGBD::keypoints2Dto3D(optimizedLocations,
+							currentSensorFrame.depthImage,
+							matcher->matcherParameters.cameraMatrixMat);
+
+			// Extract 3D from map
+			std::vector<Eigen::Vector3f> mapFeaturePositions3D =
+						matcher->extractMapFeaturesPositions(mapFeatures);
+
+			// RANSAC
+			std::cout << "Matches on patches counter: " << matches.size()
+					<< std::endl;
+
+			std::vector<cv::DMatch> inlierMatches2;
+			RANSAC ransac(matcher->matcherParameters.RANSACParams);
+			mapEstimatedTransformation = ransac.estimateTransformation(
+					mapFeaturePositions3D, optimizedMapLocations3D, matches,
+					inlierMatches2);
+
+			// for all inliers, convert them to map-compatible format
+			measurementList.clear();
+			for (std::vector<cv::DMatch>::iterator it = inlierMatches2.begin();
+					it != inlierMatches2.end(); ++it) {
+				int mapId = it->queryIdx, currentPoseId = it->trainIdx;
+
+				MapFeature mapFeature;
+				mapFeature.id = mapFeatures[mapId].id;
+
+				// TODO: Test corrections after Dominic question
+				mapFeature.u = optimizedLocations[currentPoseId].x;
+				mapFeature.v = optimizedLocations[currentPoseId].y;
+
+				mapFeature.position = Vec3(
+						optimizedMapLocations3D[currentPoseId].cast<double>());
+				mapFeature.posesIds.push_back(cameraPoseId);
+				// TODO: take into account the future orientation
+				ExtendedDescriptor featureExtendedDescriptor(cameraPoseId,
+						mapFeature.u, mapFeature.v, cv::Mat());
+				mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+				// Add the measurement
+				measurementList.push_back(mapFeature);
+			}
+
+
+
+
+
+
+
 
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
@@ -275,6 +392,7 @@ void PUTSLAM::startProcessing() {
 			int addedCounter = 0;
 
 			// Lets process possible features to add
+			// TODO: change between descriptor based and descriptor free versions
 			addedCounter = chooseFeaturesToAddToMap(features, addedCounter,
 					maxOnceFeatureAdd, mapFeatures,
 					minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures,
