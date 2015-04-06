@@ -247,111 +247,14 @@ void PUTSLAM::startProcessing() {
 //			//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 //
 
-			// Create matching on patches of size 9x9, verbose = 0
-			MatchingOnPatches matchingOnPatches(9, 20, 0.04, 0);
-
-
-			// Optimize patch locations
-			std::vector<cv::Point2f> optimizedLocations;
-			std::vector<cv::DMatch> matches;
-			for (int i=0, goodFeaturesIndex = 0;i<mapFeatures.size();i++)
-			{
-				float uMap=-1,vMap=-1;
-				for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
-					std::cout << "FRAME IDS: "
-							<< mapFeatures[i].descriptors[j].poseId << " "
-							<< frameIds[i] << std::endl;
-					if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
-						uMap = mapFeatures[i].descriptors[j].u;
-						vMap = mapFeatures[i].descriptors[j].v;
-						break;
-					}
-				}
-
-				cv::Mat rgbImageMap, depthImageMap;
-				map->getImages(frameIds[i], rgbImageMap, depthImageMap);
-
-				// TODO: PERFORM WARPING !!!
-
-				// Compute old patch
-				std::vector<uint8_t> patchMap;
-				patchMap = matchingOnPatches.computePatch(rgbImageMap, uMap, vMap);
-
-				// Compute gradient
-				std::vector<float> gradientX, gradientY;
-				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
-				matchingOnPatches.computeGradient(rgbImageMap, uMap, vMap, InvHessian, gradientX, gradientY);
-
-				// Print infromation
-				std::cout<<"Patches preoptimization: " << mapFeatures[i].u << " " << mapFeatures[i].v << std::endl;
-
-				// Optimize position of the feature
-				bool success = matchingOnPatches.optimizeLocation(rgbImageMap, patchMap,
-						currentSensorFrame.rgbImage, mapFeatures[i].u,
-						mapFeatures[i].v, gradientX, gradientY, InvHessian);
-
-				// Print information
-				std::cout<<"Patches: " << success << " " << mapFeatures[i].u << " " << mapFeatures[i].v << std::endl;
-
-				// Save a good match
-				if ( success ) {
-					matches.push_back(cv::DMatch(i,goodFeaturesIndex,0));
-					optimizedLocations.push_back(cv::Point2f( mapFeatures[i].u, mapFeatures[i].v));
-					goodFeaturesIndex++;
-				}
-
+			// Prepare set of images
+			std::vector<cv::Mat> mapRgbImages(frameIds.size()), mapDepthImages(frameIds.size());
+			for (int i=0;i<frameIds.size();i++) {
+				map->getImages(frameIds[i], mapRgbImages[i], mapDepthImages[i]);
 			}
 
-			// Project optimized features into 3D features
-			std::vector<Eigen::Vector3f> optimizedMapLocations3D =
-					RGBD::keypoints2Dto3D(optimizedLocations,
-							currentSensorFrame.depthImage,
-							matcher->matcherParameters.cameraMatrixMat);
-
-			// Extract 3D from map
-			std::vector<Eigen::Vector3f> mapFeaturePositions3D =
-						matcher->extractMapFeaturesPositions(mapFeatures);
-
-			// RANSAC
-			std::cout << "Matches on patches counter: " << matches.size()
-					<< std::endl;
-
-			std::vector<cv::DMatch> inlierMatches2;
-			RANSAC ransac(matcher->matcherParameters.RANSACParams);
-			mapEstimatedTransformation = ransac.estimateTransformation(
-					mapFeaturePositions3D, optimizedMapLocations3D, matches,
-					inlierMatches2);
-
-			// for all inliers, convert them to map-compatible format
-			measurementList.clear();
-			for (std::vector<cv::DMatch>::iterator it = inlierMatches2.begin();
-					it != inlierMatches2.end(); ++it) {
-				int mapId = it->queryIdx, currentPoseId = it->trainIdx;
-
-				MapFeature mapFeature;
-				mapFeature.id = mapFeatures[mapId].id;
-
-				// TODO: Test corrections after Dominic question
-				mapFeature.u = optimizedLocations[currentPoseId].x;
-				mapFeature.v = optimizedLocations[currentPoseId].y;
-
-				mapFeature.position = Vec3(
-						optimizedMapLocations3D[currentPoseId].cast<double>());
-				mapFeature.posesIds.push_back(cameraPoseId);
-				// TODO: take into account the future orientation
-				ExtendedDescriptor featureExtendedDescriptor(cameraPoseId,
-						mapFeature.u, mapFeature.v, cv::Mat());
-				mapFeature.descriptors.push_back(featureExtendedDescriptor);
-
-				// Add the measurement
-				measurementList.push_back(mapFeature);
-			}
-
-
-
-
-
-
+			matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId, frameIds,
+					mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
 
 
 			// TESTING VO with map corrections

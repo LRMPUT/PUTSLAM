@@ -74,15 +74,15 @@ void Matcher::mergeTrackedFeatures(
 
 bool Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
-		std::vector<cv::DMatch> &inlierMatches)
-{
+		std::vector<cv::DMatch> &inlierMatches) {
 	// TODO:
 	// - if no motion than skip frame
 
 	// Tracking features and creating potential matches
 	std::vector<cv::Point2f> undistortedFeatures2D;
 	std::vector<cv::DMatch> matches = performTracking(prevRgbImage,
-			sensorData.rgbImage, prevFeaturesUndistorted, undistortedFeatures2D);
+			sensorData.rgbImage, prevFeaturesUndistorted,
+			undistortedFeatures2D);
 
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
@@ -99,9 +99,10 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	// TODO: Parameters
 	int minimalTrackingFeatures = 100;
 	float euclideanDistance = 4;
-	if ( undistortedFeatures2D.size() < minimalTrackingFeatures ) {
+	if (undistortedFeatures2D.size() < minimalTrackingFeatures) {
 		// Detect salient features
-		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(sensorData.rgbImage);
+		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(
+				sensorData.rgbImage);
 
 		// DBScan on detected
 		DBScan dbscan(8, 2, 1);
@@ -125,7 +126,8 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Merge 3D positions
 		features3D.reserve(features3D.size() + newFeatures3D.size());
-		features3D.insert(features3D.end(), newFeatures3D.begin(), newFeatures3D.end());
+		features3D.insert(features3D.end(), newFeatures3D.begin(),
+				newFeatures3D.end());
 	}
 
 	// Save computed values for next iteration
@@ -137,7 +139,6 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	prevDepthImage = sensorData.depthImage;
 
 }
-
 
 bool Matcher::match(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
@@ -151,7 +152,6 @@ bool Matcher::match(const SensorFrame& sensorData,
 //	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
 //			<< " ms" << std::endl;
 
-
 	// DBScan
 	DBScan dbscan(8, 2, 1);
 //	start = std::chrono::high_resolution_clock::now();
@@ -160,7 +160,6 @@ bool Matcher::match(const SensorFrame& sensorData,
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
 //			<< std::endl;
-
 
 	if (matcherParameters.verbose > 1)
 		showFeatures(sensorData.rgbImage, features);
@@ -173,7 +172,6 @@ bool Matcher::match(const SensorFrame& sensorData,
 //	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
 //			<< " ms" << std::endl;
 
-
 	// Perform matching
 //	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
@@ -182,7 +180,6 @@ bool Matcher::match(const SensorFrame& sensorData,
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t Matching: " << duration.count() / 1000.0 << " ms"
 //			<< std::endl;
-
 
 	// Find 2D positions without distortion
 //	start = std::chrono::high_resolution_clock::now();
@@ -194,7 +191,6 @@ bool Matcher::match(const SensorFrame& sensorData,
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
 //			<< " ms" << std::endl;
-
 
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
@@ -288,7 +284,6 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
-
 
 		// TODO: Test corrections after Dominic question
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
@@ -400,7 +395,6 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
 		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
 
-
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
@@ -412,6 +406,122 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
+}
+
+bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+		int sensorPoseId, std::vector<int> frameIds,
+		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
+		std::vector<MapFeature> &foundInlierMapFeatures,
+		Eigen::Matrix4f &estimatedTransformation) {
+
+	// Create matching on patches of size 9x9, verbose = 0
+	MatchingOnPatches matchingOnPatches(9, 20, 0.04, 0);
+
+	// Optimize patch locations
+	std::vector<cv::Point2f> optimizedLocations;
+	std::vector<cv::DMatch> matches;
+	for (int i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
+		float uMap = -1, vMap = -1;
+		for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
+			std::cout << "FRAME IDS: " << mapFeatures[i].descriptors[j].poseId
+					<< " " << frameIds[i] << std::endl;
+			if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
+				uMap = mapFeatures[i].descriptors[j].u;
+				vMap = mapFeatures[i].descriptors[j].v;
+				break;
+			}
+		}
+		// TODO: PERFORM WARPING !!!
+
+		// Compute four points
+
+		// Project into space
+
+		// Get frame ids pose
+
+		// Project onto the image
+
+		// Compute getPerspective
+
+		// Compute warpPerspective
+
+		// Compute old patch
+		std::vector<uint8_t> patchMap;
+		patchMap = matchingOnPatches.computePatch(mapRgbImages[i], uMap, vMap);
+
+		// Compute gradient
+		std::vector<float> gradientX, gradientY;
+		Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+		matchingOnPatches.computeGradient(mapRgbImages[i], uMap, vMap, InvHessian,
+				gradientX, gradientY);
+
+		// Print infromation
+		std::cout << "Patches preoptimization: " << mapFeatures[i].u << " "
+				<< mapFeatures[i].v << std::endl;
+
+		// Optimize position of the feature
+		bool success = matchingOnPatches.optimizeLocation(mapRgbImages[i], patchMap,
+				prevRgbImage, mapFeatures[i].u, mapFeatures[i].v, gradientX,
+				gradientY, InvHessian);
+
+		// Print information
+		std::cout << "Patches: " << success << " " << mapFeatures[i].u << " "
+				<< mapFeatures[i].v << std::endl;
+
+		// Save a good match
+		if (success) {
+			matches.push_back(cv::DMatch(i, goodFeaturesIndex, 0));
+			optimizedLocations.push_back(
+					cv::Point2f(mapFeatures[i].u, mapFeatures[i].v));
+			goodFeaturesIndex++;
+		}
+
+	}
+
+	// Project optimized features into 3D features
+	std::vector<Eigen::Vector3f> optimizedMapLocations3D =
+			RGBD::keypoints2Dto3D(optimizedLocations,
+					prevDepthImage,
+					matcherParameters.cameraMatrixMat);
+
+	// Extract 3D from map
+	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
+			extractMapFeaturesPositions(mapFeatures);
+
+	// RANSAC
+	std::cout << "Matches on patches counter: " << matches.size() << std::endl;
+
+	std::vector<cv::DMatch> inlierMatches2;
+	RANSAC ransac(matcherParameters.RANSACParams);
+	estimatedTransformation = ransac.estimateTransformation(
+			mapFeaturePositions3D, optimizedMapLocations3D, matches,
+			inlierMatches2);
+
+	// for all inliers, convert them to map-compatible format
+	foundInlierMapFeatures.clear();
+	for (std::vector<cv::DMatch>::iterator it = inlierMatches2.begin();
+			it != inlierMatches2.end(); ++it) {
+		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
+
+		MapFeature mapFeature;
+		mapFeature.id = mapFeatures[mapId].id;
+
+		// TODO: Test corrections after Dominic question
+		mapFeature.u = optimizedLocations[currentPoseId].x;
+		mapFeature.v = optimizedLocations[currentPoseId].y;
+
+		mapFeature.position = Vec3(
+				optimizedMapLocations3D[currentPoseId].cast<double>());
+		mapFeature.posesIds.push_back(sensorPoseId);
+		// TODO: take into account the future orientation
+		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, mapFeature.u,
+				mapFeature.v, cv::Mat());
+		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+		// Add the measurement
+		foundInlierMapFeatures.push_back(mapFeature);
+	}
+
 }
 
 void Matcher::showFeatures(cv::Mat rgbImage,

@@ -15,6 +15,8 @@
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../TransformEst/RANSAC.h"
 
+#include "MatchingOnPatches.h"
+
 namespace putslam {
 /// Grabber interface
 class Matcher {
@@ -79,6 +81,12 @@ public:
 	/// More like guided-matching
 	bool matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
+
+	// Matching to map with patch computation
+	bool matchToMapUsingPatches(std::vector<MapFeature> mapFeatures, int sensorPoseId, std::vector<int> frameIds,
+			std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Class used to hold all parameters
 	class MatcherParameters {
@@ -231,11 +239,8 @@ protected:
 			std::vector<cv::Point2f> &features) = 0;
 
 private:
-	// We need to extract values in OpenCV types from classes/strcutures
+	// We need to extract values in OpenCV types from classes/structures
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
-
-	//TODO: CHANGE IT LATER TO PRIVATE
-public:
 	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(
 			std::vector<MapFeature> mapFeatures);
 
