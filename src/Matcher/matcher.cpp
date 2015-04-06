@@ -78,6 +78,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
 	// TODO: Parameter
 	int minimalTrackingFeatures = 100;
+	float euclideanDistance = 4;
 	if ( undistortedFeatures2D.size() < minimalTrackingFeatures ) {
 		// Detect salient features
 		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(sensorData.rgbImage);
@@ -92,7 +93,28 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 						matcherParameters.cameraMatrixMat,
 						matcherParameters.distortionCoeffsMat);
 
-		// TODO: MERGE THEM INTELLIGENTLY
+		// Merging features - rejecting feature too close to existing ones
+		for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
+			bool addFeature = true;
+			for (int j = 0; j < undistortedFeatures2D.size(); j++) {
+				if (cv::norm(featuresSandBoxUndistorted[i] - undistortedFeatures2D[j]) < euclideanDistance) {
+					addFeature = false;
+					break;
+				}
+			}
+			if (addFeature) {
+				undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
+			}
+		}
+
+		// Add depth to new features
+		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
+				undistortedFeatures2D, sensorData.depthImage,
+				matcherParameters.cameraMatrixMat, features3D.size());
+
+		// Merge 3D positions
+		features3D.reserve(features3D.size() + newFeatures3D.size());
+		features3D.insert(features3D.end(), newFeatures3D.begin(), newFeatures3D.end());
 	}
 
 	// Save computed values for next iteration

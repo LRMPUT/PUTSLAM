@@ -67,12 +67,12 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage,
-		cv::Mat cameraMatrix) {
+		cv::Mat cameraMatrix, int startingID) {
 
 	// Lets create 3D points
 	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size());
 	int i = 0;
-	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin();
+	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin() + startingID;
 			it != undistortedFeatures2D.end(); ++it) {
 		// Feature are extracted with subpixel precision, so find closest pixel
 		int uRounded = roundSize(it->x, depthImage.cols);
