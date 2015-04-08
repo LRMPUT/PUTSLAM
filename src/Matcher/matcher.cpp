@@ -6,7 +6,7 @@
  */
 
 #include "../include/Matcher/matcher.h"
-#include "../include/Matcher/RGBD.h"
+#include "../include/RGBD/RGBD.h"
 #include "../include/Matcher/dbscan.h"
 
 #include <chrono>
@@ -91,7 +91,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
-	RANSAC ransac(matcherParameters.RANSACParams);
+	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
 
@@ -204,7 +204,7 @@ bool Matcher::match(const SensorFrame& sensorData,
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
-	RANSAC ransac(matcherParameters.RANSACParams);
+	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
 //	start = std::chrono::high_resolution_clock::now();
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
@@ -272,7 +272,7 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
-	RANSAC ransac(matcherParameters.RANSACParams);
+	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
 			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
 
@@ -378,7 +378,7 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
-	RANSAC ransac(matcherParameters.RANSACParams);
+	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
 			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
 
@@ -540,7 +540,7 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 	std::cout << "Matches on patches counter: " << matches.size() << std::endl;
 
 	std::vector<cv::DMatch> inlierMatches2;
-	RANSAC ransac(matcherParameters.RANSACParams);
+	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
 			mapFeaturePositions3D, optimizedMapLocations3D, matches,
 			inlierMatches2);

@@ -30,6 +30,8 @@ option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
 option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" YES)
 mark_as_advanced(BUILD_PUTSLAM_LDB)
+option(BUILD_PUTSLAM_RGBD "Build PUTSLAM RGBD library" YES)
+mark_as_advanced(BUILD_PUTSLAM_RGBD)
 option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MATCHER)
 option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" YES)
@@ -239,7 +241,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst)
+        TARGET_LINK_LIBRARIES(TransformEst RGBD)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
@@ -263,6 +265,25 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
         INSTALL(FILES ${LDB_HEADERS} DESTINATION include/putslam/LDB/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
 
+###############################################################################
+#
+# PUTSLAM RGBD library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
+        file(GLOB RGBD_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
+        )
+        file(GLOB MATCHER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
+        )
+
+        ADD_LIBRARY(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
+        INSTALL(TARGETS RGBD RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${RGBD_HEADERS} DESTINATION include/putslam/RGBD/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
+
 
 ###############################################################################
 #
@@ -279,7 +300,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         )
 
         ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst LDB)
+        TARGET_LINK_LIBRARIES(TransformEst LDB RGBD)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
@@ -357,7 +378,7 @@ if(BUILD_PUTSLAM)
             "${CMAKE_SOURCE_DIR}/include/PUTSLAM/*.h"
         )
         ADD_LIBRARY(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
-        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher TransformEst Utilities ${OpenCV_LIBS})
+        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher RGBD TransformEst Utilities ${OpenCV_LIBS})
         INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LIBPUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
 endif(BUILD_PUTSLAM)
