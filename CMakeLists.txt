@@ -32,6 +32,8 @@ option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" YES)
 mark_as_advanced(BUILD_PUTSLAM_LDB)
 option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MATCHER)
+option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" YES)
+mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" YES)
@@ -297,7 +299,24 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
 
+###############################################################################
+#
+# PUTSLAM MotionModel library
+#
+###############################################################################
 
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
+        file(GLOB MOTIONMODDEL_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/MotionModel/*.cpp"
+        )
+        file(GLOB MOTIONMODDEL_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/MotionModel/*.h"
+        )
+
+        ADD_LIBRARY(MotionModel STATIC ${MOTIONMODDEL_SOURCES} ${MOTIONMODDEL_HEADERS})
+      	INSTALL(TARGETS MotionModel RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${MOTIONMODDEL_HEADERS} DESTINATION include/putslam/MotionModel/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
 
 ###############################################################################
 #
@@ -546,7 +565,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
         SET(DEMO_SOURCES ./demos/demoPatches.cpp)
         ADD_EXECUTABLE(demoPatches ${DEMO_SOURCES})
         add_dependencies(demoPatches g2o)
-        TARGET_LINK_LIBRARIES(demoPatches tinyxml2 Utilities PoseGraph Map LDB ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(demoPatches tinyxml2 Utilities PoseGraph Map Matcher LDB ${OpenCV_LIBS} boost_system)
         INSTALL(TARGETS demoPatches RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
