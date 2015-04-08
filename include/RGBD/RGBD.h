@@ -37,6 +37,11 @@ std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistorte
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage, cv::Mat cameraMatrix, int startingID = 0);
 
+Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
+		cv::Mat depthImage, cv::Mat cameraMatrix);
+Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
+		float depth, cv::Mat cameraMatrix);
+
 // Project 3D points onto images
 std::vector<cv::Point2f> points3Dto2D(std::vector<Eigen::Vector3f> features3D, cv::Mat cameraMatrix);
 
