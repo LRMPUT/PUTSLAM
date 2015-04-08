@@ -44,7 +44,7 @@ option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" YES)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
-option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" YES)
+option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" NO)
 mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 # demos
