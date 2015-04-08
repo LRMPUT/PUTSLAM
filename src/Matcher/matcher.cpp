@@ -51,62 +51,146 @@ Matcher::featureSet Matcher::getFeatures() {
 	return returnSet;
 }
 
+void Matcher::mergeTrackedFeatures(
+		std::vector<cv::Point2f>& undistortedFeatures2D,
+		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+		float euclideanDistance) {
+	// Merging features - rejecting feature too close to existing ones
+	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
+		bool addFeature = true;
+		for (int j = 0; j < undistortedFeatures2D.size(); j++) {
+			if (cv::norm(
+					featuresSandBoxUndistorted[i] - undistortedFeatures2D[j])
+					< euclideanDistance) {
+				addFeature = false;
+				break;
+			}
+		}
+		if (addFeature) {
+			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
+		}
+	}
+}
+
+bool Matcher::trackKLT(const SensorFrame& sensorData,
+		Eigen::Matrix4f &estimatedTransformation,
+		std::vector<cv::DMatch> &inlierMatches) {
+	// TODO:
+	// - if no motion than skip frame
+
+	// Tracking features and creating potential matches
+	std::vector<cv::Point2f> undistortedFeatures2D;
+	std::vector<cv::DMatch> matches = performTracking(prevRgbImage,
+			sensorData.rgbImage, prevFeaturesUndistorted,
+			undistortedFeatures2D);
+
+	// Associate depth
+	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
+			undistortedFeatures2D, sensorData.depthImage,
+			matcherParameters.cameraMatrixMat);
+
+	// RANSAC
+	// - neglect inlierMatches if you do not need them
+	RANSAC ransac(matcherParameters.RANSACParams);
+	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
+			features3D, matches, inlierMatches);
+
+	// If the number of tracked features falls below certain number, we detect new features are merge them together
+	// TODO: Parameters
+	int minimalTrackingFeatures = 100;
+	float euclideanDistance = 4;
+	if (undistortedFeatures2D.size() < minimalTrackingFeatures) {
+		// Detect salient features
+		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(
+				sensorData.rgbImage);
+
+		// DBScan on detected
+		DBScan dbscan(8, 2, 1);
+		dbscan.run(featuresSandbox);
+
+		// Find 2D positions without distortion
+		std::vector<cv::Point2f> featuresSandBoxUndistorted =
+				RGBD::removeImageDistortion(featuresSandbox,
+						matcherParameters.cameraMatrixMat,
+						matcherParameters.distortionCoeffsMat);
+
+		// Merging features - rejecting feature too close to existing ones
+		// Parameters: (existing features and vector to add new features, new features, minimal euclidean distance between features)
+		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted,
+				euclideanDistance);
+
+		// Add depth to new features
+		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
+				undistortedFeatures2D, sensorData.depthImage,
+				matcherParameters.cameraMatrixMat, features3D.size());
+
+		// Merge 3D positions
+		features3D.reserve(features3D.size() + newFeatures3D.size());
+		features3D.insert(features3D.end(), newFeatures3D.begin(),
+				newFeatures3D.end());
+	}
+
+	// Save computed values for next iteration
+	undistortedFeatures2D.swap(prevFeaturesUndistorted);
+	features3D.swap(prevFeatures3D);
+
+	// Save rgb/depth images
+	prevRgbImage = sensorData.rgbImage;
+	prevDepthImage = sensorData.depthImage;
+
+}
+
 bool Matcher::match(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
 	// Detect salient features
-	auto start = std::chrono::high_resolution_clock::now();
+//	auto start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
-	auto duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
-
+//	auto duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 	// DBScan
 	DBScan dbscan(8, 2, 1);
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	dbscan.run(features);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
-			<< std::endl;
-
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
+//			<< std::endl;
 
 	if (matcherParameters.verbose > 1)
 		showFeatures(sensorData.rgbImage, features);
 
 	// Describe salient features
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, features);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
-
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 	// Perform matching
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
 			descriptors);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t Matching: " << duration.count() / 1000.0 << " ms"
-			<< std::endl;
-
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t Matching: " << duration.count() / 1000.0 << " ms"
+//			<< std::endl;
 
 	// Find 2D positions without distortion
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::Point2f> undistortedFeatures2D =
 			RGBD::removeImageDistortion(features,
 					matcherParameters.cameraMatrixMat,
 					matcherParameters.distortionCoeffsMat);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-			> (std::chrono::high_resolution_clock::now() - start);
-	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
-			<< " ms" << std::endl;
-
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//			> (std::chrono::high_resolution_clock::now() - start);
+//	std::cout << "---->Time:\t undistortion: " << duration.count() / 1000.0
+//			<< " ms" << std::endl;
 
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
@@ -121,13 +205,13 @@ bool Matcher::match(const SensorFrame& sensorData,
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
 	RANSAC ransac(matcherParameters.RANSACParams);
-	start = std::chrono::high_resolution_clock::now();
+//	start = std::chrono::high_resolution_clock::now();
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
-	duration = std::chrono::duration_cast < std::chrono::microseconds
-				> (std::chrono::high_resolution_clock::now() - start);
-		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
-				<< " ms" << std::endl;
+//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//				> (std::chrono::high_resolution_clock::now() - start);
+//		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
+//				<< " ms" << std::endl;
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
@@ -200,7 +284,6 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
-
 
 		// TODO: Test corrections after Dominic question
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
@@ -312,7 +395,6 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
 		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
 
-
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
@@ -324,6 +406,169 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
+}
+
+bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+		int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
+		std::vector<putslam::Mat34> cameraPoses,
+		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
+		std::vector<MapFeature> &foundInlierMapFeatures,
+		Eigen::Matrix4f &estimatedTransformation) {
+
+	// Create matching on patches of size 9x9, verbose = 0
+	MatchingOnPatches matchingOnPatches(9, 20, 0.04, 0);
+
+	// Optimize patch locations
+	std::vector<cv::Point2f> optimizedLocations;
+	std::vector<cv::DMatch> matches;
+	for (int i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
+		float uMap = -1, vMap = -1;
+		for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
+			std::cout << "FRAME IDS: " << mapFeatures[i].descriptors[j].poseId
+					<< " " << frameIds[i] << std::endl;
+			if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
+				uMap = mapFeatures[i].descriptors[j].u;
+				vMap = mapFeatures[i].descriptors[j].v;
+				break;
+			}
+		}
+//		// TODO: What about the gradient ? :(
+//		// Compute four points - CW
+//		std::vector<cv::Point2f> warpingPoints;
+//		const int halfPatchSize = matchingOnPatches.getHalfPatchSize();
+//		const int patchSize = matchingOnPatches.getPatchSize();
+//		warpingPoints.push_back(
+//				cv::Point2f(mapFeatures[i].u - halfPatchSize,
+//						mapFeatures[i].v - halfPatchSize));
+//		warpingPoints.push_back(
+//						cv::Point2f(mapFeatures[i].u + halfPatchSize,
+//								mapFeatures[i].v - halfPatchSize));
+//		warpingPoints.push_back(
+//						cv::Point2f(mapFeatures[i].u + halfPatchSize,
+//								mapFeatures[i].v + halfPatchSize));
+//		warpingPoints.push_back(
+//						cv::Point2f(mapFeatures[i].u - halfPatchSize,
+//								mapFeatures[i].v + halfPatchSize));
+//
+//		// Project into space
+//		std::vector<Eigen::Vector3f> warpingPoints3D =
+//					RGBD::keypoints2Dto3D(warpingPoints,
+//							prevDepthImage,
+//							matcherParameters.cameraMatrixMat);
+//
+//		// Move to global coordinate and then to local of original feature detection
+//		std::vector<cv::Point2f> src(4);
+//		for (int i=0;i<4;i++)
+//		{
+//			putslam::Mat34 warp(
+//					putslam::Vec3(warpingPoints3D[0].cast<double>()));
+//			warp = (cameraPoses[i].inverse()).matrix() * cameraPose.matrix()
+//					* warp.matrix();
+//
+//			float u = warp(0,3)
+//					* matcherParameters.cameraMatrixMat.at<float>(0, 0)
+//					/ warp(2,3)
+//					+ matcherParameters.cameraMatrixMat.at<float>(0, 2);
+//			float v = warp(1,3)
+//					* matcherParameters.cameraMatrixMat.at<float>(1, 1)
+//					/ warp(2,3)
+//					+ matcherParameters.cameraMatrixMat.at<float>(1, 2);
+//			src[i] = cv::Point2f(u, v);
+//		}
+//
+//		// Project onto the image
+//		std::vector<cv::Point2f> dst(4);
+//		dst[0] = cv::Point2f(0, 0);
+//		dst[1] = cv::Point2f(patchSize - 1, 0);
+//		dst[2] = cv::Point2f(patchSize - 1, patchSize - 1);
+//		dst[3] = cv::Point2f(0, patchSize - 1);
+//
+//		// Compute getPerspective
+//		cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,dst);
+//
+//		// Compute warpPerspective
+//		cv::Mat warpedPatch;
+//		cv::warpPerspective(mapRgbImages[i], warpedPatch, perspectiveTransform,
+//				cv::Size(matchingOnPatches.getPatchSize(),
+//						matchingOnPatches.getPatchSize()));
+
+		// Compute old patch
+		std::vector<uint8_t> patchMap;
+		patchMap = matchingOnPatches.computePatch(mapRgbImages[i], uMap, vMap);
+
+		// TODO: When warping, the rest must be implemented different?
+		// Compute gradient
+		std::vector<float> gradientX, gradientY;
+		Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+		matchingOnPatches.computeGradient(mapRgbImages[i], uMap, vMap, InvHessian,
+				gradientX, gradientY);
+
+		// Print information
+		std::cout << "Patches preoptimization: " << mapFeatures[i].u << " "
+				<< mapFeatures[i].v << std::endl;
+
+		// Optimize position of the feature
+		bool success = matchingOnPatches.optimizeLocation(mapRgbImages[i], patchMap,
+				prevRgbImage, mapFeatures[i].u, mapFeatures[i].v, gradientX,
+				gradientY, InvHessian);
+
+		// Print information
+		std::cout << "Patches: " << success << " " << mapFeatures[i].u << " "
+				<< mapFeatures[i].v << std::endl;
+
+		// Save a good match
+		if (success) {
+			matches.push_back(cv::DMatch(i, goodFeaturesIndex, 0));
+			optimizedLocations.push_back(
+					cv::Point2f(mapFeatures[i].u, mapFeatures[i].v));
+			goodFeaturesIndex++;
+		}
+
+	}
+
+	// Project optimized features into 3D features
+	std::vector<Eigen::Vector3f> optimizedMapLocations3D =
+			RGBD::keypoints2Dto3D(optimizedLocations,
+					prevDepthImage,
+					matcherParameters.cameraMatrixMat);
+
+	// Extract 3D from map
+	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
+			extractMapFeaturesPositions(mapFeatures);
+
+	// RANSAC
+	std::cout << "Matches on patches counter: " << matches.size() << std::endl;
+
+	std::vector<cv::DMatch> inlierMatches2;
+	RANSAC ransac(matcherParameters.RANSACParams);
+	estimatedTransformation = ransac.estimateTransformation(
+			mapFeaturePositions3D, optimizedMapLocations3D, matches,
+			inlierMatches2);
+
+	// for all inliers, convert them to map-compatible format
+	foundInlierMapFeatures.clear();
+	for (std::vector<cv::DMatch>::iterator it = inlierMatches2.begin();
+			it != inlierMatches2.end(); ++it) {
+		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
+
+		MapFeature mapFeature;
+		mapFeature.id = mapFeatures[mapId].id;
+
+		mapFeature.u = optimizedLocations[currentPoseId].x;
+		mapFeature.v = optimizedLocations[currentPoseId].y;
+
+		mapFeature.position = Vec3(
+				optimizedMapLocations3D[currentPoseId].cast<double>());
+		mapFeature.posesIds.push_back(sensorPoseId);
+
+		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, mapFeature.u,
+				mapFeature.v, cv::Mat());
+		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+		// Add the measurement
+		foundInlierMapFeatures.push_back(mapFeature);
+	}
+
 }
 
 void Matcher::showFeatures(cv::Mat rgbImage,

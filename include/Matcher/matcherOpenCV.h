@@ -53,6 +53,11 @@ public:
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors);
 
+	// Perform tracking
+	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
+			cv::Mat img, std::vector<cv::Point2f> prevFeatures,
+			std::vector<cv::Point2f> &features);
+
 //
 //        /// Returns current set of features
 //        virtual const ImageFeature::Seq& getFeatures(void) const;

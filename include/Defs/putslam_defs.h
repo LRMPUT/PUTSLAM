@@ -118,17 +118,19 @@ public:
 	unsigned int poseId;
 
     /// feature location on the rgb image
-    float_type u;
+    float_type u, v;
 
-    /// feature location on the rgb image
-    float_type v;
-
-	/// Constructor
+	/// Constructor TODO: is it needed?
     ExtendedDescriptor() {};
 
-	/// Constructor
+	/// Constructor TODO: is it needed?
 	ExtendedDescriptor(unsigned int _poseId, cv::Mat _descriptor) :
             poseId(_poseId), descriptor(_descriptor) {};
+
+	/// Constructor
+	ExtendedDescriptor(unsigned int _poseId, float_type _u, float_type _v,
+			cv::Mat _descriptor) :
+			poseId(_poseId), u(_u), v(_v), descriptor(_descriptor) {};
 };
 
 class RGBDFeature {

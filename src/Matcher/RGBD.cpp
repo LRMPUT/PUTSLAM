@@ -67,12 +67,12 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage,
-		cv::Mat cameraMatrix) {
+		cv::Mat cameraMatrix, int startingID) {
 
 	// Lets create 3D points
-	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size());
+	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size() - startingID);
 	int i = 0;
-	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin();
+	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin() + startingID;
 			it != undistortedFeatures2D.end(); ++it) {
 		// Feature are extracted with subpixel precision, so find closest pixel
 		int uRounded = roundSize(it->x, depthImage.cols);
@@ -134,6 +134,10 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
 std::vector<cv::Point2f> RGBD::removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
 		cv::Mat distCoeffs) {
+
+	// Check if the vector is not empty
+	if (features.size() == 0)
+		return std::vector<cv::Point2f>();
 
 	// Convert to points2D and then to Mat
 	std::vector<cv::Point2f> points2D;

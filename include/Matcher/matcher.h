@@ -15,6 +15,8 @@
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../TransformEst/RANSAC.h"
 
+#include "MatchingOnPatches.h"
+
 namespace putslam {
 /// Grabber interface
 class Matcher {
@@ -29,6 +31,12 @@ public:
 	struct parameters {
 		std::string detector;
 		std::string descriptor;
+
+		int useInitialFlow;
+		int winSize;
+		int maxLevels;
+		int maxIter;
+		float eps;
 	};
 
 	/// Overloaded constructor
@@ -54,6 +62,12 @@ public:
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
 
+	/// Rung single KLT tracking
+	bool trackKLT(const SensorFrame& sensorData,
+			Eigen::Matrix4f &estimatedTransformation,
+			std::vector<cv::DMatch> &inlierMatches);
+
+
 	/// Run single match
 	bool match(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation,
@@ -61,12 +75,23 @@ public:
 
 	/// Run the match with map
 	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
 	bool matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-			std::vector<MapFeature> &foundInlierMapFeatures, Eigen::Matrix4f &estimatedTransformation);
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
+
+	// Matching to map with patch computation
+	bool matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+			int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
+			std::vector<putslam::Mat34> cameraPoses,
+			std::vector<cv::Mat> mapRgbImages,
+			std::vector<cv::Mat> mapDepthImages,
+			std::vector<MapFeature> &foundInlierMapFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Class used to hold all parameters
 	class MatcherParameters {
@@ -104,6 +129,22 @@ public:
 			OpenCVParams.descriptor =
 					params->FirstChildElement("MatcherOpenCV")->Attribute(
 							"descriptor");
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"useInitialFlow", &OpenCVParams.useInitialFlow);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"winSize", &OpenCVParams.winSize);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"maxLevels", &OpenCVParams.maxLevels);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"maxIter", &OpenCVParams.maxIter);
+			params->FirstChildElement("MatcherOpenCV")->QueryFloatAttribute(
+					"eps", &OpenCVParams.eps);
+
+
 
 			// Camera parameters
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -173,8 +214,11 @@ protected:
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
 
+	//TODO: TEMPORARILY
+public:
 	/// Parameters
 	MatcherParameters matcherParameters;
+protected:
 
 	/// Methods used to visualize results/data
 	void showFeatures(cv::Mat rgbImage, std::vector<cv::KeyPoint> features);
@@ -194,10 +238,22 @@ protected:
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
 			cv::Mat descriptors) = 0;
 
+	// Perform tracking
+	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
+			cv::Mat img, std::vector<cv::Point2f> prevFeatures,
+			std::vector<cv::Point2f> &features) = 0;
+
 private:
+	// We need to extract values in OpenCV types from classes/structures
 	cv::Mat extractMapDescriptors(std::vector<MapFeature> mapFeatures);
 	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(
 			std::vector<MapFeature> mapFeatures);
+
+private:
+	// Method used to combine old tracking features with new features
+	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
+			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+			float euclideanDistance);
 };
 }
 ;
