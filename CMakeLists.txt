@@ -44,6 +44,8 @@ option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" YES)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" YES)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
+option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" YES)
+mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
@@ -59,6 +61,8 @@ option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" YES)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_MAP)
 option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" YES)
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
+option(BUILD_PUTSLAM_VISUALIZER "Build g2o visualizer demo" YES)
+mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 #additional dependencies
 
@@ -89,6 +93,17 @@ link_directories(${LIBCSPARSE_LIBRARY})
 
 #Eigen
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
+
+#QGLViewer library
+FIND_PACKAGE(OpenGL)
+include_directories(${OPENGL_INCLUDE_DIR})
+link_directories(${OPENGL_LIBRARY})
+
+#QGLViewer library
+FIND_PACKAGE(QGLViewer)
+include_directories(${QGLVIEWER_INCLUDE_DIR})
+include_directories(${QT_INCLUDES})
+link_directories(${QGLVIEWER_LIBRARY})
 
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
@@ -366,6 +381,25 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
 
 ###############################################################################
 #
+# PUTSLAM Visualizer library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
+        file(GLOB VISUALIZER_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/Visualizer/*.cpp"
+        )
+        file(GLOB VISUALIZER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/Visualizer/*.h"
+        )
+        ADD_LIBRARY(Visualizer STATIC ${VISUALIZER_SOURCES} ${VISUALIZER_HEADERS})
+        TARGET_LINK_LIBRARIES(Visualizer tinyxml2 Map ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} QtCore QtXml QtOpenGL QtGui ${OPENGL_LIBRARY})
+        INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${VISUALIZER_HEADERS} DESTINATION include/putslam/Visualizer/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
+
+###############################################################################
+#
 # PUTSLAM library
 #
 ###############################################################################
@@ -556,3 +590,19 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
         INSTALL(TARGETS demoPatches RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
+
+###############################################################################
+#
+# PUTSLAM demo Visualizer
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER)
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
+        ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
+#        add_dependencies(demoVisualizer Map)
+        TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} boost_system)
+        INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER)

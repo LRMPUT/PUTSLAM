@@ -6,7 +6,7 @@
 
 using namespace putslam;
 
-/// A single instance of Elevation Map
+/// A single instance of Features Map
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :

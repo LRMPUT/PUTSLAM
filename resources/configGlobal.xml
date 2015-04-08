@@ -22,3 +22,8 @@
   	<name>FeaturesMap</name>
   	<parametersFile>mapConfig.xml</parametersFile>
   </Map>
+  
+  <Visualizer>
+  	<name>Visualizer</name>
+  	<parametersFile>visualizerConfig.xml</parametersFile>
+  </Visualizer>

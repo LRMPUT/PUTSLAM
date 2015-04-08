@@ -106,7 +106,6 @@ protected:
 	/// Map name
 	const std::string name;
 };
-}
-;
+};
 
 #endif // _MAP_H_
