@@ -19,7 +19,7 @@
 #include "../include/Grabber/xtionGrabber.h"
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
-#include "../include/Matcher/RGBD.h"
+#include "../include/RGBD/RGBD.h"
 
 using namespace std;
 using namespace putslam;

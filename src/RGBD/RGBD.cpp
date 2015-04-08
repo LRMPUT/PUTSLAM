@@ -4,46 +4,7 @@
  * \author Michal Nowicki
  *
  */
-#include "../include/Matcher/RGBD.h"
-
-//// Convert Keypoints to 3D points
-//std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
-//		std::vector<cv::KeyPoint> features, std::vector<float> depth) {
-//
-//	// Assume standard distortion
-//	float distortionCoeffs[5] = { -0.0410, 0.3286, 0.0087, 0.0051, -0.5643 };
-//	float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
-//			0, 1 } };
-//
-//	// Call method with additional parameters
-//	return keypoints2Dto3D(features, depth,
-//			cv::Mat(3, 3, CV_32FC1, &cameraMatrix),
-//			cv::Mat(1, 5, CV_32FC1, &distortionCoeffs));
-//}
-//
-//std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
-//		std::vector<cv::KeyPoint> features, std::vector<float> depth,
-//		cv::Mat cameraMatrix, cv::Mat distCoeffs) {
-//
-//	// Convert to points2D and then to Mat
-//	std::vector<cv::Point2f> points2D;
-//	cv::KeyPoint::convert(features, points2D);
-//	cv::Mat pointsDisorted(points2D), pointsUndistorted;
-//
-//	// Undistortion
-//	cv::undistortPoints(pointsDisorted, pointsUndistorted, cameraMatrix,
-//			distCoeffs);
-//
-//	// Lets create 3D points
-//	std::vector<Eigen::Vector3f> features3D(pointsUndistorted.rows);
-//	for (int i = 0; i < pointsUndistorted.rows; i++) {
-//		float X = pointsUndistorted.at<cv::Vec2f>(i)[0] * depth[i];
-//		float Y = pointsUndistorted.at<cv::Vec2f>(i)[1] * depth[i];
-//		features3D[i] = Eigen::Vector3f(X, Y, depth[i]);
-//	}
-//
-//	return features3D;
-//}
+#include "../include/RGBD/RGBD.h"
 
 int RGBD::roundSize(double x, int size) {
 	if (x < 0)
@@ -94,6 +55,26 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 	}
 
 	return features3D;
+}
+
+// Project 3D points onto images
+std::vector<cv::Point2f> RGBD::points3Dto2D(std::vector<Eigen::Vector3f> features3D, cv::Mat cameraMatrix) {
+
+	std::vector<cv::Point2f> features2D(features3D.size());
+	int i=0;
+	for (std::vector<Eigen::Vector3f>::iterator it = features3D.begin(); it!=features3D.end(); ++it, i++)
+	{
+		features2D[i] = RGBD::point3Dto2D(*it, cameraMatrix);
+	}
+	return features2D;
+}
+
+cv::Point2f RGBD::point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix) {
+	float u = feature3D.x() * cameraMatrix.at<float>(0, 0) / feature3D.z()
+			+ cameraMatrix.at<float>(0, 2);
+	float v = feature3D.y() * cameraMatrix.at<float>(1, 1) / feature3D.z()
+			+ cameraMatrix.at<float>(1, 2);
+	return cv::Point2f(u, v);
 }
 
 void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,

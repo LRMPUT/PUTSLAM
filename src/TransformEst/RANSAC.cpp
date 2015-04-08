@@ -6,9 +6,12 @@
  */
 #include "../include/TransformEst/RANSAC.h"
 #include "../include/TransformEst/g2oEst.h"
+#include "../include/RGBD/RGBD.h"
 
-RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 	srand(time(0));
+
+	cameraMatrix = _cameraMatrix;
 
 	RANSACParams.verbose = _RANSACParameters.verbose;
 	RANSACParams.errorVersion = _RANSACParameters.errorVersion;
@@ -272,12 +275,12 @@ float RANSAC::computeInlierRatioReprojection(
 		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx] + t;
 
 		// Now project both features
-
-
+		cv::Point2f predicted = RGBD::point3Dto2D(estimatedNewPosition, cameraMatrix);
+		cv::Point2f real = RGBD::point3Dto2D(prevFeatures[it->queryIdx], cameraMatrix);
 
 		// Compute residual error and compare it to inlier threshold
-		if ((estimatedNewPosition - prevFeatures[it->queryIdx]).norm()
-				< RANSACParams.inlierThresholdEuclidean) {
+		if (cv::norm(predicted - real)
+				< RANSACParams.inlierThresholdReprojection) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}

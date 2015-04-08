@@ -26,7 +26,7 @@ public:
 		int iterationCount;
 	};
 
-	RANSAC(RANSAC::parameters RANSACParameters);
+	RANSAC(RANSAC::parameters RANSACParameters, cv::Mat cameraMatrix = cv::Mat());
 
 	/**
 	 * Method used to robustly estimate transformation from given two sets of
@@ -44,6 +44,7 @@ public:
 			std::vector<cv::DMatch> & bestInlierMatches);
 
 private:
+	cv::Mat cameraMatrix;
 	parameters RANSACParams;
 
 	enum TransfEstimationType {
