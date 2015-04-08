@@ -35,26 +35,49 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 	int i = 0;
 	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin() + startingID;
 			it != undistortedFeatures2D.end(); ++it) {
-		// Feature are extracted with subpixel precision, so find closest pixel
-		int uRounded = roundSize(it->x, depthImage.cols);
-		int vRounded = roundSize(it->y, depthImage.rows);
 
-		// Convert it using the scaling of depth image
-		float Z = depthImage.at<uint16_t>(vRounded, uRounded)
-				/ RGBD::depthScale;
-
-		// Compute the feature position in normalized image coordinates
-		float u = (it->x - cameraMatrix.at<float>(0, 2))
-				/ cameraMatrix.at<float>(0, 0);
-		float v = (it->y - cameraMatrix.at<float>(1, 2))
-				/ cameraMatrix.at<float>(1, 1);
-
-		// Create 3D feature
-		features3D[i] = Eigen::Vector3f(u * Z, v * Z, Z);
+		features3D[i] = point2Dto3D(*it, depthImage, cameraMatrix);
 		i++;
 	}
 
 	return features3D;
+}
+
+Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
+		cv::Mat depthImage, cv::Mat cameraMatrix) {
+
+	// Feature are extracted with subpixel precision, so find closest pixel
+	int uRounded = roundSize(feature2D.x, depthImage.cols);
+	int vRounded = roundSize(feature2D.y, depthImage.rows);
+
+	// Convert it using the scaling of depth image
+	float Z = depthImage.at<uint16_t>(vRounded, uRounded) / RGBD::depthScale;
+
+	// Compute the feature position in normalized image coordinates
+	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
+			/ cameraMatrix.at<float>(0, 0);
+	float v = (feature2D.y - cameraMatrix.at<float>(1, 2))
+			/ cameraMatrix.at<float>(1, 1);
+
+	// Create 3D feature
+	return Eigen::Vector3f(u * Z, v * Z, Z);
+}
+
+Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
+		float depth, cv::Mat cameraMatrix) {
+
+	// Feature are extracted with subpixel precision, so find closest pixel
+	int uRounded = round(feature2D.x);
+	int vRounded = round(feature2D.y);
+
+	// Compute the feature position in normalized image coordinates
+	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
+			/ cameraMatrix.at<float>(0, 0);
+	float v = (feature2D.y - cameraMatrix.at<float>(1, 2))
+			/ cameraMatrix.at<float>(1, 1);
+
+	// Create 3D feature
+	return Eigen::Vector3f(u * depth, v * depth, depth);
 }
 
 // Project 3D points onto images

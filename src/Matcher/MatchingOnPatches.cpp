@@ -94,6 +94,12 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 			std::cout << "ITER: " << iter << " | " << newX << " " << newY
 					<< " Mean: " << mean << std::endl;
 
+		// If something is wrong -> skip the optimization
+		if (std::isnan(newX) || std::isnan(newY) || std::isnan(mean)
+						|| newX < halfPatchSize || newX > oldImg.cols - halfPatchSize
+						|| newY < halfPatchSize || newY > oldImg.rows - halfPatchSize)
+					return false;
+
 		// Compute newPatch
 		std::vector<uint8_t> newPatch = computePatch(oldImg, newX, newY);
 
@@ -106,11 +112,6 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 		newX += increment[0];
 		newY += increment[1];
 		mean += increment[2];
-
-		if (std::isnan(newX) || std::isnan(newY) || std::isnan(mean)
-				|| newX < halfPatchSize || newX > oldImg.cols - halfPatchSize
-				|| newY < halfPatchSize || newY > oldImg.rows - halfPatchSize)
-			return false;
 
 		// Ending condition
 		if (increment[0] * increment[0] + increment[1] * increment[1]
