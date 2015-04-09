@@ -7,7 +7,7 @@ SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
 
 # PUTSLAM Project configuration
 PROJECT(PUTSLAM)
-SET(CMAKE_CXX_FLAGS "-std=c++0x -pthread")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
 
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
