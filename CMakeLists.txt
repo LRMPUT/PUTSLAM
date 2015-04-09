@@ -44,7 +44,7 @@ option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
-option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" OFF)
+option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" ON)
 mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 # demos
@@ -61,7 +61,7 @@ option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_MAP)
 option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" ON)
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
-option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" NO)
+option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" OFF)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
 
 #additional dependencies
