@@ -198,7 +198,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 		Mat34 featureCam = cameraPose.inverse() * featurePos;
 		Eigen::Vector3d pointCam = sensorModel.inverseModel(featureCam(0, 3),
 				featureCam(1, 3), featureCam(2, 3));
-		//std::cout << pointCam(0) << " " << pointCam(1) << " " << pointCam(2) << "\n";
+        //std::cout << pointCam(0) << " " << pointCam(1) << " " << pointCam(2) << "\n";
 		if (pointCam(0) != -1) {
 			visibleFeatures.push_back(*it);
 		}
@@ -222,6 +222,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
             Eigen::Vector3f featureViewCurr(featureInCamCurr(0,2), featureInCamCurr(1,2), featureInCamCurr(2,2));
             float_type minRot=10; int idMin;
             //find the smallest angle between two views (max dot product)
+            imageIds[i]=-1;
             for (size_t j=0; j<features[i].posesIds.size();j++){
                 //compute position of feature in the camera pose
                 Mat34 camPose = getSensorPose(features[i].posesIds[j]);
