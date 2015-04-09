@@ -6,18 +6,23 @@
 				2 -> show matches + show detected features
 
 -->  
- <Matcher verbose="0">
+ <Matcher verbose="1">
  	
  	
 	 <!-- RANSAC settings
 	 	verbose : 	0 -> no debug
 	 				1 -> print final result
 	 				2 -> print every iteration
-	 	inlierThreshold : maximal error of inlier in RANSAC (in meters)
+		errorVersion :	0 -> Euclidean error
+	 					1 -> Reprojection error 
+	 	inlierThresholdEuclidean : maximal Euclidean error of inlier in RANSAC (in meters)
+	 	inlierThresholdReprojection : maximal reprojection error of inlier in RANSAC (in pixels)
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-  	<RANSAC verbose="0" inlierThreshold="0.02" minimalInlierRatioThreshold="0.1" usedPairs="3"></RANSAC>
+	<RANSAC verbose="1" errorVersion="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="3.0"
+		minimalInlierRatioThreshold="0.3" usedPairs="3">
+	</RANSAC>
     	
     <!-- Matching settings
     	detector : 		FAST, ORB, SURF, SIFT
@@ -33,5 +38,5 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="ORB" descriptor="SURF" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
 </Matcher>
