@@ -39,4 +39,5 @@
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
     <MatcherOpenCV detector="ORB" descriptor="SURF" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <Parameters maxAngleBetweenFrames="0.3"> </Parameters>
 </Matcher>

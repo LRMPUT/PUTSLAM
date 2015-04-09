@@ -222,7 +222,13 @@ void PUTSLAM::startProcessing() {
 
             // Find the ids of frames for which feature observations have the most similar angle
             std::vector<int> frameIds;
-            map->findNearestFrame(mapFeatures, frameIds);
+            std::vector<float_type> angles;
+            map->findNearestFrame(mapFeatures, frameIds, angles, matcher->matcherParameters.maxAngleBetweenFrames);
+            std::cout << "max:" << matcher->matcherParameters.maxAngleBetweenFrames << " angles:\n";
+            for (std::vector<float_type>::iterator it = angles.begin(); it!=angles.end(); it++)
+                std::cout << *it << ", ";
+            std::cout << "\n";
+            getchar();
 
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
