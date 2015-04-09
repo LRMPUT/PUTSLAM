@@ -99,8 +99,7 @@ public:
 		MatcherParameters() {
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
 			distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
-		}
-		;
+		};
 		MatcherParameters(std::string configFilename, std::string cameraConfigFileName) {
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
@@ -115,8 +114,12 @@ public:
 			// RANSAC
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose",
 					&RANSACParams.verbose);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersion",
+					&RANSACParams.errorVersion);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
-					"inlierThreshold", &RANSACParams.inlierThreshold);
+					"inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
+			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+					"inlierThresholdReprojection", &RANSACParams.inlierThresholdReprojection);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
 					"minimalInlierRatioThreshold",
 					&RANSACParams.minimalInlierRatioThreshold);

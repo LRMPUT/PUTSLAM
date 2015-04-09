@@ -31,18 +31,21 @@ namespace RGBD {
 /// Depth image scale
 const double depthScale = 5000;
 
-// Convert keypoints to 3D points using vector of float as depth
-//std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
-//		std::vector<float> depth);
-//std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::KeyPoint> features,
-//		std::vector<float> depth, cv::Mat cameraMatrix, cv::Mat distCoeffs);
-
 // Convert keypoints to 3D points using depth image
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage);
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
 		cv::Mat depthImage, cv::Mat cameraMatrix, int startingID = 0);
 
+Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
+		cv::Mat depthImage, cv::Mat cameraMatrix);
+Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
+		float depth, cv::Mat cameraMatrix);
+
+// Project 3D points onto images
+std::vector<cv::Point2f> points3Dto2D(std::vector<Eigen::Vector3f> features3D, cv::Mat cameraMatrix);
+
+cv::Point2f point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix);
 
 // Rounds the (u,v) location to integer
 int roundSize(double x, int size);

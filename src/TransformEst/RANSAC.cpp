@@ -6,13 +6,20 @@
  */
 #include "../include/TransformEst/RANSAC.h"
 #include "../include/TransformEst/g2oEst.h"
+#include "../include/RGBD/RGBD.h"
 
-RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 	srand(time(0));
 
+	cameraMatrix = _cameraMatrix;
+
 	RANSACParams.verbose = _RANSACParameters.verbose;
+	RANSACParams.errorVersion = _RANSACParameters.errorVersion;
 	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
-	RANSACParams.inlierThreshold = _RANSACParameters.inlierThreshold;
+	RANSACParams.inlierThresholdEuclidean =
+			_RANSACParameters.inlierThresholdEuclidean;
+	RANSACParams.inlierThresholdReprojection =
+			_RANSACParameters.inlierThresholdReprojection;
 	RANSACParams.minimalInlierRatioThreshold =
 			_RANSACParameters.minimalInlierRatioThreshold;
 
@@ -23,8 +30,12 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters) {
 				<< std::endl;
 		std::cout << "RANSACParams.usedPairs --> " << RANSACParams.usedPairs
 				<< std::endl;
-		std::cout << "RANSACParams.inlierThreshold --> "
-				<< RANSACParams.inlierThreshold << std::endl;
+		std::cout << "RANSACParams.errorVersion --> "
+				<< RANSACParams.errorVersion << std::endl;
+		std::cout << "RANSACParams.inlierThresholdEuclidean --> "
+				<< RANSACParams.inlierThresholdEuclidean << std::endl;
+		std::cout << "RANSACParams.inlierThresholdReprojection --> "
+					<< RANSACParams.inlierThresholdReprojection << std::endl;
 		std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
 				<< RANSACParams.minimalInlierRatioThreshold << std::endl;
 	}
@@ -84,8 +95,21 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 			if (RANSACParams.verbose > 1)
 				std::cout << "RANSAC: evaluating the model" << std::endl;
 			std::vector<cv::DMatch> modelConsistentMatches;
-			float inlierRatio = computeInlierRatio(prevFeatures, features,
-					matches, transformationModel, modelConsistentMatches);
+
+			// Choose proper error computation version based on provided parameters
+			float inlierRatio = 0;
+			if ( RANSACParams.errorVersion == EUCLIDEAN_ERROR)
+			{
+				 inlierRatio = computeInlierRatioEuclidean(prevFeatures, features,
+						matches, transformationModel, modelConsistentMatches);
+			}
+			else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
+				inlierRatio = computeInlierRatioReprojection(prevFeatures,
+						features, matches, transformationModel,
+						modelConsistentMatches);
+			}
+			else
+				std::cout << "RANSAC: incorrect error version" << std::endl;
 
 			// Save better model
 			if (RANSACParams.verbose > 1)
@@ -106,7 +130,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	computeTransformationModel(prevFeatures, features,
 				bestInlierMatches, bestTransformationModel, UMEYAMA);
 	std::vector<cv::DMatch> newBestInlierMatches;
-	computeInlierRatio(prevFeatures, features,
+	computeInlierRatioEuclidean(prevFeatures, features,
 			bestInlierMatches, bestTransformationModel, newBestInlierMatches);
 	newBestInlierMatches.swap(bestInlierMatches);
 
@@ -204,7 +228,7 @@ bool RANSAC::checkModelFeasibility(Eigen::Matrix4f transformationModel) {
 	return true;
 }
 
-float RANSAC::computeInlierRatio(
+float RANSAC::computeInlierRatioEuclidean(
 		const std::vector<Eigen::Vector3f> prevFeatures,
 		const std::vector<Eigen::Vector3f> features,
 		const std::vector<cv::DMatch> matches,
@@ -223,7 +247,40 @@ float RANSAC::computeInlierRatio(
 
 		// Compute residual error and compare it to inlier threshold
 		if ((estimatedNewPosition - prevFeatures[it->queryIdx]).norm()
-				< RANSACParams.inlierThreshold) {
+				< RANSACParams.inlierThresholdEuclidean) {
+			inlierCount++;
+			modelConsistentMatches.push_back(*it);
+		}
+	}
+
+	// Percent of correct matches
+	return float(inlierCount) / matches.size();
+}
+
+float RANSAC::computeInlierRatioReprojection(
+		const std::vector<Eigen::Vector3f> prevFeatures,
+		const std::vector<Eigen::Vector3f> features,
+		const std::vector<cv::DMatch> matches,
+		const Eigen::Matrix4f transformationModel,
+		std::vector<cv::DMatch> &modelConsistentMatches) {
+	// Break into rotation (R) and translation (t)
+	Eigen::Matrix3f R = transformationModel.block<3, 3>(0, 0);
+	Eigen::Vector3f t = transformationModel.block<3, 1>(0, 3);
+
+	int inlierCount = 0;
+	// For all matches
+	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
+			it != matches.end(); ++it) {
+		// Estimate location of feature from position one after transformation
+		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx] + t;
+
+		// Now project both features
+		cv::Point2f predicted = RGBD::point3Dto2D(estimatedNewPosition, cameraMatrix);
+		cv::Point2f real = RGBD::point3Dto2D(prevFeatures[it->queryIdx], cameraMatrix);
+
+		// Compute residual error and compare it to inlier threshold
+		if (cv::norm(predicted - real)
+				< RANSACParams.inlierThresholdReprojection) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}

@@ -16,15 +16,17 @@
 
 class RANSAC {
 public:
+	enum ERROR_VERSION {EUCLIDEAN_ERROR, REPROJECTION_ERROR};
 	struct parameters {
 		int verbose;
-		double inlierThreshold;
+		int errorVersion;
+		double inlierThresholdEuclidean, inlierThresholdReprojection;
 		double minimalInlierRatioThreshold;
 		int usedPairs;
 		int iterationCount;
 	};
 
-	RANSAC(RANSAC::parameters RANSACParameters);
+	RANSAC(RANSAC::parameters RANSACParameters, cv::Mat cameraMatrix = cv::Mat());
 
 	/**
 	 * Method used to robustly estimate transformation from given two sets of
@@ -42,6 +44,7 @@ public:
 			std::vector<cv::DMatch> & bestInlierMatches);
 
 private:
+	cv::Mat cameraMatrix;
 	parameters RANSACParams;
 
 	enum TransfEstimationType {
@@ -78,15 +81,31 @@ private:
 	bool checkModelFeasibility(Eigen::Matrix4f transformationModel);
 
 	/**
-	 * Method used to compute the inlierRatio based on:
+	 * Method used to compute the inlierRatio based on 3D Euclidean error:
 	 *
 	 * prevFeatures				-- 	first set of 3D features
 	 * features					--	second set of 3D features
 	 * matches					-- 	vector of matches to be determined as inliers or outliers
 	 * transformationModel		--	transformation used in evaluation
-	 * modelConsistentMatches	--  returns the matches that are considered inliers using currentle evaluated model
+	 * modelConsistentMatches	--  returns the matches that are considered inliers using currently evaluated model
 	 */
-	float computeInlierRatio(const std::vector<Eigen::Vector3f> prevFeatures,
+	float computeInlierRatioEuclidean(const std::vector<Eigen::Vector3f> prevFeatures,
+			const std::vector<Eigen::Vector3f> features,
+			const std::vector<cv::DMatch> matches,
+			const Eigen::Matrix4f transformationModel,
+			std::vector<cv::DMatch> &modelConsistentMatches);
+
+	/**
+	 * Method used to compute the inlierRatio based on reprojection error:
+	 *
+	 * prevFeatures				-- 	first set of 3D features
+	 * features					--	second set of 3D features
+	 * matches					-- 	vector of matches to be determined as inliers or outliers
+	 * transformationModel		--	transformation used in evaluation
+	 * modelConsistentMatches	--  returns the matches that are considered inliers using currently evaluated model
+	 */
+	float computeInlierRatioReprojection(
+			const std::vector<Eigen::Vector3f> prevFeatures,
 			const std::vector<Eigen::Vector3f> features,
 			const std::vector<cv::DMatch> matches,
 			const Eigen::Matrix4f transformationModel,

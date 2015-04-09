@@ -17,50 +17,52 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
 
 # core libraries
-option(BUILD_PUTSLAM "Build PUT SLAM libraries" YES)
-option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" YES)
+option(BUILD_PUTSLAM "Build PUT SLAM libraries" ON)
+option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEFS)
-option(BUILD_PUTSLAM_UTILITIES "Build PUTSLAM Utilities library" YES)
+option(BUILD_PUTSLAM_UTILITIES "Build PUTSLAM Utilities library" ON)
 mark_as_advanced(BUILD_PUTSLAM_UTILITIES)
-option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" YES)
+option(BUILD_PUTSLAM_GRABBER "Build PUTSLAM Grabber library" ON)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER)
 option(BUILD_PUTSLAM_GRABBER_PTGREY "Build PUTSLAM Grabber PointGrey library" NO)
 mark_as_advanced(BUILD_PUTSLAM_GRABBER_PTGREY)
-option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" YES)
+option(BUILD_PUTSLAM_TRACKER "Build PUTSLAM Tracker library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRACKER)
-option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" YES)
+option(BUILD_PUTSLAM_LDB "Build PUTSLAM LDB library" ON)
 mark_as_advanced(BUILD_PUTSLAM_LDB)
-option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" YES)
+option(BUILD_PUTSLAM_RGBD "Build PUTSLAM RGBD library" ON)
+mark_as_advanced(BUILD_PUTSLAM_RGBD)
+option(BUILD_PUTSLAM_MATCHER "Build PUTSLAM Matcher library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MATCHER)
-option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" YES)
+option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
-option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" YES)
+option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
-option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" YES)
+option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" ON)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
-option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" YES)
+option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
-option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" YES)
+option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
-option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" YES)
+option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" OFF)
 mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 # demos
-option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" YES)
-option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" YES)
+option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" ON)
+option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_G2O)
-option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" YES)
+option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
-option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" YES)
+option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_GRABBER)
-option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" YES)
+option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_KABSCH)
-option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" YES)
+option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_MAP)
-option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" YES)
+option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" ON)
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
-option(BUILD_PUTSLAM_VISUALIZER "Build g2o visualizer demo" YES)
-mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
+option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" NO)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
 
 #additional dependencies
 
@@ -254,7 +256,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst)
+        TARGET_LINK_LIBRARIES(TransformEst RGBD)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
@@ -278,6 +280,25 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
         INSTALL(FILES ${LDB_HEADERS} DESTINATION include/putslam/LDB/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
 
+###############################################################################
+#
+# PUTSLAM RGBD library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
+        file(GLOB RGBD_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
+        )
+        file(GLOB MATCHER_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
+        )
+
+        ADD_LIBRARY(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
+        INSTALL(TARGETS RGBD RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${RGBD_HEADERS} DESTINATION include/putslam/RGBD/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
+
 
 ###############################################################################
 #
@@ -294,7 +315,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         )
 
         ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst LDB)
+        TARGET_LINK_LIBRARIES(TransformEst LDB RGBD)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
@@ -391,7 +412,7 @@ if(BUILD_PUTSLAM)
             "${CMAKE_SOURCE_DIR}/include/PUTSLAM/*.h"
         )
         ADD_LIBRARY(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
-        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher TransformEst Utilities ${OpenCV_LIBS})
+        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher RGBD TransformEst Utilities ${OpenCV_LIBS})
         INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LIBPUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
 endif(BUILD_PUTSLAM)
@@ -576,7 +597,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER)
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
         SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
         ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
@@ -584,4 +605,4 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER)
         TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
-endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER)
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
