@@ -215,14 +215,15 @@ void PUTSLAM::startProcessing() {
 					currentSensorFrame.depthImage);
 
 			// Get the visible features
-			Mat34 cameraPose = map->getSensorPose();
+            Mat34 cameraPose = map->getSensorPose();
             mapFeatures = map->getVisibleFeatures(cameraPose);
 
             //map->removeDistantFeatures(mapFeatures, 500, 10.01);
 
             // Find the ids of frames for which feature observations have the most similar angle
             std::vector<int> frameIds;
-            map->findNearestFrame(mapFeatures, frameIds);
+            std::vector<float_type> angles;
+            map->findNearestFrame(mapFeatures, frameIds, angles, matcher->matcherParameters.maxAngleBetweenFrames);
 
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
