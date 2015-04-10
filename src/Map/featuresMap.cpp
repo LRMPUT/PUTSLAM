@@ -220,7 +220,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
             Mat34 featureGlob(Vec3(features[i].position.x(), features[i].position.y(), features[i].position.z())*Quaternion(1,0,0,0));
             Mat34 featureInCamCurr = featureGlob.inverse()*currentCameraPose;
             Eigen::Vector3f featureViewCurr(featureInCamCurr(0,2), featureInCamCurr(1,2), featureInCamCurr(2,2));
-            float_type minRot=10; int idMin;
+            float_type minRot=10; int idMin=-1;
             //find the smallest angle between two views (max dot product)
             imageIds[i]=-1;
             for (size_t j=0; j<features[i].posesIds.size();j++){
