@@ -225,6 +225,26 @@ void PUTSLAM::startProcessing() {
             std::vector<float_type> angles;
             map->findNearestFrame(mapFeatures, frameIds, angles, matcher->matcherParameters.maxAngleBetweenFrames);
 
+            //Remove features that we do not have a good observation angle
+            std::vector<MapFeature>::iterator mapFeaturesIter = mapFeatures.begin();
+            std::vector<int>::iterator	frameIdsIter = frameIds.begin();
+            std::vector<float_type>::iterator anglesIter = angles.begin();
+
+            for(;mapFeaturesIter!=mapFeatures.end();)
+            {
+            	if (*frameIdsIter == -1) {
+            		mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
+            		frameIdsIter = frameIds.erase(frameIdsIter);
+            		anglesIter = angles.erase(anglesIter);
+            	}
+            	else
+            	{
+            		++mapFeaturesIter;
+            		++frameIdsIter;
+            		++anglesIter;
+            	}
+            }
+
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 
