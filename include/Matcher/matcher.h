@@ -125,6 +125,10 @@ public:
 					&RANSACParams.minimalInlierRatioThreshold);
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("usedPairs",
 					&RANSACParams.usedPairs);
+            // general parameters
+            params->FirstChildElement("Parameters")->QueryDoubleAttribute(
+                    "maxAngleBetweenFrames",
+                    &maxAngleBetweenFrames);
 			// Matcher OpenCV
 			OpenCVParams.detector =
 					params->FirstChildElement("MatcherOpenCV")->Attribute(
@@ -146,8 +150,6 @@ public:
 					"maxIter", &OpenCVParams.maxIter);
 			params->FirstChildElement("MatcherOpenCV")->QueryFloatAttribute(
 					"eps", &OpenCVParams.eps);
-
-
 
 			// Camera parameters
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -199,6 +201,9 @@ public:
 
 		cv::Mat cameraMatrixMat;
 		cv::Mat distortionCoeffsMat;
+
+        /// max rotation angle between camera frames
+        float_type maxAngleBetweenFrames;
 	};
 
 

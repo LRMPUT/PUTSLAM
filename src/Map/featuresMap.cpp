@@ -198,7 +198,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 		Mat34 featureCam = cameraPose.inverse() * featurePos;
 		Eigen::Vector3d pointCam = sensorModel.inverseModel(featureCam(0, 3),
 				featureCam(1, 3), featureCam(2, 3));
-		//std::cout << pointCam(0) << " " << pointCam(1) << " " << pointCam(2) << "\n";
+        //std::cout << pointCam(0) << " " << pointCam(1) << " " << pointCam(2) << "\n";
 		if (pointCam(0) != -1) {
 			visibleFeatures.push_back(*it);
 		}
@@ -211,32 +211,34 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 }
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds){
+void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle){
     Mat34 currentCameraPose = getSensorPose();
     imageIds.resize(features.size(),-1);
+    angles.resize(features.size());
     for (size_t i = 0; i<features.size();i++){
-        if (features[i].posesIds.size()==1)
-            imageIds[i] = features[i].posesIds[0];
-        else{
             //compute position of feature in current camera pose
             Mat34 featureGlob(Vec3(features[i].position.x(), features[i].position.y(), features[i].position.z())*Quaternion(1,0,0,0));
             Mat34 featureInCamCurr = featureGlob.inverse()*currentCameraPose;
             Eigen::Vector3f featureViewCurr(featureInCamCurr(0,2), featureInCamCurr(1,2), featureInCamCurr(2,2));
-            float_type maxProduct=-1; int idMax;
+            float_type minRot=10; int idMin;
             //find the smallest angle between two views (max dot product)
+            imageIds[i]=-1;
             for (size_t j=0; j<features[i].posesIds.size();j++){
                 //compute position of feature in the camera pose
                 Mat34 camPose = getSensorPose(features[i].posesIds[j]);
                 Mat34 featureInCam = featureGlob.inverse()*camPose;
                 Eigen::Vector3f featureView(featureInCam(0,2), featureInCam(1,2), featureInCam(2,2));
-                float_type dotProduct = featureView.dot(featureViewCurr);
-                if (dotProduct>maxProduct){
-                    maxProduct = dotProduct;
-                    idMax = j;
+                float_type angle = acos(featureView.dot(featureViewCurr)/(featureView.norm()*featureViewCurr.norm()));
+                if (fabs(angle)<minRot){
+                    minRot = angle;
+                    idMin = j;
+                    angles[i] = fabs(angle);
                 }
             }
-            imageIds[i] = idMax;
-        }
+            if (angles[i]>maxAngle)
+                imageIds[i] =-1;
+            else
+                imageIds[i] = idMin;
     }
 }
 

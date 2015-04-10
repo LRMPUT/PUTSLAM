@@ -41,7 +41,7 @@ public:
 			const Mat34& cameraPose) = 0;
 
     /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-    virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds) = 0;
+    virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14) = 0;
 
     /// removes features which are too far from current camera pose (distant in graph)
     virtual void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0) = 0;
