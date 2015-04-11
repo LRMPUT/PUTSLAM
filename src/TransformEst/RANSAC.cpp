@@ -263,9 +263,14 @@ float RANSAC::computeInlierRatioReprojection(
 		const std::vector<cv::DMatch> matches,
 		const Eigen::Matrix4f transformationModel,
 		std::vector<cv::DMatch> &modelConsistentMatches) {
+
 	// Break into rotation (R) and translation (t)
 	Eigen::Matrix3f R = transformationModel.block<3, 3>(0, 0);
 	Eigen::Vector3f t = transformationModel.block<3, 1>(0, 3);
+
+	// Break into rotation (R) and translation (t)
+	Eigen::Matrix3f Rinv = transformationModel.inverse().block<3, 3>(0, 0);
+	Eigen::Vector3f tinv = transformationModel.inverse().block<3, 1>(0, 3);
 
 	int inlierCount = 0;
 	// For all matches
@@ -273,14 +278,20 @@ float RANSAC::computeInlierRatioReprojection(
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
 		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx] + t;
+		Eigen::Vector3f estimatedOldPosition = Rinv * features[it->queryIdx] + tinv;
 
 		// Now project both features
-		cv::Point2f predicted = RGBD::point3Dto2D(estimatedNewPosition, cameraMatrix);
-		cv::Point2f real = RGBD::point3Dto2D(prevFeatures[it->queryIdx], cameraMatrix);
+		cv::Point2f predictedNew = RGBD::point3Dto2D(estimatedNewPosition, cameraMatrix);
+		cv::Point2f realNew = RGBD::point3Dto2D(prevFeatures[it->queryIdx], cameraMatrix);
+
+		cv::Point2f predictedOld = RGBD::point3Dto2D(estimatedOldPosition, cameraMatrix);
+		cv::Point2f realOld = RGBD::point3Dto2D(prevFeatures[it->trainIdx], cameraMatrix);
 
 		// Compute residual error and compare it to inlier threshold
-		if (cv::norm(predicted - real)
-				< RANSACParams.inlierThresholdReprojection) {
+		if (cv::norm(predictedNew - realNew)
+				< RANSACParams.inlierThresholdReprojection
+				|| cv::norm(predictedOld - realOld)
+						< RANSACParams.inlierThresholdReprojection) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}
