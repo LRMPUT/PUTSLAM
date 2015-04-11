@@ -95,6 +95,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
 
+
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
 	// TODO: Parameters
 	int minimalTrackingFeatures = 100;
@@ -205,13 +206,15 @@ bool Matcher::match(const SensorFrame& sensorData,
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
 	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
-//	start = std::chrono::high_resolution_clock::now();
+//	auto start = std::chrono::high_resolution_clock::now();
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 			features3D, matches, inlierMatches);
-//	duration = std::chrono::duration_cast < std::chrono::microseconds
+//	auto duration = std::chrono::duration_cast < std::chrono::microseconds
 //				> (std::chrono::high_resolution_clock::now() - start);
 //		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
 //				<< " ms" << std::endl;
+
+
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
