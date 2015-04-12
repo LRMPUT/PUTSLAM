@@ -5,8 +5,14 @@
 				1 -> show matches
 				2 -> show matches + show detected features
 
+	VOVersion :	0 -> matching
+				1 -> tracking
+
+	MapMatchingVersion :	0 -> descriptors
+							1 -> XYZ + descriptors
+							2 -> patches
 -->  
- <Matcher verbose="1">
+ <Matcher verbose="0" VOVersion="1" MapMatchingVersion="2">
  	
  	
 	 <!-- RANSAC settings
@@ -20,7 +26,7 @@
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-	<RANSAC verbose="1" errorVersion="1" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="8.0"
+	<RANSAC verbose="0" errorVersion="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="8.0"
 		minimalInlierRatioThreshold="0.3" usedPairs="3">
 	</RANSAC>
     	
@@ -34,10 +40,19 @@
     		
     	TODO: LDB didn't compile due to LDB issues
      
-     
+		gridRows : 	number of grids in the image row
+    	gridCols : 	number of grids in the image cols     
+    
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="ORB" descriptor="SURF" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="ORB" descriptor="SURF" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    
+    <!-- Matching using patche 
+    
+		TODO: DESCRIPTION!!!    
+    -->
+	<MatchingOnPatches verbose="0" warping="1" patchSize="99" maxIterationCount="50" minSqrtError="0.04"></MatchingOnPatches>    
+    
     <Parameters maxAngleBetweenFrames="0.3"> </Parameters>
 </Matcher>

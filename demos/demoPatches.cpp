@@ -11,10 +11,11 @@
 int main()
 {
 	// Just reading random image
-	cv::Mat img = cv::imread("0.png", CV_LOAD_IMAGE_COLOR ), dst;
+	cv::Mat img = cv::imread("0.png", CV_LOAD_IMAGE_COLOR ), dst, imgNew = cv::imread("1.png", CV_LOAD_IMAGE_COLOR ), dstNew;
 
 	// Just use gray image
 	cv::cvtColor(img, dst, CV_RGB2GRAY);
+	cv::cvtColor(imgNew, dstNew, CV_RGB2GRAY);
 
 	// Select random feature
 	putslam::float_type x = 150.3f, y = 253.1f;
@@ -25,7 +26,7 @@ int main()
 //	cv::waitKey(5000);
 
 	// Distruption to point
-	putslam::float_type newX = x + (rand()%100)/20.0, newY = y + (rand()%100)/20.0;
+	putslam::float_type newX = x + (rand()%100)/50.0, newY = y + (rand()%100)/50.0;
 	std::cout<<"x, y = " << x << " " << y << std::endl;
 	std::cout<<"newX, newY = " << newX << " " << newY <<std::endl;
 
@@ -45,7 +46,7 @@ int main()
 
 
 	// Optimize position of the feature
-	matchingOnPatches.optimizeLocation(dst, oldPatch, dst, newX, newY, gradientX, gradientY, InvHessian);
+	matchingOnPatches.optimizeLocation(dst, oldPatch, dstNew, newX, newY, gradientX, gradientY, InvHessian);
 
 
 
