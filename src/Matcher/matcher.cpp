@@ -419,7 +419,7 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
 	// Create matching on patches of size 9x9, verbose = 0
-	MatchingOnPatches matchingOnPatches(9, 50, 0.1, 0);
+	MatchingOnPatches matchingOnPatches(9, 50, 0.1, 1);
 
 	// Optimize patch locations
 	std::vector<cv::Point2f> optimizedLocations;
@@ -512,30 +512,61 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 			cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,dst);
 	//
 	//		// Compute warpPerspective
-	//		cv::Mat warpedPatch;
-	//		cv::warpPerspective(mapRgbImages[i], warpedPatch, perspectiveTransform,
-	//				cv::Size(matchingOnPatches.getPatchSize(),
-	//						matchingOnPatches.getPatchSize()));
+			cv::Mat warpedImage;
+			cv::warpPerspective(mapRgbImages[i], warpedImage, perspectiveTransform,
+					cv::Size(patchBorderSize, patchBorderSize));
+
 
 			// Compute old patch
+			bool warping = true;
+			bool success = true;
 			std::vector<uint8_t> patchMap;
-			patchMap = matchingOnPatches.computePatch(mapRgbImages[i], uMap, vMap);
+			if (warping) {
+				uMap = halfPatchSize + 1;
+				vMap = halfPatchSize + 1;
 
-			// TODO: When warping, the rest must be implemented different?
-			// Compute gradient
-			std::vector<float> gradientX, gradientY;
-			Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
-			matchingOnPatches.computeGradient(mapRgbImages[i], uMap, vMap, InvHessian,
-					gradientX, gradientY);
+				patchMap = matchingOnPatches.computePatch(warpedImage, uMap,
+						vMap);
 
-			// Print information
-			std::cout << "Patches preoptimization: " << mapFeatures[i].u << " "
-					<< mapFeatures[i].v << std::endl;
+				// Compute gradient
+				std::vector<float> gradientX, gradientY;
+				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+				matchingOnPatches.computeGradient(warpedImage, uMap, vMap,
+						InvHessian, gradientX, gradientY);
 
-			// Optimize position of the feature
-			bool success = matchingOnPatches.optimizeLocation(mapRgbImages[i], patchMap,
-					prevRgbImage, mapFeatures[i].u, mapFeatures[i].v, gradientX,
-					gradientY, InvHessian);
+				// Print information
+				std::cout << "Patches preoptimization: " << mapFeatures[i].u
+						<< " " << mapFeatures[i].v << std::endl;
+
+				// Optimize position of the feature
+				success = matchingOnPatches.optimizeLocation(
+						warpedImage, patchMap, prevRgbImage,
+						mapFeatures[i].u, mapFeatures[i].v, gradientX,
+						gradientY, InvHessian);
+			}
+			else
+			{
+				patchMap = matchingOnPatches.computePatch(mapRgbImages[i], uMap,
+						vMap);
+
+				// TODO: When warping, the rest must be implemented different?
+				// Compute gradient
+				std::vector<float> gradientX, gradientY;
+				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+				matchingOnPatches.computeGradient(mapRgbImages[i], uMap, vMap,
+						InvHessian, gradientX, gradientY);
+
+				// Print information
+				std::cout << "Patches preoptimization: " << mapFeatures[i].u
+						<< " " << mapFeatures[i].v << std::endl;
+
+				// Optimize position of the feature
+				success = matchingOnPatches.optimizeLocation(
+						mapRgbImages[i], patchMap, prevRgbImage,
+						mapFeatures[i].u, mapFeatures[i].v, gradientX,
+						gradientY, InvHessian);
+			}
+
 
 			// Print information
 			std::cout << "Patches: " << success << " " << mapFeatures[i].u << " "
