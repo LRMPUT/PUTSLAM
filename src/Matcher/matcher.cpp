@@ -419,7 +419,7 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
 	// Create matching on patches of size 9x9, verbose = 0
-	MatchingOnPatches matchingOnPatches(9, 50, 0.1, 1);
+	MatchingOnPatches matchingOnPatches(17, 50, 0.1, 1);
 
 	// Optimize patch locations
 	std::vector<cv::Point2f> optimizedLocations;
@@ -518,7 +518,7 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 
 
 			// Compute old patch
-			bool warping = true;
+			bool warping = false;
 			bool success = true;
 			std::vector<uint8_t> patchMap;
 			if (warping) {

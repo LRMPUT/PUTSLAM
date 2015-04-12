@@ -96,12 +96,12 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 
 		// If something is wrong -> skip the optimization
 		if (std::isnan(newX) || std::isnan(newY) || std::isnan(mean)
-						|| newX < halfPatchSize || newX > oldImg.cols - halfPatchSize
-						|| newY < halfPatchSize || newY > oldImg.rows - halfPatchSize)
+						|| newX < halfPatchSize || newX > newImg.cols - halfPatchSize
+						|| newY < halfPatchSize || newY > newImg.rows - halfPatchSize)
 					return false;
 
 		// Compute newPatch
-		std::vector<uint8_t> newPatch = computePatch(oldImg, newX, newY);
+		std::vector<uint8_t> newPatch = computePatch(newImg, newX, newY);
 
 		// Evaluate patches
 		Eigen::Vector3f tmpJ = Eigen::Vector3f::Zero();
