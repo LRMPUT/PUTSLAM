@@ -112,30 +112,32 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-//	featureDetector.get()->detect(grayImage, raw_keypoints);
+	//featureDetector.get()->detect(grayImage, raw_keypoints);
 
 	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
-	int stripesCount = 6;
-	for (int i = 0; i < stripesCount; i++) {
-		std::vector<cv::KeyPoint> keypointsInROI;
-		cv::Mat roiBGR(grayImage,
-				cv::Rect(0, i * grayImageHeight / stripesCount, grayImageHeight,
-						grayImageHeight / stripesCount));
-		cv::Mat roiD(grayImage,
-				cv::Rect(0, i * grayImageHeight / stripesCount, grayImageHeight,
-						grayImageHeight / stripesCount));
+	for (int k = 0; k < matcherParameters.OpenCVParams.gridCols; k++) {
+		for (int i = 0; i < matcherParameters.OpenCVParams.gridRows; i++) {
 
-		featureDetector.get()->detect(roiBGR, keypointsInROI);
+			std::vector<cv::KeyPoint> keypointsInROI;
+			cv::Mat roiBGR(grayImage,
+					cv::Rect(k * grayImageWidth / matcherParameters.OpenCVParams.gridCols,
+							i * grayImageHeight / matcherParameters.OpenCVParams.gridRows,
+							grayImageWidth / matcherParameters.OpenCVParams.gridCols,
+							grayImageHeight / matcherParameters.OpenCVParams.gridRows));
 
-		if (matcherParameters.verbose > 1)
-			std::cout << "MatcherOpenCV: Stripe " << i << " : "
-					<< keypointsInROI.size() << " keypoints" << std::endl;
+			featureDetector.get()->detect(roiBGR, keypointsInROI);
 
-		std::sort(keypointsInROI.begin(), keypointsInROI.end(),
-				MatcherOpenCV::compare_response);
-		for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
-			keypointsInROI[j].pt.y += i * grayImageHeight / stripesCount;
-			raw_keypoints.push_back(keypointsInROI[j]);
+			if (matcherParameters.verbose > 1)
+				std::cout << "MatcherOpenCV: Grid (" << k << ", " << i << ") : "
+						<< keypointsInROI.size() << " keypoints" << std::endl;
+
+			std::sort(keypointsInROI.begin(), keypointsInROI.end(),
+					MatcherOpenCV::compare_response);
+			for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
+				keypointsInROI[j].pt.x += k * grayImageWidth / matcherParameters.OpenCVParams.gridCols;
+				keypointsInROI[j].pt.y += i * grayImageHeight / matcherParameters.OpenCVParams.gridRows;
+				raw_keypoints.push_back(keypointsInROI[j]);
+			}
 		}
 	}
 

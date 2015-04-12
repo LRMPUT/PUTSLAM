@@ -12,6 +12,22 @@
 class MatchingOnPatches {
 
 public:
+	struct parameters {
+		// Vebose level - 0 or 1
+		int verbose;
+
+		// Perform warping
+		bool warping;
+
+		// Patch size in pixels and equal in row and column size
+		int patchSize, halfPatchSize;
+
+		// Max iterations of Gauss-Newton optimization
+		int maxIter;
+
+		// Optimization threshold - lower step update than this value indicates convergence
+		double minSqrtIncrement;
+	};
 
 	// Constructor. Takes:
 	// 	-	patchSize	-> size of the used patches in pixels and equal in row and column size
@@ -19,7 +35,10 @@ public:
 	// 	-	minSqrtIncrement	-> Optimization threshold - lower step update than this value indicates convergence
 	//  - 	verbose		-> verbose level (0 or 1)
 	MatchingOnPatches(int _patchSize, int _maxIter = 20,
-			float _minSqrtIncrement = 0.04, int _verbose = 0);
+			double _minSqrtIncrement = 0.04, int _verbose = 0);
+
+	// Constructor based on parameters
+	MatchingOnPatches(parameters _parameters);
 
 	// Computes the patch on image "img" at location (x,y)
 	std::vector<uint8_t> computePatch(cv::Mat img, putslam::float_type x,
@@ -52,24 +71,18 @@ public:
 
 private:
 
+	// Parameters
+	parameters params;
+
+	// Methods used to initialize parameters
+	void init(int _patchSize, int _maxIter, double _minSqrtIncrement,
+			int _verbose);
+
 	// Method used to compute the Jacobian of optimization
 	inline void evaluatePatches(const std::vector<uint8_t> newPatch,
 			const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,
 			const std::vector<float> gradientX,
 			const std::vector<float> gradientY);
-
-	// Vebose level - 0 or 1
-	int verbose;
-
-	// Patch size in pixels and equal in row and column size
-	int patchSize, halfPatchSize;
-
-	// Max iterations of Gauss-Newton optimization
-	int maxIter;
-
-	// Optimization threshold - lower step update than this value indicates convergence
-	float minSqrtIncrement;
-
 };
 
 #endif // _PATCHES
