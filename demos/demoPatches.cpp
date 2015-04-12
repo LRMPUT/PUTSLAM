@@ -32,7 +32,7 @@ int main()
 
 
 	// Create matching on patches of size 9x9, verbose = 0
-	MatchingOnPatches matchingOnPatches(9);
+	MatchingOnPatches matchingOnPatches(13, 50, 0.1, 1);
 
 	// Compute old patch
 	std::vector<uint8_t> oldPatch;
