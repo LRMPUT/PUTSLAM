@@ -25,8 +25,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		float minEuclideanDistanceOfFeatures, float minImageDistanceOfFeatures,
 		int cameraPoseId, std::vector<RGBDFeature>& mapFeaturesToAdd) {
 
-	std::cout << "COMPARE 2D and 3D sizes: "
-			<< features.undistortedFeature2D.size() << " vs " << features.feature3D.size() << std::endl;
 	// Lets process possible features to add
 	for (int j = 0;
 			j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd;
