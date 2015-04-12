@@ -195,10 +195,8 @@ void PUTSLAM::startProcessing() {
             Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-			// TODO: Just for test - make it a parameter
-//            matcher->Matcher::match(currentSensorFrame, transformation,
-//                    inlierMatches);
-			matcher->Matcher::trackKLT(currentSensorFrame, transformation, inlierMatches);
+			// Running VO - matching or tracking depending on parameters
+			matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
 
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
@@ -263,22 +261,34 @@ void PUTSLAM::startProcessing() {
 			// Remember! The match returns the list of inlier features from current pose!
 			std::vector<MapFeature> measurementList;
 			Eigen::Matrix4f mapEstimatedTransformation;
-//			matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
-//					measurementList, mapEstimatedTransformation);
-//			//			matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
-//
 
-			// Prepare set of images
-			std::vector<cv::Mat> mapRgbImages(frameIds.size()), mapDepthImages(frameIds.size());
-			std::vector<putslam::Mat34> cameraPoses(frameIds.size());
-			for (int i=0;i<frameIds.size();i++) {
-				map->getImages(frameIds[i], mapRgbImages[i], mapDepthImages[i]);
-				cameraPoses[i] = map->getSensorPose(frameIds[i]);
+			if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS)
+			{
+				matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 			}
+			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS)
+			{
+				matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
+					measurementList, mapEstimatedTransformation);
+			}
+			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_PATCHES)
+			{
+				// Prepare set of images
+				std::vector<cv::Mat> mapRgbImages(frameIds.size()),
+						mapDepthImages(frameIds.size());
+				std::vector<putslam::Mat34> cameraPoses(frameIds.size());
+				for (int i = 0; i < frameIds.size(); i++) {
+					map->getImages(frameIds[i], mapRgbImages[i],
+							mapDepthImages[i]);
+					cameraPoses[i] = map->getSensorPose(frameIds[i]);
+				}
 
-			matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId, cameraPose, frameIds, cameraPoses,
-					mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
-
+				matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId,
+						cameraPose, frameIds, cameraPoses, mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
+			}
+			else {
+				std::cout<<"Unrecognized map matching version -- double check matcherOpenCVParameters.xml" << std::endl;
+			}
 
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
@@ -317,6 +327,8 @@ void PUTSLAM::startProcessing() {
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
+
+			std::cout<<"Feature size: " << features.undistortedFeature2D.size() << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeaturesToAdd;

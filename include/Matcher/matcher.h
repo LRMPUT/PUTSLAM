@@ -32,6 +32,8 @@ public:
 		std::string detector;
 		std::string descriptor;
 
+		int gridRows, gridCols;
+
 		int useInitialFlow;
 		int winSize;
 		int maxLevels;
@@ -62,6 +64,11 @@ public:
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
 
+	// VO
+	bool runVO(const SensorFrame& currentSensorFrame,
+			Eigen::Matrix4f &estimatedTransformation,
+			std::vector<cv::DMatch> &inlierMatches);
+
 	/// Rung single KLT tracking
 	bool trackKLT(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation,
@@ -72,6 +79,9 @@ public:
 	bool match(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation,
 			std::vector<cv::DMatch> &foundInlierMatches);
+
+
+
 
 	/// Run the match with map
 	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
@@ -96,6 +106,9 @@ public:
 	/// Class used to hold all parameters
 	class MatcherParameters {
 	public:
+		enum VOVERSION {VO_MATCHING, VO_TRACKING};
+		enum MAPMATCHINGVERSION {MAPMATCH_DESCRIPTORS, MAPMATCH_XYZ_DESCRIPTORS, MAPMATCH_XYZ_PATCHES};
+
 		MatcherParameters() {
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
 			distortionCoeffsMat = cv::Mat::zeros(1, 5, CV_32FC1);
@@ -111,6 +124,13 @@ public:
 			tinyxml2::XMLElement * params = config.FirstChildElement("Matcher");
 			// Matcher
 			params->QueryIntAttribute("verbose", &verbose);
+			params->QueryIntAttribute("VOVersion", &VOVersion);
+			params->QueryIntAttribute("MapMatchingVersion", &MapMatchingVersion);
+
+//			std::cout<<"VOVersion: " << VOVersion << std::endl;
+//			std::cout<<"MapMatchingVersion: " << MapMatchingVersion << std::endl;
+
+
 			// RANSAC
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose",
 					&RANSACParams.verbose);
@@ -138,8 +158,12 @@ public:
 							"descriptor");
 
 			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
-					"useInitialFlow", &OpenCVParams.useInitialFlow);
+					"gridRows", &OpenCVParams.gridRows);
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"gridCols", &OpenCVParams.gridCols);
 
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+					"useInitialFlow", &OpenCVParams.useInitialFlow);
 			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
 					"winSize", &OpenCVParams.winSize);
 
@@ -150,6 +174,20 @@ public:
 					"maxIter", &OpenCVParams.maxIter);
 			params->FirstChildElement("MatcherOpenCV")->QueryFloatAttribute(
 					"eps", &OpenCVParams.eps);
+
+
+			// Patches params
+			params->FirstChildElement("MatchingOnPatches")->QueryIntAttribute(
+					"verbose", &PatchesParams.verbose);
+			params->FirstChildElement("MatchingOnPatches")->QueryBoolAttribute(
+								"warping", &PatchesParams.warping);
+			params->FirstChildElement("MatchingOnPatches")->QueryIntAttribute(
+					"patchSize", &PatchesParams.patchSize);
+			params->FirstChildElement("MatchingOnPatches")->QueryIntAttribute(
+					"maxIterationCount", &PatchesParams.maxIter);
+			params->FirstChildElement("MatchingOnPatches")->QueryDoubleAttribute(
+					"minSqrtError", &PatchesParams.minSqrtIncrement);
+
 
 			// Camera parameters
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -195,9 +233,10 @@ public:
 			//std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
 		}
 	public:
-		int verbose;
+		int verbose, VOVersion, MapMatchingVersion;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
+		MatchingOnPatches::parameters PatchesParams;
 
 		cv::Mat cameraMatrixMat;
 		cv::Mat distortionCoeffsMat;

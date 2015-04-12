@@ -17,9 +17,13 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	// Detect salient features
 	prevFeatures = detectFeatures(sensorData.rgbImage);
 
+	std::cout<<prevFeatures.size()<<std::endl;
+
 	// DBScan
-	DBScan dbscan(8, 2, 1);
+	DBScan dbscan(6, 2, 1);
 	dbscan.run(prevFeatures);
+
+	std::cout<<prevFeatures.size()<<std::endl;
 
 	// Show detected features
 	if (matcherParameters.verbose > 1)
@@ -72,6 +76,23 @@ void Matcher::mergeTrackedFeatures(
 	}
 }
 
+
+bool Matcher::runVO(const SensorFrame& currentSensorFrame,
+		Eigen::Matrix4f &estimatedTransformation,
+		std::vector<cv::DMatch> &inlierMatches) {
+
+	if (matcherParameters.VOVersion == Matcher::MatcherParameters::VO_MATCHING) {
+		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
+	}
+	else if (matcherParameters.VOVersion == Matcher::MatcherParameters::VO_TRACKING){
+		return trackKLT(currentSensorFrame, estimatedTransformation, inlierMatches);
+	}
+	else {
+		std::cout << "Unrecognized VO choise -> double check matcherOpenCVParameters.xml" << std::endl;
+	}
+
+}
+
 bool Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
@@ -106,7 +127,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 				sensorData.rgbImage);
 
 		// DBScan on detected
-		DBScan dbscan(8, 2, 1);
+		DBScan dbscan(6, 2, 1);
 		dbscan.run(featuresSandbox);
 
 		// Find 2D positions without distortion
@@ -418,31 +439,24 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
-	// Create matching on patches of size 9x9, verbose = 0
-	MatchingOnPatches matchingOnPatches(17, 50, 0.1, 1);
+	// Create matching on patches with wanted params
+	MatchingOnPatches matchingOnPatches(matcherParameters.PatchesParams);
 
 	// Optimize patch locations
 	std::vector<cv::Point2f> optimizedLocations;
 	std::vector<cv::DMatch> matches;
-	for (int i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
-		float uMap = -1, vMap = -1;
-		for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
-			std::cout << "FRAME IDS: " << mapFeatures[i].descriptors[j].poseId
-					<< " " << frameIds[i] << std::endl;
-			if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
-				uMap = mapFeatures[i].descriptors[j].u;
-				vMap = mapFeatures[i].descriptors[j].v;
-				break;
-			}
-		}
 
-		// Compute four points - CW
+	// For all features
+	for (int i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
+
+		// Compute the 4 points/borders of the new patch (Clockwise)
 		std::vector<cv::Point2f> warpingPoints;
 		const int halfPatchSize = matchingOnPatches.getHalfPatchSize();
 		const int halfPatchBorderSize = halfPatchSize + 1;
 		const int patchSize = matchingOnPatches.getPatchSize();
 		const int patchBorderSize = patchSize + 2;
 
+		// Saving those points in OpenCV types
 		warpingPoints.push_back(
 				cv::Point2f(mapFeatures[i].u - halfPatchBorderSize,
 						mapFeatures[i].v - halfPatchBorderSize));
@@ -456,121 +470,107 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 						cv::Point2f(mapFeatures[i].u - halfPatchBorderSize,
 								mapFeatures[i].v + halfPatchBorderSize));
 
-		// Project into space
+		// Project those 4 points into space
 		std::vector<Eigen::Vector3f> warpingPoints3D =
 					RGBD::keypoints2Dto3D(warpingPoints,
 							prevDepthImage,
 							matcherParameters.cameraMatrixMat);
 
-		// Check if all points are correct
+		// Check if all points are correct - reject those without depth as those invalidate the patch planarity assumption
 		bool correctPoints3D = true;
 		for (int i=0;i<warpingPoints3D.size(); i++) {
-			std::cout << warpingPoints[i].x << " " << warpingPoints[i].y
-									<< " " << warpingPoints3D[i].x() << " "
-									<< warpingPoints3D[i].y() << " "
-									<< warpingPoints3D[i].z() << std::endl;
-
 			if (warpingPoints3D[i].z() < 0.0001) {
-
-				std::cout<<"Incorrect depth in warping !" << std::endl;
 				correctPoints3D = false;
 				break;
 			}
 		}
 
+		// If those points are correct - we perform matching on patches
 		if ( correctPoints3D ) {
 
-			// Move to global coordinate and then to local of original feature detection
-			std::vector<cv::Point2f> src(4);
-			for (int i=0;i<4;i++)
-			{
-				putslam::Mat34 warp(
-						putslam::Vec3(warpingPoints3D[i].cast<double>()));
-				warp = (cameraPoses[i].inverse()).matrix() * cameraPose.matrix()
-						* warp.matrix();
-
-				float u = warp(0,3)
-						* matcherParameters.cameraMatrixMat.at<float>(0, 0)
-						/ warp(2,3)
-						+ matcherParameters.cameraMatrixMat.at<float>(0, 2);
-				float v = warp(1,3)
-						* matcherParameters.cameraMatrixMat.at<float>(1, 1)
-						/ warp(2,3)
-						+ matcherParameters.cameraMatrixMat.at<float>(1, 2);
-				src[i] = cv::Point2f(u, v);
-			}
-
-
-			// Project onto the image
-			std::vector<cv::Point2f> dst(4);
-			dst[0] = cv::Point2f(0, 0);
-			dst[1] = cv::Point2f(patchSize + 1, 0);
-			dst[2] = cv::Point2f(patchSize + 1, patchSize + 1);
-			dst[3] = cv::Point2f(0, patchSize + 1);
-
-			// Compute getPerspective
-			cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,dst);
-	//
-	//		// Compute warpPerspective
 			cv::Mat warpedImage;
-			cv::warpPerspective(mapRgbImages[i], warpedImage, perspectiveTransform,
-					cv::Size(patchBorderSize, patchBorderSize));
+			double uMap = 0.0, vMap = 0.0;
+			if ( matcherParameters.PatchesParams.warping )
+			{
+				// Move to global coordinate and then to local of original feature detection
+				std::vector<cv::Point2f> src(4);
+				for (int i=0;i<4;i++)
+				{
+					putslam::Mat34 warp(
+							putslam::Vec3(warpingPoints3D[i].cast<double>()));
+					warp = (cameraPoses[i].inverse()).matrix() * cameraPose.matrix()
+							* warp.matrix();
+
+					float u = warp(0,3)
+							* matcherParameters.cameraMatrixMat.at<float>(0, 0)
+							/ warp(2,3)
+							+ matcherParameters.cameraMatrixMat.at<float>(0, 2);
+					float v = warp(1,3)
+							* matcherParameters.cameraMatrixMat.at<float>(1, 1)
+							/ warp(2,3)
+							+ matcherParameters.cameraMatrixMat.at<float>(1, 2);
+					src[i] = cv::Point2f(u, v);
+				}
 
 
-			// Compute old patch
-			bool warping = false;
-			bool success = true;
-			std::vector<uint8_t> patchMap;
-			if (warping) {
+				// We will transform it into the rectangle
+				std::vector<cv::Point2f> dst(4);
+				dst[0] = cv::Point2f(0, 0);
+				dst[1] = cv::Point2f(patchSize + 1, 0);
+				dst[2] = cv::Point2f(patchSize + 1, patchSize + 1);
+				dst[3] = cv::Point2f(0, patchSize + 1);
+
+				// Compute getPerspective
+				cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,dst);
+
+				// Compute warpPerspective
+				cv::warpPerspective(mapRgbImages[i], warpedImage, perspectiveTransform,
+						cv::Size(patchBorderSize, patchBorderSize));
+
+				// Position to compute the map patch
 				uMap = halfPatchSize + 1;
 				vMap = halfPatchSize + 1;
-
-				patchMap = matchingOnPatches.computePatch(warpedImage, uMap,
-						vMap);
-
-				// Compute gradient
-				std::vector<float> gradientX, gradientY;
-				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
-				matchingOnPatches.computeGradient(warpedImage, uMap, vMap,
-						InvHessian, gradientX, gradientY);
-
-				// Print information
-				std::cout << "Patches preoptimization: " << mapFeatures[i].u
-						<< " " << mapFeatures[i].v << std::endl;
-
-				// Optimize position of the feature
-				success = matchingOnPatches.optimizeLocation(
-						warpedImage, patchMap, prevRgbImage,
-						mapFeatures[i].u, mapFeatures[i].v, gradientX,
-						gradientY, InvHessian);
 			}
 			else
 			{
-				patchMap = matchingOnPatches.computePatch(mapRgbImages[i], uMap,
-						vMap);
+				// Find positions on original image
+				float uMap = -1, vMap = -1;
+				for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
+					if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
+						uMap = mapFeatures[i].descriptors[j].u;
+						vMap = mapFeatures[i].descriptors[j].v;
+						break;
+					}
+				}
 
-				// TODO: When warping, the rest must be implemented different?
-				// Compute gradient
-				std::vector<float> gradientX, gradientY;
-				Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
-				matchingOnPatches.computeGradient(mapRgbImages[i], uMap, vMap,
-						InvHessian, gradientX, gradientY);
-
-				// Print information
-				std::cout << "Patches preoptimization: " << mapFeatures[i].u
-						<< " " << mapFeatures[i].v << std::endl;
-
-				// Optimize position of the feature
-				success = matchingOnPatches.optimizeLocation(
-						mapRgbImages[i], patchMap, prevRgbImage,
-						mapFeatures[i].u, mapFeatures[i].v, gradientX,
-						gradientY, InvHessian);
+				// Set image as:
+				warpedImage = mapRgbImages[i];
 			}
 
+			// Compute old patch
+			std::vector<uint8_t> patchMap;
+			patchMap = matchingOnPatches.computePatch(warpedImage, uMap, vMap);
+
+			// Compute gradient
+			std::vector<float> gradientX, gradientY;
+			Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
+			matchingOnPatches.computeGradient(warpedImage, uMap, vMap,
+					InvHessian, gradientX, gradientY);
 
 			// Print information
-			std::cout << "Patches: " << success << " " << mapFeatures[i].u << " "
-					<< mapFeatures[i].v << std::endl;
+			if ( matcherParameters.verbose > 0 )
+				std::cout << "Patches preoptimization: " << mapFeatures[i].u << " "
+						<< mapFeatures[i].v << std::endl;
+
+			// Optimize position of the feature
+			bool success = matchingOnPatches.optimizeLocation(warpedImage,
+					patchMap, prevRgbImage, mapFeatures[i].u, mapFeatures[i].v,
+					gradientX, gradientY, InvHessian);
+
+			// Print information
+			if ( matcherParameters.verbose > 0 )
+				std::cout << "Patches: " << success << " " << mapFeatures[i].u << " "
+						<< mapFeatures[i].v << std::endl;
 
 			// Save a good match
 			if (success) {
@@ -594,7 +594,9 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 			extractMapFeaturesPositions(mapFeatures);
 
 	// RANSAC
-	std::cout << "Matches on patches counter: " << matches.size() << std::endl;
+	if ( matcherParameters.verbose > 0 )
+		std::cout << "Matches on patches counter: " << matches.size() << std::endl;
+
 
 	std::vector<cv::DMatch> inlierMatches2;
 	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
