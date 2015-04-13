@@ -13,6 +13,7 @@
 #include "../include/Grabber/depthSensorModel.h"
 
 namespace putslam {
+
 /// Map interface
 class Map {
 public:
@@ -39,6 +40,9 @@ public:
 	/// get all visible features
 	virtual std::vector<MapFeature> getVisibleFeatures(
 			const Mat34& cameraPose) = 0;
+    /// get all visible features and reduce results
+    virtual std::vector<MapFeature> getVisibleFeatures(
+            const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold) = 0;
 
     /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
     virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14) = 0;
