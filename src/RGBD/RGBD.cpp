@@ -166,3 +166,42 @@ std::vector<cv::Point2f> RGBD::removeImageDistortion(
 	}
 	return returnVector;
 }
+
+std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
+		cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose) {
+	std::vector<Eigen::Vector3f> pointCloud;
+
+	for(int j = 0;j < rgbImage.rows;j++){
+	    for(int i = 0;i < rgbImage.cols;i++){
+
+	    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / RGBD::depthScale;
+
+	    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
+	    			depth, cameraMatrix);
+
+	    	point3D = pose.block<3,3>(0,0) * point3D + pose.block<3,1>(0,3);
+
+	    	if ( point3D.z() > 0.0001) {
+	    		pointCloud.push_back(point3D);
+	    	}
+	    }
+	}
+	return pointCloud;
+}
+
+void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first)
+{
+	std::ofstream fileToSave;
+
+	if (first) {
+		fileToSave.open(fileName);
+		fileToSave << "NODE 0.0 0.0 0.0 0.0 0.0 0.0" << std::endl;
+	}
+	else
+		fileToSave.open(fileName,  std::ofstream::out | std::ofstream::app);
+
+	for (int i=0;i<pointCloud.size();i++) {
+		fileToSave << pointCloud[i].x() << " " << pointCloud[i].y() << " " << pointCloud[i].z() << std::endl;
+	}
+	fileToSave.close();
+}

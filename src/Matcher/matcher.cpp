@@ -88,6 +88,7 @@ bool Matcher::runVO(const SensorFrame& currentSensorFrame,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
+
 	if (matcherParameters.VOVersion == Matcher::MatcherParameters::VO_MATCHING) {
 		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
 	}
@@ -95,9 +96,9 @@ bool Matcher::runVO(const SensorFrame& currentSensorFrame,
 		return trackKLT(currentSensorFrame, estimatedTransformation, inlierMatches);
 	}
 	else {
-		std::cout << "Unrecognized VO choise -> double check matcherOpenCVParameters.xml" << std::endl;
+		std::cout << "Unrecognized VO choice -> double check matcherOpenCVParameters.xml" << std::endl;
+		return false;
 	}
-
 }
 
 bool Matcher::trackKLT(const SensorFrame& sensorData,

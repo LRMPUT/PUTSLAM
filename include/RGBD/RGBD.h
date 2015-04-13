@@ -62,6 +62,10 @@ std::vector<cv::Point2f> removeImageDistortion(
 		cv::Mat distCoeffs);
 
 // Building a point cloud
+std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose);
+
+void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first = false);
+
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
 //	static Eigen::Vector3f simplePoint2Dto3D(cv::Point2f p, float z, CalibrationParameters cameraParams);
