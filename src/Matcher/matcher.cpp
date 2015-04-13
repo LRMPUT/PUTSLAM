@@ -63,6 +63,8 @@ void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
 		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
 		float euclideanDistance, cv::Mat& descriptors, cv::Mat &featuresSandboxDescriptors) {
+
+
 	// Merging features - rejecting feature too close to existing ones
 	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
 		bool addFeature = true;
@@ -77,10 +79,12 @@ void Matcher::mergeTrackedFeatures(
 		if (addFeature) {
 			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
 
-			if ( !featuresSandboxDescriptors.empty() )
+			if ( !featuresSandboxDescriptors.empty() ) {
 				descriptors.push_back(featuresSandboxDescriptors.row(i));
+			}
 		}
 	}
+
 }
 
 
@@ -141,7 +145,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 		cv::Mat featuresSandboxDescriptors;
 		if ( matcherParameters.VOVersion
 					!= MatcherParameters::MAPMATCH_PATCHES) {
-			featuresSandboxDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
+			featuresSandboxDescriptors = describeFeatures(sensorData.rgbImage, featuresSandbox);
 		}
 
 		// Find 2D positions without distortion

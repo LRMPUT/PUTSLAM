@@ -119,6 +119,7 @@ bool FileGrabber::grab(void) {
 
 	if (parameters.verbose > 0)
 		std::cout << "Measurement timestamp : " << convertToHighPrecisionString(timestamp) << std::endl;
+	tmpSensorFrame.readId = fileNo;
 	tmpSensorFrame.timestamp = timestamp;
 
 	// RGB

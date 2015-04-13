@@ -197,8 +197,9 @@ void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileN
 		fileToSave.open(fileName);
 		fileToSave << "NODE 0.0 0.0 0.0 0.0 0.0 0.0" << std::endl;
 	}
-	else
+	else {
 		fileToSave.open(fileName,  std::ofstream::out | std::ofstream::app);
+	}
 
 	for (int i=0;i<pointCloud.size();i++) {
 		fileToSave << pointCloud[i].x() << " " << pointCloud[i].y() << " " << pointCloud[i].z() << std::endl;
