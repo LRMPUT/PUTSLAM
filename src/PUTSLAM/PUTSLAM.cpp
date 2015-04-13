@@ -223,6 +223,7 @@ void PUTSLAM::startProcessing() {
 			// Get the visible features
             Mat34 cameraPose = map->getSensorPose();
             mapFeatures = map->getVisibleFeatures(cameraPose);
+            //mapFeatures = map->getVisibleFeatures(cameraPose, 500, 10.05);
 
             //map->removeDistantFeatures(mapFeatures, 500, 10.01);
 
@@ -352,8 +353,8 @@ void PUTSLAM::startProcessing() {
 			std::cout << "map->addFeatures -> adding " << addedCounter
 					<< " features" << std::endl;
 
-			// Finally, adding to map
-			map->addFeatures(mapFeaturesToAdd, cameraPoseId);
+            // Finally, adding to map
+            map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
 			addFeatureToMap = false;
 		}
