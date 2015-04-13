@@ -220,8 +220,10 @@ void PUTSLAM::startProcessing() {
 			robotPose = robotPose * transformation;
 
 			// Save for octomap
-//			if (int(currentSensorFrame.timestamp) % 20 == 0)
+//			if (currentSensorFrame.readId % 20 == 0)
 //			{
+//				std::cout<<"ROBOT POSE" << std::endl << robotPose << std::endl;
+//
 //				std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
 //						currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
 //						matcher->matcherParameters.cameraMatrixMat, robotPose);

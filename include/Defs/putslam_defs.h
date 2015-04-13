@@ -73,6 +73,9 @@ public:
 	/// timestamp
 	float_type timestamp;
 
+	/// readCounter
+	int readId;
+
 	/// Default constructor
 	inline SensorFrame() :
 			timestamp(0) {
