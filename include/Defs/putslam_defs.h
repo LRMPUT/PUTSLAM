@@ -424,8 +424,10 @@ public:
 	/// Point cloud
 	PointCloud cloud;
 
-	/// Set of keypoints
-	KeyPoint::Seq keypoints;
+    /// Set of keypoints
+    //KeyPoint::Seq keypoints;
+
+    std::set<int> featuresIds;
 
 	/// Default constructor
 	inline VertexSE3(void) :
