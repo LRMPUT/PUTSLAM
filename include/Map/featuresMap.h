@@ -28,13 +28,13 @@ using namespace putslam;
 class MapModifier{
 public:
     /// Features to update
-    std::vector<MapFeature> features2update;
+    std::map<int,MapFeature> features2update;
 
     /// Features to remove
     std::vector<int> removeIds;
 
     /// Features to update
-    std::vector<MapFeature> features2add;
+    std::map<int,MapFeature> features2add;
 
     /// Update features?
     inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
@@ -88,6 +88,10 @@ public:
 
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
+
+    /// get all visible features and reduce results
+    std::vector<MapFeature> getVisibleFeatures(
+            const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold);
 
     /// removes features which are too far from current camera pose (distant in graph)
     void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0);
@@ -261,7 +265,7 @@ private:
 	bool emptyMap;
 
     ///Set of features (map for the front-end thread)
-    std::vector<MapFeature> featuresMapFrontend;
+    std::map<int,MapFeature> featuresMapFrontend;
 
     /// mutex for critical section - map frontend
     std::recursive_mutex mtxMapFrontend;
@@ -273,7 +277,7 @@ private:
     std::recursive_mutex mtxMapVisualization;
 
     ///Set of features (map for the map management thread)
-    std::vector<MapFeature> featuresMapManagement;
+    std::map<int,MapFeature> featuresMapManagement;
 
     /// mutex for critical section - map management
     std::recursive_mutex mtxMapManagement;
@@ -297,10 +301,10 @@ private:
     void manage(int verbose);
 
     /// Update map
-    void updateMap(MapModifier& modifier, std::vector<MapFeature>& featuresMap, std::recursive_mutex& mutex);
+    void updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
 
     /// Update feature
-    void updateFeature(std::vector<MapFeature>& featuresMap, MapFeature& newFeature);
+    void updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature);
 
     /// Update camera trajectory
     void updateCamTrajectory(std::vector<VertexSE3>& poses2update);
