@@ -103,10 +103,15 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 //						<< std::endl;
 
 				// Create an extended descriptor
+				cv::Mat descMat;
+				if ( !features.descriptors.empty() ) {
+					descMat = features.descriptors.row(j);
+				}
+
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
 						features.undistortedFeature2D[j].y,
-						cv::Mat()); // TODO: change between descriptor based and descriptor free versions - features.descriptors.row(j)
+						descMat); // TODO: change between descriptor based and descriptor free versions -
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
@@ -135,9 +140,14 @@ void PUTSLAM::startProcessing() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	//map->startOptimizationThread(1,1, "Cauchy",1); with robust kernel
-    map->startOptimizationThread(1, 0);
-    //map->startMapManagerThread(1);
+	if (optimizationThreadVersion == OPTTHREAD_ON)
+		map->startOptimizationThread(1, 0);
+	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
+		map->startOptimizationThread(1, 0, "Cauchy",1);
+
+	// Thread looking for too close features
+	if (mapManagmentThreadVersion == MAPTHREAD_ON)
+		map->startMapManagerThread(1);
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
@@ -269,7 +279,7 @@ void PUTSLAM::startProcessing() {
 				matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
 					measurementList, mapEstimatedTransformation);
 			}
-			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_PATCHES)
+			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_PATCHES)
 			{
 				// Prepare set of images
 				std::vector<cv::Mat> mapRgbImages(frameIds.size()),
@@ -362,10 +372,17 @@ void PUTSLAM::startProcessing() {
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
+	// We optimize only at the end if that version is chosen
+	if ( optimizationThreadVersion == OPTTHREAD_ATEND)
+		map->startOptimizationThread(15, 0);
+
     // Wait for optimization thread to finish
-    map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+	if ( optimizationThreadVersion != OPTTHREAD_OFF)
+		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+
     // Wait for management thread to finish
-    //map->finishManagementThr();
+    if ( mapManagmentThreadVersion == MAPTHREAD_ON)
+    	map->finishManagementThr();
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
@@ -379,6 +396,16 @@ void PUTSLAM::loadConfigs() {
 	config.LoadFile("../../resources/configGlobal.xml");
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
+
+	// Thread settings
+	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("verbose", &verbose);
+	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("optimizationThreadVersion", &optimizationThreadVersion);
+	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("mapManagmentThreadVersion", &mapManagmentThreadVersion);
+
+	if (verbose > 0) {
+		std::cout<<"PUTSLAM: optimizationThreadVersion = " << optimizationThreadVersion << std::endl;
+		std::cout<<"PUTSLAM: mapManagmentThreadVersion = " << mapManagmentThreadVersion << std::endl;
+	}
 
 	// Create map
 	std::string configFileGrabber(
