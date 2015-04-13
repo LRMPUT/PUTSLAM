@@ -44,13 +44,12 @@ public:
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
 			name(_name), frame_id(0) {
+		prevDescriptors = cv::Mat();
 	}
-//	Matcher(const std::string _name, const std::string parametersFile) :
-//			name(_name), frame_id(0), matcherParameters(parametersFile) {
-//	}
 	Matcher(const std::string _name, const std::string parametersFile, const std::string grabberParametersFile) :
 				name(_name), frame_id(0), matcherParameters(parametersFile, grabberParametersFile) {
-		}
+		prevDescriptors = cv::Mat();
+	}
 
 	~Matcher() {
 	}
@@ -107,7 +106,7 @@ public:
 	class MatcherParameters {
 	public:
 		enum VOVERSION {VO_MATCHING, VO_TRACKING};
-		enum MAPMATCHINGVERSION {MAPMATCH_DESCRIPTORS, MAPMATCH_XYZ_DESCRIPTORS, MAPMATCH_XYZ_PATCHES};
+		enum MAPMATCHINGVERSION {MAPMATCH_DESCRIPTORS, MAPMATCH_XYZ_DESCRIPTORS, MAPMATCH_PATCHES};
 
 		MatcherParameters() {
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -300,7 +299,7 @@ private:
 	// Method used to combine old tracking features with new features
 	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
 			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
-			float euclideanDistance);
+			float euclideanDistance, cv::Mat& descriptors, cv::Mat& featuresSandboxDescriptors);
 };
 }
 ;

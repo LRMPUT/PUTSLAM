@@ -27,3 +27,17 @@
   	<name>Visualizer</name>
   	<parametersFile>visualizerConfig.xml</parametersFile>
   </Visualizer>
+  
+  <!--
+	verbose :	0 - off
+  				1 - on  
+  	
+  	optimizationThreadVersion : 	0 - off
+  									1 - at the end
+  									2 - simultaneous with frontend
+									3 - simulatenous with frontend + robust kernel Cauchy  
+  	
+  	mapManagmentThreadVersion :		0 - off
+									1 - on  
+  -->
+  <ThreadSettings verbose="1" optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>

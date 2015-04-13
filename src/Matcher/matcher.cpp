@@ -29,8 +29,12 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	if (matcherParameters.verbose > 1)
 		showFeatures(sensorData.rgbImage, prevFeatures);
 
-	// Describe salient features
-	prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
+	// Describe salient features if needed
+		if (matcherParameters.VOVersion == MatcherParameters::VO_MATCHING
+			|| matcherParameters.MapMatchingVersion
+					!= MatcherParameters::MAPMATCH_PATCHES) {
+		prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
+	}
 
 	// Remove distortion
 	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
@@ -58,7 +62,7 @@ Matcher::featureSet Matcher::getFeatures() {
 void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
 		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
-		float euclideanDistance) {
+		float euclideanDistance, cv::Mat& descriptors, cv::Mat &featuresSandboxDescriptors) {
 	// Merging features - rejecting feature too close to existing ones
 	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
 		bool addFeature = true;
@@ -72,6 +76,9 @@ void Matcher::mergeTrackedFeatures(
 		}
 		if (addFeature) {
 			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
+
+			if ( !featuresSandboxDescriptors.empty() )
+				descriptors.push_back(featuresSandboxDescriptors.row(i));
 		}
 	}
 }
@@ -130,6 +137,12 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 		DBScan dbscan(6, 2, 1);
 		dbscan.run(featuresSandbox);
 
+		cv::Mat featuresSandboxDescriptors;
+		if ( matcherParameters.VOVersion
+					!= MatcherParameters::MAPMATCH_PATCHES) {
+			featuresSandboxDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
+		}
+
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> featuresSandBoxUndistorted =
 				RGBD::removeImageDistortion(featuresSandbox,
@@ -139,7 +152,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 		// Merging features - rejecting feature too close to existing ones
 		// Parameters: (existing features and vector to add new features, new features, minimal euclidean distance between features)
 		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted,
-				euclideanDistance);
+				euclideanDistance, prevDescriptors, featuresSandboxDescriptors);
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
