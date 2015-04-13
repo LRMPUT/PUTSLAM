@@ -197,6 +197,13 @@ void PUTSLAM::startProcessing() {
 			ifStart = false;
 			addFeatureToMap = true;
 
+			// Save for octomap
+//			std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+//					currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
+//					matcher->matcherParameters.cameraMatrixMat, robotPose);
+//			RGBD::saveToFile(pointCloud, "octomap.log", true);
+//			std::cout << "SAVED" << std::endl;
+
         }
 		// The next pose in the sequence
         else {
@@ -211,6 +218,17 @@ void PUTSLAM::startProcessing() {
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
 			robotPose = robotPose * transformation;
+
+			// Save for octomap
+//			if (int(currentSensorFrame.timestamp) % 20 == 0)
+//			{
+//				std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+//						currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
+//						matcher->matcherParameters.cameraMatrixMat, robotPose);
+//				RGBD::saveToFile(pointCloud, "octomap.log");
+//				std::cout << "SAVED" << std::endl;
+//			}
+
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
