@@ -140,14 +140,14 @@ void PUTSLAM::startProcessing() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-	if (optimizationThreadVersion == OPTTHREAD_ON)
-		map->startOptimizationThread(1, 0);
-	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
-		map->startOptimizationThread(1, 0, "Cauchy",1);
+    if (optimizationThreadVersion == OPTTHREAD_ON)
+        map->startOptimizationThread(1, 0);
+    else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
+        map->startOptimizationThread(1, 0, "Cauchy",1);
 
 	// Thread looking for too close features
-	if (mapManagmentThreadVersion == MAPTHREAD_ON)
-		map->startMapManagerThread(1);
+    if (mapManagmentThreadVersion == MAPTHREAD_ON)
+        map->startMapManagerThread(1);
 
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
@@ -269,7 +269,7 @@ void PUTSLAM::startProcessing() {
             		++mapFeaturesIter;
             		++frameIdsIter;
             		++anglesIter;
-            	}
+                }
             }
 
 			// Move mapFeatures to local coordinate system
@@ -388,7 +388,7 @@ void PUTSLAM::startProcessing() {
 				currentSensorFrame.timestamp);
 
 		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
-				currentSensorFrame.timestamp);
+                currentSensorFrame.timestamp);
 	}
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
