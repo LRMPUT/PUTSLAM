@@ -263,10 +263,10 @@ private:
 
 	/// boolean value informing if the features had been added to the map
 	bool emptyMap;
-public:
+
     ///Set of features (map for the front-end thread)
     std::map<int,MapFeature> featuresMapFrontend;
-private:
+
     /// mutex for critical section - map frontend
     std::recursive_mutex mtxMapFrontend;
 
