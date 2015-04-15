@@ -328,7 +328,7 @@ void PUTSLAM::startProcessing() {
 			// Compare VO and VOMap estimate -> decide whether to add measurements to map
 			float distanceDiff =
 					mapEstimatedTransformation.block<3, 1>(0, 3).norm();
-			std::cout << "Difference between VO i Map : " << distanceDiff
+            std::cout << "Difference between VO and Map : " << distanceDiff
 					<< " meters" << std::endl;
 
 			if (distanceDiff < 0.05) {
