@@ -173,11 +173,9 @@ namespace putslam {
             std::vector<unsigned int> findIncominEdges(unsigned int toVertexId){
                 std::vector<unsigned int> edgeIds;
                 for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end(); it++){
-                    std::cout << it->get()->toVertexId << ", ";
                     if (it->get()->toVertexId == toVertexId)
                         edgeIds.push_back(it->get()->id);
                 }
-                std::cout << "\n";
                 return edgeIds;
             }
     };
