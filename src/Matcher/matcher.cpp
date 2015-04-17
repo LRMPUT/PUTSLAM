@@ -143,7 +143,7 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 		dbscan.run(featuresSandbox);
 
 		cv::Mat featuresSandboxDescriptors;
-		if ( matcherParameters.VOVersion
+		if ( matcherParameters.MapMatchingVersion
 					!= MatcherParameters::MAPMATCH_PATCHES) {
 			featuresSandboxDescriptors = describeFeatures(sensorData.rgbImage, featuresSandbox);
 		}

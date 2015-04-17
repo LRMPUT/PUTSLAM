@@ -101,6 +101,9 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 //						<< features.undistortedFeature2D[j].x << ", "
 //						<< features.undistortedFeature2D[j].y << ")"
 //						<< std::endl;
+//
+//				std::cout << "VALUE: " << features.descriptors.empty() << " j="
+//						<< j << " " <<features.descriptors.rows << " " << features.descriptors.cols << 	std::endl;
 
 				// Create an extended descriptor
 				cv::Mat descMat;
@@ -161,6 +164,10 @@ void PUTSLAM::startProcessing() {
 			((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
 	int addNoFeaturesWhenMapSizeGreaterThan =
 			((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
+	int minMeasurementsToAddPoseToFeatureEdge =
+			((FeaturesMap*) map)->getMinMeasurementsToAddPoseToFeatureEdge();
+	bool addPoseToPoseEdges =
+			((FeaturesMap*) map)->getAddPoseToPoseEdges();
 
     ///for inverse SLAM problem
     //Simulator simulator;
@@ -332,14 +339,16 @@ void PUTSLAM::startProcessing() {
 					<< " meters" << std::endl;
 
 
-			// TODO: Liczba pomiarów !!!
-			if (distanceDiff < 0.05) {
-				// Add the measurements of inliers
+            // Add pose-pose constrain - depends on config file
+            if (addPoseToPoseEdges) {
+            	map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+            						cameraPoseIncrement);
+            }
+
+            // Add pose-feature constrain
+            measurementToMapSizeLog.push_back(measurementList.size());
+			if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
 				map->addMeasurements(measurementList);
-			} else {
-				//				addFeatureToMap = true;
-				map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-						cameraPoseIncrement);
 			}
 
 			// Insufficient number of features -> time to add some features
@@ -378,6 +387,9 @@ void PUTSLAM::startProcessing() {
             // Finally, adding to map
             map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
+            std::cout << "map->addFeatures -> added " << addedCounter
+            					<< " features" << std::endl;
+
 			addFeatureToMap = false;
 		}
 
@@ -410,6 +422,9 @@ void PUTSLAM::startProcessing() {
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
 	trajectoryVOMapStream.close();
+
+	// Save statistics
+	saveLogs();
 }
 
 /// PRIVATE
@@ -516,4 +531,31 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 				<< " " << features.feature3D[id](2) << std::endl;
 	}
 	file.close();
+}
+
+void PUTSLAM::saveLogs(){
+	ofstream mapMeasurementsStream("statistics.m");
+
+	mapMeasurementsStream<<"import matplotlib.pyplot as plt"<<endl;
+	mapMeasurementsStream<<"import numpy as np"<<endl;
+
+	mapMeasurementsStream<<"plt.ioff()" << std::endl;
+
+	mapMeasurementsStream<<"pomiar = np.array([";
+	for (int a = 0; a <measurementToMapSizeLog.size(); a++) {
+		mapMeasurementsStream<<measurementToMapSizeLog[a] <<", ";
+	}
+	mapMeasurementsStream<<"]);" << std::endl;
+
+
+	mapMeasurementsStream<<"fig = plt.figure()"<<endl;
+	mapMeasurementsStream<<"plt.plot(pomiar)"<<endl;
+	mapMeasurementsStream<<"fig.suptitle('Liczba pomiarow cech z mapy', fontsize=20)"<<endl;
+	mapMeasurementsStream<<"plt.xlabel('Numer klatki', fontsize=18)"<<endl;
+	mapMeasurementsStream<<"plt.ylabel('Liczba pomiarow', fontsize=16)"<<endl;
+	mapMeasurementsStream<<"plt.savefig('mapMatchinggSize.png')"<<endl;
+
+	mapMeasurementsStream.close();
+
+	std::system("python statistics.m");
 }
