@@ -63,8 +63,8 @@ private:
 
 	// Save some statistics to analyze
 	std::vector<int> measurementToMapSizeLog;
-	std::vector<double> VORansacPercentLog;
-	std::vector<double> MapMatchingRansacPercentLog;
+	std::vector<double> VORansacInlierRatioLog;
+	std::vector<double> MapMatchingRansacInlierRatioLog;
 
 	void saveLogs();
 

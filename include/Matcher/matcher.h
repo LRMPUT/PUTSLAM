@@ -64,18 +64,18 @@ public:
 	Matcher::featureSet getFeatures();
 
 	// VO
-	bool runVO(const SensorFrame& currentSensorFrame,
+	double runVO(const SensorFrame& currentSensorFrame,
 			Eigen::Matrix4f &estimatedTransformation,
 			std::vector<cv::DMatch> &inlierMatches);
 
 	/// Rung single KLT tracking
-	bool trackKLT(const SensorFrame& sensorData,
+	double trackKLT(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation,
 			std::vector<cv::DMatch> &inlierMatches);
 
 
 	/// Run single match
-	bool match(const SensorFrame& sensorData,
+	double match(const SensorFrame& sensorData,
 			Eigen::Matrix4f &estimatedTransformation,
 			std::vector<cv::DMatch> &foundInlierMatches);
 
@@ -83,18 +83,18 @@ public:
 
 
 	/// Run the match with map
-	bool match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+	double match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
-	bool matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation);
 
 	// Matching to map with patch computation
-	bool matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+	double matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 			int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
 			std::vector<putslam::Mat34> cameraPoses,
 			std::vector<cv::Mat> mapRgbImages,

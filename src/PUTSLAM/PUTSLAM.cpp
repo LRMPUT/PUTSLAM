@@ -218,7 +218,8 @@ void PUTSLAM::startProcessing() {
 			std::vector<cv::DMatch> inlierMatches;
 
 			// Running VO - matching or tracking depending on parameters
-			matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
+			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
+			VORansacInlierRatioLog.push_back(inlierRatio);
 
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
@@ -298,13 +299,14 @@ void PUTSLAM::startProcessing() {
 			std::vector<MapFeature> measurementList;
 			Eigen::Matrix4f mapEstimatedTransformation;
 
+			double mapMatchingInlierRatio = 0.0f;
 			if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS)
 			{
-				matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
+				mapMatchingInlierRatio = matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 			}
 			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS)
 			{
-				matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
+				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
 					measurementList, mapEstimatedTransformation);
 			}
 			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_PATCHES)
@@ -319,12 +321,13 @@ void PUTSLAM::startProcessing() {
 					cameraPoses[i] = map->getSensorPose(frameIds[i]);
 				}
 
-				matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId,
+				mapMatchingInlierRatio = matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId,
 						cameraPose, frameIds, cameraPoses, mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
 			}
 			else {
 				std::cout<<"Unrecognized map matching version -- double check matcherOpenCVParameters.xml" << std::endl;
 			}
+			MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
 
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
@@ -424,6 +427,7 @@ void PUTSLAM::startProcessing() {
 	trajectoryVOMapStream.close();
 
 	// Save statistics
+	std::cout<<"Saving logs to file" << std::endl;
 	saveLogs();
 }
 
@@ -534,28 +538,61 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 }
 
 void PUTSLAM::saveLogs(){
-	ofstream mapMeasurementsStream("statistics.m");
+	ofstream statisticsLogStream("statistics.m");
 
-	mapMeasurementsStream<<"import matplotlib.pyplot as plt"<<endl;
-	mapMeasurementsStream<<"import numpy as np"<<endl;
+	statisticsLogStream<<"import matplotlib.pyplot as plt"<<endl;
+	statisticsLogStream<<"import numpy as np"<<endl;
 
-	mapMeasurementsStream<<"plt.ioff()" << std::endl;
+	statisticsLogStream<<"plt.ioff()" << std::endl;
 
-	mapMeasurementsStream<<"pomiar = np.array([";
-	for (int a = 0; a <measurementToMapSizeLog.size(); a++) {
-		mapMeasurementsStream<<measurementToMapSizeLog[a] <<", ";
+	// VORansacInlierRatioLog
+	statisticsLogStream << "VORansacInlierRatioLog = np.array([";
+	for (int a = 0; a < VORansacInlierRatioLog.size(); a++) {
+		statisticsLogStream << VORansacInlierRatioLog[a] << ", ";
 	}
-	mapMeasurementsStream<<"]);" << std::endl;
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream << "plt.plot(VORansacInlierRatioLog)" << endl;
+	statisticsLogStream
+			<< "fig.suptitle('RANSAC inlier ratio in VO', fontsize=20)" << endl;
+	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+	statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << endl;
+	statisticsLogStream << "plt.savefig('VORansacInlierRatio.png')" << endl;
 
 
-	mapMeasurementsStream<<"fig = plt.figure()"<<endl;
-	mapMeasurementsStream<<"plt.plot(pomiar)"<<endl;
-	mapMeasurementsStream<<"fig.suptitle('Liczba pomiarow cech z mapy', fontsize=20)"<<endl;
-	mapMeasurementsStream<<"plt.xlabel('Numer klatki', fontsize=18)"<<endl;
-	mapMeasurementsStream<<"plt.ylabel('Liczba pomiarow', fontsize=16)"<<endl;
-	mapMeasurementsStream<<"plt.savefig('mapMatchinggSize.png')"<<endl;
+	// MapMatchingRansacInlierRatioLog
+	statisticsLogStream << "MapMatchingRansacInlierRatioLog = np.array([";
+	for (int a = 0; a < MapMatchingRansacInlierRatioLog.size(); a++) {
+		statisticsLogStream << MapMatchingRansacInlierRatioLog[a] << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
 
-	mapMeasurementsStream.close();
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream << "plt.plot(MapMatchingRansacInlierRatioLog, label='-1 means no matches before RANSAC')" << endl;
+	statisticsLogStream
+			<< "fig.suptitle('RANSAC inlier ratio in Map Matching', fontsize=20)" << endl;
+	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+	statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('MapMatchingRansacInlierRatioLog.png')" << endl;
 
-	std::system("python statistics.m");
+
+	// Measurement to map size
+	statisticsLogStream<<"mapMeasurementSize = np.array([";
+	for (int a = 0; a <measurementToMapSizeLog.size(); a++) {
+		statisticsLogStream<<measurementToMapSizeLog[a] <<", ";
+	}
+	statisticsLogStream<<"]);" << std::endl;
+
+	statisticsLogStream<<"fig = plt.figure()"<<endl;
+	statisticsLogStream<<"plt.plot(mapMeasurementSize)"<<endl;
+	statisticsLogStream<<"fig.suptitle('Measurement number to features in map', fontsize=20)"<<endl;
+	statisticsLogStream<<"plt.xlabel('Frame counter', fontsize=18)"<<endl;
+	statisticsLogStream<<"plt.ylabel('Measurement number', fontsize=16)"<<endl;
+	statisticsLogStream<<"plt.savefig('mapMatchinggSize.png')"<<endl;
+
+	statisticsLogStream.close();
+
+	int tmp = std::system("python statistics.m");
 }
