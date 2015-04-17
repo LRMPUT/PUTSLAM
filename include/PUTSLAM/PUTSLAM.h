@@ -60,6 +60,15 @@ private:
 	int verbose, mapManagmentThreadVersion, optimizationThreadVersion;
 
 
+
+	// Save some statistics to analyze
+	std::vector<int> measurementToMapSizeLog;
+	std::vector<double> VORansacPercentLog;
+	std::vector<double> MapMatchingRansacPercentLog;
+
+	void saveLogs();
+
+
 	void loadConfigs();
 
 	// TODO: Make it nicer

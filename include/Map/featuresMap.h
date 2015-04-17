@@ -142,6 +142,12 @@ public:
 	int getAddNoFeaturesWhenMapSizeGreaterThan() {
 		return config.addNoFeaturesWhenMapSizeGreaterThan;
 	}
+	int getMinMeasurementsToAddPoseToFeatureEdge() {
+		return config.minMeasurementsToAddPoseToFeatureEdge;
+	}
+	bool getAddPoseToPoseEdges() {
+		return config.addPoseToPoseEdges;
+	}
 
     /// set Robust Kernel
     void setRobustKernel(std::string name, float_type delta);
@@ -166,6 +172,8 @@ public:
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
+            model->FirstChildElement( "parameters" )->QueryBoolAttribute("addPoseToPoseEdges", &addPoseToPoseEdges);
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("minMeasurementsToAddPoseToFeatureEdge", &minMeasurementsToAddPoseToFeatureEdge);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("weakFeatureThr", &weakFeatureThr);
             model->FirstChildElement( "parameters" )->QueryFloatAttribute("edges3DPrunningThreshold", &edges3DPrunningThreshold);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
@@ -200,6 +208,12 @@ public:
 
             // fix all optimized vertices after optimization
             bool fixVertices;
+
+            // true/false whether add pose-pose constrains from VO
+            bool addPoseToPoseEdges;
+
+            // minimal number of consistent pose-(feature in map) observations to add those links
+            int minMeasurementsToAddPoseToFeatureEdge;
 
             // We perform adding to map if visible map is too small
             int addFeaturesWhenMapSizeLessThan;
