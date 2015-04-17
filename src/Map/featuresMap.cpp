@@ -10,14 +10,14 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-		featureIdNo(FATURES_START_ID), lastOptimizedPose(0), Map("Features Map",
+        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",
 				MAP_FEATURES) {
 	poseGraph = createPoseGraphG2O();
 }
 
 /// Construction
 FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
-		config(configMap), featureIdNo(FATURES_START_ID), sensorModel(
+        config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(
 				sensorConfig), lastOptimizedPose(0), Map("Features Map",
 				MAP_FEATURES) {
 	tinyxml2::XMLDocument config;
@@ -92,8 +92,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 	bufferMapFrontend.mtxBuffer.unlock();
 
     bufferMapManagement.mtxBuffer.unlock();
-	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    //try to update the map
+    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
 	emptyMap = false;
@@ -164,7 +164,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 					it->v, (*it).position.z());
         }
 
-        featuresMapFrontend[it->id-FATURES_START_ID].posesIds.push_back(_poseId);
+        featuresMapFrontend[it->id].posesIds.push_back(_poseId);
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
@@ -195,7 +195,7 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 /// Get feature position
 Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
 	mtxMapFrontend.lock();
-    Vec3 feature(featuresMapFrontend[id-FATURES_START_ID].position);
+    Vec3 feature(featuresMapFrontend[id].position);
 	mtxMapFrontend.unlock();
 	return feature;
 }
@@ -386,7 +386,7 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
     std::cout << "save map to file\n";
-   // plotFeatures("../../resources/map.m");
+    plotFeatures("../../resources/map.m");
     std::cout << "save map to file end\n";
 }
 
@@ -527,10 +527,10 @@ void FeaturesMap::updateMap(MapModifier& modifier,
 		if (modifier.updateFeatures()) {
             for (auto it =
 					modifier.features2update.begin();
-					it != modifier.features2update.end(); it++) {
+                    it != modifier.features2update.end(); it++) {
                 updateFeature(featuresMap, it->second);
 			}
-			modifier.features2update.clear();
+            modifier.features2update.clear();
 		}
 		modifier.mtxBuffer.unlock();
 		mutex.unlock();
@@ -539,8 +539,8 @@ void FeaturesMap::updateMap(MapModifier& modifier,
 
 /// Update feature
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap,
-		MapFeature& newFeature) {
-    featuresMap[newFeature.id] = newFeature;
+        MapFeature& newFeature) {
+    featuresMap[newFeature.id].position = newFeature.position;
 }
 
 /// Update camera trajectory
@@ -615,26 +615,86 @@ void FeaturesMap::save2file(std::string mapFilename,
 	file.close();
 }
 
+/// computes std and mean from float vector
+void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max){
+    double sum = std::accumulate(v.begin(), v.end(), 0.0);
+    mean = sum / v.size();
+    max=0;
+    for (auto it=v.begin();it!=v.end();it++){
+        if (fabs(*it-mean)>max)
+            max=fabs(*it-mean);
+    }
+    double sq_sum = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
+    std = std::sqrt(sq_sum / v.size() - mean * mean);
+}
+
 /// plot all features
 void FeaturesMap::plotFeatures(std::string filename){
     std::ofstream file(filename);
     file << "close all;\nclear all;\nhold on;\n";
-    for (int i=0;i<featureIdNo;i++){
+    //std::vector<float_type> meanX, meanY, meanZ;
+    std::vector<float_type> meanDist, stdevDist;
+    std::vector<float_type> maxDist;
+    std::vector<float_type> measurementsNo;
+    for (int i=FEATURES_START_ID;i<featureIdNo;i++){
         std::vector<Edge3D> features;
         Vec3 estimation;
-        ((PoseGraphG2O*)poseGraph)->getMeasurements(FATURES_START_ID+i, features, estimation);
-        file << "%feature no " << FATURES_START_ID+i << "\n";
+        ((PoseGraphG2O*)poseGraph)->getMeasurements(i, features, estimation);
+        file << "%feature no " << i << "\n";
         file << "plot3(" << estimation.x() << "," << estimation.y() << "," << estimation.z() << ",'ro');\n";
-        for (int j=0;j<features.size();j++){
-            file << "plot3(" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << ",'bx');\n";
-        }
-        for (int j=0;j<features.size();j++){
-            Mat33 unc = features[j].info.inverse();
-            file << "C = [" << unc(0,0) << ", " << unc(0,1) << ", " << unc(0,2) << "; " << unc(1,0) << ", " << unc(1,1) << ", " << unc(1,2) << "; " << unc(2,0) << ", " << unc(2,1) << ", " << unc(2,2) << ", " << "];\n";
-            file << "M = [" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << "];\n";
-            file << "error_ellipse(C, M);\n";
+        std::vector<float_type> dist4estim;
+        measurementsNo.push_back(features.size());
+        if (features.size()>0){ //how come?
+            for (int j=0;j<features.size();j++){
+                float_type dist = sqrt(pow(features[j].trans.x()-estimation.x(),2.0)+pow(features[j].trans.y()-estimation.y(),2.0)+pow(features[j].trans.z()-estimation.z(),2.0));
+                dist4estim.push_back(dist);
+                file << "plot3(" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << ",'bx');\n";
+            }
+            float_type mean, std, max;
+            computeMeanStd(dist4estim, mean, std, max); meanDist.push_back(mean); stdevDist.push_back(std); maxDist.push_back(max);
+            /*for (int j=0;j<features.size();j++){
+                Mat33 unc = features[j].info.inverse();
+                file << "C = [" << unc(0,0) << ", " << unc(0,1) << ", " << unc(0,2) << "; " << unc(1,0) << ", " << unc(1,1) << ", " << unc(1,2) << "; " << unc(2,0) << ", " << unc(2,1) << ", " << unc(2,2) << ", " << "];\n";
+                file << "M = [" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << "];\n";
+                file << "error_ellipse(C, M);\n";
+            }*/
         }
     }
+    float_type mean, std, max;
+    computeMeanStd(measurementsNo, mean, std, max);
+    file << "featuresNo = " << featureIdNo - FEATURES_START_ID << "\n";
+    file << "meanMeasurementsNo = " << mean << "\n";
+    file << "stdMeasurementsNo = " << std << "\n";
+    file << "maxMeasurementsNo = " << max + mean<< "\n";
+    int singleMeasurementsNo = 0;
+    for (auto it = measurementsNo.begin(); it!= measurementsNo.end();it++){
+        if (*it<2) singleMeasurementsNo++;
+    }
+    file << "featuresMeasuredLessThanOnce = " << (double(singleMeasurementsNo)/double(measurementsNo.size()))*100 << "%[%]\n";
+    file << "measurementsNo = [";
+    for (auto it = measurementsNo.begin(); it!=measurementsNo.end();it++)
+            file << *it << ", ";
+    file << "];\n plot(measurementsNo,'r'); ylabel('measurementsNo'); xlabel('featureNo');\n";
+    file << "meanDist = [";
+    for (auto it = meanDist.begin(); it!=meanDist.end();it++)
+        file << *it << ", ";
+    file << "];\n figure(); plot(meanDist,'k'); ylabel('meanDist'); xlabel('featureNo');";
+    file << "stdevDist = [";
+    for (auto it = stdevDist.begin(); it!=stdevDist.end();it++)
+        file << *it << ", ";
+    file << "];\n meanMeanDist = mean(meanDist)\n; meanStdDist = mean(stdevDist)\n";
+    file << "figure(); plot(stdevDist,'g'); ylabel('stdevDist'); xlabel('featureNo'); \n";
+    file << "maxDist = [";
+    for (auto it = maxDist.begin(); it!=maxDist.end();it++)
+        file << *it << ", ";
+    file << "];\nmeanMaxDist=mean(maxDist)\n stdMaxDist = std(maxDist)\n";
+    file << "figure(); plot(maxDist,'b');\n ylabel('maxDist'); xlabel('featureNo');";
+    file << "meanDist(meanDist<1e-5) = [];";
+    file << "\nmeanDistWithoutZeros=mean(meanDist)\n stdMeanDistWithoutZeros = std(meanDist)\n";
+    file << "maxDist(maxDist==0) = [];";
+    file << "\nmeanMaxDistWithoutZeros=mean(maxDist)\n stdMaxDistWithoutZeros = std(maxDist)\n";
+    file << "stdevDist(stdevDist==0) = [];";
+    file << "\nmeanStdDistWithoutZeros=mean(stdevDist)\n stdStdDistWithoutZeros = std(stdevDist)";
     file.close();
 }
 

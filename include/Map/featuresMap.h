@@ -14,7 +14,7 @@
 #include <atomic>
 #include "../include/Grabber/depthSensorModel.h"
 
-#define FATURES_START_ID 10000
+#define FEATURES_START_ID 10000
 
 namespace putslam {
 /// create a single Map
@@ -314,6 +314,9 @@ private:
 
     /// plot all features
     void plotFeatures(std::string filename);
+
+    /// computes std and mean from float vector
+    void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

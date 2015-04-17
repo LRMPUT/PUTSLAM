@@ -12,7 +12,7 @@
 							1 -> XYZ + descriptors
 							2 -> patches
 -->  
- <Matcher verbose="0" VOVersion="1" MapMatchingVersion="2">
+ <Matcher verbose="0" VOVersion="1" MapMatchingVersion="1">
  	
  	
 	 <!-- RANSAC settings
