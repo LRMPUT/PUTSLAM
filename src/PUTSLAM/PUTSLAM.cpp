@@ -331,6 +331,8 @@ void PUTSLAM::startProcessing() {
 			std::cout << "Difference between VO i Map : " << distanceDiff
 					<< " meters" << std::endl;
 
+
+			// TODO: Liczba pomiarów !!!
 			if (distanceDiff < 0.05) {
 				// Add the measurements of inliers
 				map->addMeasurements(measurementList);
