@@ -88,7 +88,7 @@ void Matcher::mergeTrackedFeatures(
 }
 
 
-bool Matcher::runVO(const SensorFrame& currentSensorFrame,
+double Matcher::runVO(const SensorFrame& currentSensorFrame,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
@@ -101,11 +101,11 @@ bool Matcher::runVO(const SensorFrame& currentSensorFrame,
 	}
 	else {
 		std::cout << "Unrecognized VO choice -> double check matcherOpenCVParameters.xml" << std::endl;
-		return false;
+		return 0.0;
 	}
 }
 
-bool Matcher::trackKLT(const SensorFrame& sensorData,
+double Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 	// TODO:
@@ -178,9 +178,10 @@ bool Matcher::trackKLT(const SensorFrame& sensorData,
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
 
+	return double(inlierMatches.size())/double(matches.size());
 }
 
-bool Matcher::match(const SensorFrame& sensorData,
+double Matcher::match(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
@@ -265,7 +266,7 @@ bool Matcher::match(const SensorFrame& sensorData,
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
 
-	return false;
+	return double(inlierMatches.size())/double(matches.size());
 }
 
 // We have chosen to use the first descriptor. TODO: Change it to be based on orientation
@@ -289,7 +290,7 @@ std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(
 	return mapFeaturePositions3D;
 }
 
-bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 	// The current pose descriptors are renamed to make it less confusing
@@ -342,9 +343,11 @@ bool Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
+
+	return double(inlierMatches.size())/double(matches.size());
 }
 
-bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
@@ -448,9 +451,11 @@ bool Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
+
+	return double(inlierMatches.size())/double(matches.size());
 }
 
-bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
+double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
 		std::vector<putslam::Mat34> cameraPoses,
 		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
@@ -615,6 +620,8 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 	if ( matcherParameters.verbose > 0 )
 		std::cout << "Matches on patches counter: " << matches.size() << std::endl;
 
+	if ( matches.size() <= 0 )
+		return -1.0;
 
 	std::vector<cv::DMatch> inlierMatches2;
 	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
@@ -646,6 +653,7 @@ bool Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
 
+	return double(inlierMatches2.size())/double(matches.size());
 }
 
 void Matcher::showFeatures(cv::Mat rgbImage,
