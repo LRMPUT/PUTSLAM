@@ -45,9 +45,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
         int poseId) {
 	mtxCamTraj.lock();
 	int camTrajSize = camTrajectory.size();
-	Mat34 cameraPose =
-			(poseId >= 0) ?
-					camTrajectory[poseId].pose : camTrajectory.back().pose;
+    Mat34 cameraPose = getSensorPose(poseId);
 	mtxCamTraj.unlock();
 
 	bufferMapFrontend.mtxBuffer.lock();
@@ -121,7 +119,7 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
     } else {
 		odoMeasurements.push_back(cameraPoseChange);
 		VertexSE3 camPose(trajSize,
-                camTrajectory.back().pose * cameraPoseChange, timestamp);
+                getSensorPose() * cameraPoseChange, timestamp);
 		camTrajectory.push_back(camPose);
 
 		mtxCamTraj.unlock();
