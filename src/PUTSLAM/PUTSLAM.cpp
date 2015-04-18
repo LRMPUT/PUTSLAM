@@ -420,7 +420,7 @@ void PUTSLAM::startProcessing() {
 	// Save map
 	std::cout<<"Saving to octomap" << std::endl;
 	int size = map->getPoseCounter();
-	for (int i = 0; i < size; i = i + size / 5) {
+	for (int i = 0; i < size; i = i + size / 15) {
 
 		std::cout<<"Octomap uses point clouds with id = " << i << std::endl;
 
@@ -432,7 +432,7 @@ void PUTSLAM::startProcessing() {
 		// Save for octomap
 		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
 				rgbImage, depthImage,
-				matcher->matcherParameters.cameraMatrixMat, robotPose);
+				matcher->matcherParameters.cameraMatrixMat, tmpPose);
 		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
 
 	}
