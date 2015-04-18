@@ -194,6 +194,9 @@ public:
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 								"addNoFeaturesWhenMapSizeGreaterThan",
 								&addNoFeaturesWhenMapSizeGreaterThan);
+            model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
+            filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
+            filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
             model->FirstChildElement( "mapManager" )->QueryFloatAttribute("distThreshold", &distThreshold);
         }
         public:
@@ -233,6 +236,15 @@ public:
 
             /// MapManagement: distance threshold
             float distThreshold;
+
+            /// export map to files
+            bool exportMap;
+
+            /// m-file ploting all features
+            std::string filenameMap;
+
+            /// m-file computing map properties
+            std::string filenameData;
     };
 
 private:
@@ -327,7 +339,7 @@ private:
     void updatePose(VertexSE3& newPose);
 
     /// plot all features
-    void plotFeatures(std::string filename);
+    void plotFeatures(std::string filenamePlot, std::string filenameData);
 
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
