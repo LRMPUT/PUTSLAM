@@ -204,13 +204,6 @@ void PUTSLAM::startProcessing() {
 			ifStart = false;
 			addFeatureToMap = true;
 
-			// Save for octomap
-//			std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-//					currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
-//					matcher->matcherParameters.cameraMatrixMat, robotPose);
-//			RGBD::saveToFile(pointCloud, "octomap.log", true);
-//			std::cout << "SAVED" << std::endl;
-
         }
 		// The next pose in the sequence
         else {
@@ -227,17 +220,7 @@ void PUTSLAM::startProcessing() {
 
 			robotPose = robotPose * transformation;
 
-			// Save for octomap
-//			if (currentSensorFrame.readId % 20 == 0)
-//			{
-//				std::cout<<"ROBOT POSE" << std::endl << robotPose << std::endl;
-//
-//				std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-//						currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
-//						matcher->matcherParameters.cameraMatrixMat, robotPose);
-//				RGBD::saveToFile(pointCloud, "octomap.log");
-//				std::cout << "SAVED" << std::endl;
-//			}
+
 
 
 			// cameraPose as Eigen::Transform
@@ -433,6 +416,26 @@ void PUTSLAM::startProcessing() {
 	// Run statistics
 	std::cout<<"Evaluating trajectory" << std::endl;
 	evaluateResults(((FileGrabber*) grabber)->parameters.basePath, ((FileGrabber*) grabber)->parameters.datasetName);
+
+	// Save map
+	std::cout<<"Saving to octomap" << std::endl;
+	int size = map->getPoseCounter();
+	for (int i = 0; i < size; i = i + size / 5) {
+
+		std::cout<<"Octomap uses point clouds with id = " << i << std::endl;
+
+		cv::Mat rgbImage, depthImage;
+		map->getImages(i, rgbImage, depthImage);
+		Mat34 pose = map->getSensorPose(i);
+		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
+
+		// Save for octomap
+		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+				rgbImage, depthImage,
+				matcher->matcherParameters.cameraMatrixMat, robotPose);
+		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
+
+	}
 
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }

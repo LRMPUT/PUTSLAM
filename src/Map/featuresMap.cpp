@@ -362,6 +362,13 @@ Mat34 FeaturesMap::getSensorPose(int poseId) {
     return pose;
 }
 
+int FeaturesMap::getPoseCounter() {
+	mtxCamTraj.lock();
+	int size = camTrajectory.size();
+	mtxCamTraj.unlock();
+	return size;
+}
+
 /// start optimization thread
 void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 		std::string RobustKernelName, float_type kernelDelta) {

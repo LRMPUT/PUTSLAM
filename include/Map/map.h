@@ -75,6 +75,9 @@ public:
 	/// get pose of the sensor (default: last pose)
 	virtual Mat34 getSensorPose(int poseId = -1) = 0;
 
+	// get number of poses stored in map
+	virtual int getPoseCounter() = 0;
+
 	/// getDepthSensorModel
 	virtual DepthSensorModel getDepthSensorModel() = 0;
 
