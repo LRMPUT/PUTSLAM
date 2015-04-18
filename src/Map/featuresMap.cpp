@@ -43,9 +43,9 @@ const std::string& FeaturesMap::getName() const {
 /// Position of features in relation to camera pose
 void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
         int poseId) {
-	mtxCamTraj.lock();
-	int camTrajSize = camTrajectory.size();
     Mat34 cameraPose = getSensorPose(poseId);
+    mtxCamTraj.lock();
+    int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
 
 	bufferMapFrontend.mtxBuffer.lock();
@@ -100,8 +100,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 /// add new pose of the camera, returns id of the new pose
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
         float_type timestamp, cv::Mat image, cv::Mat depthImage) {
-	//add camera pose to the map
-    mtxCamTraj.lock();
+    //add camera pose to the map
     imageSeq.push_back(image);
     depthSeq.push_back(depthImage);
 
@@ -109,8 +108,9 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 	if (trajSize == 0) {
 		odoMeasurements.push_back(Mat34::Identity());
 		VertexSE3 camPose(trajSize, cameraPoseChange, timestamp);
-		camTrajectory.push_back(camPose);
 
+        mtxCamTraj.lock();
+		camTrajectory.push_back(camPose);
 		mtxCamTraj.unlock();
 
         //add camera pose to the graph
@@ -120,8 +120,8 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		odoMeasurements.push_back(cameraPoseChange);
 		VertexSE3 camPose(trajSize,
                 getSensorPose() * cameraPoseChange, timestamp);
+        mtxCamTraj.lock();
 		camTrajectory.push_back(camPose);
-
 		mtxCamTraj.unlock();
 
         //add camera pose to the graph
