@@ -383,9 +383,11 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
     optimizationThr->join();
 	poseGraph->export2RGBDSLAM(trajectoryFilename);
 	poseGraph->save2file(graphFilename);
-    std::cout << "save map to file\n";
-    plotFeatures("../../resources/map.m");
-    std::cout << "save map to file end\n";
+    if (config.exportMap){
+        std::cout << "save map to file\n";
+        plotFeatures(config.filenameMap,config.filenameData);
+        std::cout << "save map to file end\n";
+    }
 }
 
 /// Wait for map management thread to finish
@@ -627,8 +629,8 @@ void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& m
 }
 
 /// plot all features
-void FeaturesMap::plotFeatures(std::string filename){
-    std::ofstream file(filename);
+void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameData){
+    std::ofstream file(filenamePlot);
     file << "close all;\nclear all;\nhold on;\n";
     //std::vector<float_type> meanX, meanY, meanZ;
     std::vector<float_type> meanDist, stdevDist;
@@ -658,42 +660,48 @@ void FeaturesMap::plotFeatures(std::string filename){
             }*/
         }
     }
+    file.close();
+    std::ofstream fileData(filenameData);
+    fileData << "\nclear all;\n";
     float_type mean, std, max;
     computeMeanStd(measurementsNo, mean, std, max);
-    file << "featuresNo = " << featureIdNo - FEATURES_START_ID << "\n";
-    file << "meanMeasurementsNo = " << mean << "\n";
-    file << "stdMeasurementsNo = " << std << "\n";
-    file << "maxMeasurementsNo = " << max + mean<< "\n";
+    fileData << "featuresNo = " << featureIdNo - FEATURES_START_ID << "\n";
+    fileData << "meanMeasurementsNo = " << mean << "\n";
+    fileData << "stdMeasurementsNo = " << std << "\n";
+    fileData << "maxMeasurementsNo = " << max + mean<< "\n";
     int singleMeasurementsNo = 0;
     for (auto it = measurementsNo.begin(); it!= measurementsNo.end();it++){
         if (*it<2) singleMeasurementsNo++;
     }
-    file << "featuresMeasuredLessThanOnce = " << (double(singleMeasurementsNo)/double(measurementsNo.size()))*100 << "%[%]\n";
-    file << "measurementsNo = [";
+    fileData << "featuresMeasuredLessThanOnce = " << (double(singleMeasurementsNo)/double(measurementsNo.size()))*100 << "%[%]\n";
+    fileData << "measurementsNo = [";
     for (auto it = measurementsNo.begin(); it!=measurementsNo.end();it++)
-            file << *it << ", ";
-    file << "];\n plot(measurementsNo,'r'); ylabel('measurementsNo'); xlabel('featureNo');\n";
-    file << "meanDist = [";
+            fileData << *it << ", ";
+    fileData << "];\n plot(measurementsNo,'r'); ylabel('measurementsNo'); xlabel('featureNo');\n";
+    fileData << "print -color -djpg measurementsNo.jpg\n";
+    fileData << "meanDist = [";
     for (auto it = meanDist.begin(); it!=meanDist.end();it++)
-        file << *it << ", ";
-    file << "];\n figure(); plot(meanDist,'k'); ylabel('meanDist'); xlabel('featureNo');";
-    file << "stdevDist = [";
+        fileData << *it << ", ";
+    fileData << "];\n figure(); plot(meanDist,'k'); ylabel('meanDist'); xlabel('featureNo');";
+    fileData << "print -color -djpg meanDist.jpg\n";
+    fileData << "stdevDist = [";
     for (auto it = stdevDist.begin(); it!=stdevDist.end();it++)
-        file << *it << ", ";
-    file << "];\n meanMeanDist = mean(meanDist)\n; meanStdDist = mean(stdevDist)\n";
-    file << "figure(); plot(stdevDist,'g'); ylabel('stdevDist'); xlabel('featureNo'); \n";
-    file << "maxDist = [";
+        fileData << *it << ", ";
+    fileData << "];\n meanMeanDist = mean(meanDist)\n; meanStdDist = mean(stdevDist)\n";
+    fileData << "figure(); plot(stdevDist,'g'); ylabel('stdevDist'); xlabel('featureNo'); \n";
+    fileData << "maxDist = [";
     for (auto it = maxDist.begin(); it!=maxDist.end();it++)
-        file << *it << ", ";
-    file << "];\nmeanMaxDist=mean(maxDist)\n stdMaxDist = std(maxDist)\n";
-    file << "figure(); plot(maxDist,'b');\n ylabel('maxDist'); xlabel('featureNo');";
-    file << "meanDist(meanDist<1e-5) = [];";
-    file << "\nmeanDistWithoutZeros=mean(meanDist)\n stdMeanDistWithoutZeros = std(meanDist)\n";
-    file << "maxDist(maxDist==0) = [];";
-    file << "\nmeanMaxDistWithoutZeros=mean(maxDist)\n stdMaxDistWithoutZeros = std(maxDist)\n";
-    file << "stdevDist(stdevDist==0) = [];";
-    file << "\nmeanStdDistWithoutZeros=mean(stdevDist)\n stdStdDistWithoutZeros = std(stdevDist)";
-    file.close();
+        fileData << *it << ", ";
+    fileData << "];\nmeanMaxDist=mean(maxDist)\n stdMaxDist = std(maxDist)\n";
+    fileData << "figure(); plot(maxDist,'b');\n ylabel('maxDist'); xlabel('featureNo');";
+    fileData << "print -color -djpg maxDist.jpg\n";
+    fileData << "meanDist(meanDist<1e-5) = [];";
+    fileData << "\nmeanDistWithoutZeros=mean(meanDist)\n stdMeanDistWithoutZeros = std(meanDist)\n";
+    fileData << "maxDist(maxDist==0) = [];";
+    fileData << "\nmeanMaxDistWithoutZeros=mean(maxDist)\n stdMaxDistWithoutZeros = std(maxDist)\n";
+    fileData << "stdevDist(stdevDist==0) = [];";
+    fileData << "\nmeanStdDistWithoutZeros=mean(stdevDist)\n stdStdDistWithoutZeros = std(stdevDist)";
+    fileData.close();
 }
 
 /// set Robust Kernel
