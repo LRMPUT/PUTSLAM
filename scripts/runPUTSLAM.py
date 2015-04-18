@@ -7,6 +7,8 @@ import sys
 import glob
 import os
 
+
+
 # Path to save main results - create if needed
 if not os.path.exists("../../results"):
 	os.makedirs("../../results");	
@@ -49,3 +51,12 @@ for root, dirs, files in os.walk("../../configs/"):
 		call('mv *.py ../../results/' + dir + '/', shell=True);
 		call('mv *.g2o ../../results/' + dir + '/', shell=True);
 		call('mv *.m ../../results/' + dir + '/', shell=True);
+
+		# OCTOMAP
+		if len(sys.argv) >= 2 and "OCTOMAP" in sys.argv[1].upper():
+			print("Running octomap conversion!");
+			call('../../../octomap/bin/log2graph ../../results/' + dir + '/octomap.log  ../../results/' + dir + '/octomap.graph', shell=True);
+			call('../../../octomap/bin/graph2tree -i ../../results/' + dir + '/octomap.graph -o ../../results/' + dir + '/octomap.bt -res 0.01', shell=True);
+			call('../../../octomap/bin/octovis ../../results/' + dir + '/octomap.bt', shell=True);
+
+
