@@ -313,6 +313,9 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			<< mapFeaturePositions3D.size() << " " << prevFeatures3D.size()
 			<< std::endl;
 
+	if ( matches.size() <= 0 )
+			return -1.0;
+
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
 	RANSAC ransac(matcherParameters.RANSACParams, matcherParameters.cameraMatrixMat);
@@ -420,6 +423,9 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	}
 
 	std::cout << "MatchesXYZ - we found : " << matches.size() << std::endl;
+
+	if ( matches.size() <= 0 )
+			return -1.0;
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;

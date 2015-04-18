@@ -120,9 +120,11 @@ class FileGrabber : public Grabber {
 		// Convert to string with high numer of digits
 		std::string convertToHighPrecisionString(double timestamp, int precision = 20);
 
+    public:
 		/// Parameters read from file
 		Parameters parameters;
 
+    private:
         /// file prefix (images)
         std::string imageSeqPrefix;
 

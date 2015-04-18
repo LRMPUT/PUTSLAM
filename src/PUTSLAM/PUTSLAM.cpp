@@ -429,6 +429,12 @@ void PUTSLAM::startProcessing() {
 	// Save statistics
 	std::cout<<"Saving logs to file" << std::endl;
 	saveLogs();
+
+	// Run statistics
+	std::cout<<"Evaluating trajectory" << std::endl;
+	evaluateResults(((FileGrabber*) grabber)->parameters.basePath, ((FileGrabber*) grabber)->parameters.datasetName);
+
+	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
 
 /// PRIVATE
@@ -538,7 +544,7 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 }
 
 void PUTSLAM::saveLogs(){
-	ofstream statisticsLogStream("statistics.m");
+	ofstream statisticsLogStream("statistics.py");
 
 	statisticsLogStream<<"import matplotlib.pyplot as plt"<<endl;
 	statisticsLogStream<<"import numpy as np"<<endl;
@@ -553,11 +559,12 @@ void PUTSLAM::saveLogs(){
 	statisticsLogStream << "]);" << std::endl;
 
 	statisticsLogStream << "fig = plt.figure()" << endl;
-	statisticsLogStream << "plt.plot(VORansacInlierRatioLog)" << endl;
+	statisticsLogStream << "plt.plot(VORansacInlierRatioLog, label='-1 means no matches before RANSAC')" << endl;
 	statisticsLogStream
 			<< "fig.suptitle('RANSAC inlier ratio in VO', fontsize=20)" << endl;
 	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
 	statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << endl;
+	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream << "plt.savefig('VORansacInlierRatio.png')" << endl;
 
 
@@ -586,13 +593,28 @@ void PUTSLAM::saveLogs(){
 	statisticsLogStream<<"]);" << std::endl;
 
 	statisticsLogStream<<"fig = plt.figure()"<<endl;
-	statisticsLogStream<<"plt.plot(mapMeasurementSize)"<<endl;
+	statisticsLogStream<<"plt.plot(mapMeasurementSize, label='-1 means no matches before RANSAC')"<<endl;
 	statisticsLogStream<<"fig.suptitle('Measurement number to features in map', fontsize=20)"<<endl;
 	statisticsLogStream<<"plt.xlabel('Frame counter', fontsize=18)"<<endl;
 	statisticsLogStream<<"plt.ylabel('Measurement number', fontsize=16)"<<endl;
+	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream<<"plt.savefig('mapMatchinggSize.png')"<<endl;
 
 	statisticsLogStream.close();
 
-	int tmp = std::system("python statistics.m");
+	int tmp = std::system("python statistics.py");
+}
+
+
+void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
+
+	std::string fullPath = basePath + "/" + datasetName + "/";
+
+	std::string evalVO = "python2 ../../scripts/evaluate_ate.py " + fullPath
+					+ "groundtruth.txt VO_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot VOAte.png > VOAte.res";
+	int tmp = std::system(evalVO.c_str());
+
+	std::string evalMap = "python2 ../../scripts/evaluate_ate.py " + fullPath
+			+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res";
+	tmp = std::system(evalMap.c_str());
 }
