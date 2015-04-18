@@ -65,9 +65,10 @@ private:
 	std::vector<int> measurementToMapSizeLog;
 	std::vector<double> VORansacInlierRatioLog;
 	std::vector<double> MapMatchingRansacInlierRatioLog;
-
 	void saveLogs();
 
+	// Evaluate results
+	void evaluateResults(std::string basePath, std::string datasetName);
 
 	void loadConfigs();
 

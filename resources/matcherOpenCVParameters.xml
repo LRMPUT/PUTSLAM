@@ -26,7 +26,7 @@
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-	<RANSAC verbose="0" errorVersion="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="8.0"
+	<RANSAC verbose="0" errorVersion="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="2.5"
 		minimalInlierRatioThreshold="0.3" usedPairs="3">
 	</RANSAC>
     	
@@ -46,7 +46,7 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
     
     <!-- Matching using patche 
     
