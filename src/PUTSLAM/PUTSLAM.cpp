@@ -292,7 +292,10 @@ void PUTSLAM::startProcessing() {
 				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
 					measurementList, mapEstimatedTransformation);
 			}
-			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_PATCHES)
+			else if (matcher->matcherParameters.MapMatchingVersion
+					== Matcher::MatcherParameters::MAPMATCH_PATCHES
+					|| matcher->matcherParameters.MapMatchingVersion
+							== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES)
 			{
 				// Prepare set of images
 				std::vector<cv::Mat> mapRgbImages(frameIds.size()),
@@ -304,8 +307,28 @@ void PUTSLAM::startProcessing() {
 					cameraPoses[i] = map->getSensorPose(frameIds[i]);
 				}
 
-				mapMatchingInlierRatio = matcher->matchToMapUsingPatches(mapFeatures, cameraPoseId,
-						cameraPose, frameIds, cameraPoses, mapRgbImages, mapDepthImages, measurementList, mapEstimatedTransformation);
+				if (matcher->matcherParameters.MapMatchingVersion
+						== Matcher::MatcherParameters::MAPMATCH_PATCHES) {
+					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
+							mapFeatures, cameraPoseId, cameraPose, frameIds,
+							cameraPoses, mapRgbImages, mapDepthImages,
+							measurementList, mapEstimatedTransformation);
+				} else if (matcher->matcherParameters.MapMatchingVersion
+						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
+					// XYZ+desc
+					std::vector<MapFeature> probablyInliers;
+					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
+							mapFeatures, cameraPoseId, probablyInliers,
+							mapEstimatedTransformation);
+
+					std::cout << "Measurement list size before patches : " << probablyInliers.size()
+										<< std::endl;
+					// PATCHES
+					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
+							probablyInliers, cameraPoseId, cameraPose, frameIds,
+							cameraPoses, mapRgbImages, mapDepthImages,
+							measurementList, mapEstimatedTransformation);
+				}
 			}
 			else {
 				std::cout<<"Unrecognized map matching version -- double check matcherOpenCVParameters.xml" << std::endl;
