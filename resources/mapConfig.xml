@@ -27,8 +27,6 @@
 				minEuclideanDistanceOfFeatures="0.05"
 				minImageDistanceOfFeatures="8"
 				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
-	
-	<mapOutput exportMap="true" filenameMap="../../resources/map.m" filenameData="../../resources/mapData.m"></mapOutput>
-	
+	<mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"></mapOutput>
 	<mapManager distThreshold="0.03"></mapManager>
   </MapConfig>

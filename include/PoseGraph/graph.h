@@ -46,6 +46,12 @@ namespace putslam {
             virtual bool addVertexSE2(const VertexSE2& v) = 0;
 
             /**
+             * update a vertex of the graph - robot pose
+             * returns true, on success, or false on failure.
+             */
+            virtual bool updateVertex(const putslam::VertexSE3& v) = 0;
+
+            /**
              * Adds an SE3 edge to the graph. If the edge is already in the graph, it
              * does nothing and returns false. Otherwise it returns true.
              */

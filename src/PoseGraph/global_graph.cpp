@@ -96,6 +96,14 @@ bool GlobalGraph::addEdgeSE2(const EdgeSE2& e){
 }
 
 /**
+ * update a vertex of the graph - robot pose
+ * returns true, on success, or false on failure.
+ */
+bool GlobalGraph::updateVertex(const putslam::VertexSE3& v){
+
+}
+
+/**
  * update graph: adds vertices and edges to the graph.
  * returns true, on success, or false on failure.
  */
