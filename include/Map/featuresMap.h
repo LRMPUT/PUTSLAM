@@ -158,6 +158,9 @@ public:
     /// get n-th image and depth image from the sequence
     void getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage);
 
+    /// Update pose
+    void updatePose(VertexSE3& newPose, bool updateGraph = false);
+
     class Config{
       public:
         Config() :
@@ -334,9 +337,6 @@ private:
 
     /// Update camera trajectory
     void updateCamTrajectory(std::vector<VertexSE3>& poses2update);
-
-    /// Update pose
-    void updatePose(VertexSE3& newPose);
 
     /// plot all features
     void plotFeatures(std::string filenamePlot, std::string filenameData);

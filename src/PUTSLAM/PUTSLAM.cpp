@@ -171,15 +171,20 @@ void PUTSLAM::startProcessing() {
 
     ///for inverse SLAM problem
     //Simulator simulator;
-    //simulator.loadTrajectory("../../resources/traj_fr1_desk.txt");
+    //simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
     //std::vector<Mat34> traj = simulator.getTrajectory();
+    //int trajIt=1;
 
 	// Main loop
 	while (true) {
 
 		bool middleOfSequence = grabber->grab(); // grab frame
 		if (!middleOfSequence)
-			break;
+            break;
+        ///for inverse SLAM problem
+        //if (trajIt>traj.size())
+//            break;
+//        trajIt++;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -194,7 +199,7 @@ void PUTSLAM::startProcessing() {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 
             // cameraPose as Eigen::Transform
-			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+            Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
 			cameraPoseId = map->addNewPose(cameraPose,
@@ -225,7 +230,7 @@ void PUTSLAM::startProcessing() {
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
-			robotPose = robotPose * transformation;
+            robotPose = robotPose * transformation;
 
 			// Save for octomap
 //			if (currentSensorFrame.readId % 20 == 0)
@@ -238,7 +243,6 @@ void PUTSLAM::startProcessing() {
 //				RGBD::saveToFile(pointCloud, "octomap.log");
 //				std::cout << "SAVED" << std::endl;
 //			}
-
 
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
@@ -411,8 +415,14 @@ void PUTSLAM::startProcessing() {
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// We optimize only at the end if that version is chosen
-	if ( optimizationThreadVersion == OPTTHREAD_ATEND)
+    if ( optimizationThreadVersion == OPTTHREAD_ATEND)
 		map->startOptimizationThread(15, 0);
+
+    ///for inverse SLAM problem
+    //for (int i=0; i<traj.size();i++){
+    //    VertexSE3 vert(i, traj[i], i);
+    //    ((FeaturesMap*) map)->updatePose(vert, true);
+    //}
 
     // Wait for optimization thread to finish
 	if ( optimizationThreadVersion != OPTTHREAD_OFF)

@@ -552,7 +552,7 @@ void FeaturesMap::updateCamTrajectory(std::vector<VertexSE3>& poses2update) {
 }
 
 /// Update pose
-void FeaturesMap::updatePose(VertexSE3& newPose) {
+void FeaturesMap::updatePose(VertexSE3& newPose, bool updateGraph) {
 	if (newPose.vertexId > lastOptimizedPose)
 		lastOptimizedPose = newPose.vertexId;
 	mtxCamTraj.lock();
@@ -562,6 +562,8 @@ void FeaturesMap::updatePose(VertexSE3& newPose) {
 			it->pose = newPose.pose;
 		}
 	}
+    if (updateGraph)
+        poseGraph->updateVertex(newPose);
 	mtxCamTraj.unlock();
 }
 
@@ -619,13 +621,16 @@ void FeaturesMap::save2file(std::string mapFilename,
 void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max){
     double sum = std::accumulate(v.begin(), v.end(), 0.0);
     mean = sum / v.size();
-    max=0;
+    max=-10;
     for (auto it=v.begin();it!=v.end();it++){
-        if (fabs(*it-mean)>max)
-            max=fabs(*it-mean);
+        if (*it>max)
+            max=*it;
     }
+
     double sq_sum = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
     std = std::sqrt(sq_sum / v.size() - mean * mean);
+    if (std::isnan(std))
+            std=0;
 }
 
 /// plot all features
@@ -641,17 +646,46 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
         Vec3 estimation;
         ((PoseGraphG2O*)poseGraph)->getMeasurements(i, features, estimation);
         file << "%feature no " << i << "\n";
-        file << "plot3(" << estimation.x() << "," << estimation.y() << "," << estimation.z() << ",'ro');\n";
+        file << "%measured from frames ";
+        MapFeature tmpFeature = featuresMapFrontend[i];
+        for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
+            file << *it << ", ";
+        }
+        file << "\n";
         std::vector<float_type> dist4estim;
         measurementsNo.push_back(features.size());
         if (features.size()>0){ //how come?
+            //std::cout << "dist:\n";
+            float_type sumPos[3]={0,0,0};
+            // compute the center of mass
+            for (int j=0;j<features.size();j++){
+                sumPos[0]+=features[j].trans.x(); sumPos[1]+=features[j].trans.y(); sumPos[2]+=features[j].trans.z();
+            }
+            estimation.x()=sumPos[0]/features.size(); estimation.y()=sumPos[1]/features.size(); estimation.z()=sumPos[2]/features.size();
+            file << "plot3(" << estimation.x() << "," << estimation.y() << "," << estimation.z() << ",'ro');\n";
             for (int j=0;j<features.size();j++){
                 float_type dist = sqrt(pow(features[j].trans.x()-estimation.x(),2.0)+pow(features[j].trans.y()-estimation.y(),2.0)+pow(features[j].trans.z()-estimation.z(),2.0));
+                //std::cout << dist << ", ";
                 dist4estim.push_back(dist);
                 file << "plot3(" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << ",'bx');\n";
             }
             float_type mean, std, max;
             computeMeanStd(dist4estim, mean, std, max); meanDist.push_back(mean); stdevDist.push_back(std); maxDist.push_back(max);
+            if (max>0.2){
+                std::cout << "dist:\n";
+                for (auto it = dist4estim.begin(); it!=dist4estim.end();it++){
+                    std::cout << *it << ", ";
+                }
+                std::cout << "\n";
+                std::cout << "estimation: " << estimation.x() << " " << estimation.y() << " " << estimation.z() << "\n";
+                for (int j=0;j<features.size();j++){
+                    std::cout << "feature: " << features[j].fromVertexId << "->" <<features[j].toVertexId << " " << features[j].trans.x() << " " << features[j].trans.y() << " " << features[j].trans.z() << "\n";
+                }
+                getchar();
+            }
+
+            //std::cout << "\nmean:" << mean << " std: " << std << " max:" << max << "\n";
+            //getchar();
             /*for (int j=0;j<features.size();j++){
                 Mat33 unc = features[j].info.inverse();
                 file << "C = [" << unc(0,0) << ", " << unc(0,1) << ", " << unc(0,2) << "; " << unc(1,0) << ", " << unc(1,1) << ", " << unc(1,2) << "; " << unc(2,0) << ", " << unc(2,1) << ", " << unc(2,2) << ", " << "];\n";
@@ -668,7 +702,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
     fileData << "featuresNo = " << featureIdNo - FEATURES_START_ID << "\n";
     fileData << "meanMeasurementsNo = " << mean << "\n";
     fileData << "stdMeasurementsNo = " << std << "\n";
-    fileData << "maxMeasurementsNo = " << max + mean<< "\n";
+    fileData << "maxMeasurementsNo = " << max << "\n";
     int singleMeasurementsNo = 0;
     for (auto it = measurementsNo.begin(); it!= measurementsNo.end();it++){
         if (*it<2) singleMeasurementsNo++;
