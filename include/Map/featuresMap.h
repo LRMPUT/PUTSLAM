@@ -102,6 +102,9 @@ public:
 	/// get pose of the sensor (default: last pose)
 	Mat34 getSensorPose(int poseId = -1);
 
+	/// get size of poses
+	int getPoseCounter();
+
 	/// getDepthSensorModel
 	DepthSensorModel getDepthSensorModel() {
 		return sensorModel;
@@ -148,6 +151,8 @@ public:
 	bool getAddPoseToPoseEdges() {
 		return config.addPoseToPoseEdges;
 	}
+
+
 
     /// set Robust Kernel
     void setRobustKernel(std::string name, float_type delta);
