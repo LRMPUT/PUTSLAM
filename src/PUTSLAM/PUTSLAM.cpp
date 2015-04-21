@@ -327,7 +327,8 @@ void PUTSLAM::startProcessing() {
 					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
 							probablyInliers, cameraPoseId, cameraPose, frameIds,
 							cameraPoses, mapRgbImages, mapDepthImages,
-							measurementList, mapEstimatedTransformation);
+							measurementList, mapEstimatedTransformation, false);
+
 				}
 			}
 			else {
@@ -420,13 +421,12 @@ void PUTSLAM::startProcessing() {
 	if ( optimizationThreadVersion == OPTTHREAD_ATEND)
 		map->startOptimizationThread(15, 0);
 
-    // Wait for optimization thread to finish
-	if ( optimizationThreadVersion != OPTTHREAD_OFF)
-		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
-
     // Wait for management thread to finish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
-    	map->finishManagementThr();
+    	map->finishManagementThr();  // Wait for optimization thread to finish
+
+    if ( optimizationThreadVersion != OPTTHREAD_OFF)
+		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
