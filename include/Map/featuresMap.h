@@ -120,6 +120,10 @@ public:
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
 
+    /// Export graph and trajectory
+    void exportOutput(std::string trajectoryFilename,
+            std::string graphFilename);
+
     /// Wait for map management thread to finish
     void finishManagementThr(void);
 

@@ -91,6 +91,9 @@ public:
 	virtual void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename) = 0;
 
+    virtual /// Export graph and trajectory
+    void exportOutput(std::string trajectoryFilename,
+            std::string graphFilename) = 0;
     /// Wait for map management thread to finish
     virtual void finishManagementThr(void) = 0;
 

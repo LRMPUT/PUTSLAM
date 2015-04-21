@@ -388,8 +388,14 @@ void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
 	continueOpt = false;
     optimizationThr->join();
-	poseGraph->export2RGBDSLAM(trajectoryFilename);
-	poseGraph->save2file(graphFilename);
+    exportOutput(trajectoryFilename, graphFilename);
+}
+
+/// Export graph and trajectory
+void FeaturesMap::exportOutput(std::string trajectoryFilename,
+        std::string graphFilename) {
+    poseGraph->export2RGBDSLAM(trajectoryFilename);
+    poseGraph->save2file(graphFilename);
     if (config.exportMap){
         std::cout << "save map to file\n";
         plotFeatures(config.filenameMap,config.filenameData);
@@ -701,6 +707,57 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
             }*/
         }
     }
+    ///move along trajectory and compute projection of features
+    std::vector<float_type> meanDistU; std::vector<float_type> meanDistV;
+    std::vector<float_type> maxDistU; std::vector<float_type> maxDistV;
+    int iterFrame=0;
+    for (auto it = camTrajectory.begin(); it!=camTrajectory.end();it++){
+        float_type meanU = 0; float_type meanV = 0;
+        float_type maxU = 0; float_type maxV = 0;
+        int featuresNo = 0;
+        for (auto itFeat=camTrajectory[iterFrame].featuresIds.begin();itFeat!=camTrajectory[iterFrame].featuresIds.end();itFeat++){
+            std::vector<Edge3D> features;
+            Vec3 estimation;
+            ((PoseGraphG2O*)poseGraph)->getMeasurements(*itFeat, features, estimation);
+            // compute the center of mass
+            float_type sumPos[3]={0,0,0};
+            for (int j=0;j<features.size();j++){
+                sumPos[0]+=features[j].trans.x(); sumPos[1]+=features[j].trans.y(); sumPos[2]+=features[j].trans.z();
+            }
+            estimation.x()=sumPos[0]/features.size(); estimation.y()=sumPos[1]/features.size(); estimation.z()=sumPos[2]/features.size();
+            //estimation pose in camera frame
+            Mat34 feature(Quaternion(1,0,0,0)*estimation);
+            Mat34 featInCam = camTrajectory[iterFrame].pose.inverse()*feature;
+            Eigen::Vector3d featCam = sensorModel.inverseModel(featInCam(0,3), featInCam(1,3), featInCam(2,3));
+            float_type meanFeatU = 0; float_type meanFeatV = 0;
+            float_type maxFeatU = -10; float_type maxFeatV = -10;
+            if (featCam(0)>0&&featCam(1)>1){/// for all measurements of the feature
+                int measNo=0;
+                for (int j=0;j<features.size();j++){
+                    Mat34 featureLocal(Quaternion(1,0,0,0)*features[j].trans);
+                    Mat34 featLocalInCam = camTrajectory[iterFrame].pose.inverse()*featureLocal;
+                    Eigen::Vector3d featLocalCam = sensorModel.inverseModel(featLocalInCam(0,3), featLocalInCam(1,3), featLocalInCam(2,3));
+                    if (featLocalCam(0)>0&&featLocalCam(1)>1){
+                        float_type distU = fabs(featLocalCam(0)-featCam(0));
+                        float_type distV = fabs(featLocalCam(1)-featCam(1));
+                        meanFeatU+=distU; meanFeatV+=distV;
+                        if (distU>maxFeatU) maxFeatU = distU;
+                        if (distV>maxFeatV) maxFeatV = distV;
+                        measNo++;
+                    }
+                }
+                meanFeatU/=double(measNo); meanFeatV/=double(measNo);
+            }
+            meanU += meanFeatU; meanV += meanFeatV;
+            featuresNo++;
+            if (maxFeatU>maxU) maxU = maxFeatU;
+            if (maxFeatV>maxV) maxV = maxFeatV;
+        }
+        meanU/=double(featuresNo); meanV/=double(featuresNo);
+        meanDistU.push_back(meanU); meanDistV.push_back(meanV);
+        maxDistU.push_back(maxU); maxDistV.push_back(maxV);
+        iterFrame++;
+    }
     file.close();
     std::ofstream fileData(filenameData);
     fileData << "\nclear all;\n";
@@ -725,6 +782,26 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
         fileData << *it << ", ";
     fileData << "];\n figure(); plot(meanDist,'k'); ylabel('meanDist'); xlabel('featureNo');";
     fileData << "print -color -djpg meanDist.jpg\n";
+    fileData << "maxDistU = [";
+    for (auto it = maxDistU.begin(); it!=maxDistU.end();it++)
+        fileData << *it << ", ";
+    fileData << "];\n figure(); plot(maxDistU,'k'); ylabel('maxDistU'); xlabel('frameNo');";
+    fileData << "print -color -djpg maxDistU.jpg\n";
+    fileData << "maxDistV = [";
+    for (auto it = maxDistV.begin(); it!=maxDistV.end();it++)
+        fileData << *it << ", ";
+    fileData << "];\n figure(); plot(maxDistV,'k'); ylabel('maxDistV'); xlabel('frameNo');";
+    fileData << "print -color -djpg maxDistV.jpg\n";
+    fileData << "meanDistU = [";
+    for (auto it = meanDistU.begin(); it!=meanDistU.end();it++)
+        fileData << *it << ", ";
+    fileData << "];\n figure(); plot(meanDistU,'k'); ylabel('meanDistU'); xlabel('frameNo');";
+    fileData << "print -color -djpg meanDistU.jpg\n";
+    fileData << "meanDistV = [";
+    for (auto it = meanDistV.begin(); it!=meanDistV.end();it++)
+        fileData << *it << ", ";
+    fileData << "];\n figure(); plot(meanDistV,'k'); ylabel('meanDistV'); xlabel('frameNo');";
+    fileData << "print -color -djpg meanDistV.jpg\n";
     fileData << "stdevDist = [";
     for (auto it = stdevDist.begin(); it!=stdevDist.end();it++)
         fileData << *it << ", ";
