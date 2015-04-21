@@ -18,25 +18,22 @@ int main()
 	cv::cvtColor(imgNew, dstNew, CV_RGB2GRAY);
 
 	// Select random feature
-	putslam::float_type x = 150.3f, y = 253.1f;
-
-	// Visualize point
-//	cv::circle(img, cv::Point2f(x,y), 5, cv::Scalar(0, 0 ,255));
-//	cv::imshow("Showing features", img);
-//	cv::waitKey(5000);
+	putslam::float_type x = 64.0f, y = 312.0f;
 
 	// Distruption to point
 	putslam::float_type newX = x + (rand()%100)/50.0, newY = y + (rand()%100)/50.0;
+	newX = 66.0f;
+	newY = 314.0f;
 	std::cout<<"x, y = " << x << " " << y << std::endl;
 	std::cout<<"newX, newY = " << newX << " " << newY <<std::endl;
 
 
 
 	// Create matching on patches of size 9x9, verbose = 0
-	MatchingOnPatches matchingOnPatches(13, 50, 0.1, 1);
+	MatchingOnPatches matchingOnPatches(5, 50, 0.0000005, 3);
 
 	// Compute old patch
-	std::vector<uint8_t> oldPatch;
+	std::vector<double> oldPatch;
 	oldPatch = matchingOnPatches.computePatch(dst, x, y);
 
 	// Compute gradient

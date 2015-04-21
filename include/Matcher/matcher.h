@@ -100,7 +100,8 @@ public:
 			std::vector<cv::Mat> mapRgbImages,
 			std::vector<cv::Mat> mapDepthImages,
 			std::vector<MapFeature> &foundInlierMapFeatures,
-			Eigen::Matrix4f &estimatedTransformation);
+			Eigen::Matrix4f &estimatedTransformation,
+			bool withRANSAC = true);
 
 	/// Class used to hold all parameters
 	class MatcherParameters {

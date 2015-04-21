@@ -53,7 +53,7 @@
     
 		TODO: DESCRIPTION!!!    
     -->
-	<MatchingOnPatches verbose="0" warping="1" patchSize="7" maxIterationCount="50" minSqrtError="0.04"></MatchingOnPatches>    
+	<MatchingOnPatches verbose="1" warping="0" patchSize="3" maxIterationCount="50" minSqrtError="0.01"></MatchingOnPatches>    
     
     <Parameters maxAngleBetweenFrames="0.3"> </Parameters>
 </Matcher>

@@ -41,7 +41,7 @@ public:
 	MatchingOnPatches(parameters _parameters);
 
 	// Computes the patch on image "img" at location (x,y)
-	std::vector<uint8_t> computePatch(cv::Mat img, putslam::float_type x,
+	std::vector<double> computePatch(cv::Mat img, putslam::float_type x,
 			putslam::float_type y);
 
 	// Method used to compute the gradient on the old image for optimization purposes. Takes:
@@ -60,7 +60,7 @@ public:
 	//	-	newX, newY	-> firstly the guess of feature location, used to return optimized location
 	//	- 	gradientX, gradientY -> precomputed gradients of the patch on the old image
 	//	-	InvHessian	-> precomputed inverse of hessian of the patch on the old image
-	bool optimizeLocation(cv::Mat oldImg, std::vector<uint8_t> oldPatch,
+	bool optimizeLocation(cv::Mat oldImg, std::vector<double> oldPatch,
 			cv::Mat newImg, putslam::float_type &newX,
 			putslam::float_type &newY, std::vector<float> gradientX,
 			std::vector<float> gradientY, Eigen::Matrix3f &InvHessian);
@@ -79,10 +79,13 @@ private:
 			int _verbose);
 
 	// Method used to compute the Jacobian of optimization
-	inline void evaluatePatches(const std::vector<uint8_t> newPatch,
-			const std::vector<uint8_t> oldPatch, Eigen::Vector3f & tmpJ,
+	inline void evaluatePatches(const std::vector<double> newPatch,
+			const std::vector<double> oldPatch, Eigen::Vector3f & tmpJ,
 			const std::vector<float> gradientX,
-			const std::vector<float> gradientY);
+			const std::vector<float> gradientY, double mean = 0.0);
+
+	// Method used to check that image is grayscale
+	inline void assertGrayscale(cv::Mat &img);
 };
 
 #endif // _PATCHES
