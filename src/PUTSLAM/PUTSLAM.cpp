@@ -184,7 +184,6 @@ void PUTSLAM::startProcessing() {
         ///for inverse SLAM problem
         //if (trajIt>traj.size())
         //    break;
-        //trajIt++;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -219,6 +218,10 @@ void PUTSLAM::startProcessing() {
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
+            //Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+            //            transformation = transReal.cast<float>().matrix();
+            //std::cout << "iteration: " << trajIt << "\n";
+            //trajIt++;
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
@@ -339,6 +342,8 @@ void PUTSLAM::startProcessing() {
 			}
 			MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
 
+            /// for inverse slam problem (ver. A)
+            //mapEstimatedTransformation.setIdentity();
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
