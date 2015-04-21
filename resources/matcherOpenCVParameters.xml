@@ -9,10 +9,11 @@
 				1 -> tracking
 
 	MapMatchingVersion :	0 -> descriptors
-							1 -> XYZ + descriptors
-							2 -> patches
+				1 -> XYZ + descriptors
+				2 -> patches
+				3 -> XYZ + descriptors + patches
 -->  
- <Matcher verbose="0" VOVersion="1" MapMatchingVersion="1">
+ <Matcher verbose="0" VOVersion="1" MapMatchingVersion="3">
  	
  	
 	 <!-- RANSAC settings
@@ -52,7 +53,7 @@
     
 		TODO: DESCRIPTION!!!    
     -->
-	<MatchingOnPatches verbose="0" warping="1" patchSize="13" maxIterationCount="50" minSqrtError="0.04"></MatchingOnPatches>    
+	<MatchingOnPatches verbose="1" warping="0" patchSize="3" maxIterationCount="50" minSqrtError="0.01"></MatchingOnPatches>    
     
     <Parameters maxAngleBetweenFrames="0.3"> </Parameters>
 </Matcher>
