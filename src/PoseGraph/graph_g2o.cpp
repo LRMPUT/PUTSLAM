@@ -247,6 +247,26 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
 }
 
 /**
+ * update a vertex of the graph - robot pose
+ * returns true, on success, or false on failure.
+ */
+bool PoseGraphG2O::updateVertex(const putslam::VertexSE3& v){
+    mtxGraph.lock();
+    //update vertex
+    PoseGraph::VertexSet::iterator vertIt = findVertex(v.vertexId);
+    if (vertIt!=graph.vertices.end()){
+        ((VertexSE3*)(*vertIt).get())->pose = v.pose;
+        ///TODO update g2o graph
+        mtxGraph.unlock();
+        return true;
+    }
+    else {
+        mtxGraph.unlock();
+        return false;
+    }
+}
+
+/**
  * adds a vertex to the graph - x,y,theta.
  * returns true, on success, or false on failure.
  */
@@ -900,7 +920,7 @@ void PoseGraphG2O::getMeasurements(int featureId, std::vector<Edge3D>& features,
                 //compute information matrix in global frame J*unc*J'
                 Mat33 info = ((Edge3D*)edgeIt->get())->info;
                 info = camPose.rotation() * info * camPose.rotation().transpose();
-                features.push_back(Edge3D(Vec3(featureGlobal(0,3), featureGlobal(1,3), featureGlobal(2,3)),info,0,0));
+                features.push_back(Edge3D(Vec3(featureGlobal(0,3), featureGlobal(1,3), featureGlobal(2,3)),info,((Edge3D*)edgeIt->get())->fromVertexId,((Edge3D*)edgeIt->get())->toVertexId));
             }
         }
     }

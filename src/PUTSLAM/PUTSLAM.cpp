@@ -171,15 +171,19 @@ void PUTSLAM::startProcessing() {
 
     ///for inverse SLAM problem
     //Simulator simulator;
-    //simulator.loadTrajectory("../../resources/traj_fr1_desk.txt");
+    //simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
     //std::vector<Mat34> traj = simulator.getTrajectory();
+    //int trajIt=1;
 
 	// Main loop
 	while (true) {
 
 		bool middleOfSequence = grabber->grab(); // grab frame
 		if (!middleOfSequence)
-			break;
+            break;
+        ///for inverse SLAM problem
+        //if (trajIt>traj.size())
+        //    break;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -194,7 +198,7 @@ void PUTSLAM::startProcessing() {
 			matcher->Matcher::loadInitFeatures(currentSensorFrame);
 
             // cameraPose as Eigen::Transform
-			Mat34 cameraPose = Mat34(robotPose.cast<double>());
+            Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
 			cameraPoseId = map->addNewPose(cameraPose,
@@ -214,12 +218,15 @@ void PUTSLAM::startProcessing() {
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
+            //Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+            //            transformation = transReal.cast<float>().matrix();
+            //std::cout << "iteration: " << trajIt << "\n";
+            //trajIt++;
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
-			robotPose = robotPose * transformation;
-
+            robotPose = robotPose * transformation;
 
 
 
@@ -336,6 +343,8 @@ void PUTSLAM::startProcessing() {
 			}
 			MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
 
+            /// for inverse slam problem (ver. A)
+            //mapEstimatedTransformation.setIdentity();
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
@@ -418,8 +427,12 @@ void PUTSLAM::startProcessing() {
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// We optimize only at the end if that version is chosen
-	if ( optimizationThreadVersion == OPTTHREAD_ATEND)
+    if ( optimizationThreadVersion == OPTTHREAD_ATEND)
 		map->startOptimizationThread(15, 0);
+
+    // Wait for optimization thread to finish
+	if ( optimizationThreadVersion != OPTTHREAD_OFF)
+		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
     // Wait for management thread to finish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
@@ -427,6 +440,14 @@ void PUTSLAM::startProcessing() {
 
     if ( optimizationThreadVersion != OPTTHREAD_OFF)
 		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+
+    ///for inverse SLAM problem
+    //for (int i=0; i<traj.size();i++){
+    //    VertexSE3 vert(i, traj[i], i);
+    //    ((FeaturesMap*) map)->updatePose(vert, true);
+    //}
+    //map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();

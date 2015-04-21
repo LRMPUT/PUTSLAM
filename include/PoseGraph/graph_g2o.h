@@ -80,6 +80,12 @@ class PoseGraphG2O : public Graph {
         bool addVertexSE2(const VertexSE2& v);
 
         /**
+         * update a vertex of the graph - robot pose
+         * returns true, on success, or false on failure.
+         */
+        bool updateVertex(const putslam::VertexSE3& v);
+
+        /**
          * Adds an SE3 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */
