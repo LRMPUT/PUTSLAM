@@ -183,8 +183,8 @@ void PUTSLAM::startProcessing() {
             break;
         ///for inverse SLAM problem
         //if (trajIt>traj.size())
-//            break;
-//        trajIt++;
+        //    break;
+        //trajIt++;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -424,15 +424,16 @@ void PUTSLAM::startProcessing() {
     if ( optimizationThreadVersion == OPTTHREAD_ATEND)
 		map->startOptimizationThread(15, 0);
 
+    // Wait for optimization thread to finish
+	if ( optimizationThreadVersion != OPTTHREAD_OFF)
+		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+
     ///for inverse SLAM problem
     //for (int i=0; i<traj.size();i++){
     //    VertexSE3 vert(i, traj[i], i);
     //    ((FeaturesMap*) map)->updatePose(vert, true);
     //}
-
-    // Wait for optimization thread to finish
-	if ( optimizationThreadVersion != OPTTHREAD_OFF)
-		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+    //map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
     // Wait for management thread to finish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
