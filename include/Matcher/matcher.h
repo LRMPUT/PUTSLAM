@@ -101,6 +101,7 @@ public:
 			std::vector<cv::Mat> mapDepthImages,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation,
+			std::vector<std::pair<double, double>> &errorLog,
 			bool withRANSAC = true);
 
 	/// Class used to hold all parameters
@@ -134,8 +135,10 @@ public:
 			// RANSAC
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose",
 					&RANSACParams.verbose);
-			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersion",
-					&RANSACParams.errorVersion);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersionVO",
+					&RANSACParams.errorVersionVO);
+			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersionMap",
+								&RANSACParams.errorVersionMap);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
 					"inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(

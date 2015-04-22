@@ -16,10 +16,10 @@
 
 class RANSAC {
 public:
-	enum ERROR_VERSION {EUCLIDEAN_ERROR, REPROJECTION_ERROR};
+	enum ERROR_VERSION {EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR};
 	struct parameters {
 		int verbose;
-		int errorVersion;
+		int errorVersion, errorVersionVO, errorVersionMap;
 		double inlierThresholdEuclidean, inlierThresholdReprojection;
 		double minimalInlierRatioThreshold;
 		int usedPairs;
@@ -110,6 +110,22 @@ private:
 			const std::vector<cv::DMatch> matches,
 			const Eigen::Matrix4f transformationModel,
 			std::vector<cv::DMatch> &modelConsistentMatches);
+
+	/**
+		 * Method used to compute the inlierRatio based on eulidean and reprojection error (simultaneously):
+		 *
+		 * prevFeatures				-- 	first set of 3D features
+		 * features					--	second set of 3D features
+		 * matches					-- 	vector of matches to be determined as inliers or outliers
+		 * transformationModel		--	transformation used in evaluation
+		 * modelConsistentMatches	--  returns the matches that are considered inliers using currently evaluated model
+		 */
+		float computeInlierRatioEuclideanAndReprojection(
+				const std::vector<Eigen::Vector3f> prevFeatures,
+				const std::vector<Eigen::Vector3f> features,
+				const std::vector<cv::DMatch> matches,
+				const Eigen::Matrix4f transformationModel,
+				std::vector<cv::DMatch> &modelConsistentMatches);
 
 	/**
 	 * Method used to compare two transformation models and save better one

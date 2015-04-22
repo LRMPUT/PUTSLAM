@@ -125,6 +125,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
+	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
@@ -247,6 +248,7 @@ double Matcher::match(const SensorFrame& sensorData,
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
+	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 //	auto start = std::chrono::high_resolution_clock::now();
@@ -319,6 +321,7 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
+	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -431,6 +434,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
+	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -470,6 +474,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation,
+		std::vector<std::pair<double, double>> &errorLog,
 		bool withRANSAC) {
 
 	// Create matching on patches with wanted params
@@ -599,6 +604,25 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 					patchMap, prevRgbImage, mapFeatures[i].u, mapFeatures[i].v,
 					gradientX, gradientY, InvHessian);
 
+
+			// Save ok
+			if (featureOK) {
+				double error2D = std::sqrt(
+						(mapFeatures[i].u - uOld) * (mapFeatures[i].u - uOld)
+								+ (mapFeatures[i].v - vOld)
+										* (mapFeatures[i].v - vOld));
+				std::cout << "Patches 2D diff: " << error2D << std::endl;
+				Eigen::Vector3f p3D = RGBD::point2Dto3D(
+						cv::Point2f(mapFeatures[i].u, mapFeatures[i].v),
+						prevDepthImage, matcherParameters.cameraMatrixMat);
+				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f(uOld, vOld),
+						prevDepthImage, matcherParameters.cameraMatrixMat);
+				double error3D = (r3D - p3D).norm();
+				std::cout << "Patches 3D diff: " << error3D << std::endl;
+
+				errorLog.push_back(std::make_pair(error2D, error3D));
+			}
+
 			if (!featureOK) {
 				mapFeatures[i].u = uOld;
 				mapFeatures[i].v = vOld;
@@ -641,6 +665,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 
 	// should we use RANSAC?
 	if (withRANSAC) {
+		matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
 		RANSAC ransac(matcherParameters.RANSACParams,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(

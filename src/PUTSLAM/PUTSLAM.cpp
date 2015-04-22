@@ -316,10 +316,11 @@ void PUTSLAM::startProcessing() {
 
 				if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_PATCHES) {
+					std::vector<std::pair<double, double>> tmp;
 					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
 							mapFeatures, cameraPoseId, cameraPose, frameIds,
 							cameraPoses, mapRgbImages, mapDepthImages,
-							measurementList, mapEstimatedTransformation);
+							measurementList, mapEstimatedTransformation, tmp);
 				} else if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
 					// XYZ+desc
@@ -331,10 +332,15 @@ void PUTSLAM::startProcessing() {
 					std::cout << "Measurement list size before patches : " << probablyInliers.size()
 										<< std::endl;
 					// PATCHES
+					std::vector<std::pair<double, double>> errorLog;
 					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
 							probablyInliers, cameraPoseId, cameraPose, frameIds,
 							cameraPoses, mapRgbImages, mapDepthImages,
-							measurementList, mapEstimatedTransformation, false);
+							measurementList, mapEstimatedTransformation, errorLog, false);
+
+					// Add error to log
+					patchesErrorLog.insert(patchesErrorLog.end(), errorLog.begin(), errorLog.end());
+
 
 				}
 			}
@@ -424,6 +430,10 @@ void PUTSLAM::startProcessing() {
                 currentSensorFrame.timestamp);
 	}
 
+	// Save statistics
+	std::cout<<"Saving logs to file" << std::endl;
+	saveLogs();
+
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// We optimize only at the end if that version is chosen
@@ -438,9 +448,6 @@ void PUTSLAM::startProcessing() {
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
     	map->finishManagementThr();  // Wait for optimization thread to finish
 
-    if ( optimizationThreadVersion != OPTTHREAD_OFF)
-		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
-
     ///for inverse SLAM problem
     //for (int i=0; i<traj.size();i++){
     //    VertexSE3 vert(i, traj[i], i);
@@ -453,9 +460,7 @@ void PUTSLAM::startProcessing() {
 	trajectoryFreiburgStream.close();
 	trajectoryVOMapStream.close();
 
-	// Save statistics
-	std::cout<<"Saving logs to file" << std::endl;
-	saveLogs();
+
 
 	// Run statistics
 	std::cout<<"Evaluating trajectory" << std::endl;
@@ -647,9 +652,46 @@ void PUTSLAM::saveLogs(){
 	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream<<"plt.savefig('mapMatchinggSize.png')"<<endl;
 
+	// diff 2D in patches
+	statisticsLogStream << "error2DPatchesSize = np.array([";
+	for (int a = 0; a < patchesErrorLog.size(); a++) {
+		statisticsLogStream << patchesErrorLog[a].first << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream
+			<< "plt.plot(error2DPatchesSize)"
+			<< endl;
+	statisticsLogStream
+			<< "fig.suptitle('2D patches diff', fontsize=20)"
+			<< endl;
+	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)" << endl;
+	statisticsLogStream << "plt.ylabel('diff [px]', fontsize=16)"
+			<< endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('diff2DPatchesSize.png')" << endl;
+
+	// diff 3D in patches
+	statisticsLogStream << "error3DPatchesSize = np.array([";
+	for (int a = 0; a < patchesErrorLog.size(); a++) {
+		statisticsLogStream << patchesErrorLog[a].second << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream << "plt.plot(error3DPatchesSize)" << endl;
+	statisticsLogStream << "fig.suptitle('3D patches diff', fontsize=20)"
+			<< endl;
+	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
+			<< endl;
+	statisticsLogStream << "plt.ylabel('diff [m]', fontsize=16)" << endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
+
 	statisticsLogStream.close();
 
-	int tmp = std::system("python statistics.py");
+	//int tmp = std::system("python statistics.py");
 }
 
 
@@ -657,11 +699,27 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 
 	std::string fullPath = basePath + "/" + datasetName + "/";
 
-	std::string evalVO = "python2 ../../scripts/evaluate_ate.py " + fullPath
+	std::string evalATEVO =
+			"python2 ../../scripts/evaluate_ate.py " + fullPath
 					+ "groundtruth.txt VO_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot VOAte.png > VOAte.res";
-	int tmp = std::system(evalVO.c_str());
+	std::string evalATEMap =
+			"python2 ../../scripts/evaluate_ate.py " + fullPath
+					+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res";
+	std::string evalRPEVO =
+			"python2 ../../scripts/evaluate_rpe.py " + fullPath
+			+ "groundtruth.txt VO_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot VORpe.png > VORpe.res";
+	std::string evalRPEMap =
+				"python2 ../../scripts/evaluate_rpe.py " + fullPath
+				+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res";
+	try
+	{
+		int tmp = std::system(evalATEVO.c_str());
+		tmp = std::system(evalATEMap.c_str());
+		tmp = std::system(evalRPEVO.c_str());
+		tmp = std::system(evalRPEMap.c_str());
+	}
+	catch (std::system_error& error) {
+	        std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
+	}
 
-	std::string evalMap = "python2 ../../scripts/evaluate_ate.py " + fullPath
-			+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res";
-	tmp = std::system(evalMap.c_str());
 }
