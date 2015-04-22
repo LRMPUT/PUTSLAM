@@ -64,4 +64,4 @@ for dir in dirs:
 		call('../../../octomap/bin/graph2tree -i ../../results/' + dir + '/octomap.graph -o ../../results/' + dir + '/octomap.bt -res 0.01', shell=True);
 		call('../../../octomap/bin/octovis ../../results/' + dir + '/octomap.bt', shell=True);
 
-
+call('../../scripts/summarizeResults.py', shell=True);
