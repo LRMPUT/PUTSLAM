@@ -684,18 +684,18 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
             }
             float_type mean, std, max;
             computeMeanStd(dist4estim, mean, std, max); meanDist.push_back(mean); stdevDist.push_back(std); maxDist.push_back(max);
-            if (max>0.2){
-                std::cout << "dist:\n";
-                for (auto it = dist4estim.begin(); it!=dist4estim.end();it++){
-                    std::cout << *it << ", ";
-                }
-                std::cout << "\n";
-                std::cout << "estimation: " << estimation.x() << " " << estimation.y() << " " << estimation.z() << "\n";
-                for (int j=0;j<features.size();j++){
-                    std::cout << "feature: " << features[j].fromVertexId << "->" <<features[j].toVertexId << " " << features[j].trans.x() << " " << features[j].trans.y() << " " << features[j].trans.z() << "\n";
-                }
-                getchar();
-            }
+//            if (max>0.2){
+//                std::cout << "dist:\n";
+//                for (auto it = dist4estim.begin(); it!=dist4estim.end();it++){
+//                    std::cout << *it << ", ";
+//                }
+//                std::cout << "\n";
+//                std::cout << "estimation: " << estimation.x() << " " << estimation.y() << " " << estimation.z() << "\n";
+//                for (int j=0;j<features.size();j++){
+//                    std::cout << "feature: " << features[j].fromVertexId << "->" <<features[j].toVertexId << " " << features[j].trans.x() << " " << features[j].trans.y() << " " << features[j].trans.z() << "\n";
+//                }
+//              //  getchar();
+//            }
 
             //std::cout << "\nmean:" << mean << " std: " << std << " max:" << max << "\n";
             //getchar();

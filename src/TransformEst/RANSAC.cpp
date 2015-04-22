@@ -35,7 +35,7 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 		std::cout << "RANSACParams.inlierThresholdEuclidean --> "
 				<< RANSACParams.inlierThresholdEuclidean << std::endl;
 		std::cout << "RANSACParams.inlierThresholdReprojection --> "
-					<< RANSACParams.inlierThresholdReprojection << std::endl;
+				<< RANSACParams.inlierThresholdReprojection << std::endl;
 		std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
 				<< RANSACParams.minimalInlierRatioThreshold << std::endl;
 	}
@@ -53,7 +53,8 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 	// Remove matches with features containing invalid depth
 	// TODO: It is slow due to the vector rebuilds
-	for(std::vector<cv::DMatch>::iterator it = matches.begin(); it!=matches.end();) {
+	for (std::vector<cv::DMatch>::iterator it = matches.begin();
+			it != matches.end();) {
 		int prevId = it->queryIdx, id = it->trainIdx;
 
 		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
@@ -65,11 +66,10 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	}
 
 	if (RANSACParams.verbose > 0)
-		std::cout<<"RANSAC: matches.size() = " << matches.size() << std::endl;
+		std::cout << "RANSAC: matches.size() = " << matches.size() << std::endl;
 
 	// TODO: DO IT NICER!
-	if (matches.size() < 8)
-	{
+	if (matches.size() < 8) {
 		return Eigen::Matrix4f::Identity();
 	}
 
@@ -98,17 +98,19 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 			// Choose proper error computation version based on provided parameters
 			float inlierRatio = 0;
-			if ( RANSACParams.errorVersion == EUCLIDEAN_ERROR)
-			{
-				 inlierRatio = computeInlierRatioEuclidean(prevFeatures, features,
-						matches, transformationModel, modelConsistentMatches);
-			}
-			else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
+			if (RANSACParams.errorVersion == EUCLIDEAN_ERROR) {
+				inlierRatio = computeInlierRatioEuclidean(prevFeatures,
+						features, matches, transformationModel,
+						modelConsistentMatches);
+			} else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
 				inlierRatio = computeInlierRatioReprojection(prevFeatures,
 						features, matches, transformationModel,
 						modelConsistentMatches);
-			}
-			else
+			} else if (RANSACParams.errorVersion == EUCLIDEAN_AND_REPROJECTION_ERROR) {
+				inlierRatio = computeInlierRatioEuclideanAndReprojection(
+						prevFeatures, features, matches, transformationModel,
+						modelConsistentMatches);
+			}else
 				std::cout << "RANSAC: incorrect error version" << std::endl;
 
 			// Save better model
@@ -127,11 +129,11 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	}
 
 	// Reestimate from inliers
-	computeTransformationModel(prevFeatures, features,
-				bestInlierMatches, bestTransformationModel, UMEYAMA);
+	computeTransformationModel(prevFeatures, features, bestInlierMatches,
+			bestTransformationModel, UMEYAMA);
 	std::vector<cv::DMatch> newBestInlierMatches;
-	computeInlierRatioEuclidean(prevFeatures, features,
-			bestInlierMatches, bestTransformationModel, newBestInlierMatches);
+	computeInlierRatioEuclidean(prevFeatures, features, bestInlierMatches,
+			bestTransformationModel, newBestInlierMatches);
 	newBestInlierMatches.swap(bestInlierMatches);
 
 	// Test the number of inliers
@@ -186,11 +188,10 @@ bool RANSAC::computeTransformationModel(
 		const std::vector<Eigen::Vector3f> prevFeatures,
 		const std::vector<Eigen::Vector3f> features,
 		const std::vector<cv::DMatch> matches,
-		Eigen::Matrix4f &transformationModel,
-		TransfEstimationType usedType) {
+		Eigen::Matrix4f &transformationModel, TransfEstimationType usedType) {
 
-	Eigen::MatrixXf prevFeaturesMatrix(matches.size(), 3),
-			featuresMatrix(matches.size(), 3);
+	Eigen::MatrixXf prevFeaturesMatrix(matches.size(), 3), featuresMatrix(
+			matches.size(), 3);
 
 	// Create matrices
 	for (int j = 0; j < matches.size(); j++) {
@@ -202,18 +203,17 @@ bool RANSAC::computeTransformationModel(
 	// Compute transformation
 	if (usedType == UMEYAMA) {
 		transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
-					prevFeaturesMatrix.transpose(), false);
-	}
-	else if (usedType == G2O) {
+				prevFeaturesMatrix.transpose(), false);
+	} else if (usedType == G2O) {
 		putslam::TransformEst* g2oEst = createG2OEstimator();
-			Mat34 transformation = g2oEst->computeTransformation(
-					featuresMatrix.cast<double>().transpose(), prevFeaturesMatrix.cast<double>().transpose());
-			transformationModel = transformation.cast<float>().matrix();
+		Mat34 transformation = g2oEst->computeTransformation(
+				featuresMatrix.cast<double>().transpose(),
+				prevFeaturesMatrix.cast<double>().transpose());
+		transformationModel = transformation.cast<float>().matrix();
+	} else {
+		std::cout << "RANSAC: unrecognized transformation estimation"
+				<< std::endl;
 	}
-	else {
-		std::cout<<"RANSAC: unrecognized transformation estimation" << std::endl;
-	}
-
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
@@ -243,10 +243,10 @@ float RANSAC::computeInlierRatioEuclidean(
 	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
-		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx] + t;
+		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
-		if ((estimatedNewPosition - prevFeatures[it->queryIdx]).norm()
+		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()
 				< RANSACParams.inlierThresholdEuclidean) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
@@ -277,21 +277,90 @@ float RANSAC::computeInlierRatioReprojection(
 	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
-		Eigen::Vector3f estimatedNewPosition = R * features[it->trainIdx] + t;
-		Eigen::Vector3f estimatedOldPosition = Rinv * features[it->queryIdx] + tinv;
+		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
+		Eigen::Vector3f estimatedNewPosition = Rinv * prevFeatures[it->queryIdx]
+				+ tinv;
 
 		// Now project both features
-		cv::Point2f predictedNew = RGBD::point3Dto2D(estimatedNewPosition, cameraMatrix);
-		cv::Point2f realNew = RGBD::point3Dto2D(prevFeatures[it->queryIdx], cameraMatrix);
+		cv::Point2f predictedNew = RGBD::point3Dto2D(estimatedNewPosition,
+				cameraMatrix);
+		cv::Point2f realNew = RGBD::point3Dto2D(features[it->trainIdx],
+				cameraMatrix);
 
-		cv::Point2f predictedOld = RGBD::point3Dto2D(estimatedOldPosition, cameraMatrix);
-		cv::Point2f realOld = RGBD::point3Dto2D(prevFeatures[it->trainIdx], cameraMatrix);
+		cv::Point2f predictedOld = RGBD::point3Dto2D(estimatedOldPosition,
+				cameraMatrix);
+		cv::Point2f realOld = RGBD::point3Dto2D(prevFeatures[it->queryIdx],
+				cameraMatrix);
 
 		// Compute residual error and compare it to inlier threshold
-		if (cv::norm(predictedNew - realNew)
-				< RANSACParams.inlierThresholdReprojection
-				|| cv::norm(predictedOld - realOld)
-						< RANSACParams.inlierThresholdReprojection) {
+		double error2D[2] { cv::norm(predictedNew - realNew), cv::norm(
+				predictedOld - realOld) };
+
+		// Compute residual error and compare it to inlier threshold
+		if (error2D[0] < RANSACParams.inlierThresholdReprojection
+				&& error2D[1] < RANSACParams.inlierThresholdReprojection) {
+
+			inlierCount++;
+			modelConsistentMatches.push_back(*it);
+		}
+	}
+
+	// Percent of correct matches
+	return float(inlierCount) / matches.size();
+}
+
+float RANSAC::computeInlierRatioEuclideanAndReprojection(
+		const std::vector<Eigen::Vector3f> prevFeatures,
+		const std::vector<Eigen::Vector3f> features,
+		const std::vector<cv::DMatch> matches,
+		const Eigen::Matrix4f transformationModel,
+		std::vector<cv::DMatch> &modelConsistentMatches) {
+	// Break into rotation (R) and translation (t)
+	Eigen::Matrix3f R = transformationModel.block<3, 3>(0, 0);
+	Eigen::Vector3f t = transformationModel.block<3, 1>(0, 3);
+
+	// Break into rotation (R) and translation (t)
+	Eigen::Matrix3f Rinv = transformationModel.inverse().block<3, 3>(0, 0);
+	Eigen::Vector3f tinv = transformationModel.inverse().block<3, 1>(0, 3);
+
+	int inlierCount = 0;
+	// For all matches
+	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
+			it != matches.end(); ++it) {
+		// Estimate location of feature from position one after transformation
+		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
+		Eigen::Vector3f estimatedNewPosition = Rinv * prevFeatures[it->queryIdx]
+				+ tinv;
+
+		// Compute error3D
+		double error3D =
+				(estimatedOldPosition - prevFeatures[it->queryIdx]).norm();
+
+		// Now project both features
+		cv::Point2f predictedNew = RGBD::point3Dto2D(estimatedNewPosition,
+				cameraMatrix);
+		cv::Point2f realNew = RGBD::point3Dto2D(features[it->trainIdx],
+				cameraMatrix);
+
+		cv::Point2f predictedOld = RGBD::point3Dto2D(estimatedOldPosition,
+				cameraMatrix);
+		cv::Point2f realOld = RGBD::point3Dto2D(prevFeatures[it->queryIdx],
+				cameraMatrix);
+
+		// Compute residual error and compare it to inlier threshold
+		double error2D[2] { cv::norm(predictedNew - realNew), cv::norm(
+				predictedOld - realOld) };
+
+		//std::cout<<"ERROR : " << error3D << " " << error2D[0] << " " << error2D[1] << std::endl;
+
+		// Compute residual error and compare it to inlier threshold
+		if (error3D < RANSACParams.inlierThresholdEuclidean
+				&& error2D[0] < RANSACParams.inlierThresholdReprojection
+				&& error2D[1] < RANSACParams.inlierThresholdReprojection) {
+//			std::cout<<"3D position: " << estimatedOldPosition.transpose() << "\t" << prevFeatures[it->queryIdx].transpose() << std::endl;
+//			std::cout<<"3D position: " << estimatedNewPosition.transpose() << "\t" << features[it->trainIdx].transpose() << std::endl;
+//			std::cout<<"ERROR : " << error3D << " " << (estimatedNewPosition - features[it->trainIdx]).norm() <<" "<< error2D[0] << " " << error2D[1] << std::endl;
+
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}

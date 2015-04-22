@@ -65,6 +65,7 @@ private:
 	std::vector<int> measurementToMapSizeLog;
 	std::vector<double> VORansacInlierRatioLog;
 	std::vector<double> MapMatchingRansacInlierRatioLog;
+	std::vector<std::pair<double, double>> patchesErrorLog;
 	void saveLogs();
 
 	// Evaluate results
