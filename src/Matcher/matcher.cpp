@@ -118,6 +118,13 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			sensorData.rgbImage, prevFeaturesUndistorted,
 			undistortedFeatures2D);
 
+	// Show detected features
+	if (matcherParameters.verbose > 1)
+	{
+		cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
+		showFeatures(sensorData.rgbImage, prevFeatures);
+	}
+
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
 			undistortedFeatures2D, sensorData.depthImage,
@@ -357,10 +364,15 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation) {
+		Eigen::Matrix4f &estimatedTransformation,  std::vector<int> frameIds) {
 
 	// The current pose descriptors are renamed to make it less confusing
-	cv::Mat currentPoseDescriptors(prevDescriptors);
+	// TODO: TESTING the computation of descriptors on current image!!!
+	//cv::Mat currentPoseDescriptors(prevDescriptors);
+	std::vector<cv::KeyPoint> prevKeypoints;
+	cv::KeyPoint::convert(prevFeaturesUndistorted, prevKeypoints);
+	cv::Mat currentPoseDescriptors = describeFeatures(prevRgbImage, prevKeypoints);
+
 
 	// Perform matching
 	std::vector<cv::DMatch> matches;
@@ -372,8 +384,20 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// For all features in the map
 	int j = 0;
+	int perfectMatchCounter = 0;
+	std::cout<<"COMPARE: " << mapFeatures.size() << " " << frameIds.size() << std::endl;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
+		int mapFeatureClosestFrameId = 0;
+		if ( frameIds.size() > 0) {
+			for (int k=0;k<it->descriptors.size();k++) {
+				if (frameIds[j] == it->descriptors[k].poseId) {
+					mapFeatureClosestFrameId = k;
+					break;
+				}
+			}
+		}
+
 
 		// Possible matches for considered feature
 		std::vector<int> possibleMatchId;
@@ -383,7 +407,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 					(float) it->position.y(), (float) it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
-			if (norm < 0.10) {
+			if (norm < 0.15) {
 				possibleMatchId.push_back(i);
 			}
 		}
@@ -393,13 +417,19 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
+
+
 			cv::Mat x =
-					(it->descriptors[0].descriptor - prevDescriptors.row(id));
+					(it->descriptors[mapFeatureClosestFrameId].descriptor - prevDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
 			if (value < bestVal) {
 				bestVal = value;
 				bestId = id;
 			}
+		}
+
+		if ( bestVal < 0.1) {
+			perfectMatchCounter++;
 		}
 
 		for (int i = 0; i < possibleMatchId.size(); i++) {
@@ -408,7 +438,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			cv::Mat x =
 					(it->descriptors[0].descriptor - prevDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
-			if (0.7 * value < bestVal) {
+			if (0.85 * value <= bestVal) {
 				cv::DMatch tmpMatch;
 				tmpMatch.distance = value;
 				tmpMatch.queryIdx = j;
@@ -427,7 +457,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 //		}
 	}
 
-	std::cout << "MatchesXYZ - we found : " << matches.size() << std::endl;
+	std::cout << "MatchesXYZ - we found : " << matches.size() << " (Perfect matches = " << perfectMatchCounter << ")" << std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;

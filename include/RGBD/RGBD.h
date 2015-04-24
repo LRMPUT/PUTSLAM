@@ -55,7 +55,7 @@ void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage);
 
 void removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
-		cv::Mat depthImage, float additionalDistance);
+		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles);
 
 std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,

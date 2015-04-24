@@ -108,7 +108,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				// Create an extended descriptor
 				cv::Mat descMat;
 				if ( !features.descriptors.empty() ) {
-					descMat = features.descriptors.row(j);
+					descMat = features.descriptors.row(j).clone();
 				}
 
 				ExtendedDescriptor desc(cameraPoseId,
@@ -273,16 +273,22 @@ void PUTSLAM::startProcessing() {
 			// Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 
+
+
 			std::cout
 					<< "Returned visible map feature size before if not cover test: "
 					<< mapFeatures.size() << std::endl;
 
 			// Now lets check if those features are not behind sth
-//			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
-//					currentSensorFrame.depthImage, 0.1f);
+			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+					currentSensorFrame.depthImage, 0.15f, frameIds, angles);
 
 			std::cout << "Returned visible map feature size: "
 					<< mapFeatures.size() << std::endl;
+
+			// Show map features
+			if ( matcher->matcherParameters.verbose > 0)
+				showMapFeatures(currentSensorFrame.rgbImage, mapFeatures);
 
 			// Perform RANSAC matching and return measurements for found inliers in map compatible format
 			// Remember! The match returns the list of inlier features from current pose!
@@ -297,7 +303,7 @@ void PUTSLAM::startProcessing() {
 			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS)
 			{
 				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
-					measurementList, mapEstimatedTransformation);
+					measurementList, mapEstimatedTransformation, frameIds);
 			}
 			else if (matcher->matcherParameters.MapMatchingVersion
 					== Matcher::MatcherParameters::MAPMATCH_PATCHES
@@ -722,4 +728,18 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 	        std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
 	}
 
+}
+
+void PUTSLAM::showMapFeatures(cv::Mat rgbImage,std::vector<MapFeature> mapFeatures)
+{
+	std::vector<cv::KeyPoint> mapFeatures2D(mapFeatures.size());
+		std::transform(mapFeatures.begin(), mapFeatures.end(),
+				mapFeatures2D.begin(),
+				[](const MapFeature& m) {return cv::KeyPoint(m.u, m.v, 3);});
+
+	cv::Mat img2draw;
+	cv::drawKeypoints(rgbImage, mapFeatures2D, img2draw, cv::Scalar(0,0,255));
+
+	cv::imshow("Map features", img2draw);
+	cv::waitKey(10000);
 }

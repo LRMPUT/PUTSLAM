@@ -382,7 +382,7 @@ inline void RANSAC::saveBetterModel(const float inlierRatio,
 		bestInlierMatches.swap(modelConsistentMatches);
 
 		// Update iteration count
-		RANSACParams.iterationCount = computeRANSACIteration(bestInlierRatio);
+		RANSACParams.iterationCount = std::min(computeRANSACIteration(RANSACParams.minimalInlierRatioThreshold), computeRANSACIteration(bestInlierRatio));
 	}
 }
 
