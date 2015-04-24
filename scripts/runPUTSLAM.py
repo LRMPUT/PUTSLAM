@@ -34,6 +34,19 @@ for dir in dirs:
 	# Run software
 	call('./demoMatching', shell=True);
 
+	# Evaluate results
+	datasetName = subprocess.check_output("cat DatasetName" , shell = True);
+
+	call("python2 ../../scripts/evaluate_ate.py " + datasetName
+					+ "groundtruth.txt VO_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot VOAte.png > VOAte.res", shell=True);
+	call("python2 ../../scripts/evaluate_ate.py " + datasetName
+					+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res", shell=True);
+	call("python2 ../../scripts/evaluate_rpe.py " + datasetName
+			+ "groundtruth.txt VO_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot VORpe.png > VORpe.res", shell=True);
+	call("python2 ../../scripts/evaluate_rpe.py " + datasetName
+				+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res", shell=True);
+	call('rm DatasetName', shell=True);	
+
 	# Call ransac and map statistics 
 	call('python statistics.py', shell=True);
 	call('octave mapData.m > mapResults.res', shell=True);		
