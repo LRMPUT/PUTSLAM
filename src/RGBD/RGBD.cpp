@@ -115,24 +115,30 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 }
 
 void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
-		cv::Mat depthImage, float additionalDistance) {
-	// Lambda expression
-	auto it =
-			std::remove_if(features.begin(), features.end(),
-					[depthImage, additionalDistance](MapFeature point) {
+		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles) {
 
-						// Feature are extracted with subpixel precision, so find closest pixel
-						int uRounded = roundSize(point.u, depthImage.cols);
-						int vRounded = roundSize(point.v, depthImage.rows);
-//						std::cout<<"uRounded, vRounded: " << uRounded << " " << vRounded << " " << depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))/ RGBD::depthScale<<
-//								" " << additionalDistance << " " <<point.position.z()  << std::endl;
+	std::vector<MapFeature>::iterator featuresIter = features.begin();
+	std::vector<int>::iterator frameIdsIter = frameIds.begin();
+	std::vector<float_type>::iterator anglesIter = angles.begin();
 
-						if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded)) / RGBD::depthScale > point.position.z() - additionalDistance) {
-							return false;
-						}
-						return true;
-					});
-	features.erase(it, features.end());
+	for (;featuresIter!=features.end();)
+	{
+		int uRounded = roundSize(featuresIter->u, depthImage.cols);
+		int vRounded = roundSize(featuresIter->v, depthImage.rows);
+
+		if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))
+				/ RGBD::depthScale
+				<= featuresIter->position.z() - additionalDistance) {
+			featuresIter = features.erase(featuresIter);
+			frameIdsIter = frameIds.erase(frameIdsIter);
+			anglesIter = angles.erase(anglesIter);
+		}
+		else {
+			++featuresIter;
+			++frameIdsIter;
+			++anglesIter;
+		}
+	}
 }
 
 std::vector<cv::Point2f> RGBD::removeImageDistortion(

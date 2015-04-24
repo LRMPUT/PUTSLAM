@@ -91,7 +91,7 @@ public:
 	/// More like guided-matching
 	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures,
-			Eigen::Matrix4f &estimatedTransformation);
+			Eigen::Matrix4f &estimatedTransformation,  std::vector<int> frameIds = std::vector<int>());
 
 	// Matching to map with patch computation
 	double matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,

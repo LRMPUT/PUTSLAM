@@ -87,6 +87,9 @@ private:
 			float minEuclideanDistanceOfFeatures,
 			float minImageDistanceOfFeatures, int cameraPoseId,
 			std::vector<RGBDFeature>& mapFeaturesToAdd);
+
+	// Show features from map
+	void showMapFeatures(cv::Mat rgbImage,std::vector<MapFeature> mapFeatures);
 };
 
 #endif // _PUTSLAM_
