@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!-- Visualizer configuration -->
+  <VisualizerConfig>
+  	<name>QGLVisualizer</name>
+	<parameters background="black"></parameters>
+  </VisualizerConfig>

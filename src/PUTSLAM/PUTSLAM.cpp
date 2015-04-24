@@ -696,8 +696,6 @@ void PUTSLAM::saveLogs(){
 	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
 
 	statisticsLogStream.close();
-
-	//int tmp = std::system("python statistics.py");
 }
 
 
@@ -719,14 +717,18 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 				+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res";
 	try
 	{
-		int tmp = std::system(evalATEVO.c_str());
-		tmp = std::system(evalATEMap.c_str());
-		tmp = std::system(evalRPEVO.c_str());
-		tmp = std::system(evalRPEMap.c_str());
+//		int tmp = std::system(evalATEVO.c_str());
+//		tmp = std::system(evalATEMap.c_str());
+//		tmp = std::system(evalRPEVO.c_str());
+//		tmp = std::system(evalRPEMap.c_str());
 	}
 	catch (std::system_error& error) {
 	        std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
 	}
+
+	ofstream datasetNameStream("DatasetName");
+	datasetNameStream << fullPath ;
+	datasetNameStream.close();
 
 }
 
