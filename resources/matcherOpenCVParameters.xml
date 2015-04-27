@@ -13,7 +13,7 @@
 				2 -> patches
 				3 -> XYZ + descriptors + patches
 -->  
- <Matcher verbose="0" VOVersion="1" MapMatchingVersion="3">
+ <Matcher verbose="0" VOVersion="1" MapMatchingVersion="1">
  	
  	
 	 <!-- RANSAC settings
@@ -47,7 +47,7 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
     
     <!-- Matching using patche 
     

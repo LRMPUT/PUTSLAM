@@ -170,10 +170,10 @@ void PUTSLAM::startProcessing() {
 			((FeaturesMap*) map)->getAddPoseToPoseEdges();
 
     ///for inverse SLAM problem
-    //Simulator simulator;
-    //simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
-    //std::vector<Mat34> traj = simulator.getTrajectory();
-    //int trajIt=1;
+    /*Simulator simulator;
+    simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
+    std::vector<Mat34> traj = simulator.getTrajectory();
+    int trajIt=1;*/
 
 	// Main loop
 	while (true) {
@@ -182,7 +182,7 @@ void PUTSLAM::startProcessing() {
 		if (!middleOfSequence)
             break;
         ///for inverse SLAM problem
-        //if (trajIt>traj.size())
+        //if (trajIt>traj.size()-1)
         //    break;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
@@ -207,6 +207,25 @@ void PUTSLAM::startProcessing() {
 
 			ifStart = false;
 			addFeatureToMap = true;
+                        /*PointCloud cloud2save;
+                        grabber->convert2cloud(map->getDepthSensorModel(), cloud2save);
+                        std::ofstream file("../../resources/depthPatch.m");
+                        file << "hold on\n";
+                        for (int i=0;i<cloud2save.size();i++){
+                            Mat34 point(Mat34::Identity());
+                            point(0,3) = cloud2save[i].x; point(1,3) = cloud2save[i].y; point(2,3) = cloud2save[i].z;
+                            Mat34 pointGlob = cameraPose * point;
+                            //std::cout << "x y z " << pointGlob(0,3) << " " << pointGlob(1,3) << " " << pointGlob(2,3) << "\n";
+                            if (pointGlob(0,3)>-0.9&&pointGlob(0,3)<0.5){
+                                if (pointGlob(1,3)>-0.9&&pointGlob(1,3)<0.5){
+                                    if (pointGlob(2,3)>2.5&&pointGlob(2,3)<2.99){
+                                        file << "plot3(" << pointGlob(0,3) << ", " << pointGlob(1,3) << ", "<< pointGlob(2,3) << ",'.','markerfacecolor',["<<cloud2save[i].r/255.0 << ", " << cloud2save[i].g/255.0 << ", " << cloud2save[i].b/255.0 << "],'markeredgecolor',["<<cloud2save[i].r/255.0 << ", " << cloud2save[i].g/255.0 << ", " << cloud2save[i].b/255.0 << "]);\n";
+                                    }
+                                }
+                            }
+                        }
+                        file.close();
+                        getchar();*/
 
         }
 		// The next pose in the sequence
@@ -218,10 +237,10 @@ void PUTSLAM::startProcessing() {
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
-            //Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
-            //            transformation = transReal.cast<float>().matrix();
-            //std::cout << "iteration: " << trajIt << "\n";
-            //trajIt++;
+            /*Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+                        transformation = transReal.cast<float>().matrix();
+            std::cout << "iteration: " << trajIt << "\n";
+            trajIt++;*/
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
@@ -444,22 +463,22 @@ void PUTSLAM::startProcessing() {
 
 	// We optimize only at the end if that version is chosen
     if ( optimizationThreadVersion == OPTTHREAD_ATEND)
-		map->startOptimizationThread(15, 0);
+        map->startOptimizationThread(15, 1);
 
     // Wait for optimization thread to finish
 	if ( optimizationThreadVersion != OPTTHREAD_OFF)
 		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
-    // Wait for management thread to finish
+    // Wait for management thread to widaćfinish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
     	map->finishManagementThr();  // Wait for optimization thread to finish
 
     ///for inverse SLAM problem
-    //for (int i=0; i<traj.size();i++){
-    //    VertexSE3 vert(i, traj[i], i);
-    //    ((FeaturesMap*) map)->updatePose(vert, true);
-    //}
-    //map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+    /*for (int i=0; i<traj.size();i++){
+        VertexSE3 vert(i, traj[i], i);
+        ((FeaturesMap*) map)->updatePose(vert, true);
+    }*/
+    map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 
 	// Close trajectory stream

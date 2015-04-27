@@ -47,8 +47,8 @@
 	</Model> 
 
   <!-- ICL -->
-<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj1_loop"></datasetPath>-->
- <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop"></datasetPath>
+<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop"></datasetPath> -->
+    <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop_noise"></datasetPath> 
 
   <!-- freiburg1/desk -->
 <!--  <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> -->
