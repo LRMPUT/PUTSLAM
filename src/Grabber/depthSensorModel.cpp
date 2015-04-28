@@ -35,6 +35,15 @@ void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, float_type d
     cov=J*Ruvd*J.transpose();
 }
 
+/// point xyz in camera frame
+void DepthSensorModel::computeCov(Eigen::Vector3f point, Mat33& cov){
+    Eigen::Vector3d imageCoordinates = inverseModel(point.x(), point.y(), point.z());
+    if (imageCoordinates.x()==-1)
+        cov.setZero();
+    else
+        computeCov(imageCoordinates.x(), imageCoordinates.y(), imageCoordinates.z(),cov);
+}
+
 /// compute information matrix
 Mat33 DepthSensorModel::informationMatrix(float_type x, float_type y, float_type z){
     Mat33 info;
