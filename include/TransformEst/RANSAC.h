@@ -20,7 +20,7 @@ public:
 	struct parameters {
 		int verbose;
 		int errorVersion, errorVersionVO, errorVersionMap;
-		double inlierThresholdEuclidean, inlierThresholdReprojection;
+        double inlierThresholdEuclidean, inlierThresholdReprojection;
 		double minimalInlierRatioThreshold;
 		int usedPairs;
 		int iterationCount;
