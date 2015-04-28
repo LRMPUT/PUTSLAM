@@ -2,11 +2,11 @@
 
 <!-- MatcherOpenCV parameters 
 	verbose :	0 -> no debug
-				1 -> show matches
-				2 -> show matches + show detected features
-
+			1 -> show matches
+			2 -> show matches + show detected features
+			
 	VOVersion :	0 -> matching
-				1 -> tracking
+			1 -> tracking
 
 	MapMatchingVersion :	0 -> descriptors
 				1 -> XYZ + descriptors
@@ -20,15 +20,19 @@
 	 	verbose : 	0 -> no debug
 	 				1 -> print final result
 	 				2 -> print every iteration
-		errorVersion :	0 -> Euclidean error
-	 					1 -> Reprojection error 
+		errorVersionVO :	0 -> Euclidean error
+	 				1 -> Reprojection error 
+					2 -> Euclidean and Reprojection error
+		errorVersionMap :	0 -> Euclidean error
+	 				1 -> Reprojection error 
+					2 -> Euclidean and Reprojection error
+					3 -> Mahalanobis distance
 	 	inlierThresholdEuclidean : maximal Euclidean error of inlier in RANSAC (in meters)
 	 	inlierThresholdReprojection : maximal reprojection error of inlier in RANSAC (in pixels)
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-	<RANSAC verbose="0" errorVersion="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="2.5"
-		minimalInlierRatioThreshold="0.3" usedPairs="3">
+	<RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.02" inlierThresholdReprojection="2.0" minimalInlierRatioThreshold="0.1" usedPairs="3">
 	</RANSAC>
     	
     <!-- Matching settings
@@ -47,13 +51,13 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="8" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
     
     <!-- Matching using patche 
     
 		TODO: DESCRIPTION!!!    
     -->
-	<MatchingOnPatches verbose="1" warping="0" patchSize="3" maxIterationCount="50" minSqrtError="0.01"></MatchingOnPatches>    
+	<MatchingOnPatches verbose="0" warping="1" patchSize="13" maxIterationCount="50" minSqrtError="0.04"></MatchingOnPatches>    
     
     <Parameters maxAngleBetweenFrames="0.3"> </Parameters>
 </Matcher>
