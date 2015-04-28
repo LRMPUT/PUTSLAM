@@ -8,6 +8,7 @@
 #ifndef _RANSAC_H_
 #define _RANSAC_H_
 
+#include "../include/Grabber/depthSensorModel.h"
 #include <iostream>
 #include <vector>
 #include "opencv/cv.h"
@@ -16,11 +17,11 @@
 
 class RANSAC {
 public:
-	enum ERROR_VERSION {EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR};
+    enum ERROR_VERSION {EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR, MAHALANOBIS_ERROR};
 	struct parameters {
 		int verbose;
 		int errorVersion, errorVersionVO, errorVersionMap;
-        double inlierThresholdEuclidean, inlierThresholdReprojection;
+        double inlierThresholdEuclidean, inlierThresholdReprojection, inlierThresholdMahalanobis;
 		double minimalInlierRatioThreshold;
 		int usedPairs;
 		int iterationCount;
@@ -46,6 +47,9 @@ public:
 private:
 	cv::Mat cameraMatrix;
 	parameters RANSACParams;
+
+    //TODO move it up
+    DepthSensorModel sensorModel;
 
 	enum TransfEstimationType {
 		UMEYAMA, G2O
@@ -94,6 +98,21 @@ private:
 			const std::vector<cv::DMatch> matches,
 			const Eigen::Matrix4f transformationModel,
 			std::vector<cv::DMatch> &modelConsistentMatches);
+
+    /**
+     * Method used to compute the inlierRatio based on 3D Mahalanobis error:
+     *
+     * prevFeatures				-- 	first set of 3D features
+     * features					--	second set of 3D features
+     * matches					-- 	vector of matches to be determined as inliers or outliers
+     * transformationModel		--	transformation used in evaluation
+     * modelConsistentMatches	--  returns the matches that are considered inliers using currently evaluated model
+     */
+    float computeInlierRatioMahalanobis(const std::vector<Eigen::Vector3f> prevFeatures,
+            const std::vector<Eigen::Vector3f> features,
+            const std::vector<cv::DMatch> matches,
+            const Eigen::Matrix4f transformationModel,
+            std::vector<cv::DMatch> &modelConsistentMatches);
 
 	/**
 	 * Method used to compute the inlierRatio based on reprojection error:

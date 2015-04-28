@@ -8,7 +8,7 @@
 #include "../include/TransformEst/g2oEst.h"
 #include "../include/RGBD/RGBD.h"
 
-RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
 	srand(time(0));
 
 	cameraMatrix = _cameraMatrix;
@@ -19,7 +19,9 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 	RANSACParams.inlierThresholdEuclidean =
 			_RANSACParameters.inlierThresholdEuclidean;
 	RANSACParams.inlierThresholdReprojection =
-			_RANSACParameters.inlierThresholdReprojection;
+            _RANSACParameters.inlierThresholdReprojection;
+    RANSACParams.inlierThresholdMahalanobis =
+            _RANSACParameters.inlierThresholdMahalanobis;
 	RANSACParams.minimalInlierRatioThreshold =
 			_RANSACParameters.minimalInlierRatioThreshold;
 
@@ -34,6 +36,8 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 				<< RANSACParams.errorVersion << std::endl;
 		std::cout << "RANSACParams.inlierThresholdEuclidean --> "
 				<< RANSACParams.inlierThresholdEuclidean << std::endl;
+        std::cout << "RANSACParams.inlierThresholdMahalanobis --> "
+                << RANSACParams.inlierThresholdMahalanobis << std::endl;
 		std::cout << "RANSACParams.inlierThresholdReprojection --> "
 				<< RANSACParams.inlierThresholdReprojection << std::endl;
 		std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
@@ -110,7 +114,11 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 				inlierRatio = computeInlierRatioEuclideanAndReprojection(
 						prevFeatures, features, matches, transformationModel,
 						modelConsistentMatches);
-			}else
+            } else if (RANSACParams.errorVersion == MAHALANOBIS_ERROR) {
+                inlierRatio = computeInlierRatioMahalanobis(
+                        prevFeatures, features, matches, transformationModel,
+                        modelConsistentMatches);
+            }else
 				std::cout << "RANSAC: incorrect error version" << std::endl;
 
 			// Save better model
@@ -255,6 +263,45 @@ float RANSAC::computeInlierRatioEuclidean(
 
 	// Percent of correct matches
 	return float(inlierCount) / matches.size();
+}
+
+float RANSAC::computeInlierRatioMahalanobis(
+        const std::vector<Eigen::Vector3f> prevFeatures,
+        const std::vector<Eigen::Vector3f> features,
+        const std::vector<cv::DMatch> matches,
+        const Eigen::Matrix4f transformationModel,
+        std::vector<cv::DMatch> &modelConsistentMatches) {
+    // Break into rotation (R) and translation (t)
+    Eigen::Matrix3f R = transformationModel.block<3, 3>(0, 0);
+    Eigen::Vector3f t = transformationModel.block<3, 1>(0, 3);
+
+    int inlierCount = 0;
+    // For all matches
+    for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
+            it != matches.end(); ++it) {
+        // Estimate location of feature from position one after transformation
+        Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
+
+        // Compute residual error and compare it to inlier threshold
+        Mat33 cov;
+        sensorModel.computeCov(estimatedOldPosition,cov);
+        if (cov.determinant()!=0){
+            double distMah = (estimatedOldPosition - prevFeatures[it->queryIdx]).transpose()*cov.cast<float>()*(estimatedOldPosition - prevFeatures[it->queryIdx]);
+            /*std::cout << "vec: " << estimatedOldPosition.x() << " -> " << prevFeatures[it->queryIdx].x() <<"\n";
+            std::cout << "vec: " << estimatedOldPosition.y() << " -> " << prevFeatures[it->queryIdx].y() <<"\n";
+            std::cout << "vec: " << estimatedOldPosition.z() << " -> " << prevFeatures[it->queryIdx].z() <<"\n";
+            std::cout << "distMah: " << distMah << " distEucl: " << (estimatedOldPosition - prevFeatures[it->queryIdx]).norm() << "\n";
+            std::cout << "distMahThr: " << RANSACParams.inlierThresholdMahalanobis << "\n";
+            getchar();*/
+            if (distMah < RANSACParams.inlierThresholdMahalanobis) {
+                inlierCount++;
+                modelConsistentMatches.push_back(*it);
+            }
+        }
+    }
+
+    // Percent of correct matches
+    return float(inlierCount) / matches.size();
 }
 
 float RANSAC::computeInlierRatioReprojection(

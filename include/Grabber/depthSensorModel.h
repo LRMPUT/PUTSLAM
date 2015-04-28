@@ -30,6 +30,9 @@ class DepthSensorModel {
     /// u,v [px], depth [m]
     void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov);
 
+    /// point xyz in camera frame
+    void computeCov(Eigen::Vector3f point, Mat33& cov);
+
     /// compute information matrix
     Mat33 informationMatrix(float_type x, float_type y, float_type z);
 
@@ -50,7 +53,7 @@ class DepthSensorModel {
             std::cout<<"CONFIG FILENAME: " << configFilename << std::endl;
             config.LoadFile(filename.c_str());
             if (config.ErrorID())
-                std::cout << "unable to load Kinect config file: error = " << config.ErrorID() << std::endl;;
+                std::cout << "unable to load sensor config file: error = " << config.ErrorID() << std::endl;;
 
             tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
