@@ -49,7 +49,7 @@ private:
 	parameters RANSACParams;
 
     //TODO move it up (it shouldn't be here. The object is created and destroyed at each iteration of the matching procedure)
-    DepthSensorModel sensorModel;
+    //DepthSensorModel sensorModel;
 
 	enum TransfEstimationType {
 		UMEYAMA, G2O
