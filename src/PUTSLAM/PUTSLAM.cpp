@@ -172,9 +172,10 @@ void PUTSLAM::startProcessing() {
     ///for inverse SLAM problem
     /*Simulator simulator;
     simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
-    std::vector<Mat34> traj = simulator.getTrajectory();
-    int trajIt=1;*/
+    std::vector<Mat34> traj = simulator.getTrajectory();*/
+    int trajIt=1;
 
+    auto startMainLoop = std::chrono::system_clock::now();
 	// Main loop
 	while (true) {
 
@@ -240,7 +241,7 @@ void PUTSLAM::startProcessing() {
             /*Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
                         transformation = transReal.cast<float>().matrix();
             std::cout << "iteration: " << trajIt << "\n";
-            trajIt++;*/
+            */
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
@@ -453,7 +454,11 @@ void PUTSLAM::startProcessing() {
 
 		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
                 currentSensorFrame.timestamp);
+        trajIt++;
 	}
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
+    std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
+    saveFPS(double(trajIt)/(1000.0*elapsed.count()));
 
 	// Save statistics
 	std::cout<<"Saving logs to file" << std::endl;
@@ -461,7 +466,7 @@ void PUTSLAM::startProcessing() {
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
-	// We optimize only at the end if that version is chosen
+    // We optimize only at the end if that version is chosen
     if ( optimizationThreadVersion == OPTTHREAD_ATEND)
         map->startOptimizationThread(15, 1);
 
@@ -618,6 +623,13 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 				<< " " << features.feature3D[id](2) << std::endl;
 	}
 	file.close();
+}
+
+void PUTSLAM::saveFPS(float_type fps){
+    ofstream fileFPS;
+    fileFPS.open ("fps.res");
+    fileFPS << fps;
+    fileFPS.close();
 }
 
 void PUTSLAM::saveLogs(){
