@@ -457,8 +457,7 @@ void PUTSLAM::startProcessing() {
         trajIt++;
 	}
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
-    std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
-    saveFPS(double(trajIt)/(1000.0*elapsed.count()));
+    saveFPS(double(trajIt)/(elapsed.count()/1000.0));
 
 	// Save statistics
 	std::cout<<"Saving logs to file" << std::endl;
