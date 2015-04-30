@@ -8,7 +8,8 @@
 #include "../include/TransformEst/g2oEst.h"
 #include "../include/RGBD/RGBD.h"
 
-RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
+RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
+//RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
 	srand(time(0));
 
 	cameraMatrix = _cameraMatrix;
@@ -255,7 +256,8 @@ float RANSAC::computeInlierRatioEuclidean(
 
 		// Compute residual error and compare it to inlier threshold
 		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()
-                < RANSACParams.inlierThresholdEuclidean*prevFeatures[it->queryIdx].z()) {
+                < RANSACParams.inlierThresholdEuclidean) {
+//                < RANSACParams.inlierThresholdEuclidean*prevFeatures[it->queryIdx].z()) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}
@@ -284,7 +286,7 @@ float RANSAC::computeInlierRatioMahalanobis(
 
         // Compute residual error and compare it to inlier threshold
         Mat33 cov;
-        sensorModel.computeCov(prevFeatures[it->queryIdx],cov);
+        //sensorModel.computeCov(prevFeatures[it->queryIdx],cov);
         if (cov.determinant()!=0){
             double distMah = (estimatedOldPosition - prevFeatures[it->queryIdx]).transpose()*cov.cast<float>()*(estimatedOldPosition - prevFeatures[it->queryIdx]);
             /*std::cout << "vec: " << estimatedOldPosition.x() << " -> " << prevFeatures[it->queryIdx].x() <<"\n";

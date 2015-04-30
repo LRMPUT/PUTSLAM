@@ -482,7 +482,7 @@ void PUTSLAM::startProcessing() {
         VertexSE3 vert(i, traj[i], i);
         ((FeaturesMap*) map)->updatePose(vert, true);
     }*/
-    map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+//    map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 
 	// Close trajectory stream
