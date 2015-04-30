@@ -295,16 +295,16 @@ void PUTSLAM::startProcessing() {
 
 
 
-            //std::cout
-//					<< "Returned visible map feature size before if not cover test: "
-//					<< mapFeatures.size() << std::endl;
+            std::cout
+                    << "Returned visible map feature size before if not cover test: "
+                    << mapFeatures.size() << std::endl;
 
 			// Now lets check if those features are not behind sth
 			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
 					currentSensorFrame.depthImage, 0.15f, frameIds, angles);
 
-            //std::cout << "Returned visible map feature size: "
-//					<< mapFeatures.size() << std::endl;
+            std::cout << "Returned visible map feature size: "
+                    << mapFeatures.size() << std::endl;
 
 			// Show map features
 			if ( matcher->matcherParameters.verbose > 0)
@@ -355,8 +355,8 @@ void PUTSLAM::startProcessing() {
 							mapFeatures, cameraPoseId, probablyInliers,
 							mapEstimatedTransformation);
 
-//					std::cout << "Measurement list size before patches : " << probablyInliers.size()
-//										<< std::endl;
+                    std::cout << "Measurement list size before patches : " << probablyInliers.size()
+                                        << std::endl;
 					// PATCHES
 					std::vector<std::pair<double, double>> errorLog;
 					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
@@ -380,14 +380,14 @@ void PUTSLAM::startProcessing() {
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
-//			std::cout << "Measurement list size : " << measurementList.size()
-//					<< std::endl;
+            std::cout << "Measurement list size : " << measurementList.size()
+                    << std::endl;
 
 			// Compare VO and VOMap estimate -> decide whether to add measurements to map
 			float distanceDiff =
 					mapEstimatedTransformation.block<3, 1>(0, 3).norm();
-//            std::cout << "Difference between VO and Map : " << distanceDiff
-//					<< " meters" << std::endl;
+            std::cout << "Difference between VO and Map : " << distanceDiff
+                    << " meters" << std::endl;
 
 
             // Add pose-pose constrain - depends on config file
@@ -414,12 +414,12 @@ void PUTSLAM::startProcessing() {
 
 		// Should we add some features to the map?
 		if (addFeatureToMap) {
-//			std::cout << "Adding features to map " << std::endl;
+            std::cout << "Adding features to map " << std::endl;
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
 
-//			std::cout<<"Feature size: " << features.undistortedFeature2D.size() << std::endl;
+            std::cout<<"Feature size: " << features.undistortedFeature2D.size() << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeaturesToAdd;
@@ -432,14 +432,14 @@ void PUTSLAM::startProcessing() {
 					minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures,
 					cameraPoseId, mapFeaturesToAdd);
 
-//			std::cout << "map->addFeatures -> adding " << addedCounter
-                    //<< " features" << std::endl;
+            std::cout << "map->addFeatures -> adding " << addedCounter
+                    << " features" << std::endl;
 
             // Finally, adding to map
             map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
-//            std::cout << "map->addFeatures -> added " << addedCounter
-//            					<< " features" << std::endl;
+            std::cout << "map->addFeatures -> added " << addedCounter
+                                << " features" << std::endl;
 
 			addFeatureToMap = false;
 		}
