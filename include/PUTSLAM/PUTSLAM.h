@@ -67,6 +67,7 @@ private:
 	std::vector<double> MapMatchingRansacInlierRatioLog;
 	std::vector<std::pair<double, double>> patchesErrorLog;
 	void saveLogs();
+    void saveFPS(float_type fps);
 
 	// Evaluate results
 	void evaluateResults(std::string basePath, std::string datasetName);

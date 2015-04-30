@@ -48,7 +48,7 @@ private:
 	cv::Mat cameraMatrix;
 	parameters RANSACParams;
 
-    //TODO move it up
+    //TODO move it up (it shouldn't be here. The object is created and destroyed at each iteration of the matching procedure)
     DepthSensorModel sensorModel;
 
 	enum TransfEstimationType {
