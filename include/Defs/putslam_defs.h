@@ -89,13 +89,8 @@ public:
 	typedef std::vector<ImageFeature> Seq;
 
 	/// 2D feature location
-	union {
-		struct {
-			uint_fast16_t u;
-			uint_fast16_t v;
-		};
-		uint_fast16_t coord[2];
-	};
+    float_type u;
+    float_type v;
 
 	/// Image patch
 	cv::Mat patch;
@@ -107,6 +102,11 @@ public:
 	inline ImageFeature() :
 			u(0), v(0) {
 	}
+
+    /// Overloaded constructor
+    inline ImageFeature(float_type _u, float_type _v, float_type _depth) :
+            u(_u), v(_v), depth(_depth) {
+    }
 };
 
 class ExtendedDescriptor {
@@ -168,6 +168,9 @@ public:
 	/// poses ids
 	std::vector<unsigned int> posesIds;
 
+    /// image coordinates: std::map<index_of_the_frame,<u,v,d>>
+    std::map<unsigned int, ImageFeature> imageCoordinates;
+
 	/// Constructor
 	MapFeature() {
     };
@@ -175,9 +178,10 @@ public:
 	/// Constructor
 	MapFeature(unsigned int _id, float_type u, float_type  v,
 			const Vec3 _position, std::vector<unsigned int> _posesIds,
-			std::vector<ExtendedDescriptor> _descriptors) :
+            std::vector<ExtendedDescriptor> _descriptors,
+            std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
-                    _posesIds) {
+                    _posesIds), imageCoordinates(_imageCoordinates) {
     };
 
 	/// Constructor

@@ -239,9 +239,9 @@ void PUTSLAM::startProcessing() {
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
             /*Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
-                        transformation = transReal.cast<float>().matrix();
+                        transformation = transReal.cast<float>().matrix();*/
             std::cout << "iteration: " << trajIt << "\n";
-            */
+
             // Saving inliers for Dominic
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
@@ -473,7 +473,7 @@ void PUTSLAM::startProcessing() {
 	if ( optimizationThreadVersion != OPTTHREAD_OFF)
 		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
-    // Wait for management thread to widaćfinish
+    // Wait for management thread to finish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)
     	map->finishManagementThr();  // Wait for optimization thread to finish
 

@@ -47,6 +47,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     mtxCamTraj.lock();
     int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
+    if (poseId==-1) poseId = camTrajectory.size() - 1;
 
 	bufferMapFrontend.mtxBuffer.lock();
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
@@ -64,14 +65,18 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		std::vector<unsigned int> poseIds;
         poseIds.push_back(poseId);
 
+        /// image coordinates: std::map<index_of_the_frame,<u,v>>
+        std::map<unsigned int, ImageFeature> imageCoordinates;
+        imageCoordinates.insert(std::make_pair(poseId,ImageFeature(it->u, it->v,it->position.z())));
+
 		//add each feature to map structure...
 		Vec3 featurePositionInGlobal(featurePos.translation());
         bufferMapFrontend.features2add[featureIdNo] = MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
-                        poseIds, (*it).descriptors);
+                        poseIds, (*it).descriptors, imageCoordinates);
         bufferMapManagement.mtxBuffer.lock();
         bufferMapManagement.features2add[featureIdNo] =
                 MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
-                        poseIds, (*it).descriptors);
+                        poseIds, (*it).descriptors, imageCoordinates);
         bufferMapManagement.mtxBuffer.unlock();
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
@@ -163,6 +168,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         }
 
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
+        featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
@@ -646,6 +652,37 @@ void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& m
             std=0;
 }
 
+/// plot all features on the i-th image
+void FeaturesMap::plotFeaturesOnImage(std::string filename, unsigned int frameId){
+    std::ofstream file(filename);
+    file << "close all;\nclear all;\nhold on;\n";
+    file << "I=imread(\"rgb_00000.png\");\n";
+    file << "imshow(I);\n";
+    Mat34 camPose = getSensorPose(frameId);
+    //std::cout << "camPose\n" << camPose.matrix() << "\n";
+    for (int i=FEATURES_START_ID;i<featureIdNo;i++){
+        MapFeature tmpFeature = featuresMapFrontend[i];
+        // for each frame position
+        file << "%feature id: " << i << "\n";
+        for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
+            Mat34 currCamPose = getSensorPose(*it);
+            //std::cout << "CurrCamPose\n" << currCamPose.matrix() << "\n";
+            Eigen::Vector3d point;
+            sensorModel.getPoint(tmpFeature.imageCoordinates[*it].u, tmpFeature.imageCoordinates[*it].v, tmpFeature.imageCoordinates[*it].depth, point);
+            //compute point coordinates in camera frame
+            Mat34 point3d(Quaternion(1,0,0,0)*Vec3(point.x(), point.y(), point.z()));
+            Mat34 cam2cam = (camPose.inverse()*currCamPose)*point3d;
+            //std::cout << "cam2cam\n" << cam2cam.matrix() << "\n";
+            Eigen::Vector3d pointUV = sensorModel.inverseModel(cam2cam(0,3),cam2cam(1,3),cam2cam(2,3));
+            if (pointUV(0)!=-1){
+                file << "plot(" << pointUV(0) << ", " << pointUV(1) << ",'o','MarkerEdgeColor', [" << double(i%255)/255.0 << ", " << double(i*2%255)/255.0 << ", " << double(i*3%255)/255.0
+                << "],'MarkerFaceColor',[" << double(i%255)/255.0 << ", " << double(i*2%255)/255.0 << ", " << double(i*3%255)/255.0 << "]);\n";
+            }
+        }
+    }
+    file << "%imwrite (I, \"my_output_image.img\");\n";
+}
+
 /// plot all features
 void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameData){
     std::ofstream file(filenamePlot);
@@ -662,7 +699,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
         file << "%measured from frames ";
         MapFeature tmpFeature = featuresMapFrontend[i];
         for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
-            file << *it << ", ";
+            file << *it << "(" << tmpFeature.imageCoordinates[*it].u << "," << tmpFeature.imageCoordinates[*it].v << "), ";
         }
         file << "\n";
         std::vector<float_type> dist4estim;
@@ -820,6 +857,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
     fileData << "stdevDist(stdevDist==0) = [];";
     fileData << "\nmeanStdDistWithoutZeros=mean(stdevDist)\n stdStdDistWithoutZeros = std(stdevDist)";
     fileData.close();
+    plotFeaturesOnImage("featuresImage.m", 0);
 }
 
 /// set Robust Kernel
