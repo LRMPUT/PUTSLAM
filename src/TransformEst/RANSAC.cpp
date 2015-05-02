@@ -256,8 +256,8 @@ float RANSAC::computeInlierRatioEuclidean(
 
 		// Compute residual error and compare it to inlier threshold
 		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()
-//                < RANSACParams.inlierThresholdEuclidean) {
-                < RANSACParams.inlierThresholdEuclidean*prevFeatures[it->queryIdx].z()) {
+                < RANSACParams.inlierThresholdEuclidean) {
+//                < RANSACParams.inlierThresholdEuclidean*prevFeatures[it->queryIdx].z()) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}
