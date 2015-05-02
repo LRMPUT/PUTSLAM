@@ -350,6 +350,9 @@ private:
     /// plot all features
     void plotFeatures(std::string filenamePlot, std::string filenameData);
 
+    /// plot all features on the i-th image
+    void plotFeaturesOnImage(std::string filename, unsigned int frameId);
+
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
 };
