@@ -407,6 +407,9 @@ void FeaturesMap::exportOutput(std::string trajectoryFilename,
         plotFeatures(config.filenameMap,config.filenameData);
         std::cout << "save map to file end\n";
     }
+    if (config.exportDistribution){
+        plotFeaturesOnImage(config.filenameFeatDistr, config.frameNo);
+    }
 }
 
 /// Wait for map management thread to finish
@@ -656,27 +659,32 @@ void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& m
 void FeaturesMap::plotFeaturesOnImage(std::string filename, unsigned int frameId){
     std::ofstream file(filename);
     file << "close all;\nclear all;\nhold on;\n";
-    file << "I=imread(\"rgb_00000.png\");\n";
+    file << "I=imread('rgb_00000.png');\n";
     file << "imshow(I);\n";
     Mat34 camPose = getSensorPose(frameId);
     //std::cout << "camPose\n" << camPose.matrix() << "\n";
+    std::default_random_engine generator(time(NULL));
+    std::uniform_real_distribution<double> distribution(0,1);
     for (int i=FEATURES_START_ID;i<featureIdNo;i++){
         MapFeature tmpFeature = featuresMapFrontend[i];
         // for each frame position
         file << "%feature id: " << i << "\n";
-        for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
-            Mat34 currCamPose = getSensorPose(*it);
-            //std::cout << "CurrCamPose\n" << currCamPose.matrix() << "\n";
-            Eigen::Vector3d point;
-            sensorModel.getPoint(tmpFeature.imageCoordinates[*it].u, tmpFeature.imageCoordinates[*it].v, tmpFeature.imageCoordinates[*it].depth, point);
-            //compute point coordinates in camera frame
-            Mat34 point3d(Quaternion(1,0,0,0)*Vec3(point.x(), point.y(), point.z()));
-            Mat34 cam2cam = (camPose.inverse()*currCamPose)*point3d;
-            //std::cout << "cam2cam\n" << cam2cam.matrix() << "\n";
-            Eigen::Vector3d pointUV = sensorModel.inverseModel(cam2cam(0,3),cam2cam(1,3),cam2cam(2,3));
-            if (pointUV(0)!=-1){
-                file << "plot(" << pointUV(0) << ", " << pointUV(1) << ",'o','MarkerEdgeColor', [" << double(i%255)/255.0 << ", " << double(i*2%255)/255.0 << ", " << double(i*3%255)/255.0
-                << "],'MarkerFaceColor',[" << double(i%255)/255.0 << ", " << double(i*2%255)/255.0 << ", " << double(i*3%255)/255.0 << "]);\n";
+        if (tmpFeature.posesIds.size()>10){
+            double red = distribution(generator); double green = distribution(generator); double blue = distribution(generator);
+            for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
+                Mat34 currCamPose = getSensorPose(*it);
+                //std::cout << "CurrCamPose\n" << currCamPose.matrix() << "\n";
+                Eigen::Vector3d point;
+                sensorModel.getPoint(tmpFeature.imageCoordinates[*it].u, tmpFeature.imageCoordinates[*it].v, tmpFeature.imageCoordinates[*it].depth, point);
+                //compute point coordinates in camera frame
+                Mat34 point3d(Quaternion(1,0,0,0)*Vec3(point.x(), point.y(), point.z()));
+                Mat34 cam2cam = (camPose.inverse()*currCamPose)*point3d;
+                //std::cout << "cam2cam\n" << cam2cam.matrix() << "\n";
+                Eigen::Vector3d pointUV = sensorModel.inverseModel(cam2cam(0,3),cam2cam(1,3),cam2cam(2,3));
+                if (pointUV(0)!=-1){
+                    file << "plot(" << pointUV(0) << ", " << pointUV(1) << ",'o','MarkerEdgeColor', [" << red << ", " << green << ", " << blue
+                    << "],'MarkerFaceColor',[" << red << ", " << green << ", " << blue << "]);\n";
+                }
             }
         }
     }
@@ -857,7 +865,6 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
     fileData << "stdevDist(stdevDist==0) = [];";
     fileData << "\nmeanStdDistWithoutZeros=mean(stdevDist)\n stdStdDistWithoutZeros = std(stdevDist)";
     fileData.close();
-    plotFeaturesOnImage("featuresImage.m", 0);
 }
 
 /// set Robust Kernel

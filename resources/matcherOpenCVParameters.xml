@@ -13,7 +13,7 @@
 				2 -> patches
 				3 -> XYZ + descriptors + patches
 -->  
- <Matcher verbose="0" VOVersion="0" MapMatchingVersion="1">
+ <Matcher verbose="0" VOVersion="1" MapMatchingVersion="1">
  	
  	
 	 <!-- RANSAC settings
@@ -27,6 +27,7 @@
 	 				1 -> Reprojection error 
 					2 -> Euclidean and Reprojection error
 					3 -> Mahalanobis distance
+					4 -> Adaptive Euclidean error
 	 	inlierThresholdEuclidean : maximal Euclidean error of inlier in RANSAC (in meters)
 	 	inlierThresholdReprojection : maximal reprojection error of inlier in RANSAC (in pixels)
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
@@ -51,7 +52,7 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01"> </MatcherOpenCV>
     
     <!-- Matching using patche 
     

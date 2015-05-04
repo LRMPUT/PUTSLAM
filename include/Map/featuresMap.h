@@ -210,6 +210,9 @@ public:
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
             filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
             model->FirstChildElement( "mapManager" )->QueryFloatAttribute("distThreshold", &distThreshold);
+            model->FirstChildElement( "featuresDistribution" )->QueryBoolAttribute("exportDistribution", &exportDistribution);
+            model->FirstChildElement( "featuresDistribution" )->QueryUnsignedAttribute("frameNo", &frameNo);
+            filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
@@ -257,6 +260,15 @@ public:
 
             /// m-file computing map properties
             std::string filenameData;
+
+            /// draw each detected feature in the common coordinate system
+            bool exportDistribution;
+
+            /// m-file ploting features distribution
+            std::string filenameFeatDistr;
+
+            /// common frame no for features distribution
+            unsigned int frameNo;
     };
 
 private:

@@ -103,7 +103,8 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 
 			// Choose proper error computation version based on provided parameters
 			float inlierRatio = 0;
-			if (RANSACParams.errorVersion == EUCLIDEAN_ERROR) {
+            if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
+                (RANSACParams.errorVersion == ADAPTIVE_ERROR)){
 				inlierRatio = computeInlierRatioEuclidean(prevFeatures,
 						features, matches, transformationModel,
 						modelConsistentMatches);
@@ -255,9 +256,11 @@ float RANSAC::computeInlierRatioEuclidean(
 		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
+        float_type threshold = RANSACParams.inlierThresholdEuclidean;
+        if (RANSACParams.errorVersion == ADAPTIVE_ERROR)
+            threshold *= prevFeatures[it->queryIdx].z();
 		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()
-                < RANSACParams.inlierThresholdEuclidean) {
-//                < RANSACParams.inlierThresholdEuclidean*prevFeatures[it->queryIdx].z()) {
+                < threshold) {
 			inlierCount++;
 			modelConsistentMatches.push_back(*it);
 		}

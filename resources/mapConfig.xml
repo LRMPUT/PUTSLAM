@@ -14,6 +14,7 @@
   	maxOnceFeatureAdd						- 	we maximally add maxOnceFeatureAdd number of features from one frame
   	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
+	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
 	<parameters useUncertainty="false"
 				weakFeatureThr="-1"
@@ -28,5 +29,6 @@
 				minImageDistanceOfFeatures="8"
 				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
 	<mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"></mapOutput>
+	<featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"></featuresDistribution>
 	<mapManager distThreshold="0.03"></mapManager>
   </MapConfig>
