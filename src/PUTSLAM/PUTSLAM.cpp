@@ -459,11 +459,11 @@ void PUTSLAM::startProcessing() {
     	map->finishManagementThr();  // Wait for optimization thread to finish
 
     ///for inverse SLAM problem
-    /*for (int i=0; i<traj.size();i++){
+    for (int i=0; i<traj.size();i++){
         VertexSE3 vert(i, traj[i], i);
         ((FeaturesMap*) map)->updatePose(vert, true);
-    }*/
-//    map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+    }
+    map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 
 	// Close trajectory stream
