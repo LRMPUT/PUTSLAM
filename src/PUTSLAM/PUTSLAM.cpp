@@ -143,11 +143,11 @@ void PUTSLAM::startProcessing() {
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
-    if (optimizationThreadVersion == OPTTHREAD_ON)
+/*    if (optimizationThreadVersion == OPTTHREAD_ON)
         map->startOptimizationThread(1, 0);
     else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
         map->startOptimizationThread(1, 0, "Cauchy",1);
-
+*/
 	// Thread looking for too close features
     if (mapManagmentThreadVersion == MAPTHREAD_ON)
         map->startMapManagerThread(1);
@@ -170,9 +170,9 @@ void PUTSLAM::startProcessing() {
 			((FeaturesMap*) map)->getAddPoseToPoseEdges();
 
     ///for inverse SLAM problem
-    /*Simulator simulator;
+    Simulator simulator;
     simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
-    std::vector<Mat34> traj = simulator.getTrajectory();*/
+    std::vector<Mat34> traj = simulator.getTrajectory();
     int trajIt=1;
 
     auto startMainLoop = std::chrono::system_clock::now();
@@ -183,8 +183,8 @@ void PUTSLAM::startProcessing() {
 		if (!middleOfSequence)
             break;
         ///for inverse SLAM problem
-        /*if (trajIt>traj.size()-1)
-            break;*/
+        if (trajIt>traj.size()-1)
+            break;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -219,8 +219,8 @@ void PUTSLAM::startProcessing() {
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
             //for inverse slam problem
-            /*Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
-                        transformation = transReal.cast<float>().matrix();*/
+            Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+                        transformation = transReal.cast<float>().matrix();
             std::cout << "iteration: " << trajIt << "\n";
 
             // Saving inliers for Dominic
@@ -357,7 +357,7 @@ void PUTSLAM::startProcessing() {
 			MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
 
             /// for inverse slam problem (ver. A)
-            //mapEstimatedTransformation.setIdentity();
+            mapEstimatedTransformation.setIdentity();
 			// TESTING VO with map corrections
 			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
@@ -447,9 +447,9 @@ void PUTSLAM::startProcessing() {
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
     // We optimize only at the end if that version is chosen
-    if ( optimizationThreadVersion == OPTTHREAD_ATEND)
+/*    if ( optimizationThreadVersion == OPTTHREAD_ATEND)
         map->startOptimizationThread(15, 1);
-
+*/
     // Wait for optimization thread to finish
 	if ( optimizationThreadVersion != OPTTHREAD_OFF)
 		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");

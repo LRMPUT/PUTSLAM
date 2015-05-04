@@ -393,7 +393,7 @@ void FeaturesMap::startMapManagerThread(int verbose){
 void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
 	continueOpt = false;
-    optimizationThr->join();
+//    optimizationThr->join();
     exportOutput(trajectoryFilename, graphFilename);
 }
 
