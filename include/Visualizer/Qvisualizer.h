@@ -7,22 +7,16 @@
 #ifndef QVISUALIZER_H_INCLUDED
 #define QVISUALIZER_H_INCLUDED
 
-#include "visualizer.h"
+#include "../Defs/putslam_defs.h"
+#include "../include/Utilities/observer.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include <QGLViewer/qglviewer.h>
 #include <iostream>
 
-namespace putslam {
-/// create a single visualizer
-Visualizer* createVisualizerQGL(void);
-/// create a single visualizer - overloaded
-Visualizer* createVisualizerQGL(std::string configFileGrabber);
-}
-
 using namespace putslam;
 
 /// Map implementation
-class QGLVisualizer: public Visualizer, public QGLViewer{
+class QGLVisualizer: public QGLViewer, public Observer{
 public:
     /// Pointer
     typedef std::unique_ptr<QGLVisualizer> Ptr;
@@ -36,11 +30,8 @@ public:
     /// Destruction
     ~QGLVisualizer(void);
 
-    /// Name of the map
-    const std::string& getName() const;
-
-    /// visualize
-    void visualize(void);
+    /// Observer update
+    void update(MapModifier& mapModifier);
 
     class Config{
       public:
@@ -65,14 +56,39 @@ public:
 private:
     Config config;
 
+    ///Set of features (map for the front-end thread)
+    std::map<int,MapFeature> featuresMap;
+
+    /// mutex for critical section - map frontend
+    std::recursive_mutex mtxFeaturesMap;
+
+    ///camera trajectory
+    std::vector<VertexSE3> camTrajectory;
+
+    /// mutex for critical section - cam trajectory
+    std::recursive_mutex mtxCamTrajectory;
+
+    /// Map visualization -- buffer
+    MapModifier bufferMapVisualization;
+
     /// draw objects
     void draw();
+
+    /// draw objects
+    void animate();
 
     /// initialize visualizer
     void init();
 
     /// generate help string
     std::string help() const;
+
+    ///update map
+    void updateMap();
+
+    /// Update feature
+    void updateFeature(std::map<int,MapFeature>& featuresMap,
+            MapFeature& newFeature);
 };
 
 #endif // QVISUALIZER_H_INCLUDED

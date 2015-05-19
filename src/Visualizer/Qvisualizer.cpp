@@ -8,13 +8,12 @@ using namespace putslam;
 /// A single instance of Visualizer
 QGLVisualizer::Ptr visualizer;
 
-QGLVisualizer::QGLVisualizer(void) : Visualizer("QGL Visualizer",
-                VISUALIZER_QGL) {
+QGLVisualizer::QGLVisualizer(void) {
 }
 
 /// Construction
 QGLVisualizer::QGLVisualizer(std::string configFile) :
-        config(configFile), Visualizer("QGL Visualizer", VISUALIZER_QGL) {
+        config(configFile) {
     tinyxml2::XMLDocument configXML;
     std::string filename = "../../resources/" + configFile;
     configXML.LoadFile(filename.c_str());
@@ -26,46 +25,111 @@ QGLVisualizer::QGLVisualizer(std::string configFile) :
 QGLVisualizer::~QGLVisualizer(void) {
 }
 
-const std::string& QGLVisualizer::getName() const {
-    return name;
-}
-
-/// visualize
-void QGLVisualizer::visualize(void){
-
+/// Observer update
+void QGLVisualizer::update(MapModifier& mapModifier) {
+    std::cout << "update visualizer\n";
+    bufferMapVisualization.mtxBuffer.lock();
+    mapModifier.mtxBuffer.lock();
+    if (mapModifier.addFeatures()) {
+        bufferMapVisualization.features2add.insert(mapModifier.features2add.begin(),
+                mapModifier.features2add.end());
+        mapModifier.features2add.clear();
+    }
+    if (mapModifier.updateFeatures()) {
+        bufferMapVisualization.features2update.insert(mapModifier.features2update.begin(),
+                mapModifier.features2update.end());
+        mapModifier.features2update.clear();
+    }
+    if (mapModifier.addPoses()) {
+        if (camTrajectory.size()==0){//set initial camera pose -- looks at the initial point of the trajectory
+            qglviewer::Vec camPos(mapModifier.poses2add[0].pose(0,3), mapModifier.poses2add[0].pose(1,3), mapModifier.poses2add[0].pose(2,3));
+            camera()->setPosition(camPos+qglviewer::Vec(1,1,1));
+            camera()->lookAt(camPos);
+        }
+        bufferMapVisualization.poses2add.insert(bufferMapVisualization.poses2add.end(), mapModifier.poses2add.begin(),
+                mapModifier.poses2add.end());
+        mapModifier.poses2add.clear();
+    }
+    if (mapModifier.updatePoses()) {
+        bufferMapVisualization.poses2update.insert(bufferMapVisualization.poses2update.end(), mapModifier.poses2update.begin(),
+                mapModifier.poses2update.end());
+        mapModifier.poses2update.clear();
+    }
+    mapModifier.mtxBuffer.unlock();
+    bufferMapVisualization.mtxBuffer.unlock();
 }
 
 /// draw objects
 void QGLVisualizer::draw(){
-    const float nbSteps = 200.0;
+    // Here we are in the world coordinate system. Draw unit size axis.
+    drawAxis();
 
-    glBegin(GL_QUAD_STRIP);
-    for (int i=0; i<nbSteps; ++i)
-      {
-        const float ratio = i/nbSteps;
-        const float angle = 21.0*ratio;
-        const float c = cos(angle);
-        const float s = sin(angle);
-        const float r1 = 1.0 - 0.8f*ratio;
-        const float r2 = 0.8f - 0.8f*ratio;
-        const float alt = ratio - 0.5f;
-        const float nor = 0.5f;
-        const float up = sqrt(1.0-nor*nor);
-        glColor3f(1.0-ratio, 0.2f , ratio);
-        glNormal3f(nor*c, up, nor*s);
-        glVertex3f(r1*c, alt, r1*s);
-        glVertex3f(r2*c, alt+0.05f, r2*s);
-      }
+    glLineWidth(2.5);
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
+        glVertex3f(it->pose(0,3), it->pose(1,3), it->pose(2,3));
+    }
     glEnd();
+    updateMap();
+}
+
+/// draw objects
+void QGLVisualizer::animate(){
+}
+
+/// Update feature
+void QGLVisualizer::updateFeature(std::map<int,MapFeature>& featuresMap,
+        MapFeature& newFeature) {
+    featuresMap[newFeature.id].position = newFeature.position;
+}
+
+///update map
+void QGLVisualizer::updateMap(){
+    bufferMapVisualization.mtxBuffer.lock();
+    if (bufferMapVisualization.addFeatures()) {
+        featuresMap.insert(bufferMapVisualization.features2add.begin(),
+                bufferMapVisualization.features2add.end());
+        bufferMapVisualization.features2add.clear();
+    }
+    if (bufferMapVisualization.updateFeatures()) {
+        for (auto it =
+                bufferMapVisualization.features2update.begin();
+                it != bufferMapVisualization.features2update.end(); it++) {
+            updateFeature(featuresMap, it->second);
+        }
+        bufferMapVisualization.features2update.clear();
+    }
+    mtxCamTrajectory.lock();
+    if (bufferMapVisualization.addPoses()) {
+        camTrajectory.insert(camTrajectory.end(), bufferMapVisualization.poses2add.begin(),
+                bufferMapVisualization.poses2add.end());
+        bufferMapVisualization.poses2add.clear();
+    }
+    if (bufferMapVisualization.updatePoses()) {
+        for (auto it =
+                bufferMapVisualization.poses2update.begin();
+                it != bufferMapVisualization.poses2update.end(); it++) {
+            camTrajectory[it->vertexId].pose = it->pose;
+        }
+        bufferMapVisualization.features2update.clear();
+    }
+    mtxCamTrajectory.unlock();
+    bufferMapVisualization.mtxBuffer.unlock();
 }
 
 /// initialize visualizer
 void QGLVisualizer::init(){
     // Restore previous viewer state.
-    restoreStateFromFile();
+    //restoreStateFromFile();
+
+    camera()->setZNearCoefficient(0.00001);
+    camera()->setZClippingCoefficient(100.0);
 
     // Opens help window
     help();
+
+    startAnimation();
 }
 
 /// generate help string
@@ -88,12 +152,3 @@ std::string QGLVisualizer::help() const{
     return text;
 }
 
-putslam::Visualizer* putslam::createVisualizerQGL(void) {
-    visualizer.reset(new QGLVisualizer());
-    return visualizer.get();
-}
-
-putslam::Visualizer* putslam::createVisualizerQGL(std::string config) {
-    visualizer.reset(new QGLVisualizer(config));
-    return visualizer.get();
-}

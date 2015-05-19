@@ -2,31 +2,47 @@
 #include "../include/Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include "../include/Visualizer/Qvisualizer.h"
+#include "../include/PUTSLAM/PUTSLAM.h"
 #include <qapplication.h>
 
 using namespace std;
 
+std::unique_ptr<PUTSLAM> slam;
+
+// run PUTSLAM
+void runPUTSLAM(){
+    slam.get()->startProcessing();
+}
+
 int main(int argc, char** argv)
 {
     try {
-        using namespace putslam;
         tinyxml2::XMLDocument config;
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Visualizer" )->FirstChildElement( "parametersFile" )->GetText());
 
+        slam.reset(new PUTSLAM);
+
         QApplication application(argc,argv);
 
-        Visualizer* visu = createVisualizerQGL(configFile);
+        QGLVisualizer visu(configFile);
 
-        ((QGLVisualizer*)visu)->setWindowTitle("QGLViewer");
+        visu.setWindowTitle("PUT SLAM map viewer");
 
         // Make the viewer window visible on screen.
-        ((QGLVisualizer*)visu)->show();
+        visu.show();
+        slam.get()->attachVisualizer(&visu);
+
+        // run PUTSLAM
+        std::thread tSLAM(runPUTSLAM);
 
         // Run main loop.
-        return application.exec();
+        application.exec();
+        tSLAM.join();
+
+        return 1;
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;

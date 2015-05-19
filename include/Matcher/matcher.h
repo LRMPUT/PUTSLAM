@@ -140,8 +140,8 @@ public:
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersionMap",
 								&RANSACParams.errorVersionMap);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
-					"inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
-			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+                    "inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
+            params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
 					"inlierThresholdReprojection", &RANSACParams.inlierThresholdReprojection);
             params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
                     "inlierThresholdMahalanobis", &RANSACParams.inlierThresholdMahalanobis);

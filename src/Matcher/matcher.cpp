@@ -128,15 +128,15 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
 			undistortedFeatures2D, sensorData.depthImage,
-			matcherParameters.cameraMatrixMat);
+            matcherParameters.cameraMatrixMat);
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
-	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
+    matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
-			features3D, matches, inlierMatches);
+            features3D, matches, inlierMatches);
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
 	// TODO: Parameters

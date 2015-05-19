@@ -15,6 +15,8 @@
 #include "../../3rdParty/Eigen/Geometry"
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
+#include <mutex>
+#include <iostream>
 
 /// putslam name space
 namespace putslam {
@@ -471,6 +473,38 @@ public:
 	VertexSet vertices;
 };
 //exception class goes here
+
+class MapModifier{
+public:
+    /// Features to update
+    std::map<int,MapFeature> features2update;
+
+    /// Features to remove
+    std::vector<int> removeIds;
+
+    /// Features to update
+    std::map<int,MapFeature> features2add;
+
+    ///poses to update
+    std::vector<VertexSE3> poses2update;
+
+    ///poses to add
+    std::vector<VertexSE3> poses2add;
+
+    /// Update features?
+    inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
+    /// Remove feaures?
+    inline bool removeFeatures() { return (removeIds.size()>0) ?  true : false;};
+    /// add features?
+    inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
+    /// add poses?
+    inline bool addPoses() { return (poses2add.size()>0) ?  true : false;};
+    /// Update features?
+    inline bool updatePoses() { return (poses2update.size()>0) ?  true : false;};
+
+    /// mutex to lock access
+    std::recursive_mutex mtxBuffer;
+};
 
 }
 
