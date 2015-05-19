@@ -83,7 +83,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: randomly sampling ids of matches"
 					<< std::endl;
-		std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
+        std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
 
 		// Compute model based on those matches
 		if (RANSACParams.verbose > 1)
@@ -102,7 +102,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 			std::vector<cv::DMatch> modelConsistentMatches;
 
 			// Choose proper error computation version based on provided parameters
-			float inlierRatio = 0;
+            float inlierRatio = 0;
             if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
                 (RANSACParams.errorVersion == ADAPTIVE_ERROR)){
 				inlierRatio = computeInlierRatioEuclidean(prevFeatures,
@@ -253,7 +253,7 @@ float RANSAC::computeInlierRatioEuclidean(
 	for (std::vector<cv::DMatch>::const_iterator it = matches.begin();
 			it != matches.end(); ++it) {
 		// Estimate location of feature from position one after transformation
-		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
+        Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
         float_type threshold = RANSACParams.inlierThresholdEuclidean;

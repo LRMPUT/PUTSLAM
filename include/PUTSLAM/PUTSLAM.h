@@ -20,6 +20,7 @@
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
 #include "../include/RGBD/RGBD.h"
+#include "../include/Visualizer/Qvisualizer.h"
 
 using namespace std;
 using namespace putslam;
@@ -52,6 +53,9 @@ public:
 	}
 
 	void startProcessing();
+
+    ///Attach visualizer
+    void attachVisualizer(QGLVisualizer * visualizer);
 
 
 private:

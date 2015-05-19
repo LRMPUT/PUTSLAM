@@ -138,6 +138,11 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 /// PUBLIC
 
+///Attahc visualizer
+void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer){
+    ((FeaturesMap*)map)->attach(visualizer);
+}
+
 void PUTSLAM::startProcessing() {
 
 	bool ifStart = true;
@@ -214,8 +219,8 @@ void PUTSLAM::startProcessing() {
             Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
-			// Running VO - matching or tracking depending on parameters
-			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
+            // Running VO - matching or tracking depending on parameters
+            double inlierRatio = matcher->Matcher::runVO(currentSensorFrame, transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
             //for inverse slam problem
@@ -271,7 +276,7 @@ void PUTSLAM::startProcessing() {
                 }
             }
 
-			// Move mapFeatures to local coordinate system
+            // Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 
 

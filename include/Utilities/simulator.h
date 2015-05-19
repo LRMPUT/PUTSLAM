@@ -1,6 +1,9 @@
 //source: http://www.cplusplus.com/forum/beginner/26251/
 //@author: m4ster r0shi
 
+#ifndef _SIMULATOR_H_
+#define _SIMULATOR_H_
+
 #include <iostream>
 #include <vector>
 #include "../Defs/putslam_defs.h"
@@ -48,3 +51,5 @@ private:
     std::vector<Mat34> trajectory;
 
 };
+
+#endif //_SIMULATOR_H_

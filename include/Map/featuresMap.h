@@ -9,6 +9,7 @@
 
 #include "map.h"
 #include "../PoseGraph/graph_g2o.h"
+#include "../include/Utilities/observer.h"
 #include <iostream>
 #include <memory>
 #include <atomic>
@@ -25,30 +26,8 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 
 using namespace putslam;
 
-class MapModifier{
-public:
-    /// Features to update
-    std::map<int,MapFeature> features2update;
-
-    /// Features to remove
-    std::vector<int> removeIds;
-
-    /// Features to update
-    std::map<int,MapFeature> features2add;
-
-    /// Update features?
-    inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
-    /// Remove feaures?
-    inline bool removeFeatures() { return (removeIds.size()>0) ?  true : false;};
-    /// add features?
-    inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
-
-    /// mutex to lock access
-    std::recursive_mutex mtxBuffer;
-};
-
 /// Map implementation
-class FeaturesMap: public Map {
+class FeaturesMap: public Map, public Subject {
 public:
 	/// Pointer
 	typedef std::unique_ptr<FeaturesMap> Ptr;
@@ -319,12 +298,6 @@ private:
 
     /// mutex for critical section - map frontend
     std::recursive_mutex mtxMapFrontend;
-
-    ///Set of features (map for the visualization thread)
-    std::vector<MapFeature> featuresMapVisualization;
-
-    /// mutex for critical section - map visualization
-    std::recursive_mutex mtxMapVisualization;
 
     ///Set of features (map for the map management thread)
     std::map<int,MapFeature> featuresMapManagement;

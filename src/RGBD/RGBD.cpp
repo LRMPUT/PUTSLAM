@@ -122,18 +122,18 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
 	std::vector<float_type>::iterator anglesIter = angles.begin();
 
 	for (;featuresIter!=features.end();)
-	{
+    {
 		int uRounded = roundSize(featuresIter->u, depthImage.cols);
 		int vRounded = roundSize(featuresIter->v, depthImage.rows);
 
 		if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))
 				/ RGBD::depthScale
-				<= featuresIter->position.z() - additionalDistance) {
-			featuresIter = features.erase(featuresIter);
-			frameIdsIter = frameIds.erase(frameIdsIter);
+                <= featuresIter->position.z() - additionalDistance) {
+            featuresIter = features.erase(featuresIter);
+            frameIdsIter = frameIds.erase(frameIdsIter);
 			anglesIter = angles.erase(anglesIter);
 		}
-		else {
+        else {
 			++featuresIter;
 			++frameIdsIter;
 			++anglesIter;
