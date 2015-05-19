@@ -622,9 +622,9 @@ void FeaturesMap::updatePose(VertexSE3& newPose, bool updateGraph) {
 
 /// Save map to file
 void FeaturesMap::save2file(std::string mapFilename,
-		std::string graphFilename) {
-	poseGraph->save2file(graphFilename);
-	std::ofstream file(mapFilename);
+        std::string graphFilename) {
+    poseGraph->save2file(graphFilename);
+    std::ofstream file(mapFilename);
 	mtxMapFrontend.lock();
 	file << "#Legend:\n";
 	file << "#Pose pose_id pose(0,0) pose(1,0) ... pose(2,3)\n";
@@ -633,8 +633,8 @@ void FeaturesMap::save2file(std::string mapFilename,
 	file << "#FeaturePosesIds pose_id1 pose_id2 ...\n";
 	file
 			<< "#FeatureExtendedDescriptors size pose_id1 descriptor.cols descriptor.rows desc1(0,0) desc1(1,0)...\n";
-	for (std::vector<VertexSE3>::iterator it = camTrajectory.begin();
-			it != camTrajectory.end(); it++) {
+    for (std::vector<VertexSE3>::iterator it = camTrajectory.begin();
+            it != camTrajectory.end(); it++) {
 		file << "Pose " << it->vertexId;
 		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 4; j++)
@@ -642,7 +642,7 @@ void FeaturesMap::save2file(std::string mapFilename,
 		file << "\n";
 	}
     for (auto it = featuresMapFrontend.begin();
-			it != featuresMapFrontend.end(); it++) {
+            it != featuresMapFrontend.end(); it++) {
         file << "Feature " << it->second.id << " " << it->second.position.x() << " "
                 << it->second.position.y() << " " << it->second.position.z() << " " << it->second.u
                 << " " << it->second.v << "\n";
@@ -650,20 +650,20 @@ void FeaturesMap::save2file(std::string mapFilename,
         for (std::vector<unsigned int>::iterator iter = it->second.posesIds.begin();
                 iter != it->second.posesIds.end(); iter++) {
 			file << " " << *iter;
-		}
+        }
 		file << "\n";
         file << "FeatureExtendedDescriptors " << it->second.descriptors.size() << " ";
-		for (std::vector<ExtendedDescriptor>::iterator iter =
+        /*for (std::vector<ExtendedDescriptor>::iterator iter =
                 it->second.descriptors.begin(); iter != it->second.descriptors.end();
-				iter++) {
+                iter++) {
 			file << iter->poseId << " " << iter->descriptor.cols << " "
-					<< iter->descriptor.rows;
-			for (int i = 0; i < iter->descriptor.cols; i++)
-				for (int j = 0; j < iter->descriptor.rows; j++) {
-					file << " " << iter->descriptor.at<double>(i, j);
-				}
+                    << iter->descriptor.rows;
+            for (int i = 0; i < iter->descriptor.cols; i++)
+                for (int j = 0; j < iter->descriptor.rows; j++) {
+                    file << " " << iter->descriptor.at<double>(i, j);
+                }
 			file << "\n";
-		}
+        }*/
         file << "\n";
 	}
 	mtxMapFrontend.unlock();

@@ -30,7 +30,7 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
     std::cout << "update visualizer\n";
     bufferMapVisualization.mtxBuffer.lock();
     mapModifier.mtxBuffer.lock();
-    if (mapModifier.addFeatures()) {
+    /*if (mapModifier.addFeatures()) {
         bufferMapVisualization.features2add.insert(mapModifier.features2add.begin(),
                 mapModifier.features2add.end());
         mapModifier.features2add.clear();
@@ -39,7 +39,7 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
         bufferMapVisualization.features2update.insert(mapModifier.features2update.begin(),
                 mapModifier.features2update.end());
         mapModifier.features2update.clear();
-    }
+    }*/
     if (mapModifier.addPoses()) {
         if (camTrajectory.size()==0){//set initial camera pose -- looks at the initial point of the trajectory
             qglviewer::Vec camPos(mapModifier.poses2add[0].pose(0,3), mapModifier.poses2add[0].pose(1,3), mapModifier.poses2add[0].pose(2,3));
@@ -87,7 +87,7 @@ void QGLVisualizer::updateFeature(std::map<int,MapFeature>& featuresMap,
 ///update map
 void QGLVisualizer::updateMap(){
     bufferMapVisualization.mtxBuffer.lock();
-    if (bufferMapVisualization.addFeatures()) {
+   /* if (bufferMapVisualization.addFeatures()) {
         featuresMap.insert(bufferMapVisualization.features2add.begin(),
                 bufferMapVisualization.features2add.end());
         bufferMapVisualization.features2add.clear();
@@ -99,7 +99,7 @@ void QGLVisualizer::updateMap(){
             updateFeature(featuresMap, it->second);
         }
         bufferMapVisualization.features2update.clear();
-    }
+    }*/
     mtxCamTrajectory.lock();
     if (bufferMapVisualization.addPoses()) {
         camTrajectory.insert(camTrajectory.end(), bufferMapVisualization.poses2add.begin(),
@@ -112,7 +112,7 @@ void QGLVisualizer::updateMap(){
                 it != bufferMapVisualization.poses2update.end(); it++) {
             camTrajectory[it->vertexId].pose = it->pose;
         }
-        bufferMapVisualization.features2update.clear();
+        bufferMapVisualization.poses2update.clear();
     }
     mtxCamTrajectory.unlock();
     bufferMapVisualization.mtxBuffer.unlock();

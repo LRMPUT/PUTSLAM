@@ -447,9 +447,9 @@ void PUTSLAM::startProcessing() {
 
 	// Save statistics
 	std::cout<<"Saving logs to file" << std::endl;
-	saveLogs();
+    saveLogs();
 
-	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
+    map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
     // We optimize only at the end if that version is chosen
     if ( optimizationThreadVersion == OPTTHREAD_ATEND)
