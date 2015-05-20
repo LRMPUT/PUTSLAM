@@ -602,7 +602,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
         ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
 #        add_dependencies(demoVisualizer Map)
-        TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map LIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} boost_system)
+        TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map LIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
