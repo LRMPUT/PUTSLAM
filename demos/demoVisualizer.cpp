@@ -1,9 +1,10 @@
-#include <iostream>
 #include "../include/Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include "../include/Visualizer/Qvisualizer.h"
 #include "../include/PUTSLAM/PUTSLAM.h"
+#include <GL/glut.h>
 #include <qapplication.h>
+#include <iostream>
 
 using namespace std;
 
@@ -23,11 +24,16 @@ int main(int argc, char** argv)
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Visualizer" )->FirstChildElement( "parametersFile" )->GetText());
 
+        QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
+        //object is created libTinyxml can read only ints from xml file
+
         slam.reset(new PUTSLAM);
 
         QApplication application(argc,argv);
 
-        QGLVisualizer visu(configFile);
+        glutInit(&argc, argv);
+
+        QGLVisualizer visu(configVis);
 
         visu.setWindowTitle("PUT SLAM map viewer");
 
