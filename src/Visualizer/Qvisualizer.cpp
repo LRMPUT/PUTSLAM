@@ -237,7 +237,7 @@ void QGLVisualizer::init(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_color);
 
     glEnable(GL_AUTO_NORMAL);
-        glEnable(GL_NORMALIZE);
+    glEnable(GL_NORMALIZE);
     // Restore previous viewer state.
     //restoreStateFromFile();
 
@@ -245,6 +245,12 @@ void QGLVisualizer::init(){
     camera()->setZClippingCoefficient(100.0);
 
     setBackgroundColor(config.backgroundColor);
+
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Opens help window
     help();
 
