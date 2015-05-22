@@ -38,6 +38,8 @@ option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
+mark_as_advanced(BUILD_PUTSLAM_USAC)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" ON)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
@@ -260,6 +262,26 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+
+###############################################################################
+#
+# PUTSLAM USAC library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+        file(GLOB USAC_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
+        )
+        file(GLOB USAC_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
+        )
+
+        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
+        TARGET_LINK_LIBRARIES(USAC RGBD)
+        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
 
 ###############################################################################
 #
