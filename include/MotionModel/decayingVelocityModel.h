@@ -32,7 +32,7 @@ public:
 	putslam::Mat34 predict(float dt);
 
 	// Current pose is corrected from the SLAM system
-	putslam::Mat34 correct(putslam::Mat34 pose);
+	putslam::Mat34 correct(putslam::Mat34 poseIncrement);
 
 private:
 	// Predict based on last estimate

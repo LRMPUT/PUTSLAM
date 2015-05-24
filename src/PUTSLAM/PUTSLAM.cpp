@@ -1,5 +1,6 @@
 #include "../include/PUTSLAM/PUTSLAM.h"
 #include "../include/Utilities/simulator.h"
+#include "../include/MotionModel/decayingVelocityModel.h"
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
@@ -175,6 +176,10 @@ void PUTSLAM::startProcessing() {
     //std::vector<Mat34> traj = simulator.getTrajectory();
     //int trajIt=1;
 
+	std::unique_ptr<MotionModel> motionModel;
+	motionModel.reset(new DecayingVelocityModel(1000,1,0.9));
+	double motionModelLastTime = -1;
+
 	// Main loop
 	while (true) {
 
@@ -205,6 +210,12 @@ void PUTSLAM::startProcessing() {
 					currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
 					currentSensorFrame.depthImage);
 
+			// Correct motionModel
+			motionModelLastTime = currentSensorFrame.timestamp;
+			Mat34 x = motionModel.get()->correct(cameraPose);
+			motionModelPose =  Eigen::Matrix4f (x.matrix().cast<float>());
+
+
 			ifStart = false;
 			addFeatureToMap = true;
 
@@ -228,10 +239,20 @@ void PUTSLAM::startProcessing() {
 
             robotPose = robotPose * transformation;
 
-
-
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
+
+			// Motion model
+			Mat34 x = motionModel.get()->predict(
+					motionModelLastTime - currentSensorFrame.timestamp);
+			motionModelPose = Eigen::Matrix4f (x.matrix().cast<float>());
+			motionModelLastTime = currentSensorFrame.timestamp;
+
+			if ( int(currentSensorFrame.timestamp) %4 != 0)
+			{
+				x = motionModel.get()->correct(Mat34(motionModelPose.cast<double>()) * cameraPoseIncrement);
+				motionModelPose =  Eigen::Matrix4f (x.matrix().cast<float>());
+			}
 
 			// Add new position to the map
 			cameraPoseId = map->addNewPose(cameraPoseIncrement,
@@ -434,6 +455,9 @@ void PUTSLAM::startProcessing() {
 
 		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
                 currentSensorFrame.timestamp);
+
+		saveTrajectoryFreiburgFormat(motionModelPose, trajectoryMotionModelStream,
+						currentSensorFrame.timestamp);
 	}
 
 	// Save statistics
@@ -465,6 +489,7 @@ void PUTSLAM::startProcessing() {
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
 	trajectoryVOMapStream.close();
+	trajectoryMotionModelStream.close();
 
 
 

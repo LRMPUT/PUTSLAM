@@ -31,9 +31,11 @@ class PUTSLAM {
 
 	ofstream trajectoryFreiburgStream;
 	ofstream trajectoryVOMapStream;
+	ofstream trajectoryMotionModelStream;
 
     Eigen::Matrix4f robotPose;
     Eigen::Matrix4f VoMapPose;
+    Eigen::Matrix4f motionModelPose;
 
 public:
 
@@ -48,6 +50,7 @@ public:
 		// File to save trajectory
 		trajectoryFreiburgStream.open("VO_trajectory.res");
 		trajectoryVOMapStream.open("VOMap_trajectory.res");
+		trajectoryMotionModelStream.open("MotionModel_trajectory.res");
 
 	}
 
