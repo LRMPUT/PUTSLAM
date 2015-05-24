@@ -9,6 +9,6 @@ class MotionModel
 	virtual putslam::Mat34 predict(float dt) = 0;
 
 	// Current pose is corrected from the SLAM system
-	virtual void correct(putslam::Mat34 pose) = 0;
+	virtual putslam::Mat34 correct(putslam::Mat34 pose) = 0;
 };
 #endif // _MOTIONMODEL_
