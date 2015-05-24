@@ -385,7 +385,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	// For all features in the map
 	int j = 0;
 	int perfectMatchCounter = 0;
-	std::cout<<"COMPARE: " << mapFeatures.size() << " " << frameIds.size() << std::endl;
+
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
 		int mapFeatureClosestFrameId = 0;

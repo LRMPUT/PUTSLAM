@@ -195,7 +195,7 @@ std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
 	return pointCloud;
 }
 
-void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first)
+void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first, Eigen::Matrix4f tmpPose)
 {
 	std::ofstream fileToSave;
 
@@ -206,6 +206,17 @@ void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileN
 	else {
 		fileToSave.open(fileName,  std::ofstream::out | std::ofstream::app);
 	}
+	std::cout << "Writing NODE" << std::endl;
+
+	// OCTOMAP:
+	// he keyword NODE is followed by the 6D pose of the laser origin of the 3D scan
+	//(coordinates are regarded as SI units: meter for translation & rad for angles. x points forward, y left, z up.
+	//roll, pitch, and yaw angles are around the axes x, y, z respectively).
+	Eigen::Vector3f eulerAnglesRPY = tmpPose.block<3,3>(0,0).eulerAngles(0, 1, 2);
+
+//	fileToSave << "NODE " << tmpPose(0, 3) << " " << tmpPose(1, 3) << " "
+//			<< tmpPose(2, 3) << " " << eulerAnglesRPY(0) << " "
+//			<< eulerAnglesRPY(1) << " " << eulerAnglesRPY(2) << std::endl;
 
 	for (int i=0;i<pointCloud.size();i++) {
 		fileToSave << pointCloud[i].x() << " " << pointCloud[i].y() << " " << pointCloud[i].z() << std::endl;

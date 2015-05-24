@@ -29,7 +29,7 @@
 namespace RGBD {
 
 /// Depth image scale
-const double depthScale = 5000;
+const double depthScale = 1000;
 
 // Convert keypoints to 3D points using depth image
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
@@ -64,7 +64,8 @@ std::vector<cv::Point2f> removeImageDistortion(
 // Building a point cloud
 std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose);
 
-void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first = false);
+void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName,
+		bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());
 
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
