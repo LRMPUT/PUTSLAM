@@ -481,7 +481,7 @@ void PUTSLAM::startProcessing() {
 
 		cv::Mat rgbImage, depthImage;
 		map->getImages(i, rgbImage, depthImage);
-		Mat34 pose = map->getSensorPose(i);
+		Mat34 pose = map->getSensorPose(0).inverse() * map->getSensorPose(i);
 		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
 
 		// Save for octomap
@@ -489,6 +489,11 @@ void PUTSLAM::startProcessing() {
 				rgbImage, depthImage,
 				matcher->matcherParameters.cameraMatrixMat, tmpPose);
 		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
+
+//		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+//				rgbImage, depthImage,
+//				matcher->matcherParameters.cameraMatrixMat, Eigen::Matrix4f::Identity());
+//		RGBD::saveToFile(pointCloud, "octomap.log", i == 0, tmpPose);
 
 	}
 
