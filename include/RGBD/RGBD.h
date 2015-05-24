@@ -29,7 +29,7 @@
 namespace RGBD {
 
 /// Depth image scale
-const double depthScale = 1000;
+const double depthScale = 5000;
 
 // Convert keypoints to 3D points using depth image
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,

@@ -5,6 +5,7 @@
 
 class MotionModel
 {
+public:
 	// Motion model predicts new pose after dt time
 	virtual putslam::Mat34 predict(float dt) = 0;
 

@@ -12,11 +12,14 @@ DecayingVelocityModel::DecayingVelocityModel(double _Q, double _R, double _decay
 
 	this->H.setZero();
 	// X Y Z
-	for (int i = 0; i < 3; i++)
+	for (int i=0;i<3;i++)
 		this->H(i, i) = 1.0;
-	// Quaternion
-	for (int i = 6; i < 10; i++)
-			this->H(i, i) = 1.0;
+
+	// Quat
+	this->H(3, 6) = 1.0;
+	this->H(4, 7) = 1.0;
+	this->H(5, 8) = 1.0;
+	this->H(6, 9) = 1.0;
 
 	firstMeasurement = true;
 };
@@ -37,13 +40,16 @@ putslam::Mat34 DecayingVelocityModel::predict(float dt) {
 }
 
 // Current pose is corrected from the SLAM system
-putslam::Mat34 DecayingVelocityModel::correct(putslam::Mat34 pose) {
-	Eigen::Matrix<double, 7, 1> measurementVector = Eigen::Matrix<double, 7, 1>::Identity();
+putslam::Mat34 DecayingVelocityModel::correct(putslam::Mat34 poseIncrement) {
+
+	Eigen::Matrix<double, 7, 1> measurementVector =
+			Eigen::Matrix<double, 7, 1>::Identity();
 
 	// X Y Z and Quaternion
-	for (int i=0;i<3;i++)
-		measurementVector(i) = pose(i,3);
-	Eigen::Quaternion<double> Quaternion(pose.matrix().block<3, 3>(0, 0));
+	for (int i = 0; i < 3; i++)
+		measurementVector(i) = poseIncrement(i, 3);
+	Eigen::Quaternion<double> Quaternion(
+			poseIncrement.matrix().block<3, 3>(0, 0));
 	measurementVector(3) = Quaternion.coeffs().x();
 	measurementVector(4) = Quaternion.coeffs().y();
 	measurementVector(5) = Quaternion.coeffs().z();
@@ -51,7 +57,6 @@ putslam::Mat34 DecayingVelocityModel::correct(putslam::Mat34 pose) {
 
 	// First measurement
 	if (firstMeasurement) {
-
 		firstMeasurement = false;
 		for (int i = 0; i < 3; i++)
 			this->x_apriori(i) = this->x_aposteriori(i) = measurementVector(i);
@@ -64,6 +69,28 @@ putslam::Mat34 DecayingVelocityModel::correct(putslam::Mat34 pose) {
 	// Next measurement
 	else
 	{
+
+//		std::cout<<"ESTIMATE : " << std::endl << getCurrentEstimate(this->x_apriori).matrix() << std::endl<<std::endl;
+
+//		Eigen::Matrix<double,3,3> x = getCurrentEstimate(this->x_apriori).matrix().block<3,3>(0,0);
+//		Eigen::Matrix<double,4,4> y = Eigen::Matrix<double,4,4>::Identity();
+//		y.block<3,3>(0,0) = x;
+//
+//
+//		poseIncrement = putslam::Mat34(y) * poseIncrement;
+//		Eigen::Matrix<double, 6, 1> measurementVector = Eigen::Matrix<double, 6, 1>::Identity();
+//		// X Y Z and Quaternion
+//		for (int i=0;i<3;i++)
+//			measurementVector(i) = poseIncrement(i,3);
+//
+//		measurementVector(3) = poseIncrement(2,1);
+//		measurementVector(4) = poseIncrement(0,2);
+//		measurementVector(5) = poseIncrement(1,0);
+//		std::cout<<"POSE INCREMENT: " << std::endl << poseIncrement.matrix() << std::endl<< std::endl;
+
+
+//		std::cout<<"STATE VECTOR apriori: " << this->x_apriori.transpose() << std::endl;
+
 		// Some additional variables
 		Eigen::Matrix<double, 13, 13> I = Eigen::Matrix<double, 13, 13>::Identity();
 		Eigen::Matrix<double, 13, 7> K = Eigen::Matrix<double, 13, 7>::Zero();
@@ -74,10 +101,17 @@ putslam::Mat34 DecayingVelocityModel::correct(putslam::Mat34 pose) {
 						* (this->H * this->P_apriori * this->H.transpose()
 								+ this->R).inverse();
 
+//		std::cout<<" K " << K.matrix() << std::endl;
+
+//		std::cout<< " WTF: " << (measurementVector - this->H * this->x_apriori).matrix() << std::endl;
+
 		this->x_aposteriori = this->x_apriori
 				+ K * (measurementVector - this->H * this->x_apriori);
 		this->P_aposteriori = (I - K * this->H) * this->P_apriori;
 
+//		std::cout<<"STATE VECTOR aposteriori: " << this->x_aposteriori.transpose() << std::endl;
+
+//		int a; std::cin>>a;
 	}
 
 	// Normalize quaternion
