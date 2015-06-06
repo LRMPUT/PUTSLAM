@@ -13,9 +13,10 @@
 #include <cmath>
 #include "opencv2/core/core.hpp"
 #include "../../3rdParty/Eigen/Geometry"
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+//#include <pcl/point_types.h>
+//#include <pcl/io/pcd_io.h>
 #include <mutex>
+#include <set>
 #include <iostream>
 
 /// putslam name space
@@ -52,10 +53,13 @@ public:
 };
 
 /// 3D point representation
-typedef pcl::PointXYZRGBA Point3D;
+class Point3D{
+public:
+    float_type x,y,z,r,g,b,a;
+};
 
 /// 3D point cloud representation
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+typedef std::vector<Point3D> PointCloud;
 
 /// Sensor Frame representation
 class SensorFrame {

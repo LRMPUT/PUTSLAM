@@ -12,6 +12,8 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <iomanip>
+#include <fstream>
 
 namespace putslam {
     /// Graph interface

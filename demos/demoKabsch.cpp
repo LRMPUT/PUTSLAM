@@ -12,10 +12,6 @@
 #include <Eigen/Dense>
 #include "../include/Grabber/kinectGrabber.h"
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-
 using namespace std;
 
 #define INIT_VERTEX_ID 10000

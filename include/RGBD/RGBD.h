@@ -13,14 +13,14 @@
 #include <string>
 
 // Podst PCL
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include "pcl/io/pcd_io.h"
+//#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
+//#include "pcl/io/pcd_io.h"
 
 // OpenCV
 #include "opencv/cv.h"
 #include <opencv2/opencv.hpp>
-#include <Eigen/Eigen>
+#include <eigen3/Eigen/Core>
 
 
 // Out types
