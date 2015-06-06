@@ -73,6 +73,7 @@ public:
             model->FirstChildElement( "pose2feature" )->QueryDoubleAttribute("width", &pose2FeatureWidth);
             pose2FeatureColor.setRedF(rgba[0]); pose2FeatureColor.setGreenF(rgba[1]);
             pose2FeatureColor.setBlueF(rgba[2]); pose2FeatureColor.setAlphaF(rgba[3]);
+            model->FirstChildElement( "camera" )->QueryBoolAttribute("flyingCamera", &flyingCamera);
         }
         public:
         /// Background color
@@ -119,6 +120,9 @@ public:
 
         /// pose2feature link width
         double pose2FeatureWidth;
+
+        /// flying camera effect
+        bool flyingCamera;
     };
 
     /// Construction
@@ -135,6 +139,9 @@ public:
 
     /// Observer update
     void update(MapModifier& mapModifier);
+
+    /// Observer update
+    void update(const putslam::PointCloud& cloud, int frameNo);
 
 private:
     Config config;
@@ -153,6 +160,8 @@ private:
 
     /// Map visualization -- buffer
     MapModifier bufferMapVisualization;
+
+    std::vector<std::pair<int,PointCloud>> pointClouds;
 
     /// draw objects
     void draw();
