@@ -5,6 +5,8 @@
 #include <GL/glut.h>
 #include <qapplication.h>
 #include <iostream>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 
@@ -12,6 +14,8 @@ std::unique_ptr<PUTSLAM> slam;
 
 // run PUTSLAM
 void runPUTSLAM(){
+    std::cout << "Press Enter to start\n";
+    getchar();
     slam.get()->startProcessing();
 }
 
@@ -26,6 +30,12 @@ int main(int argc, char** argv)
 
         QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
         //object is created libTinyxml can read only ints from xml file
+
+        cv::Mat im(480,680, CV_8UC3);
+        cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
+        cv::imshow( "PUTSLAM RGB frame", im );
+        cv::namedWindow( "PUTSLAM Depth frame", cv::WINDOW_AUTOSIZE );
+        cv::imshow( "PUTSLAM Depth frame", im );
 
         slam.reset(new PUTSLAM);
 

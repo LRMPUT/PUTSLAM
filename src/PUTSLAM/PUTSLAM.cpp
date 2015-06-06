@@ -193,6 +193,11 @@ void PUTSLAM::startProcessing() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
+        if (matcher->matcherParameters.showRGBframe)
+            cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
+        if (matcher->matcherParameters.showDepthFrame)
+            cv::imshow( "PUTSLAM Depth frame", currentSensorFrame.depthImage );
+
 		int cameraPoseId = 0;
 		bool addFeatureToMap = false;
 

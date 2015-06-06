@@ -496,15 +496,15 @@ public:
     std::vector<VertexSE3> poses2add;
 
     /// Update features?
-    inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
+    inline bool updateFeatures() const { return (features2update.size()>0) ?  true : false;};
     /// Remove feaures?
-    inline bool removeFeatures() { return (removeIds.size()>0) ?  true : false;};
+    inline bool removeFeatures() const { return (removeIds.size()>0) ?  true : false;};
     /// add features?
-    inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
+    inline bool addFeatures() const { return (features2add.size()>0) ?  true : false;};
     /// add poses?
-    inline bool addPoses() { return (poses2add.size()>0) ?  true : false;};
+    inline bool addPoses() const { return (poses2add.size()>0) ?  true : false;};
     /// Update features?
-    inline bool updatePoses() { return (poses2update.size()>0) ?  true : false;};
+    inline bool updatePoses() const { return (poses2update.size()>0) ?  true : false;};
 
     /// mutex to lock access
     std::recursive_mutex mtxBuffer;

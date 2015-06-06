@@ -117,6 +117,13 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
             camera()->setPosition(camPos+qglviewer::Vec(1,1,1));
             camera()->lookAt(camPos);
         }
+        else if (config.flyingCamera){
+            qglviewer::Vec camPos(-mapModifier.poses2add.back().pose(0,3), mapModifier.poses2add.back().pose(1,3), mapModifier.poses2add.back().pose(2,3));
+            camera()->setPosition(camPos+qglviewer::Vec(0,0,0));
+            Quaternion quat(mapModifier.poses2add.back().pose.rotation());
+            qglviewer::Quaternion q(quat.w(), quat.x(), quat.y(), quat.z());
+            camera()->setOrientation(q*qglviewer::Quaternion(0, 0, 1, 0));
+        }
         bufferMapVisualization.poses2add.insert(bufferMapVisualization.poses2add.end(), mapModifier.poses2add.begin(),
                 mapModifier.poses2add.end());
         mapModifier.poses2add.clear();
@@ -130,6 +137,11 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
     bufferMapVisualization.mtxBuffer.unlock();
 }
 
+/// Observer update
+void QGLVisualizer::update(const putslam::PointCloud& cloud, int frameNo){
+
+}
+
 /// draw objects
 void QGLVisualizer::draw(){
     // Here we are in the world coordinate system. Draw unit size axis.
@@ -140,7 +152,7 @@ void QGLVisualizer::draw(){
         glColor4f(config.trajectoryColor.red(), config.trajectoryColor.green(), config.trajectoryColor.blue(), config.trajectoryColor.alpha());
         glBegin(GL_LINE_STRIP);
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
-            glVertex3f(it->pose(0,3), it->pose(1,3), it->pose(2,3));
+            glVertex3f(-it->pose(0,3), it->pose(1,3), it->pose(2,3));
         }
         glEnd();
     }
@@ -149,7 +161,7 @@ void QGLVisualizer::draw(){
         glColor4f(config.trajectoryPointsColor.red(), config.trajectoryPointsColor.green(), config.trajectoryPointsColor.blue(), config.trajectoryPointsColor.alpha());
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
             //glPushMatrix();
-                sphereTraj.draw(it->pose(0,3), it->pose(1,3), it->pose(2,3));
+                sphereTraj.draw(-it->pose(0,3), it->pose(1,3), it->pose(2,3));
               //  glTranslated(it->pose(0,3), it->pose(1,3), it->pose(2,3));
                 //solidSphere(config.trajectoryPointsSize, 10, 10);
                 //glutSolidSphere(config.trajectoryPointsSize,6,6);
@@ -162,7 +174,7 @@ void QGLVisualizer::draw(){
         glColor4f(config.featuresColor.red(), config.featuresColor.green(), config.featuresColor.blue(), config.featuresColor.alpha());
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             //glPushMatrix();
-                sphereFeature.draw(it->second.position.x(), it->second.position.y(), it->second.position.z());
+                sphereFeature.draw(-it->second.position.x(), it->second.position.y(), it->second.position.z());
                 //glTranslated(it->second.position.x(), it->second.position.y(), it->second.position.z());
                 //solidSphere(config.featuresSize, 10, 10);
                 //glutSolidSphere(config.featuresSize,6,6);
@@ -176,8 +188,8 @@ void QGLVisualizer::draw(){
         glBegin(GL_LINES);
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             for (auto itPose=it->second.posesIds.begin();itPose!=it->second.posesIds.end();itPose++){
-                glVertex3f(camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
-                glVertex3f(it->second.position.x(), it->second.position.y(), it->second.position.z());
+                glVertex3f(-camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
+                glVertex3f(-it->second.position.x(), it->second.position.y(), it->second.position.z());
             }
         }
         glEnd();

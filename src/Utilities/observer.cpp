@@ -20,3 +20,12 @@ void Subject::notify(putslam::MapModifier& mapModifier){
         }
     }
 }
+
+void Subject::notify(const putslam::PointCloud& cloud, int frameNo){
+    for(vector<Observer*>::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+    {
+        if(*iter != 0) {
+            (*iter)->update(cloud, frameNo);
+        }
+    }
+}

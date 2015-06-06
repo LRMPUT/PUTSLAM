@@ -7,4 +7,5 @@
 	<trajectoryPoints drawTrajectoryPoints="true" red="0.0" green="0.0" blue="0.3" alpha="1.0" size="0.001" accuracy="20"></trajectoryPoints>
 	<features drawFeatures="true" red="0.0" green="0.8" blue="0.0" alpha="1.0" size="0.015" smoothness="20"></features>
 	<pose2feature drawLinks="true" red="0.0" green="0.0" blue="0.8" alpha="0.1" width="0.5"></pose2feature>
+	<camera flyingCamera="true"></camera>
   </VisualizerConfig>
