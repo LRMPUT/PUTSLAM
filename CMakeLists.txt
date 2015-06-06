@@ -76,12 +76,12 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 FIND_PACKAGE(OpenCV REQUIRED)
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 # PCL
-FIND_PACKAGE(PCL REQUIRED)
+#FIND_PACKAGE(PCL REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+#include_directories(${PCL_INCLUDE_DIRS})
 
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 #g2o library
 find_package(G2O REQUIRED)
@@ -94,9 +94,13 @@ include_directories(${LIBCSPARSE_INCLUDE_DIR})
 link_directories(${LIBCSPARSE_LIBRARY})
 
 #Eigen
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/3rdParty/Eigen)
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
 
 #QGLViewer library
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 FIND_PACKAGE(OpenGL)
 include_directories(${OPENGL_INCLUDE_DIR})
 link_directories(${OPENGL_LIBRARY})

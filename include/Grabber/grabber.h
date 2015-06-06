@@ -70,7 +70,7 @@ namespace putslam {
                     for (int i=0;i<sensorFrame.rgbImage.rows;i++){
                         for (int j=0;j<sensorFrame.rgbImage.cols;j++){
                             cv::Point3_ <uchar>* p = sensorFrame.rgbImage.ptr<cv::Point3_<uchar> >(i,j);
-                            pcl::PointXYZRGBA point;
+                            putslam::Point3D point;
                             Eigen::Vector3d pointxyz;
                             model.getPoint(j,i, (double)sensorFrame.depthImage.at<uint16_t>(i, j)/5000.0, pointxyz);//5000 - depth scale
                             point.x = pointxyz(0); point.y = pointxyz(1); point.z = pointxyz(2);

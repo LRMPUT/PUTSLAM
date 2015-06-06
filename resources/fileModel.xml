@@ -48,10 +48,10 @@
 
   <!-- ICL -->
 <!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj1_loop"></datasetPath>-->
- 	<datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop"></datasetPath> 
+	<datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop"></datasetPath>
 <!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop_noise"></datasetPath> -->
 	
-<!-- 	<datasetPath base="../../../Datasets" datasetName="Sequence1"></datasetPath> -->
+<!-- 	<datasetPath base="../../../Datasets" datasetName="Sequence4"></datasetPath> -->
 
   <!-- freiburg1/desk -->
 <!-- <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk"></datasetPath> -->

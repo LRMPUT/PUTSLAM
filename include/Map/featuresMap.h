@@ -10,10 +10,11 @@
 #include "map.h"
 #include "../PoseGraph/graph_g2o.h"
 #include "../include/Utilities/observer.h"
-#include <iostream>
 #include <memory>
 #include <atomic>
 #include "../include/Grabber/depthSensorModel.h"
+#include <iostream>
+#include <deque>
 
 #define FEATURES_START_ID 10000
 
