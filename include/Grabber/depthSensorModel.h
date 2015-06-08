@@ -39,6 +39,9 @@ class DepthSensorModel {
     /// compute information matrix using image coordinates
     Mat33 informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z);
 
+    /// Create point cloud from current RGB and depth image
+    void convert2cloud(const cv::Mat& color, const cv::Mat& depth, PointCloud& cloud);
+
     class Config{
       public:
         Config() :

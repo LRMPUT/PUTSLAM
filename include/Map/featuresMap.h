@@ -193,6 +193,7 @@ public:
             model->FirstChildElement( "featuresDistribution" )->QueryBoolAttribute("exportDistribution", &exportDistribution);
             model->FirstChildElement( "featuresDistribution" )->QueryUnsignedAttribute("frameNo", &frameNo);
             filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
+            model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
@@ -249,6 +250,9 @@ public:
 
             /// common frame no for features distribution
             unsigned int frameNo;
+
+            /// Update point cloud visualizer ever n-th frame
+            int frameNo2updatePointCloud;
     };
 
 private:

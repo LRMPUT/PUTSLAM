@@ -98,7 +98,6 @@ QGLVisualizer::~QGLVisualizer(void) {
 
 /// Observer update
 void QGLVisualizer::update(MapModifier& mapModifier) {
-    std::cout << "update visualizer\n";
     bufferMapVisualization.mtxBuffer.lock();
     mapModifier.mtxBuffer.lock();
     if (mapModifier.addFeatures()) {
@@ -118,11 +117,16 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
             camera()->lookAt(camPos);
         }
         else if (config.flyingCamera){
-            qglviewer::Vec camPos(-mapModifier.poses2add.back().pose(0,3), mapModifier.poses2add.back().pose(1,3), mapModifier.poses2add.back().pose(2,3));
+            Mat34 camPose = mapModifier.poses2add.back().pose;
+            Mat34 camPose1((Quaternion(0, 0, 0, 1)*camPose.rotation()*Quaternion(0, 1, 0, 0))*Vec3(-camPose(0,3),-camPose(1,3),-camPose(2,3)));
+            /*qglviewer::Vec camPos(mapModifier.poses2add.back().pose(0,3), mapModifier.poses2add.back().pose(1,3), mapModifier.poses2add.back().pose(2,3));
             camera()->setPosition(camPos+qglviewer::Vec(0,0,0));
             Quaternion quat(mapModifier.poses2add.back().pose.rotation());
             qglviewer::Quaternion q(quat.w(), quat.x(), quat.y(), quat.z());
-            camera()->setOrientation(q*qglviewer::Quaternion(0, 0, 1, 0));
+            camera()->setOrientation(q*qglviewer::Quaternion(0, 0, 1, 0));*/
+            //glScalef(1,-1,1);
+            GLdouble GLmat[16]={camPose1(0,0), camPose1(1,0), camPose1(2,0), camPose1(3,0), camPose1(0,1), camPose1(1,1), camPose1(2,1), camPose1(3,1), camPose1(0,2), camPose1(1,2), camPose1(2,2), camPose1(3,2), camPose1(0,3), camPose1(1,3), camPose1(2,3), camPose1(3,3)};
+            camera()->setFromModelViewMatrix(GLmat);
         }
         bufferMapVisualization.poses2add.insert(bufferMapVisualization.poses2add.end(), mapModifier.poses2add.begin(),
                 mapModifier.poses2add.end());
@@ -138,8 +142,36 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
 }
 
 /// Observer update
-void QGLVisualizer::update(const putslam::PointCloud& cloud, int frameNo){
+void QGLVisualizer::update(const cv::Mat& color, const cv::Mat& depth, int frameNo){
+    //pointClouds.push_back(std::make_pair(frameNo, cloud));
+    mtxImages.lock();
+    colorImagesBuff.push_back(color);
+    depthImagesBuff.push_back(depth);
+    imagesIds.push_back(frameNo);
+    mtxImages.unlock();
+}
 
+/// Draw point clouds
+void QGLVisualizer::drawPointClouds(void){
+    mtxPointClouds.lock();
+    for (int i = 0;i<pointClouds.size();i++){
+        mtxCamTrajectory.lock();
+        Mat34 camPose = camTrajectory[imagesIds[i]].pose;
+        mtxCamTrajectory.unlock();
+        float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
+
+        glPushMatrix();
+            glMultMatrixd(GLmat);
+            glPointSize(config.cloudPointSize);
+            glBegin(GL_POINTS);
+            for (size_t n = 0; n < pointClouds[i].second.size(); n++){
+                glColor3ub(pointClouds[i].second[n].r, pointClouds[i].second[n].g, pointClouds[i].second[n].b);
+                glVertex3d(pointClouds[i].second[n].x, pointClouds[i].second[n].y, pointClouds[i].second[n].z);
+            }
+            glEnd();
+        glPopMatrix();
+    }
+    mtxPointClouds.unlock();
 }
 
 /// draw objects
@@ -147,12 +179,15 @@ void QGLVisualizer::draw(){
     // Here we are in the world coordinate system. Draw unit size axis.
     drawAxis();
 
+    if (config.drawPointClouds){
+        drawPointClouds();
+    }
     if (config.drawTrajectory){
         glLineWidth(config.trajectoryWidth);
         glColor4f(config.trajectoryColor.red(), config.trajectoryColor.green(), config.trajectoryColor.blue(), config.trajectoryColor.alpha());
         glBegin(GL_LINE_STRIP);
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
-            glVertex3f(-it->pose(0,3), it->pose(1,3), it->pose(2,3));
+            glVertex3f(it->pose(0,3), it->pose(1,3), it->pose(2,3));
         }
         glEnd();
     }
@@ -161,7 +196,7 @@ void QGLVisualizer::draw(){
         glColor4f(config.trajectoryPointsColor.red(), config.trajectoryPointsColor.green(), config.trajectoryPointsColor.blue(), config.trajectoryPointsColor.alpha());
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
             //glPushMatrix();
-                sphereTraj.draw(-it->pose(0,3), it->pose(1,3), it->pose(2,3));
+                sphereTraj.draw(it->pose(0,3), it->pose(1,3), it->pose(2,3));
               //  glTranslated(it->pose(0,3), it->pose(1,3), it->pose(2,3));
                 //solidSphere(config.trajectoryPointsSize, 10, 10);
                 //glutSolidSphere(config.trajectoryPointsSize,6,6);
@@ -174,7 +209,7 @@ void QGLVisualizer::draw(){
         glColor4f(config.featuresColor.red(), config.featuresColor.green(), config.featuresColor.blue(), config.featuresColor.alpha());
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             //glPushMatrix();
-                sphereFeature.draw(-it->second.position.x(), it->second.position.y(), it->second.position.z());
+                sphereFeature.draw(it->second.position.x(), it->second.position.y(), it->second.position.z());
                 //glTranslated(it->second.position.x(), it->second.position.y(), it->second.position.z());
                 //solidSphere(config.featuresSize, 10, 10);
                 //glutSolidSphere(config.featuresSize,6,6);
@@ -188,8 +223,8 @@ void QGLVisualizer::draw(){
         glBegin(GL_LINES);
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             for (auto itPose=it->second.posesIds.begin();itPose!=it->second.posesIds.end();itPose++){
-                glVertex3f(-camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
-                glVertex3f(-it->second.position.x(), it->second.position.y(), it->second.position.z());
+                glVertex3f(camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
+                glVertex3f(it->second.position.x(), it->second.position.y(), it->second.position.z());
             }
         }
         glEnd();
@@ -239,6 +274,26 @@ void QGLVisualizer::updateMap(){
     }
     mtxCamTrajectory.unlock();
     bufferMapVisualization.mtxBuffer.unlock();
+    if (colorImagesBuff.size()>0){
+        mtxImages.lock();
+        int imagesSize = colorImagesBuff.size();
+        mtxImages.unlock();
+        while (imagesSize){
+            mtxImages.lock();
+            cv::Mat color(colorImagesBuff.back());
+            colorImagesBuff.pop_back();
+            cv::Mat depth(depthImagesBuff.back());
+            depthImagesBuff.pop_back();
+            int frameNo(imagesIds.back());
+            imagesSize = colorImagesBuff.size();
+            mtxImages.unlock();
+            PointCloud cloud;
+            sensorModel.convert2cloud(color, depth, cloud);
+            mtxPointClouds.lock();
+            pointClouds.push_back(std::make_pair(frameNo, cloud));
+            mtxPointClouds.unlock();
+        }
+    }
 }
 
 /// initialize visualizer

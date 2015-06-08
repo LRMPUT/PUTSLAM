@@ -1,5 +1,6 @@
 #include "../include/Map/featuresMap.h"
 #include "../include/PoseGraph/graph.h"
+#include "../include/Grabber/xtionGrabber.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -146,6 +147,13 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
+    }
+    if (config.frameNo2updatePointCloud>=0){
+        if (trajSize%config.frameNo2updatePointCloud==0){
+            //PointCloud cloud;
+            //sensorModel.convert2cloud(image, depthImage, cloud);
+            this->notify(image, depthImage, trajSize);
+        }
     }
 
 	return trajSize;
