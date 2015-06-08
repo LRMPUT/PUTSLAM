@@ -10,6 +10,7 @@
 #include "../Defs/putslam_defs.h"
 #include "../include/Utilities/observer.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
+#include "../include/Grabber/depthSensorModel.h"
 #include <QGLViewer/qglviewer.h>
 #include <iostream>
 
@@ -74,6 +75,8 @@ public:
             pose2FeatureColor.setRedF(rgba[0]); pose2FeatureColor.setGreenF(rgba[1]);
             pose2FeatureColor.setBlueF(rgba[2]); pose2FeatureColor.setAlphaF(rgba[3]);
             model->FirstChildElement( "camera" )->QueryBoolAttribute("flyingCamera", &flyingCamera);
+            model->FirstChildElement( "pointCloud" )->QueryBoolAttribute("drawPointClouds", &drawPointClouds);
+            model->FirstChildElement( "pointCloud" )->QueryIntAttribute("cloudPointSize", &cloudPointSize);
         }
         public:
         /// Background color
@@ -123,6 +126,12 @@ public:
 
         /// flying camera effect
         bool flyingCamera;
+
+        /// draw point clouds
+        bool drawPointClouds;
+
+        /// point size
+        int cloudPointSize;
     };
 
     /// Construction
@@ -141,7 +150,10 @@ public:
     void update(MapModifier& mapModifier);
 
     /// Observer update
-    void update(const putslam::PointCloud& cloud, int frameNo);
+    void update(const cv::Mat& color, const cv::Mat& depth, int frameNo);
+
+    /// Set depth sensor model
+    inline void setDepthSensorModel(const DepthSensorModel& model){ sensorModel = model;};
 
 private:
     Config config;
@@ -161,7 +173,26 @@ private:
     /// Map visualization -- buffer
     MapModifier bufferMapVisualization;
 
+    //pair -- pose id and point cloud
     std::vector<std::pair<int,PointCloud>> pointClouds;
+
+    /// mutex for critical section - point clouds
+    std::mutex mtxPointClouds;
+
+    /// buffer color images
+    std::vector<cv::Mat> colorImagesBuff;
+
+    /// buffer depth images
+    std::vector<cv::Mat> depthImagesBuff;
+
+    /// buffer depth images
+    std::vector<int> imagesIds;
+
+    /// mutex for critical section - images
+    std::mutex mtxImages;
+
+    /// Sensor model
+    DepthSensorModel sensorModel;
 
     /// draw objects
     void draw();
@@ -181,6 +212,9 @@ private:
     /// Update feature
     void updateFeature(std::map<int,MapFeature>& featuresMap,
             MapFeature& newFeature);
+
+    /// Draw point clouds
+    void drawPointClouds(void);
 };
 
 #endif // QVISUALIZER_H_INCLUDED

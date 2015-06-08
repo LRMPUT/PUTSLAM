@@ -57,6 +57,10 @@ public:
     ///Attach visualizer
     void attachVisualizer(QGLVisualizer * visualizer);
 
+    /// get depth sensor model
+    inline DepthSensorModel getDepthSensorModel(){
+        return map->getDepthSensorModel();
+    }
 
 private:
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };

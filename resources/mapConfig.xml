@@ -31,4 +31,5 @@
 	<mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"></mapOutput>
 	<featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"></featuresDistribution>
 	<mapManager distThreshold="0.03"></mapManager>
+	<visualization frameNo2updatePointCloud="120"></visualization>
   </MapConfig>

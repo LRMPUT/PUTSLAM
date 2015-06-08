@@ -29,7 +29,7 @@ int main(int argc, char** argv)
         std::string configFile(config.FirstChildElement( "Visualizer" )->FirstChildElement( "parametersFile" )->GetText());
 
         QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
-        //object is created libTinyxml can read only ints from xml file
+        //object is created. libTinyxml can read only ints from xml file
 
         cv::Mat im(480,680, CV_8UC3);
         cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
@@ -44,6 +44,7 @@ int main(int argc, char** argv)
         glutInit(&argc, argv);
 
         QGLVisualizer visu(configVis);
+        visu.setDepthSensorModel(slam.get()->getDepthSensorModel());
 
         visu.setWindowTitle("PUT SLAM map viewer");
 

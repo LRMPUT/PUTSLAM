@@ -10,7 +10,7 @@ class Observer
 {
 public:
     virtual void update(putslam::MapModifier& mapModifier) = 0;
-    virtual void update(const putslam::PointCloud& cloud, int frameNo) = 0;
+    virtual void update(const cv::Mat& color, const cv::Mat& depth, int frameNo) = 0;
 };
 
 class Subject
@@ -22,7 +22,7 @@ public:
     void attach(Observer *observer);
     void detach(Observer *observer);
     void notify(putslam::MapModifier& mapModifier);
-    void notify(const putslam::PointCloud& cloud, int frameNo);
+    void notify(const cv::Mat& color, const cv::Mat& depth, int frameNo);
 };
 
 #endif // OBSERVER_H_
