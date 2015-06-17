@@ -65,6 +65,8 @@ option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" O
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
+option(BUILD_PUTSLAM_DEMO_USAC "Build USAC demo" ON)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_USAC)
 
 #additional dependencies
 
@@ -630,5 +632,27 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
 #        add_dependencies(demoVisualizer Map)
         TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map LIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
+
+###############################################################################
+#
+# PUTSLAM demo USAC
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_USAC)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demos/demoUSAC.cpp)
+        ADD_EXECUTABLE(demoUSAC ${DEMO_SOURCES})
+#        add_dependencies(demoUSAC ???)
+        TARGET_LINK_LIBRARIES(demoUSAC tinyxml2 Utilities Grabber Map Matcher TransformEst USAC ${OpenCV_LIBS} boost_system)
+        INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
+	INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
