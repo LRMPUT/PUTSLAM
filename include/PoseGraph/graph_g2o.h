@@ -140,7 +140,7 @@ class PoseGraphG2O : public Graph {
         std::vector<Mat34> getTrajectory(void) const;
 
         ///return Hessian
-        Mat66 getHessian(int vertexId);
+        Mat66 getIncrementCovariance(int vertexId);
 
         ///return Transform between origin and vertex
         Mat34 getTransform(int vertexId);

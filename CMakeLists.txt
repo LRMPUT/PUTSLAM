@@ -596,7 +596,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
         SET(DEMO_SOURCES ./demos/demoMap.cpp)
         ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
         add_dependencies(demoMap g2o)
-        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map LDB ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map TransformEst LDB ${OpenCV_LIBS} boost_system)
         INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)

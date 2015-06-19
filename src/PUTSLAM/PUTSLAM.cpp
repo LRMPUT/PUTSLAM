@@ -504,8 +504,11 @@ void PUTSLAM::startProcessing() {
 				matcher->matcherParameters.cameraMatrixMat, tmpPose);
 		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
 
-	}
-
+    }
+    std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
+    std::cout << "pose 2 uncertainty\n " << map->getPoseUncertainty(2) << "\n";
+    std::cout << "pose 3 uncertainty\n " << map->getPoseUncertainty(3) << "\n";
+    std::cout << "pose 40 uncertainty\n " << map->getPoseUncertainty(40) << "\n";
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
 

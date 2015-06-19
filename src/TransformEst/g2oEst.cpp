@@ -144,7 +144,7 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
 //    graph.save2file("singleTr.g2o");
     //graph.optimize(70);
 
-    uncertainty = graph.getHessian(1);
+    uncertainty = graph.getIncrementCovariance(1);
     //std::cout << "kabsch est: \n";
     //std::cout << transformation(0,3) << " " << transformation(1,3) << " "  << transformation(2,3);
     //Quaternion qq(transformation.rotation());
@@ -157,14 +157,41 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
     return uncertainty;
 }
 
+Eigen::Isometry3f G2OEst::v2t(const Vector6f& t){
+  Eigen::Isometry3f T;
+  T.setIdentity();
+  T.translation()=t.head<3>();
+  float w=t.block<3,1>(3,0).squaredNorm();
+  if (w<1) {
+    w=sqrt(1-w);
+    T.linear()=Eigen::Quaternionf(w, t(3), t(4), t(5)).toRotationMatrix();
+  } else {
+    Eigen::Vector3f q=t.block<3,1>(3,0);
+    q.normalize();
+    T.linear()=Eigen::Quaternionf(0, q(0), q(1), q(2)).toRotationMatrix();
+  }
+  return T;
+}
+
+Vector6f G2OEst::t2v(const Eigen::Isometry3f& t){
+  Vector6f v;
+  v.head<3>()=t.translation();
+  Eigen::Quaternionf q(t.linear());
+  v(3) = q.x();
+  v(4) = q.y();
+  v(5) = q.z();
+  if (q.w()<0)
+    v.block<3,1>(3,0) *= -1.0f;
+  return v;
+}
+
 ///computes information matrix from hessian using unscented transform
 Mat66 G2OEst::computeInformationMatrix(const Mat66& Hessian, const Mat34& transformation){
-
-    using namespace PSolver;
+  using namespace PSolver;
   typedef SigmaPoint<Vector6f> SigmaPoint;
   typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
 
-    Matrix6f H(Hessian.cast<float>());
+  Matrix6f H(Hessian.cast<float>());
   // invert the hessian to get the covariance matrix of the increments
   Eigen::JacobiSVD<Matrix6f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
   Matrix6f localSigma = svd.solve(Matrix6f::Identity());

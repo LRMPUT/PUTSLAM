@@ -1075,28 +1075,24 @@ Mat34 PoseGraphG2O::getTransform(int vertexId){
 }
 
 ///return Hessian
-Mat66 PoseGraphG2O::getHessian(int vertexId){
+Mat66 PoseGraphG2O::getIncrementCovariance(int vertexId){
     g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
-    //g2o::OptimizableGraph::Vertex v;
-    Eigen::MatrixXd Hessian((vertices.size()-2)*3+6,(vertices.size()-2)*3+6);
-    Hessian.setZero();
-    g2o::OptimizableGraph::VertexContainer verts;
+    int dim=0;
+    int vertDim=0;
     for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
-        std::cout << "cinh" << (*it)->colInHessian() << "\n";
+        dim+=(*it)->dimension();
+    }
+    dim-=6; //first vertex is not optimized!
+    Eigen::MatrixXd Hessian(dim,dim);
+    Hessian.setZero();
+    //g2o::OptimizableGraph::VertexContainer verts;
+    int colInHessian=-1;
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
         if ((*it)->id()==vertexId){
-            std::vector<double> res;
-            (*it)->getEstimateData(res);
-            std::cout << "g2o est: \n";
-            for (int i=0;i<res.size();i++){
-                std::cout << " " << res[i];
-            }
-            std::cout << "\n";
-            verts.push_back(*it);
+            colInHessian = (*it)->colInHessian();
+            vertDim = (*it)->dimension();//just check if vertexId is pose vertex
         }
         if ((*it)->colInHessian()>=0){
-
-            std::cout << " dim " << (*it)->dimension() << "\n";
-            std::cout << " colinhes " << (*it)->colInHessian() << "\n";
             for (int i=0;i<(*it)->dimension();i++){
                 for (int j=0;j<(*it)->dimension();j++){
                     Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
@@ -1104,28 +1100,10 @@ Mat66 PoseGraphG2O::getHessian(int vertexId){
             }
         }
     }
-    std::cout << "Hessian:\n";// << Hessian.block<12,12>(0,0) << "\n";
-    //Hessian=Hessian.inverse();
-    optimizer.initializeOptimization();
-    optimizer.computeInitialGuess();
-    g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
-    //optimizer.initializeOptimization(optimizer.VertexSet);
-    if (!optimizer.computeMarginals(spinv,verts))
-        std::cout << "not supported\n";
-    else{
-        std::cout << "Hessian supported\n";
-    }
-    std::cout << spinv.cols() << ", " << spinv.rows() <<"\n";
-getchar();
-    //std::cout << "Hessian inv:\n" << Hessian.block<12,12>(0,0) << "\n";
-    //getchar();
-
-    Mat66 tmp = Hessian.block<6,6>(0,0);
-    /*std::cout << "\ntmp: \n" << tmp << "  " << verts.size() <<  "\n";
-    std::cout << "spinv: \n" << spinv.rows() << " " << spinv.cols() << "\n";
-    getchar();*/
-    //std::cout << tmp << "\n";
-    //getchar();
+    Hessian=Hessian.inverse();
+    Mat66 tmp;
+    if (colInHessian>=0&&vertDim==6)
+        tmp = Hessian.block<6, 6>(colInHessian, colInHessian);
     return tmp;
 }
 
