@@ -80,7 +80,7 @@ public:
     void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14);
 
 	/// get pose of the sensor (default: last pose)
-	Mat34 getSensorPose(int poseId = -1);
+    Mat34 getSensorPose(int poseId = -1) const;
 
 	/// get size of poses
 	int getPoseCounter();
@@ -136,8 +136,6 @@ public:
 		return config.addPoseToPoseEdges;
 	}
 
-
-
     /// set Robust Kernel
     void setRobustKernel(std::string name, float_type delta);
 
@@ -149,6 +147,12 @@ public:
 
     /// Update pose
     void updatePose(VertexSE3& newPose, bool updateGraph = false);
+
+    /// get uncertainty of the pose
+    Mat66 getPoseUncertainty(unsigned int id) const;
+
+    /// get uncertainty of the feature
+    Mat33 getFeatureUncertainty(unsigned int id) const;
 
     class Config{
       public:
@@ -272,7 +276,7 @@ private:
     std::deque<cv::Mat> depthSeq;
 
     /// mutex for camera trajectory
-    std::mutex mtxCamTraj;
+    mutable std::mutex mtxCamTraj;
 
 	///Pose graph
 	Graph * poseGraph;

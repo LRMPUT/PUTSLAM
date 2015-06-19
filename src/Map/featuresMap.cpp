@@ -1,6 +1,7 @@
 #include "../include/Map/featuresMap.h"
 #include "../include/PoseGraph/graph.h"
 #include "../include/Grabber/xtionGrabber.h"
+#include "../include/TransformEst/g2oEst.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -373,7 +374,7 @@ void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, in
 }
 
 /// get pose of the sensor (default: last pose)
-Mat34 FeaturesMap::getSensorPose(int poseId) {
+Mat34 FeaturesMap::getSensorPose(int poseId) const {
     mtxCamTraj.lock();
     Mat34 pose;
     if (poseId < 0){
@@ -914,6 +915,18 @@ void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
 /// disable Robust Kernel
 void FeaturesMap::disableRobustKernel(void) {
 	((PoseGraphG2O*) poseGraph)->disableRobustKernel();
+}
+
+/// get uncertainty of the pose
+Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
+    Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getIncrementCovariance(id);
+    Mat66 unc = G2OEst::computeInformationMatrix(incCov, getSensorPose(id));
+    return unc;
+}
+
+/// get uncertainty of the feature
+Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
+
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {
