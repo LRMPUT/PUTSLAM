@@ -1104,6 +1104,8 @@ Mat66 PoseGraphG2O::getPoseIncrementCovariance(int vertexId){
     dim-=6; //first vertex is not optimized!
     Eigen::MatrixXd Hessian(dim,dim);
     getHessian(Hessian, vertices);
+    Mat66 tmp1 = Hessian.block<6, 6>(colInHessian, colInHessian);
+    std::cout << "tmp1 \n" << tmp1 << "\n";
 
     Hessian=Hessian.inverse();
     Mat66 tmp;

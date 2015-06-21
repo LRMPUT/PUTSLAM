@@ -150,7 +150,7 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
     //Quaternion qq(transformation.rotation());
     //std::cout << " " << qq.x() << " " << qq.y() << " "  << qq.z() << " " << qq.w() << "\n";
     //getchar();
-    uncertainty = computeInformationMatrix(uncertainty,transformation).inverse();
+    uncertainty = computeCovarianceMatrix(uncertainty,transformation);
 
     uncertainty = uncertainty.inverse();
 
@@ -186,7 +186,7 @@ Vector6f G2OEst::t2v(const Eigen::Isometry3f& t){
 }
 
 ///computes information matrix from hessian using unscented transform
-Mat66 G2OEst::computeInformationMatrix(const Mat66& Hessian, const Mat34& transformation){
+Mat66 G2OEst::computeCovarianceMatrix(const Mat66& Hessian, const Mat34& _transformation){
   using namespace PSolver;
   typedef SigmaPoint<Vector6f> SigmaPoint;
   typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
@@ -202,7 +202,7 @@ Mat66 G2OEst::computeInformationMatrix(const Mat66& Hessian, const Mat34& transf
   sampleUnscented(sigmaPoints, localMean, localSigma);
 
   // apply each sigma point to the current transform to propagate the perturbation
-  Eigen::Isometry3f _T(transformation.matrix().cast<float>());
+  Eigen::Isometry3f _T(_transformation.inverse().matrix().cast<float>());
   for (size_t i = 0; i < sigmaPoints.size(); i++) {
     SigmaPoint &p = sigmaPoints[i];
     p._sample = t2v( v2t(p._sample) * _T);
@@ -224,7 +224,7 @@ Mat66 G2OEst::computeInformationMatrix(const Mat66& Hessian, const Mat34& transf
 }
 
 ///computes information matrix from hessian using unscented transform
-Mat33 G2OEst::computeInformationMatrix(const Mat33& Hessian, const Vec3& translation){
+Mat33 G2OEst::computeCovarianceMatrix(const Mat33& Hessian, const Vec3& translation){
   using namespace PSolver;
   typedef SigmaPoint<Vector3f> SigmaPoint;
   typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
@@ -236,15 +236,17 @@ Mat33 G2OEst::computeInformationMatrix(const Mat33& Hessian, const Vec3& transla
   SigmaPointVector sigmaPoints;
   Vector3f localMean = Vector3f::Zero();
 
-  // sanmple from the localSigma a set of sigma points
+  // sample from the localSigma a set of sigma points
   sampleUnscented(sigmaPoints, localMean, localSigma);
 
   // apply each sigma point to the current transform to propagate the perturbation
-  //Eigen::Isometry3f _T(translation.cast<float>());
+  Mat34 trans(translation*Quaternion(1,0,0,0));
+  Eigen::Isometry3f _T(trans.inverse().matrix().cast<float>());
   for (size_t i = 0; i < sigmaPoints.size(); i++) {
     SigmaPoint &p = sigmaPoints[i];
+    p._sample = _T * p._sample; //x_g^-1 * x_i
     //p._sample = t2v( v2t(p._sample) * _T);
-    p._sample = p._sample + translation.vector().cast<float>();
+    //p._sample = p._sample + translation.vector().cast<float>();
   }
 
   Vector3f mean = Vector3f::Zero();
