@@ -222,9 +222,9 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 }
 
 /// Get feature position
-Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
+Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 	mtxMapFrontend.lock();
-    Vec3 feature(featuresMapFrontend[id].position);
+    Vec3 feature = featuresMapFrontend.at(id).position;
 	mtxMapFrontend.unlock();
 	return feature;
 }
@@ -919,14 +919,16 @@ void FeaturesMap::disableRobustKernel(void) {
 
 /// get uncertainty of the pose
 Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
-    Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getIncrementCovariance(id);
+    Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
     Mat66 unc = G2OEst::computeInformationMatrix(incCov, getSensorPose(id));
     return unc;
 }
 
 /// get uncertainty of the feature
 Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
-
+    Mat33 incCov = ((PoseGraphG2O*) poseGraph)->getFeatureIncrementCovariance(id);
+    Mat33 unc = G2OEst::computeInformationMatrix(incCov, getFeaturePosition(id));
+    return unc;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

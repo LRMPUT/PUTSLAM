@@ -144,7 +144,7 @@ const Mat66& G2OEst::computeUncertainty(const Eigen::MatrixXd& setA, std::vector
 //    graph.save2file("singleTr.g2o");
     //graph.optimize(70);
 
-    uncertainty = graph.getIncrementCovariance(1);
+    uncertainty = graph.getPoseIncrementCovariance(1);
     //std::cout << "kabsch est: \n";
     //std::cout << transformation(0,3) << " " << transformation(1,3) << " "  << transformation(2,3);
     //Quaternion qq(transformation.rotation());
@@ -214,6 +214,45 @@ Mat66 G2OEst::computeInformationMatrix(const Mat66& Hessian, const Mat34& transf
 
   // Compute the information matrix from the covariance
   Matrix6f informationMatrix;
+  informationMatrix = localSigma.inverse();
+
+  if (isNan(informationMatrix))
+    informationMatrix.setZero();
+
+  informationMatrix = .5* (informationMatrix + informationMatrix.transpose());
+  return informationMatrix.cast<float_type>();
+}
+
+///computes information matrix from hessian using unscented transform
+Mat33 G2OEst::computeInformationMatrix(const Mat33& Hessian, const Vec3& translation){
+  using namespace PSolver;
+  typedef SigmaPoint<Vector3f> SigmaPoint;
+  typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
+
+  Matrix3f H(Hessian.cast<float>());
+  // invert the hessian to get the covariance matrix of the increments
+  Eigen::JacobiSVD<Matrix3f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Matrix3f localSigma = svd.solve(Matrix3f::Identity());
+  SigmaPointVector sigmaPoints;
+  Vector3f localMean = Vector3f::Zero();
+
+  // sanmple from the localSigma a set of sigma points
+  sampleUnscented(sigmaPoints, localMean, localSigma);
+
+  // apply each sigma point to the current transform to propagate the perturbation
+  //Eigen::Isometry3f _T(translation.cast<float>());
+  for (size_t i = 0; i < sigmaPoints.size(); i++) {
+    SigmaPoint &p = sigmaPoints[i];
+    //p._sample = t2v( v2t(p._sample) * _T);
+    p._sample = p._sample + translation.vector().cast<float>();
+  }
+
+  Vector3f mean = Vector3f::Zero();
+  // Reconstruct the gaussian
+  reconstructGaussian(mean, localSigma, sigmaPoints);
+
+  // Compute the information matrix from the covariance
+  Matrix3f informationMatrix;
   informationMatrix = localSigma.inverse();
 
   if (isNan(informationMatrix))

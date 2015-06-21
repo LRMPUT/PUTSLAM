@@ -64,7 +64,7 @@ public:
 	std::vector<MapFeature> getAllFeatures(void);
 
 	/// Get feature position
-	Vec3 getFeaturePosition(unsigned int id);
+    Vec3 getFeaturePosition(unsigned int id) const;
 
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
@@ -306,7 +306,7 @@ private:
     std::map<int,MapFeature> featuresMapFrontend;
 
     /// mutex for critical section - map frontend
-    std::recursive_mutex mtxMapFrontend;
+    mutable std::recursive_mutex mtxMapFrontend;
 
     ///Set of features (map for the map management thread)
     std::map<int,MapFeature> featuresMapManagement;
