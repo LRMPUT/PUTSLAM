@@ -70,7 +70,7 @@ public:
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
 
 	/// Get feature position
-	virtual Vec3 getFeaturePosition(unsigned int id) = 0;
+    virtual Vec3 getFeaturePosition(unsigned int id) const = 0;
 
 	/// get pose of the sensor (default: last pose)
     virtual Mat34 getSensorPose(int poseId = -1) const = 0;

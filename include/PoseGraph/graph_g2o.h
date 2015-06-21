@@ -139,8 +139,11 @@ class PoseGraphG2O : public Graph {
         /// Return trajectory (set of SE3 poses)
         std::vector<Mat34> getTrajectory(void) const;
 
-        ///return Hessian
-        Mat66 getIncrementCovariance(int vertexId);
+        ///return covariance increment
+        Mat66 getPoseIncrementCovariance(int vertexId);
+
+        ///return covariance increment
+        Mat33 getFeatureIncrementCovariance(int vertexId);
 
         ///return Transform between origin and vertex
         Mat34 getTransform(int vertexId);
@@ -285,6 +288,9 @@ class PoseGraphG2O : public Graph {
 
         /// removes vertex from the g2o graph. Returns true on success
         bool removeVertexG2O(unsigned int id);
+
+        /// Get Hessian
+        void getHessian(Eigen::MatrixXd& hessian, const g2o::OptimizableGraph::VertexContainer& vertices);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED

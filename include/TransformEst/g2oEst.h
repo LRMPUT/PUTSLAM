@@ -46,6 +46,9 @@ namespace putslam {
             ///computes information matrix from hessian using unscented transform
             static Mat66 computeInformationMatrix(const Mat66& Hessian, const Mat34& transformation);
 
+            ///computes information matrix from hessian using unscented transform
+            static Mat33 computeInformationMatrix(const Mat33& Hessian, const Vec3& translation);
+
             static Eigen::Isometry3f v2t(const Vector6f& t);
 
             static Vector6f t2v(const Eigen::Isometry3f& t);
