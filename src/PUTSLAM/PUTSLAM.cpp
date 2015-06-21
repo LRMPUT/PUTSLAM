@@ -511,7 +511,8 @@ void PUTSLAM::startProcessing() {
     std::cout << "pose 40 uncertainty\n " << map->getPoseUncertainty(40) << "\n";
     std::cout << "feature 10000 uncertainty\n " << map->getFeatureUncertainty(10000) << "\n";
     std::cout << "feature 10020 uncertainty\n " << map->getFeatureUncertainty(10020) << "\n";
-    std::cout << "feature 10040 uncertainty\n " << map->getFeatureUncertainty(10040) << "\n";*/
+    std::cout << "feature 10085 uncertainty\n " << map->getFeatureUncertainty(10085) << "\n";
+    std::cout << "feature 10086 uncertainty\n " << map->getFeatureUncertainty(10086) << "\n";*/
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
 

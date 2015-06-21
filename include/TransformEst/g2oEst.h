@@ -44,10 +44,10 @@ namespace putslam {
             const Mat66& computeUncertainty(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation);
 
             ///computes information matrix from hessian using unscented transform
-            static Mat66 computeInformationMatrix(const Mat66& Hessian, const Mat34& transformation);
+            static Mat66 computeCovarianceMatrix(const Mat66& Hessian, const Mat34& transformation);
 
             ///computes information matrix from hessian using unscented transform
-            static Mat33 computeInformationMatrix(const Mat33& Hessian, const Vec3& translation);
+            static Mat33 computeCovarianceMatrix(const Mat33& Hessian, const Vec3& translation);
 
             static Eigen::Isometry3f v2t(const Vector6f& t);
 
