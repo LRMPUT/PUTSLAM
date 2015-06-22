@@ -1,7 +1,7 @@
 #ifndef CONFIGPARAMSPUTSLAM_H
 #define CONFIGPARAMSPUTSLAM_H
 
-#include "ConfigParams.h"
+#include "../include/USAC/ConfigParams.h"
 
 namespace USACConfig
 {

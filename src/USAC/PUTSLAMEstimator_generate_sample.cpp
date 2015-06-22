@@ -1,5 +1,7 @@
 #include "../include/USAC/PUTSLAMEstimator.h"
 
+#include <opencv2/opencv.hpp>
+
 //// COPIED FROM PUTSLAM:
 
 //// TODO: MISSING:

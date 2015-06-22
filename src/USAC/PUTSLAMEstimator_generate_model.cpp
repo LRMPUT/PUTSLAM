@@ -1,5 +1,10 @@
 #include "../include/USAC/PUTSLAMEstimator.h"
 
+#include <opencv2/opencv.hpp>
+#include <Eigen/Eigen>
+
+#include "../include/TransformEst/g2oEst.h"
+
 //// COPIED FROM PUTSLAM:
 /**
 * Method used to compute transformation model based on:
@@ -32,7 +37,7 @@ bool PUTSLAMEstimator::computeTransformationModel(
 			prevFeaturesMatrix.transpose(), false);
 	}
 	else if (usedType == G2O) {
-		putslam::TransformEst* g2oEst = createG2OEstimator();
+		putslam::TransformEst* g2oEst = putslam::createG2OEstimator();
 		Mat34 transformation = g2oEst->computeTransformation(
 			featuresMatrix.cast<double>().transpose(),
 			prevFeaturesMatrix.cast<double>().transpose());
