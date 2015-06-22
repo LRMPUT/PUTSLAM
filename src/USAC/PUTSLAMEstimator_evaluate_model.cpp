@@ -1,5 +1,10 @@
 #include "../include/USAC/PUTSLAMEstimator.h"
 
+#include <opencv2/opencv.hpp>
+#include <Eigen/Eigen>
+
+#include "../include/RGBD/RGBD.h"
+
 //// THERE IS NOTHING LIKE THIS IN PUTSLAM
 
 //// COPIED FROM PUTSLAM:

@@ -4,37 +4,61 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "ConfigParamsPUTSLAM.h"
-#include "USAC.h"
-#include "../include/TransformEst/g2oEst.h"
-#include "../include/RGBD/RGBD.h"
+#include "../include/USAC/ConfigParamsPUTSLAM.h"
+#include "../include/USAC/USAC.h"
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
+
 
 class PUTSLAMEstimator : public USAC<PUTSLAMEstimator>
 {
 public:
+	enum ERROR_VERSION { EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR, MAHALANOBIS_ERROR, ADAPTIVE_ERROR };
 	struct parameters {
 		int verbose;
 		int errorVersion, errorVersionVO, errorVersionMap;
-		double inlierThresholdEuclidean, inlierThresholdReprojection, inlierThresholdMahalanobis;
+        double inlierThresholdEuclidean, inlierThresholdReprojection, inlierThresholdMahalanobis;
 		double minimalInlierRatioThreshold;
 		int usedPairs;
 		int iterationCount;
 	};
-	enum ERROR_VERSION { EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR, MAHALANOBIS_ERROR, ADAPTIVE_ERROR };
+
 	enum TransfEstimationType {
 		UMEYAMA, G2O
 	};
 
 public:
-	inline bool		 initProblem(const ConfigParamsPUTSLAM& cfg);
+	cv::Mat cameraMatrix;
+	parameters RANSACParams;
+
+public:
+	inline bool		 initProblem(const ConfigParamsPUTSLAM& cfg)
+	{
+		return true;
+	}
 
 public:
 	PUTSLAMEstimator(const parameters &_RANSACParameters, const cv::Mat &_cameraMatrix)
 	{
 		this->cameraMatrix = _cameraMatrix;
 		this->RANSACParams = _RANSACParameters;
+
+		if (RANSACParams.verbose > 0) {
+			std::cout << "RANSACParams.verbose --> " << RANSACParams.verbose
+					<< std::endl;
+			std::cout << "RANSACParams.usedPairs --> " << RANSACParams.usedPairs
+					<< std::endl;
+			std::cout << "RANSACParams.errorVersion --> "
+					<< RANSACParams.errorVersion << std::endl;
+			std::cout << "RANSACParams.inlierThresholdEuclidean --> "
+					<< RANSACParams.inlierThresholdEuclidean << std::endl;
+	        std::cout << "RANSACParams.inlierThresholdMahalanobis --> "
+	                << RANSACParams.inlierThresholdMahalanobis << std::endl;
+			std::cout << "RANSACParams.inlierThresholdReprojection --> "
+					<< RANSACParams.inlierThresholdReprojection << std::endl;
+			std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
+					<< RANSACParams.minimalInlierRatioThreshold << std::endl;
+		}
 	};
 	~PUTSLAMEstimator()
 	{
@@ -43,7 +67,10 @@ public:
 public:
 	// ------------------------------------------------------------------------
 	// problem specific functions
-	void		 cleanupProblem();
+	void		 cleanupProblem()
+	{
+
+	}
 	unsigned int generateMinimalSampleModels();
 	bool		 generateRefinedModel(std::vector<unsigned int>& sample, const unsigned int numPoints,
 		bool weighted = false, double* weights = NULL);
@@ -96,9 +123,6 @@ public:
 	);
 
 private:
-	cv::Mat cameraMatrix;
-	parameters RANSACParams;
-
 	// generate sample
 	std::vector<cv::DMatch> convertUSACSamplesToPUTSLAMSamples(std::vector<unsigned int> samplesFromUSAC, const std::vector<cv::DMatch> matches);
 	std::vector<cv::DMatch> randomMatches;
@@ -152,25 +176,5 @@ private:
 
 	// generate refined model
 };
-
-
-// ============================================================================================
-// initProblem: initializes problem specific data and parameters
-// this function is called once per run on new data
-// ============================================================================================
-bool PUTSLAMEstimator::initProblem(const ConfigParamsPUTSLAM& cfg)
-{
-	return true;
-}
-
-
-// ============================================================================================
-// cleanupProblem: release any temporary problem specific data storage 
-// this function is called at the end of each run on new data
-// ============================================================================================
-void PUTSLAMEstimator::cleanupProblem()
-{
-}
-
 
 #endif

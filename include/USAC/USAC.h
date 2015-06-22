@@ -8,7 +8,7 @@
 #include <limits>
 #include <vector>
 //#include <windows.h>
-#include "ConfigParams.h" 
+#include "../include/USAC/ConfigParams.h"
 
 struct UsacResults {
 	void reset() {
