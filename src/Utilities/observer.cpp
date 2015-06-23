@@ -29,3 +29,12 @@ void Subject::notify(const cv::Mat& color, const cv::Mat& depth, int frameNo){
         }
     }
 }
+
+void Subject::notify(const std::vector<putslam::Edge3D>& features){
+    for(vector<Observer*>::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+    {
+        if(*iter != 0) {
+            (*iter)->update(features);
+        }
+    }
+}

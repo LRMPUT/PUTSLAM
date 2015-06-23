@@ -207,6 +207,8 @@ class PoseGraphG2O : public Graph {
         std::map<int, Mat34> optimizedPoses;
         /// mutex for optimized poses
         std::mutex mtxOptPoses;
+        /// current inverse of hessian
+        Eigen::MatrixXd HessianInv;
 
         /// Removes a vertex from the graph. Returns true on success
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);

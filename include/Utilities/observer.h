@@ -11,6 +11,7 @@ class Observer
 public:
     virtual void update(putslam::MapModifier& mapModifier) = 0;
     virtual void update(const cv::Mat& color, const cv::Mat& depth, int frameNo) = 0;
+    virtual void update(const std::vector<putslam::Edge3D>& features) = 0;
 };
 
 class Subject
@@ -23,6 +24,7 @@ public:
     void detach(Observer *observer);
     void notify(putslam::MapModifier& mapModifier);
     void notify(const cv::Mat& color, const cv::Mat& depth, int frameNo);
+    void notify(const std::vector<putslam::Edge3D>& features);
 };
 
 #endif // OBSERVER_H_

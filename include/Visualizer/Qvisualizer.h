@@ -77,6 +77,17 @@ public:
             model->FirstChildElement( "camera" )->QueryBoolAttribute("flyingCamera", &flyingCamera);
             model->FirstChildElement( "pointCloud" )->QueryBoolAttribute("drawPointClouds", &drawPointClouds);
             model->FirstChildElement( "pointCloud" )->QueryIntAttribute("cloudPointSize", &cloudPointSize);
+            // measurements
+            model->FirstChildElement( "measurements" )->QueryBoolAttribute("drawMeasurements", &drawMeasurements);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("red", &rgba[0]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("green", &rgba[1]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("blue", &rgba[2]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("alpha", &rgba[3]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("size", &measurementSize);
+            model->FirstChildElement( "measurements" )->QueryIntAttribute("featureIDMin", &measurementFeaturesIds.first);
+            model->FirstChildElement( "measurements" )->QueryIntAttribute("featureIDMax", &measurementFeaturesIds.second);
+            measurementsColor.setRedF(rgba[0]); measurementsColor.setGreenF(rgba[1]);
+            measurementsColor.setBlueF(rgba[2]); measurementsColor.setAlphaF(rgba[3]);
         }
         public:
         /// Background color
@@ -132,6 +143,18 @@ public:
 
         /// point size
         int cloudPointSize;
+
+        /// Draw measured feature positions
+        bool drawMeasurements;
+
+        /// Measurement color
+        QColor measurementsColor;
+
+        /// measured feature position size
+        double measurementSize;
+
+        /// id range of measured features (min, max)
+        std::pair<int,int> measurementFeaturesIds;
     };
 
     /// Construction
@@ -151,6 +174,9 @@ public:
 
     /// Observer update
     void update(const cv::Mat& color, const cv::Mat& depth, int frameNo);
+
+    /// Observer update
+    void update(const std::vector<Edge3D>& features);
 
     /// Set depth sensor model
     inline void setDepthSensorModel(const DepthSensorModel& model){ sensorModel = model;};
@@ -176,6 +202,8 @@ private:
     //pair -- pose id and point cloud
     std::vector<std::pair<int,PointCloud>> pointClouds;
 
+    std::vector<GLuint> cloudsList;
+
     /// mutex for critical section - point clouds
     std::mutex mtxPointClouds;
 
@@ -193,6 +221,18 @@ private:
 
     /// Sensor model
     DepthSensorModel sensorModel;
+
+    /// Measurements (SE3 to 3D feature)
+    std::vector<Edge3D> measurements;
+
+    /// mutex for critical section - pose graph
+    std::mutex mtxMeasurements;
+
+    /// Measurements (SE3 to 3D feature)
+    std::vector<Edge3D> measurementsBuff;
+
+    /// mutex for critical section - pose graph
+    std::mutex mtxMeasurementsBuff;
 
     /// draw objects
     void draw();
@@ -215,6 +255,9 @@ private:
 
     /// Draw point clouds
     void drawPointClouds(void);
+
+    /// Create point cloud List
+    GLuint createCloudList(const std::pair<int,PointCloud>& pointCloud);
 };
 
 #endif // QVISUALIZER_H_INCLUDED
