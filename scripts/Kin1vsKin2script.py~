@@ -16,6 +16,6 @@ for datasetId in range(2,10):
 
 		print("python evaluate_rpe.py Kin1vsKin2/dataset" + str(datasetId) + "/Kin1_groundtruth_recomputed.txt Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"_recomputed.txt --verbose --delta_unit 'f' --fixed_delta --save_errors Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"RpeErrors.txt --plot Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.png > Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.res");
 
-		call("python evaluate_rpe.py Kin1vsKin2/dataset" + str(datasetId) + "/Kin1_groundtruth_recomputed.txt Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"_recomputed.txt --verbose --delta_unit 'f' --fixed_delta --save_errors Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"RpeErrors.txt --plot Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.png > Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.res", shell=True);
+		call("python evaluate_rpe.py Kin1vsKin2/dataset" + str(datasetId) + "/Kin1_groundtruth_recomputed.txt Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"_recomputed.txt --verbose --delta_unit 'f' --fixed_delta --plot Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.png > Kin1vsKin2/dataset" + str(datasetId) + "/Kin" + str(kinectNo) +"Rpe.res", shell=True);
 
 

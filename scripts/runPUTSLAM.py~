@@ -63,7 +63,6 @@ for dir in dirs:
 	call('cp ' + root + dir+"/* ../../results/" + dir + '/resources/', shell=True);
 
 	# Copy those results
-	print('mv *.png ../../results/' + dir + '/');
 	call('mv *.png ../../results/' + dir + '/', shell=True);
 	call('mv *.jpg ../../results/' + dir + '/', shell=True);
 	call('mv *.log ../../results/' + dir + '/', shell=True);
