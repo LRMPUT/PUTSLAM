@@ -51,6 +51,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 	mtxCamTraj.unlock();
     if (poseId==-1) poseId = camTrajectory.size() - 1;
 
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
             it != features.end(); it++) { // update the graph
 
@@ -99,6 +100,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 						Vec3(featurePos(0, 3), featurePos(1, 3),
 								featurePos(2, 3))));
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
 		featureIdNo++;
     }
 
@@ -108,7 +110,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
     emptyMap = false;
-    this->notify(bufferMapVisualization);
+    notify(bufferMapVisualization);
+    notify(features2visualization);
 }
 
 /// add new pose of the camera, returns id of the new pose
@@ -175,6 +178,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 
@@ -197,7 +201,9 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
     }
+    notify(features2visualization);
 }
 
 /// add measurement between two poses

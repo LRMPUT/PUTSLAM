@@ -768,6 +768,7 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 
     // Lock the graph
     mtxGraph.lock();
+    HessianInv.resize(0,0);
 
     optimizer.initializeOptimization();
     //optimizer.computeInitialGuess();
@@ -1104,13 +1105,14 @@ Mat66 PoseGraphG2O::getPoseIncrementCovariance(int vertexId){
     dim-=6; //first vertex is not optimized!
     Eigen::MatrixXd Hessian(dim,dim);
     getHessian(Hessian, vertices);
-    Mat66 tmp1 = Hessian.block<6, 6>(colInHessian, colInHessian);
-    std::cout << "tmp1 \n" << tmp1 << "\n";
 
-    Hessian=Hessian.inverse();
+    if (HessianInv.rows()==0){
+        HessianInv.resize(dim, dim);
+        HessianInv=Hessian.inverse();
+    }
     Mat66 tmp;
     if (colInHessian>=0&&vertDim==6)
-        tmp = Hessian.block<6, 6>(colInHessian, colInHessian);
+        tmp = HessianInv.block<6, 6>(colInHessian, colInHessian);
     return tmp;
 }
 
@@ -1131,10 +1133,13 @@ Mat33 PoseGraphG2O::getFeatureIncrementCovariance(int vertexId){
     Eigen::MatrixXd Hessian(dim,dim);
     getHessian(Hessian, vertices);
 
-    Hessian=Hessian.inverse();
+    if (HessianInv.rows()==0){
+        HessianInv.resize(dim, dim);
+        HessianInv=Hessian.inverse();
+    }
     Mat33 tmp;
     if (colInHessian>=0&&vertDim==3)
-        tmp = Hessian.block<3, 3>(colInHessian, colInHessian);
+        tmp = HessianInv.block<3, 3>(colInHessian, colInHessian);
     return tmp;
 }
 
