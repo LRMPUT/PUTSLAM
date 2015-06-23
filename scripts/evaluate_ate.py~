@@ -195,6 +195,7 @@ if __name__=="__main__":
         plt.savefig(args.plot,dpi=90)
 
     if args.save_errors:
+	print("WUT");
 	file = open(args.save_errors,"w")
         file.write("\n".join(["%f "%stamp+" ".join(["%f"%line]) for stamp,line in zip(second_stamps,trans_error)]))
         file.close()

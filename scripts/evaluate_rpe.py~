@@ -381,7 +381,7 @@ if __name__ == '__main__':
         plt.savefig(args.plot,dpi=300)
     if args.save_errors:
 	file = open(args.save_errors,"w")
-        file.write("\n".join(["%f "%stamp+" ".join(["%f"%trans])+ " ".join([" %f"%(rot* 180.0 / numpy.pi)]) for stamp,trans,rot in zip(stamps,trans_error,rot_error)]))
+        file.write("\n".join(["%f "%stamp+" ".join(["%f"%trans])+ " ".join([" %f"%rot]) for stamp,trans,rot in zip(stamps,trans_error,rot_error)]))
         file.close()
         
 
