@@ -88,6 +88,14 @@ public:
             model->FirstChildElement( "measurements" )->QueryIntAttribute("featureIDMax", &measurementFeaturesIds.second);
             measurementsColor.setRedF(rgba[0]); measurementsColor.setGreenF(rgba[1]);
             measurementsColor.setBlueF(rgba[2]); measurementsColor.setAlphaF(rgba[3]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("ellipsoidRed", &rgba[0]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("ellipsoidGreen", &rgba[1]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("ellipsoidBlue", &rgba[2]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("ellipsoidAlpha", &rgba[3]);
+            model->FirstChildElement( "measurements" )->QueryDoubleAttribute("ellipsoidScale", &ellipsoidScale);
+            model->FirstChildElement( "measurements" )->QueryBoolAttribute("drawEllipsoids", &drawEllipsoids);
+            ellipsoidColor.setRedF(rgba[0]); ellipsoidColor.setGreenF(rgba[1]);
+            ellipsoidColor.setBlueF(rgba[2]); ellipsoidColor.setAlphaF(rgba[3]);
         }
         public:
         /// Background color
@@ -155,6 +163,15 @@ public:
 
         /// id range of measured features (min, max)
         std::pair<int,int> measurementFeaturesIds;
+
+        /// Draw ellipsoids
+        bool drawEllipsoids;
+
+        /// Measurement color
+        QColor ellipsoidColor;
+
+        /// measured feature position size
+        double ellipsoidScale;
     };
 
     /// Construction
@@ -258,6 +275,12 @@ private:
 
     /// Create point cloud List
     GLuint createCloudList(const std::pair<int,PointCloud>& pointCloud);
+
+    /// Draw ellipsoid
+    void drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const;
+
+    /// Draw ellipsoid
+    void drawEllipsoid(const Vec3& pos, const Mat33& covariance) const;
 };
 
 #endif // QVISUALIZER_H_INCLUDED
