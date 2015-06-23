@@ -1,5 +1,7 @@
 #include "../include/Visualizer/Qvisualizer.h"
+#include <Eigen/Eigenvalues>
 #include <memory>
+#include <cmath>
 #include <stdexcept>
 #include <chrono>
 #include <GL/glut.h>
@@ -94,6 +96,38 @@ QGLVisualizer::QGLVisualizer(std::string configFile) :
 
 /// Destruction
 QGLVisualizer::~QGLVisualizer(void) {
+}
+
+/// Draw ellipsoid
+void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const {
+    float tStep = (M_PI) / (float)uiSlices;
+    float sStep = (M_PI) / (float)uiStacks;
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_COLOR);
+    for(float t = -M_PI/2.0; t <= (M_PI/2.0)+.0001; t += tStep) {
+        glBegin(GL_TRIANGLE_STRIP);
+        for(float s = -M_PI; s <= M_PI+.0001; s += sStep) {
+            glVertex3f(fA * cos(t) * cos(s), fB * cos(t) * sin(s), fC * sin(t));
+            float norm = sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
+            glNormal3f((fA * cos(t) * cos(s))/norm, (fB * cos(t) * sin(s))/norm, (fC * sin(t))/norm);
+            glVertex3f(fA * cos(t+tStep) * cos(s), fB * cos(t+tStep) * sin(s), fC * sin(t+tStep));
+            norm = sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
+            glNormal3f((fA * cos(t+tStep) * cos(s))/norm, (fB * cos(t+tStep) * sin(s))/norm, (fC * sin(t+tStep))/norm);
+        }
+        glEnd();
+    }
+}
+
+/// Draw ellipsoid
+void QGLVisualizer::drawEllipsoid(const Vec3& pos, const Mat33& covariance) const{
+    Eigen::SelfAdjointEigenSolver<Mat33> es;
+    es.compute(covariance);
+    Mat33 V(es.eigenvectors());
+    float_type GLmat[16]={V(0,0), V(1,0), V(2,0), 0, V(0,1), V(1,1), V(2,1), 0, V(0,2), V(1,2), V(2,2), 0, pos.x(), pos.y(), pos.z(), 1};
+    glPushMatrix();
+        glMultMatrixd(GLmat);
+        drawEllipsoid(10,10,sqrt(es.eigenvalues()(0))*config.ellipsoidScale, sqrt(es.eigenvalues()(1))*config.ellipsoidScale, sqrt(es.eigenvalues()(2))*config.ellipsoidScale);
+    glPopMatrix();
 }
 
 /// Observer update
@@ -198,7 +232,6 @@ GLuint QGLVisualizer::createCloudList(const std::pair<int,PointCloud>& pointClou
 void QGLVisualizer::draw(){
     // Here we are in the world coordinate system. Draw unit size axis.
     drawAxis();
-
     if (config.drawPointClouds){
         drawPointClouds();
     }
@@ -263,6 +296,10 @@ void QGLVisualizer::draw(){
                 glColor4f(config.measurementsColor.red(), config.measurementsColor.green(), config.measurementsColor.blue(), config.measurementsColor.alpha());
                 glVertex3d(measurements[i].trans.x(),measurements[i].trans.y(),measurements[i].trans.z());
                 glEnd();
+                if (config.drawEllipsoids){
+                    glColor4f(config.ellipsoidColor.red(), config.ellipsoidColor.green(), config.ellipsoidColor.blue(), config.ellipsoidColor.alpha());
+                    drawEllipsoid(measurements[i].trans, measurements[i].info.inverse());
+                }
             glPopMatrix();
         }
         mtxMeasurements.unlock();
