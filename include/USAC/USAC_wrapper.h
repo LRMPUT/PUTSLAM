@@ -37,13 +37,9 @@ public:
 private:
 	PUTSLAMEstimator* putslamest;
 
-	//cv::Mat cameraMatrix;
-	//parameters RANSACParams;
-
-	//TODO move it up (it shouldn't be here. The object is created and destroyed at each iteration of the matching procedure)
-	//DepthSensorModel sensorModel;
-
-	ConfigParamsPUTSLAM init_usac_configuration(void);
+	ConfigParamsPUTSLAM init_usac_configuration(
+			void
+	);
 
 	int USAC_run(
 		const std::vector<Eigen::Vector3f> &prevFeatures,

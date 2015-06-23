@@ -257,6 +257,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 	float inlierRatio = 0;
 	if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
 		(RANSACParams.errorVersion == ADAPTIVE_ERROR)){
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Euclidean" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioEuclidean(
 			this->prevFeatures,
 			this->features,
@@ -266,6 +270,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Reprojection" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioReprojection(
 			this->prevFeatures,
 			this->features,
@@ -275,6 +283,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == EUCLIDEAN_AND_REPROJECTION_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using EuclideanAndReprojection" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioEuclideanAndReprojection(
 			this->prevFeatures, 
 			this->features, 
@@ -284,6 +296,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == MAHALANOBIS_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Mahalanobis" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioMahalanobis(
 			this->prevFeatures, 
 			this->features, 
@@ -295,6 +311,15 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 	else {
 		std::cout << "RANSAC: incorrect error version" << std::endl;
 	}
+
+	// Save better model
+	if (RANSACParams.verbose > 1)
+		std::cout << "RANSAC: saving best model" << std::endl;
+
+	// Print achieved result
+	if (RANSACParams.verbose > 1)
+		std::cout << "RANSAC: best model inlier ratio : "
+				<< bestInlierRatio * 100.0 << "%" << std::endl;
 
 	// MF:
 	// TODO:
