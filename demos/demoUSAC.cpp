@@ -6,6 +6,7 @@
 
 #include "../include/TransformEst/RANSAC.h"
 #include "../include/USAC/USAC_wrapper.h"
+#include "../include/USAC/USAC.h"
 
 /*
 Cześć,
@@ -67,7 +68,7 @@ void TEST_Ransac(
 
 	RANSAC::parameters RANSACParams;
 
-	RANSACParams.verbose = 1;
+	RANSACParams.verbose = 2;
 	RANSACParams.errorVersion = 0;	// ?
 	RANSACParams.errorVersionVO = 0;
 	RANSACParams.errorVersionMap = 0;
@@ -93,9 +94,6 @@ void TEST_Ransac(
 		matches,
 		inlierMatches
 	);
-
-	std::cout << "RANSAC:" << std::endl;
-	std::cout << estimatedTransformation << std::endl;
 }
 
 class Features
@@ -218,7 +216,7 @@ void TEST_USAC(
 {
 	PUTSLAMEstimator::parameters RANSACParams;
 
-	RANSACParams.verbose = 1;
+	RANSACParams.verbose = 2;
 	RANSACParams.errorVersion = 0;	// ?
 	RANSACParams.errorVersionVO = 0;
 	RANSACParams.errorVersionMap = 0;
@@ -244,9 +242,6 @@ void TEST_USAC(
 		matches,
 		inlierMatches
 	);
-
-	std::cout << "RANSAC_USAC:" << std::endl;
-	std::cout << estimatedTransformation << std::endl;
 }
 
 int main(int argc, char** argv)

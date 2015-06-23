@@ -33,10 +33,12 @@ bool PUTSLAMEstimator::computeTransformationModel(
 
 	// Compute transformation
 	if (usedType == UMEYAMA) {
+		std::cout << "Using umeyama for transofmation model" << std::endl;
 		transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
 			prevFeaturesMatrix.transpose(), false);
 	}
 	else if (usedType == G2O) {
+		std::cout << "Using g2oEst for transofmation model" << std::endl;
 		putslam::TransformEst* g2oEst = putslam::createG2OEstimator();
 		Mat34 transformation = g2oEst->computeTransformation(
 			featuresMatrix.cast<double>().transpose(),
@@ -47,6 +49,9 @@ bool PUTSLAMEstimator::computeTransformationModel(
 		std::cout << "RANSAC: unrecognized transformation estimation"
 			<< std::endl;
 	}
+
+	std::cout << "transformation: " << std::endl << transformationModel << std::endl;
+
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
@@ -75,12 +80,19 @@ unsigned int PUTSLAMEstimator::generateMinimalSampleModels()
 		this->matches
 	);
 
+	std::cout << "Random matches: " << std::endl;
+	for(auto match : this->randomMatches)
+	{
+		std::cout << match.queryIdx << ", " << match.trainIdx << ", " << match.distance << std::endl;
+	}
+
 	if (this->computeTransformationModel(
 			this->prevFeatures,
 			this->features,
 			this->randomMatches,
 			this->transformationModel,
-			this->usedType)
+			//this->usedType)
+			UMEYAMA)
 		)
 	{
 		nsols = 1;

@@ -64,13 +64,16 @@ ConfigParamsPUTSLAM RANSAC_USAC::init_usac_configuration(void)
 	ConfigParamsPUTSLAM cfg;
 
 	cfg.common.confThreshold = 0.99;
-	cfg.common.minSampleSize = 7;
-	cfg.common.inlierThreshold = 1.5;
+	cfg.common.minSampleSize = 3;
+	// IMPORTANT:
+	cfg.common.inlierThreshold = 0.02;
 	cfg.common.maxHypotheses = 850000;
 	cfg.common.maxSolutionsPerSample = 1;
 	cfg.common.prevalidateSample = false;
 	cfg.common.prevalidateModel = false;
-	//cfg.common.numDataPoints
+	// MF
+	// different for each sample
+	cfg.common.numDataPoints = 133;
 	cfg.common.testDegeneracy = false;
 	cfg.common.randomSamplingMethod = USACConfig::SAMP_UNIFORM;
 	cfg.common.verifMethod = USACConfig::VERIF_STANDARD;
@@ -107,7 +110,7 @@ Eigen::Matrix4f RANSAC_USAC::estimateTransformation(
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
 	float bestInlierRatio = 0.0;
 
-	// MF addition:
+	// MF addition (just packed some code into a function):
 	remove_matches_with_invalid_depth(matches, prevFeatures, features);
 
 	if (this->putslamest->RANSACParams.verbose > 0)
@@ -128,6 +131,9 @@ Eigen::Matrix4f RANSAC_USAC::estimateTransformation(
 		bestTransformationModel,
 		bestInlierRatio
 	);
+
+	// MF:
+	// Reestimate from inliers - done in USAC_run (at the end)
 
 	// Test the number of inliers
 	if (bestInlierRatio < this->putslamest->RANSACParams.minimalInlierRatioThreshold) {
@@ -153,6 +159,7 @@ int RANSAC_USAC::USAC_run(
 	float &bestInlierRatio
 )
 {
+	// MF:
 	// already done in RANSAC constructor
 	// seed random number generator
 	//srand((unsigned int)time(NULL));
@@ -189,6 +196,8 @@ int RANSAC_USAC::USAC_run(
 
 	// additional logic from PUTSLAM (reestimation of the model)
 	// Reestimate from inliers
+	// MF TODO:
+	// is this correct? Why using euclidean inlier ratio?
 	putslamest->computeTransformationModel(
 		prevFeatures, 
 		features, 
