@@ -63,6 +63,9 @@ public:
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
 
+    /// compute normals to rgbd features
+    void computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features);
+
 	// VO
 	double runVO(const SensorFrame& currentSensorFrame,
 			Eigen::Matrix4f &estimatedTransformation,

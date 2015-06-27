@@ -205,7 +205,7 @@ Mat66 G2OEst::computeCovarianceMatrix(const Mat66& Hessian, const Mat34& _transf
   Eigen::Isometry3f _T(_transformation.inverse().matrix().cast<float>());
   for (size_t i = 0; i < sigmaPoints.size(); i++) {
     SigmaPoint &p = sigmaPoints[i];
-    p._sample = t2v( v2t(p._sample) * _T);
+    p._sample = t2v( _T * v2t(p._sample));
   }
 
   Vector6f mean = Vector6f::Zero();
