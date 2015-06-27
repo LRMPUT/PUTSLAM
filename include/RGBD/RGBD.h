@@ -66,6 +66,12 @@ std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthIm
 
 void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first = false);
 
+/// compute normals to rgbd features
+void computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features, const cv::Mat& cameraMatrix);
+
+///compute normal
+Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix);
+
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
 //	static Eigen::Vector3f simplePoint2Dto3D(cv::Point2f p, float z, CalibrationParameters cameraParams);

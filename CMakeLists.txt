@@ -316,7 +316,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
         file(GLOB RGBD_SOURCES
             "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
         )
-        file(GLOB MATCHER_HEADERS
+        file(GLOB RGBD_HEADERS
             "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
         )
 

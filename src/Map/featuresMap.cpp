@@ -926,14 +926,14 @@ void FeaturesMap::disableRobustKernel(void) {
 /// get uncertainty of the pose
 Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
     Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
-    Mat66 unc = G2OEst::computeCovarianceMatrix(incCov, getSensorPose(id));
+    Mat66 unc = G2OEst::computeCovarianceMatrix(incCov, getSensorPose(id).inverse());
     return unc;
 }
 
 /// get uncertainty of the feature
 Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
     Mat33 incCov = ((PoseGraphG2O*) poseGraph)->getFeatureIncrementCovariance(id);
-    Mat33 unc = G2OEst::computeCovarianceMatrix(incCov, getFeaturePosition(id));
+    Mat33 unc = G2OEst::computeCovarianceMatrix(incCov, getFeaturePosition(id).inverse());
     return unc;
 }
 

@@ -100,6 +100,52 @@ cv::Point2f RGBD::point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix) {
 	return cv::Point2f(u, v);
 }
 
+///compute normal
+Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix){
+    cv::Point2f center2D(u,v);
+    Eigen::Vector3f center = point2Dto3D(center2D,depthImage, cameraMatrix);
+    std::vector<Vec3> vecs;
+    std::vector<int> uidx = {-1, 0, 1, 1, 1, 0, -1, -1};
+    std::vector<int> vidx = {-1, -1, -1, 0, 1, 1, 1, 0};
+    for(int i=0;i<uidx.size();i++){
+            Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+uidx[i], v+vidx[i]),depthImage, cameraMatrix);
+            if (pointEnd(2)>0){
+                vecs.push_back(Vec3(pointEnd(0)-center(0),pointEnd(1)-center(1),pointEnd(2)-center(2)));
+            }
+    }
+    //compute normals
+    std::vector<Vec3> normals;
+    for (int i = 0; i<vecs.size();i++){
+        if (i==vecs.size()-1){
+            Vec3 norm(vecs[i]*vecs[0]);
+            normals.push_back(norm);
+        }
+        else{
+            Vec3 norm(vecs[i]*vecs[i+1]);
+            normals.push_back(norm);
+        }
+    }
+    Vec3 normal;
+    // compute average normal
+    float_type sumX=0, sumY=0, sumZ=0;
+    for (auto it=normals.begin();it!=normals.end();it++){
+        sumX+=(*it).x(); sumY+=(*it).y(); sumZ+=(*it).z();
+    }
+    normal.x()=sumX/normals.size();
+    normal.y()=sumY/normals.size();
+    normal.z()=sumZ/normals.size();
+    float_type norm = normal.vector().norm();
+    normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
+    return normal;
+}
+
+/// compute normals to rgbd features
+void RGBD::computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features, const cv::Mat& cameraMatrix){
+    for(auto it = features.begin();it!=features.end();it++){
+        it->normal = computeNormal(depthImage,it->u, it->v, cameraMatrix);
+    }
+}
+
 void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage) {
 	// Lambda expression

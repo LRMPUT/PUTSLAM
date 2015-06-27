@@ -740,6 +740,11 @@ void Matcher::showFeatures(cv::Mat rgbImage,
 	cv::waitKey(10000);
 }
 
+/// compute normals to rgbd features
+void Matcher::computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features){
+    RGBD::computeNormals(depthImage,features, matcherParameters.cameraMatrixMat);
+}
+
 void Matcher::showMatches(cv::Mat prevRgbImage,
 		std::vector<cv::KeyPoint> prevFeatures, cv::Mat rgbImage,
 		std::vector<cv::KeyPoint> features, std::vector<cv::DMatch> matches) {
