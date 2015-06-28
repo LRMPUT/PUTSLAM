@@ -53,9 +53,31 @@ Mat33 DepthSensorModel::informationMatrix(float_type x, float_type y, float_type
 }
 
 Mat33 DepthSensorModel::informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z) {
-    Mat33 info;
-    computeCov(u, v, z, info);
-    return info.inverse();
+    Mat33 cov;
+    computeCov(u, v, z, cov);
+    return cov.inverse();
+}
+
+/// compute uncertainty from normal vector
+Mat33 DepthSensorModel::uncertinatyFromNormal(Vec3 normal){
+    Mat33 cov; Vec3 x(1,0,0); Vec3 y;
+    y.vector() = normal.vector().cross(x.vector());
+    normalizeVector(normal);
+    x.vector() = y.vector().cross(normal.vector());
+    normalizeVector(x);
+    Mat33 S(Mat33::Identity()); S(2,2)=0.2;
+    Mat33 R;
+    R.block(0,0,3,1) = x.vector();
+    R.block(0,1,3,1) = y.vector();
+    R.block(0,2,3,1) = normal.vector();
+    cov = ((R*S)*S)*R.inverse();
+    return cov;
+}
+
+/// normalize vector
+void DepthSensorModel::normalizeVector(Vec3& normal) const {
+    float_type norm = normal.vector().norm();
+    normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
 }
 
 /// Create point cloud from current RGB and depth image

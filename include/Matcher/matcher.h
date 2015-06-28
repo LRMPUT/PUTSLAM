@@ -9,6 +9,7 @@
 #define _MATCHER_H_
 
 #include "../Defs/putslam_defs.h"
+#include "../include/RGBD/RGBD.h"
 #include <string>
 #include <vector>
 #include "opencv/cv.h"
@@ -64,7 +65,10 @@ public:
 	Matcher::featureSet getFeatures();
 
     /// compute normals to rgbd features
-    void computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features);
+    template <class T>
+    void computeNormals(const cv::Mat& depthImage, T& features){
+        RGBD::computeNormals(depthImage,features, matcherParameters.cameraMatrixMat);
+    }
 
 	// VO
 	double runVO(const SensorFrame& currentSensorFrame,

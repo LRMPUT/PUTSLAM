@@ -6,7 +6,6 @@
  */
 
 #include "../include/Matcher/matcher.h"
-#include "../include/RGBD/RGBD.h"
 #include "../include/Matcher/dbscan.h"
 
 #include <chrono>
@@ -738,11 +737,6 @@ void Matcher::showFeatures(cv::Mat rgbImage,
 
 	cv::imshow("Showing features", imageToShow);
 	cv::waitKey(10000);
-}
-
-/// compute normals to rgbd features
-void Matcher::computeNormals(const cv::Mat& depthImage, std::vector<RGBDFeature>& features){
-    RGBD::computeNormals(depthImage,features, matcherParameters.cameraMatrixMat);
 }
 
 void Matcher::showMatches(cv::Mat prevRgbImage,

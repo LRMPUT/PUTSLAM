@@ -167,6 +167,7 @@ public:
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("uncertaintyModel", &uncertaintyModel);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("addPoseToPoseEdges", &addPoseToPoseEdges);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("minMeasurementsToAddPoseToFeatureEdge", &minMeasurementsToAddPoseToFeatureEdge);
@@ -202,6 +203,9 @@ public:
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
             bool useUncertainty;// true - use uncertainty model
+
+            // uncetainty model
+            int uncertaintyModel;
 
             // before final optimization remove features with measuremets less than threshold
             int weakFeatureThr;

@@ -90,9 +90,14 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
-		if (config.useUncertainty)
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+        if (config.useUncertainty){
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
+        }
 
 		Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
@@ -192,8 +197,12 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 //		info = sensorModel.informationMatrix((*it).position.x(),
 //				(*it).position.y(), (*it).position.z());
         if (config.useUncertainty){
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
         }
 
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
