@@ -239,8 +239,6 @@ void PUTSLAM::startProcessing() {
 
             robotPose = robotPose * transformation;
 
-
-
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
 
@@ -283,8 +281,6 @@ void PUTSLAM::startProcessing() {
 
             // Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
-
-
 
             std::cout
                     << "Returned visible map feature size before if not cover test: "
@@ -390,6 +386,7 @@ void PUTSLAM::startProcessing() {
             // Add pose-feature constrain
             measurementToMapSizeLog.push_back(measurementList.size());
 			if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
+                matcher->computeNormals(currentSensorFrame.depthImage, measurementList);
 				map->addMeasurements(measurementList);
 			}
 
@@ -425,6 +422,8 @@ void PUTSLAM::startProcessing() {
 
             std::cout << "map->addFeatures -> adding " << addedCounter
                     << " features" << std::endl;
+
+            matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd);
 
             // Finally, adding to map
             map->addFeatures(mapFeaturesToAdd, cameraPoseId);
