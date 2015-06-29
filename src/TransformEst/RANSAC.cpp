@@ -8,6 +8,8 @@
 #include "../include/TransformEst/g2oEst.h"
 #include "../include/RGBD/RGBD.h"
 
+#include "../include/USAC/USAC_utils.h"
+
 RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 //RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
 	srand(time(0));
@@ -83,7 +85,8 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: randomly sampling ids of matches"
 					<< std::endl;
-        std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
+        //std::vector<cv::DMatch> randomMatches = getRandomMatches(matches);
+		std::vector<cv::DMatch> randomMatches = getNonRandomMatches(i);
 
 		// Compute model based on those matches
 		if (RANSACParams.verbose > 1)
@@ -216,6 +219,12 @@ bool RANSAC::computeTransformationModel(
 		const std::vector<cv::DMatch> matches,
 		Eigen::Matrix4f &transformationModel, TransfEstimationType usedType) {
 
+	std::cout << "Random matches used: " << std::endl;
+	for(auto match : matches)
+	{
+		std::cout << match.queryIdx << ", " << match.trainIdx << ", " << match.distance << std::endl;
+	}
+
 	Eigen::MatrixXf prevFeaturesMatrix(matches.size(), 3), featuresMatrix(
 			matches.size(), 3);
 
@@ -228,9 +237,11 @@ bool RANSAC::computeTransformationModel(
 
 	// Compute transformation
 	if (usedType == UMEYAMA) {
+		std::cout << "Using umeyama for transformation model" << std::endl;
 		transformationModel = Eigen::umeyama(featuresMatrix.transpose(),
 				prevFeaturesMatrix.transpose(), false);
 	} else if (usedType == G2O) {
+		std::cout << "Using g2oEst for transformation model" << std::endl;
 		putslam::TransformEst* g2oEst = createG2OEstimator();
 		Mat34 transformation = g2oEst->computeTransformation(
 				featuresMatrix.cast<double>().transpose(),
@@ -240,6 +251,8 @@ bool RANSAC::computeTransformationModel(
 		std::cout << "RANSAC: unrecognized transformation estimation"
 				<< std::endl;
 	}
+
+	std::cout << "transformation: " << std::endl << transformationModel << std::endl;
 
 	// Check if it failed
 	if (std::isnan(transformationModel(0, 0))) {
@@ -281,6 +294,8 @@ float RANSAC::computeInlierRatioEuclidean(
 			modelConsistentMatches.push_back(*it);
 		}
 	}
+
+	std::cout << "Inlier count: " << inlierCount << std::endl;
 
 	// Percent of correct matches
 	return float(inlierCount) / matches.size();
@@ -445,6 +460,7 @@ inline void RANSAC::saveBetterModel(const float inlierRatio,
 		std::vector<cv::DMatch> &bestInlierMatches) {
 	if (inlierRatio > bestInlierRatio) {
 		// Save better model
+		std::cout << "Actually really saving the model" << std::endl;
 		bestTransformationModel = transformationModel;
 		bestInlierRatio = inlierRatio;
 		bestInlierMatches.swap(modelConsistentMatches);

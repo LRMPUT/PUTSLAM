@@ -24,6 +24,10 @@
 // ============================================================================================
 void PUTSLAMEstimator::storeModel(unsigned int modelIndex, unsigned int numInliers)
 {
+	// Save better model
+	if (RANSACParams.verbose > 1)
+		std::cout << "RANSAC: saving best model" << std::endl;
+
 	// MF:
 	// code belowe is copied from FundmatrixEstimator
 	// the HomogEstimator is usign the same thing
@@ -34,7 +38,15 @@ void PUTSLAMEstimator::storeModel(unsigned int modelIndex, unsigned int numInlie
 	//}
 
 	// save the current model as the best solution so far
-	this->bestInlierRatio = numInliers;
+	this->bestInlierRatio = this->inlierRatio;
 	this->bestTransformationModel = this->transformationModel;
+
+	std::cout << "Best transormation model: " << this->bestTransformationModel << std::endl;
+
 	this->bestInlierMatches.swap(this->modelConsistentMatches);
+
+	// Print achieved result
+	if (RANSACParams.verbose > 1)
+		std::cout << "RANSAC: best model inlier ratio : "
+				<< this->bestInlierRatio * 100.0 << "%" << std::endl;
 }

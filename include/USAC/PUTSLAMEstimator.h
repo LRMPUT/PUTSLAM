@@ -8,6 +8,7 @@
 #include "../include/USAC/USAC.h"
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
+#include "../include/USAC/USAC_utils.h"
 
 
 class PUTSLAMEstimator : public USAC<PUTSLAMEstimator>
@@ -58,6 +59,8 @@ public:
 					<< RANSACParams.inlierThresholdReprojection << std::endl;
 			std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
 					<< RANSACParams.minimalInlierRatioThreshold << std::endl;
+
+			this->iterationNumber = 0;
 		}
 	};
 	~PUTSLAMEstimator()
@@ -91,18 +94,23 @@ public:
 	void initPUTSLAMData(
 		const std::vector<Eigen::Vector3f> &_prevFeatures,
 		const std::vector<Eigen::Vector3f> &_features,
-		const std::vector<cv::DMatch> &_matches,
-		std::vector<cv::DMatch> &_bestInlierMatches,
-		Eigen::Matrix4f &_bestTransformationModel,
-		float &_bestInlierRatio
+		const std::vector<cv::DMatch> &_matches
 		)
 	{
 		this->prevFeatures = _prevFeatures;
 		this->features = _features;
 		this->matches = _matches;
-		this->bestInlierMatches = _bestInlierMatches;
-		this->bestTransformationModel = _bestTransformationModel;
-		this->bestInlierRatio = _bestInlierRatio;
+	}
+
+	void deInitPUTSLAMData(
+		std::vector<cv::DMatch> &_bestInlierMatches,
+		Eigen::Matrix4f &_bestTransformationModel,
+		float &_bestInlierRatio
+		)
+	{
+		_bestInlierMatches = this->bestInlierMatches;
+		_bestTransformationModel = this->bestTransformationModel;
+		_bestInlierRatio = this->bestInlierRatio;
 	}
 
 	// generate model
@@ -133,12 +141,14 @@ private:
 	std::vector<cv::DMatch> matches;
 	Eigen::Matrix4f transformationModel;
 	TransfEstimationType usedType;
+	int iterationNumber;
 
 	// validate model
 	bool checkModelFeasibility(Eigen::Matrix4f transformationModel);
 
 	// evaluate model
 	std::vector<cv::DMatch> modelConsistentMatches;
+	float inlierRatio;
 
 	float computeInlierRatioMahalanobis(
 		const std::vector<Eigen::Vector3f> prevFeatures,

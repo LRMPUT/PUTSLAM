@@ -45,6 +45,8 @@ float PUTSLAMEstimator::computeInlierRatioEuclidean(
 		}
 	}
 
+	std::cout << "Inlier count: " << inlierCount << std::endl;
+
 	// Percent of correct matches
 	return float(inlierCount) / matches.size();
 }
@@ -254,7 +256,7 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		std::cout << "RANSAC: evaluating the model" << std::endl;
 
 	// Choose proper error computation version based on provided parameters
-	float inlierRatio = 0;
+	float inlierRatio = 0.0;
 	if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
 		(RANSACParams.errorVersion == ADAPTIVE_ERROR)){
 		if (RANSACParams.verbose > 1) {
@@ -312,14 +314,8 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		std::cout << "RANSAC: incorrect error version" << std::endl;
 	}
 
-	// Save better model
-	if (RANSACParams.verbose > 1)
-		std::cout << "RANSAC: saving best model" << std::endl;
-
-	// Print achieved result
-	if (RANSACParams.verbose > 1)
-		std::cout << "RANSAC: best model inlier ratio : "
-				<< bestInlierRatio * 100.0 << "%" << std::endl;
+	this->inlierRatio = inlierRatio;
+	std::cout << "Inlier ratio: " << this->inlierRatio << std::endl;
 
 	// MF:
 	// TODO:

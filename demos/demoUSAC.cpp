@@ -8,6 +8,7 @@
 #include "../include/USAC/USAC_wrapper.h"
 #include "../include/USAC/USAC.h"
 
+
 /*
 Cześć,
 
@@ -251,24 +252,27 @@ int main(int argc, char** argv)
 	std::string directory  = "..//..//resources//USAC//";
 
 	std::vector<cv::DMatch> matches = loadMatchesFromFile(directory + "1311868164.6703196.matches");
+	/*
 	std::cout << "Matches: " << std::endl;
 	for (auto& match : matches)
 	{
 		std::cout << match.queryIdx << ", " << match.trainIdx << ", " << match.distance << std::endl;
 	}
+	*/
 
 	Features features_previous;
 	features_previous.LoadFromFile(directory + "1311868164.5034142.features");
-	std::cout << "Features previous: " << std::endl;
-	features_previous.Show();
+	//std::cout << "Features previous: " << std::endl;
+	//features_previous.Show();
 
 	Features features_current;
 	features_current.LoadFromFile(directory +  "1311868164.6703196.features");
-	std::cout << "Features previous: " << std::endl;
-	features_current.Show();
+	//std::cout << "Features previous: " << std::endl;
+	//features_current.Show();
 
 	std::vector<Eigen::Vector3f> features_previous_eigen = features_previous.ConvertToEigen();
 	std::vector<Eigen::Vector3f> features_current_eigen = features_current.ConvertToEigen();
+	/*
 	std::cout << "Features previous Eigen: " << std::endl;
 	for (auto& feature : features_previous_eigen)
 	//for (std::vector<Eigen::Vector3f>::iterator itr = features_previous_eigen.begin(); itr != features_previous_eigen.end(); ++itr)
@@ -277,6 +281,7 @@ int main(int argc, char** argv)
 		std::cout << std::endl;
 		//std::cout << (*itr)[0] << ", " << (*itr)[1] << ", " << (*itr)[2] << std::endl;
 	}
+	*/
 
 	Eigen::Matrix4f transformation = loadTransformationFromFile(directory + "1311868164.6703196.ransac");
 
