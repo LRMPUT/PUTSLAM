@@ -105,18 +105,34 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
             float inlierRatio = 0;
             if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
                 (RANSACParams.errorVersion == ADAPTIVE_ERROR)){
+        		if (RANSACParams.verbose > 1) {
+        			std::cout << "Evaluation using Euclidean" << std::endl;
+        		}
+
 				inlierRatio = computeInlierRatioEuclidean(prevFeatures,
 						features, matches, transformationModel,
 						modelConsistentMatches);
 			} else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
+				if (RANSACParams.verbose > 1) {
+					std::cout << "Evaluation using Reprojection" << std::endl;
+				}
+
 				inlierRatio = computeInlierRatioReprojection(prevFeatures,
 						features, matches, transformationModel,
 						modelConsistentMatches);
 			} else if (RANSACParams.errorVersion == EUCLIDEAN_AND_REPROJECTION_ERROR) {
+				if (RANSACParams.verbose > 1) {
+					std::cout << "Evaluation using EuclideanAndReprojection" << std::endl;
+				}
+
 				inlierRatio = computeInlierRatioEuclideanAndReprojection(
 						prevFeatures, features, matches, transformationModel,
 						modelConsistentMatches);
             } else if (RANSACParams.errorVersion == MAHALANOBIS_ERROR) {
+        		if (RANSACParams.verbose > 1) {
+        			std::cout << "Evaluation using Mahalanobis" << std::endl;
+        		}
+
                 inlierRatio = computeInlierRatioMahalanobis(
                         prevFeatures, features, matches, transformationModel,
                         modelConsistentMatches);
