@@ -180,10 +180,7 @@ int RANSAC_USAC::USAC_run(
 	putslamest->initPUTSLAMData(
 		prevFeatures, 
 		features, 
-		matches, 
-		bestInlierMatches, 
-		bestTransformationModel,
-		bestInlierRatio
+		matches
 	);
 
 	if (!putslamest->solve())
@@ -194,10 +191,18 @@ int RANSAC_USAC::USAC_run(
 
 	std::cout << "USAC_Wrapper: " << "putslam->solve()" << " succeed." << std::endl;
 
+	// get all the data from PUTSLAMEstimator class
+	putslamest->deInitPUTSLAMData(
+		bestInlierMatches,
+		bestTransformationModel,
+		bestInlierRatio
+	);
+
 	// additional logic from PUTSLAM (reestimation of the model)
 	// Reestimate from inliers
 	// MF TODO:
 	// is this correct? Why using euclidean inlier ratio?
+	/*
 	putslamest->computeTransformationModel(
 		prevFeatures, 
 		features, 
@@ -214,6 +219,7 @@ int RANSAC_USAC::USAC_run(
 		newBestInlierMatches
 	);
 	newBestInlierMatches.swap(bestInlierMatches);
+	*/
 
 	return (EXIT_SUCCESS);
 }
