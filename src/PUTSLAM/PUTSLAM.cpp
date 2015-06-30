@@ -459,11 +459,11 @@ void PUTSLAM::startProcessing() {
 
     // We optimize only at the end if that version is chosen
     if ( optimizationThreadVersion == OPTTHREAD_ATEND)
-        map->startOptimizationThread(15, 1);
+        map->startOptimizationThread(1, 1);
 
     // Wait for optimization thread to finish
-	if ( optimizationThreadVersion != OPTTHREAD_OFF)
-		map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
+    if ( optimizationThreadVersion != OPTTHREAD_OFF)
+        map->finishOptimization("graph_trajectory.res", "optimizedGraphFile.g2o");
 
     // Wait for management thread to finish
     if ( mapManagmentThreadVersion == MAPTHREAD_ON)

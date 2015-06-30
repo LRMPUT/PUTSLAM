@@ -102,7 +102,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
             }
         }
 
-        Edge3D e((*it).position, (8-(*it).position.z())*info, camTrajSize - 1, featureIdNo);
+        Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
 				Vertex3D(featureIdNo,
 						Vec3(featurePos(0, 3), featurePos(1, 3),
@@ -214,7 +214,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
         featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
 
-        Edge3D e((*it).position, (8-(*it).position.z())*info, _poseId, (*it).id);
+        Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
         features2visualization.push_back(e);
     }
