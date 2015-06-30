@@ -8,13 +8,14 @@
 #ifndef _USACWRAPPER_H_
 #define _USACWRAPPER_H_
 
-#include "PUTSLAMEstimator.h"
+#include <opencv2/opencv.hpp>
+#include <Eigen/Eigen>
+
+#include "../include/USAC/PUTSLAMEstimator.h"
 
 class RANSAC_USAC {
+
 public:
-
-	enum ERROR_VERSION { EUCLIDEAN_ERROR, REPROJECTION_ERROR, EUCLIDEAN_AND_REPROJECTION_ERROR, MAHALANOBIS_ERROR, ADAPTIVE_ERROR };
-
 	RANSAC_USAC(PUTSLAMEstimator::parameters _RANSACParameters, cv::Mat _cameraMatrix = cv::Mat());
 	~RANSAC_USAC();
 
@@ -36,17 +37,9 @@ public:
 private:
 	PUTSLAMEstimator* putslamest;
 
-	cv::Mat cameraMatrix;
-	PUTSLAMEstimator::parameters RANSACParams;
-
-	//TODO move it up (it shouldn't be here. The object is created and destroyed at each iteration of the matching procedure)
-	//DepthSensorModel sensorModel;
-
-	enum TransfEstimationType {
-		UMEYAMA, G2O
-	};
-
-	ConfigParamsPUTSLAM init_usac_configuration(void);
+	ConfigParamsPUTSLAM init_usac_configuration(
+			void
+	);
 
 	int USAC_run(
 		const std::vector<Eigen::Vector3f> &prevFeatures,
