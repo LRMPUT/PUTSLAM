@@ -4,6 +4,8 @@
   	<name>FeaturesMap</name>
   	<!--
 	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
+	uncertaintyModel			- 0 - use sensor model
+						- 1 - use normals to the surface
 	weakFeatureThr				- before final optimization remove features with measuremets less than threshold (-1 disabbled)
 	edges3DPrunningThreshold		- 3D edges pruning
 	fixVertices					- fix all optimized vertices after optimization
@@ -17,6 +19,7 @@
 	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
 	<parameters useUncertainty="false"
+		    uncertaintyModel="1"
 				weakFeatureThr="-1"
 				edges3DPrunningThreshold="-1"
 				fixVertices = "false"
@@ -31,5 +34,5 @@
 	<mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"></mapOutput>
 	<featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"></featuresDistribution>
 	<mapManager distThreshold="0.03"></mapManager>
-	<visualization frameNo2updatePointCloud="120"></visualization>
+	<visualization frameNo2updatePointCloud="60"></visualization>
   </MapConfig>

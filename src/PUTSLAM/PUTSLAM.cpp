@@ -239,8 +239,6 @@ void PUTSLAM::startProcessing() {
 
             robotPose = robotPose * transformation;
 
-
-
 			// cameraPose as Eigen::Transform
 			Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
 
@@ -283,8 +281,6 @@ void PUTSLAM::startProcessing() {
 
             // Move mapFeatures to local coordinate system
 			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
-
-
 
             std::cout
                     << "Returned visible map feature size before if not cover test: "
@@ -390,6 +386,7 @@ void PUTSLAM::startProcessing() {
             // Add pose-feature constrain
             measurementToMapSizeLog.push_back(measurementList.size());
 			if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
+                matcher->computeNormals(currentSensorFrame.depthImage, measurementList);
 				map->addMeasurements(measurementList);
 			}
 
@@ -425,6 +422,8 @@ void PUTSLAM::startProcessing() {
 
             std::cout << "map->addFeatures -> adding " << addedCounter
                     << " features" << std::endl;
+
+            matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd);
 
             // Finally, adding to map
             map->addFeatures(mapFeaturesToAdd, cameraPoseId);
@@ -504,8 +503,17 @@ void PUTSLAM::startProcessing() {
 				matcher->matcherParameters.cameraMatrixMat, tmpPose);
 		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
 
-	}
-
+    }
+    std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
+    std::cout << "pose 2 uncertainty\n " << map->getPoseUncertainty(2) << "\n";
+    std::cout << "pose 3 uncertainty\n " << map->getPoseUncertainty(3) << "\n";
+    std::cout << "pose 40 uncertainty\n " << map->getPoseUncertainty(40) << "\n";
+    for (int i=0;i<150;i++)
+        std::cout << "tr: " << map->getPoseUncertainty(i+1).matrix().trace() << "\n";
+    std::cout << "feature 10000 uncertainty\n " << map->getFeatureUncertainty(10000) << "\n";
+    std::cout << "feature 10020 uncertainty\n " << map->getFeatureUncertainty(10020) << "\n";
+    std::cout << "feature 10085 uncertainty\n " << map->getFeatureUncertainty(10085) << "\n";
+    std::cout << "feature 10086 uncertainty\n " << map->getFeatureUncertainty(10086) << "\n";
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
 

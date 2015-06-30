@@ -1,5 +1,7 @@
 #include "../include/Visualizer/Qvisualizer.h"
+#include <Eigen/Eigenvalues>
 #include <memory>
+#include <cmath>
 #include <stdexcept>
 #include <chrono>
 #include <GL/glut.h>
@@ -96,6 +98,38 @@ QGLVisualizer::QGLVisualizer(std::string configFile) :
 QGLVisualizer::~QGLVisualizer(void) {
 }
 
+/// Draw ellipsoid
+void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const {
+    float tStep = (M_PI) / (float)uiSlices;
+    float sStep = (M_PI) / (float)uiStacks;
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_COLOR);
+    for(float t = -M_PI/2.0; t <= (M_PI/2.0)+.0001; t += tStep) {
+        glBegin(GL_TRIANGLE_STRIP);
+        for(float s = -M_PI; s <= M_PI+.0001; s += sStep) {
+            glVertex3f(fA * cos(t) * cos(s), fB * cos(t) * sin(s), fC * sin(t));
+            float norm = sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
+            glNormal3f((fA * cos(t) * cos(s))/norm, (fB * cos(t) * sin(s))/norm, (fC * sin(t))/norm);
+            glVertex3f(fA * cos(t+tStep) * cos(s), fB * cos(t+tStep) * sin(s), fC * sin(t+tStep));
+            norm = sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
+            glNormal3f((fA * cos(t+tStep) * cos(s))/norm, (fB * cos(t+tStep) * sin(s))/norm, (fC * sin(t+tStep))/norm);
+        }
+        glEnd();
+    }
+}
+
+/// Draw ellipsoid
+void QGLVisualizer::drawEllipsoid(const Vec3& pos, const Mat33& covariance) const{
+    Eigen::SelfAdjointEigenSolver<Mat33> es;
+    es.compute(covariance);
+    Mat33 V(es.eigenvectors());
+    float_type GLmat[16]={V(0,0), V(1,0), V(2,0), 0, V(0,1), V(1,1), V(2,1), 0, V(0,2), V(1,2), V(2,2), 0, pos.x(), pos.y(), pos.z(), 1};
+    glPushMatrix();
+        glMultMatrixd(GLmat);
+        drawEllipsoid(10,10,sqrt(es.eigenvalues()(0))*config.ellipsoidScale, sqrt(es.eigenvalues()(1))*config.ellipsoidScale, sqrt(es.eigenvalues()(2))*config.ellipsoidScale);
+    glPopMatrix();
+}
+
 /// Observer update
 void QGLVisualizer::update(MapModifier& mapModifier) {
     bufferMapVisualization.mtxBuffer.lock();
@@ -151,6 +185,15 @@ void QGLVisualizer::update(const cv::Mat& color, const cv::Mat& depth, int frame
     mtxImages.unlock();
 }
 
+/// Observer update
+void QGLVisualizer::update(const std::vector<Edge3D>& features){
+    mtxMeasurementsBuff.lock();
+    mtxMeasurements.lock();
+    measurementsBuff.insert(measurementsBuff.end(), features.begin(), features.end());
+    mtxMeasurements.unlock();
+    mtxMeasurementsBuff.unlock();
+}
+
 /// Draw point clouds
 void QGLVisualizer::drawPointClouds(void){
     mtxPointClouds.lock();
@@ -159,26 +202,36 @@ void QGLVisualizer::drawPointClouds(void){
         Mat34 camPose = camTrajectory[imagesIds[i]].pose;
         mtxCamTrajectory.unlock();
         float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
-
         glPushMatrix();
             glMultMatrixd(GLmat);
             glPointSize(config.cloudPointSize);
-            glBegin(GL_POINTS);
-            for (size_t n = 0; n < pointClouds[i].second.size(); n++){
-                glColor3ub(pointClouds[i].second[n].r, pointClouds[i].second[n].g, pointClouds[i].second[n].b);
-                glVertex3d(pointClouds[i].second[n].x, pointClouds[i].second[n].y, pointClouds[i].second[n].z);
-            }
-            glEnd();
+            glCallList(cloudsList[i]);
         glPopMatrix();
     }
     mtxPointClouds.unlock();
+}
+
+/// Create point cloud List
+GLuint QGLVisualizer::createCloudList(const std::pair<int,PointCloud>& pointCloud){
+    // create one display list
+    GLuint index = glGenLists(1);
+
+    // compile the display list, store a triangle in it
+    glNewList(index, GL_COMPILE);
+        glBegin(GL_POINTS);
+        for (size_t n = 0; n < pointCloud.second.size(); n++){
+            glColor3ub(pointCloud.second[n].r, pointCloud.second[n].g, pointCloud.second[n].b);
+            glVertex3d(pointCloud.second[n].x, pointCloud.second[n].y, pointCloud.second[n].z);
+        }
+        glEnd();
+    glEndList();
+    return index;
 }
 
 /// draw objects
 void QGLVisualizer::draw(){
     // Here we are in the world coordinate system. Draw unit size axis.
     drawAxis();
-
     if (config.drawPointClouds){
         drawPointClouds();
     }
@@ -229,6 +282,28 @@ void QGLVisualizer::draw(){
         }
         glEnd();
     }
+    if (config.drawMeasurements){
+        mtxMeasurements.lock();
+        for (int i = 0;i<measurements.size();i++){
+            mtxCamTrajectory.lock();
+            Mat34 camPose = camTrajectory[measurements[i].fromVertexId].pose;
+            mtxCamTrajectory.unlock();
+            float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
+            glPushMatrix();
+                glMultMatrixd(GLmat);
+                glPointSize(config.measurementSize);
+                glBegin(GL_POINTS);
+                glColor4f(config.measurementsColor.red(), config.measurementsColor.green(), config.measurementsColor.blue(), config.measurementsColor.alpha());
+                glVertex3d(measurements[i].trans.x(),measurements[i].trans.y(),measurements[i].trans.z());
+                glEnd();
+                if (config.drawEllipsoids){
+                    glColor4f(config.ellipsoidColor.red(), config.ellipsoidColor.green(), config.ellipsoidColor.blue(), config.ellipsoidColor.alpha());
+                    drawEllipsoid(measurements[i].trans, measurements[i].info.inverse());
+                }
+            glPopMatrix();
+        }
+        mtxMeasurements.unlock();
+    }
     updateMap();
 }
 
@@ -274,34 +349,55 @@ void QGLVisualizer::updateMap(){
     }
     mtxCamTrajectory.unlock();
     bufferMapVisualization.mtxBuffer.unlock();
-    if (colorImagesBuff.size()>0){
-        mtxImages.lock();
-        int imagesSize = colorImagesBuff.size();
-        mtxImages.unlock();
-        while (imagesSize){
+    if (config.drawPointClouds){
+        if (colorImagesBuff.size()>0){
             mtxImages.lock();
-            cv::Mat color(colorImagesBuff.back());
-            colorImagesBuff.pop_back();
-            cv::Mat depth(depthImagesBuff.back());
-            depthImagesBuff.pop_back();
-            int frameNo(imagesIds.back());
-            imagesSize = colorImagesBuff.size();
+            int imagesSize = colorImagesBuff.size();
             mtxImages.unlock();
-            PointCloud cloud;
-            sensorModel.convert2cloud(color, depth, cloud);
-            mtxPointClouds.lock();
-            pointClouds.push_back(std::make_pair(frameNo, cloud));
-            mtxPointClouds.unlock();
+            while (imagesSize){
+                mtxImages.lock();
+                cv::Mat color(colorImagesBuff.back());
+                colorImagesBuff.pop_back();
+                cv::Mat depth(depthImagesBuff.back());
+                depthImagesBuff.pop_back();
+                int frameNo(imagesIds.back());
+                imagesSize = colorImagesBuff.size();
+                mtxImages.unlock();
+                PointCloud cloud;
+                sensorModel.convert2cloud(color, depth, cloud);
+                mtxPointClouds.lock();
+                pointClouds.push_back(std::make_pair(frameNo, cloud));
+                cloudsList.push_back(createCloudList(pointClouds.back()));
+                mtxPointClouds.unlock();
+            }
         }
     }
+    mtxMeasurementsBuff.lock();
+    if (measurementsBuff.size()>0){
+        mtxMeasurements.lock();
+        for (auto it = measurementsBuff.begin(); it!=measurementsBuff.end();it++){
+            if (((*it).toVertexId>config.measurementFeaturesIds.first)&&
+                ((*it).toVertexId<config.measurementFeaturesIds.second)){
+                    measurements.push_back(*it);
+            }
+        }
+        //measurements.insert(measurements.end(), measurementsBuff.begin(), measurementsBuff.end());
+        mtxMeasurements.unlock();
+    }
+    measurementsBuff.clear();
+    mtxMeasurementsBuff.unlock();
 }
 
 /// initialize visualizer
 void QGLVisualizer::init(){
     // Light setup
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0);
-    GLfloat specular_color[4] = { 0.8f, 0.8f, 0.8f, 1.0 };
+    GLfloat specular_color[4] = { 0.99f, 0.99f, 0.99f, 1.0 };
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_color);
+
+    //Set global ambient light
+    GLfloat black[] = {0.99, 0.99, 0.99, 1};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, black);
 
     glEnable(GL_AUTO_NORMAL);
     glEnable(GL_NORMALIZE);
