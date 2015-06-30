@@ -239,14 +239,17 @@ void QGLVisualizer::draw(){
         glLineWidth(config.trajectoryWidth);
         glColor4f(config.trajectoryColor.red(), config.trajectoryColor.green(), config.trajectoryColor.blue(), config.trajectoryColor.alpha());
         glBegin(GL_LINE_STRIP);
+        mtxCamTrajectory.lock();
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
             glVertex3f(it->pose(0,3), it->pose(1,3), it->pose(2,3));
         }
+        mtxCamTrajectory.unlock();
         glEnd();
     }
     SolidSphere sphereTraj(config.trajectoryPointsSize, config.featuresSmoothness, config.featuresSmoothness);
     if (config.drawTrajectoryPoints){
         glColor4f(config.trajectoryPointsColor.red(), config.trajectoryPointsColor.green(), config.trajectoryPointsColor.blue(), config.trajectoryPointsColor.alpha());
+        mtxCamTrajectory.lock();
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
             //glPushMatrix();
                 sphereTraj.draw(it->pose(0,3), it->pose(1,3), it->pose(2,3));
@@ -255,11 +258,13 @@ void QGLVisualizer::draw(){
                 //glutSolidSphere(config.trajectoryPointsSize,6,6);
             //glPopMatrix();
         }
+        mtxCamTrajectory.unlock();
         glEnd();
     }
     SolidSphere sphereFeature(config.featuresSize, config.featuresSmoothness, config.featuresSmoothness);
     if (config.drawFeatures){
         glColor4f(config.featuresColor.red(), config.featuresColor.green(), config.featuresColor.blue(), config.featuresColor.alpha());
+        mtxFeaturesMap.lock();
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             //glPushMatrix();
                 sphereFeature.draw(it->second.position.x(), it->second.position.y(), it->second.position.z());
@@ -268,18 +273,23 @@ void QGLVisualizer::draw(){
                 //glutSolidSphere(config.featuresSize,6,6);
             //glPopMatrix();
         }
+        mtxFeaturesMap.unlock();
         glEnd();
     }
     if (config.drawPose2Feature){
         glLineWidth(config.pose2FeatureWidth);
         glColor4f(config.pose2FeatureColor.red(), config.pose2FeatureColor.green(), config.pose2FeatureColor.blue(), config.pose2FeatureColor.alpha());
         glBegin(GL_LINES);
+        mtxCamTrajectory.lock();
+        mtxFeaturesMap.lock();
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             for (auto itPose=it->second.posesIds.begin();itPose!=it->second.posesIds.end();itPose++){
                 glVertex3f(camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
                 glVertex3f(it->second.position.x(), it->second.position.y(), it->second.position.z());
             }
         }
+        mtxCamTrajectory.unlock();
+        mtxFeaturesMap.unlock();
         glEnd();
     }
     if (config.drawMeasurements){

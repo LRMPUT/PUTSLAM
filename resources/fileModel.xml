@@ -41,8 +41,8 @@
 <!--  	<variance sigmaU="1.1046" sigmaV="0.64160"></variance>  -->
 <!--  	<varianceDepth c3="0.0" c2="4.14e-5" c1="3.06e-6" c0="0.0"></varianceDepth>   -->
     
-    	
-    <imageSize sizeU="640" sizeV="480"></imageSize>
+	<alternateModel scaleUncertaintyNormal="0.2" scaleUncertaintyGradient="0.1"></alternateModel>
+        <imageSize sizeU="640" sizeV="480"></imageSize>
 <!--	<imageSize sizeU="1920" sizeV="1080"></imageSize> -->
 	</Model> 
 
