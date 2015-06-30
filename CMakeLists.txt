@@ -46,27 +46,25 @@ option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
-option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" OFF)
+option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" ON)
 mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" ON)
-option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" OFF)
+option(BUILD_PUTSLAM_DEMO_G2O "Build g2o PUT SLAM test" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_G2O)
-option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" OFF)
+option(BUILD_PUTSLAM_DEMO_BASIC "Build basic PUT SLAM test" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_BASIC)
-option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" OFF)
+option(BUILD_PUTSLAM_DEMO_GRABBER "Build demo for grabber" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_GRABBER)
-option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" OFF)
+option(BUILD_PUTSLAM_DEMO_KABSCH "Build demo for Kabsch" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_KABSCH)
-option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" OFF)
+option(BUILD_PUTSLAM_DEMO_MAP "Build demo for features map" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_MAP)
-option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" OFF)
+option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" ON)
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
-option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" OFF)
+option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
-option(BUILD_PUTSLAM_DEMO_USAC "Build USAC demo" ON)
-mark_as_advanced(BUILD_PUTSLAM_DEMO_USAC)
 
 #additional dependencies
 
@@ -284,7 +282,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
         )
 
         ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
-        TARGET_LINK_LIBRARIES(USAC RGBD g2o_types_slam2d g2o_types_slam3d g2o_csparse_extension g2o_stuff g2o_core g2o_solver_csparse)
+        TARGET_LINK_LIBRARIES(USAC RGBD)
         INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
@@ -318,7 +316,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
         file(GLOB RGBD_SOURCES
             "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
         )
-        file(GLOB MATCHER_HEADERS
+        file(GLOB RGBD_HEADERS
             "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
         )
 
@@ -598,7 +596,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
         SET(DEMO_SOURCES ./demos/demoMap.cpp)
         ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
         add_dependencies(demoMap g2o)
-        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map LDB ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map TransformEst LDB ${OpenCV_LIBS} boost_system)
         INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
@@ -634,26 +632,3 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
-
-###############################################################################
-#
-# PUTSLAM demo USAC
-#
-###############################################################################
-
-if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_USAC)
-
-        SET(DEMO_FILES
-                ${PROJECT_ROOT}/resources/configGlobal.xml
-        )
-
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
-        SET(DEMO_SOURCES ./demos/demoUSAC.cpp)
-        ADD_EXECUTABLE(demoUSAC ${DEMO_SOURCES})
-        #add_dependencies(demoUSAC g2o)
-        TARGET_LINK_LIBRARIES(demoUSAC USAC tinyxml2 LIBPUTSLAM Utilities Grabber PoseGraph Map Matcher Tracker TransformEst RGBD LDB ${OpenCV_LIBS} boost_system)
-        INSTALL(TARGETS demoUSAC RUNTIME DESTINATION bin)
-	INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
-
-endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_USAC)
-
