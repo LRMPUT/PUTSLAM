@@ -506,7 +506,7 @@ void PUTSLAM::startProcessing() {
 		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
 
     }
-    std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
+    /*std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
     std::cout << "pose 2 uncertainty\n " << map->getPoseUncertainty(2) << "\n";
     std::cout << "pose 3 uncertainty\n " << map->getPoseUncertainty(3) << "\n";
     std::cout << "pose 40 uncertainty\n " << map->getPoseUncertainty(40) << "\n";
@@ -515,7 +515,7 @@ void PUTSLAM::startProcessing() {
     std::cout << "feature 10000 uncertainty\n " << map->getFeatureUncertainty(10000) << "\n";
     std::cout << "feature 10020 uncertainty\n " << map->getFeatureUncertainty(10020) << "\n";
     std::cout << "feature 10085 uncertainty\n " << map->getFeatureUncertainty(10085) << "\n";
-    std::cout << "feature 10086 uncertainty\n " << map->getFeatureUncertainty(10086) << "\n";
+    std::cout << "feature 10086 uncertainty\n " << map->getFeatureUncertainty(10086) << "\n";*/
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
 
