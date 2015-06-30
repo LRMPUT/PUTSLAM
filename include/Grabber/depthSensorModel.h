@@ -43,7 +43,10 @@ class DepthSensorModel {
     void convert2cloud(const cv::Mat& color, const cv::Mat& depth, PointCloud& cloud);
 
     /// compute uncertainty from normal vector
-    Mat33 uncertinatyFromNormal(Vec3 normal);
+    Mat33 uncertinatyFromNormal(const Vec3& normal);
+
+    /// compute uncertainty from rgb gradient vector
+    Mat33 uncertinatyFromRGBGradient(const Vec3& grad);
 
     class Config{
       public:
@@ -72,6 +75,8 @@ class DepthSensorModel {
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeU", &imageSize[0]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeV", &imageSize[1]);
+            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyNormal", &scaleUncertaintyNormal);
+            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyGradient", &scaleUncertaintyGradient);
             tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
             double query[4];
             posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
@@ -86,6 +91,8 @@ class DepthSensorModel {
             float_type distVarCoefs[4];
             int imageSize[2];//[sizeU, sizeV]
             Mat34 pose; // kinect pose in robot's coordination frame
+            float_type scaleUncertaintyNormal;
+            float_type scaleUncertaintyGradient;
     };
 
     Config config;

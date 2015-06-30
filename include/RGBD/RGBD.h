@@ -77,6 +77,17 @@ void computeNormals(const cv::Mat& depthImage, T& features, const cv::Mat& camer
     }
 }
 
+//compute rgb gradient
+Vec3 computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix);
+
+/// compute rgbd gradients
+template<class T>
+void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage, T& features, const cv::Mat& cameraMatrix){
+    for(auto it = features.begin();it!=features.end();it++){
+        it->RGBgradient = computeRGBGradient(rgbImage, depthImage, it->u, it->v, cameraMatrix);
+    }
+}
+
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
 //	static Eigen::Vector3f simplePoint2Dto3D(cv::Point2f p, float z, CalibrationParameters cameraParams);

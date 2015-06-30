@@ -387,6 +387,7 @@ void PUTSLAM::startProcessing() {
             measurementToMapSizeLog.push_back(measurementList.size());
 			if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
                 matcher->computeNormals(currentSensorFrame.depthImage, measurementList);
+                matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, measurementList);
 				map->addMeasurements(measurementList);
 			}
 
@@ -424,6 +425,7 @@ void PUTSLAM::startProcessing() {
                     << " features" << std::endl;
 
             matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd);
+            matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, mapFeaturesToAdd);
 
             // Finally, adding to map
             map->addFeatures(mapFeaturesToAdd, cameraPoseId);

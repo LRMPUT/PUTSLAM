@@ -70,6 +70,12 @@ public:
         RGBD::computeNormals(depthImage,features, matcherParameters.cameraMatrixMat);
     }
 
+    /// compute RGB gradients to rgbd features
+    template <class T>
+    void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage, T& features){
+        RGBD::computeRGBGradients(rgbImage, depthImage, features, matcherParameters.cameraMatrixMat);
+    }
+
 	// VO
 	double runVO(const SensorFrame& currentSensorFrame,
 			Eigen::Matrix4f &estimatedTransformation,
