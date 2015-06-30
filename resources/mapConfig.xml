@@ -19,8 +19,8 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
 	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
-	<parameters useUncertainty="true"
-		    uncertaintyModel="1"
+	<parameters useUncertainty="false"
+		    uncertaintyModel="2"
 				weakFeatureThr="-1"
 				edges3DPrunningThreshold="-1"
 				fixVertices = "false"
