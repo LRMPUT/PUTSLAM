@@ -59,18 +59,38 @@ Mat33 DepthSensorModel::informationMatrixFromImageCoordinates(float_type u, floa
 }
 
 /// compute uncertainty from normal vector
-Mat33 DepthSensorModel::uncertinatyFromNormal(Vec3 normal){
+Mat33 DepthSensorModel::uncertinatyFromNormal(const Vec3& _normal){
     Mat33 cov; Vec3 x(1,0,0); Vec3 y;
+    Vec3 normal(_normal);
     y.vector() = normal.vector().cross(x.vector());
     normalizeVector(normal);
     x.vector() = y.vector().cross(normal.vector());
     normalizeVector(x);
-    Mat33 S(Mat33::Identity()); S(2,2)=0.2;
+    Mat33 S(Mat33::Identity()); S(2,2)=config.scaleUncertaintyNormal;
     Mat33 R;
     R.block(0,0,3,1) = x.vector();
     R.block(0,1,3,1) = y.vector();
     R.block(0,2,3,1) = normal.vector();
     cov = ((R*S)*S)*R.inverse();
+    return cov;
+}
+
+/// compute uncertainty from rgb gradient vector
+Mat33 DepthSensorModel::uncertinatyFromRGBGradient(const Vec3& grad){
+    //std::cout << "grad\n" << grad.vector() << "\n";
+    Mat33 cov; Vec3 z(0,0,1); Vec3 y;
+    y.vector() = z.vector().cross(grad.vector());
+    normalizeVector(y);
+    z.vector() = y.vector().cross(grad.vector());
+    normalizeVector(z);
+    Mat33 S(Mat33::Identity()); S(1,1)=config.scaleUncertaintyGradient; S(1,1)=config.scaleUncertaintyGradient;
+    Mat33 R;
+    R.block(0,0,3,1) = grad.vector();
+    R.block(0,1,3,1) = y.vector();
+    R.block(0,2,3,1) = z.vector();
+    cov = ((R*S)*S)*R.inverse();
+    //std::cout << "cov: \n" << cov <<"\n";
+    //getchar();
     return cov;
 }
 
