@@ -6,6 +6,7 @@
 	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
 	uncertaintyModel			- 0 - use sensor model
 						- 1 - use normals to the surface
+						- 2 - use rgb gradients
 	weakFeatureThr				- before final optimization remove features with measuremets less than threshold (-1 disabbled)
 	edges3DPrunningThreshold		- 3D edges pruning
 	fixVertices					- fix all optimized vertices after optimization
@@ -18,7 +19,7 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
 	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
-	<parameters useUncertainty="false"
+	<parameters useUncertainty="true"
 		    uncertaintyModel="1"
 				weakFeatureThr="-1"
 				edges3DPrunningThreshold="-1"

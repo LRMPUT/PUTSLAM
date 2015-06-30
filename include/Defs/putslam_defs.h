@@ -156,6 +156,9 @@ public:
     /// normal vector
     Vec3 normal;
 
+    /// RGB gradient vector
+    Vec3 RGBgradient;
+
 	/// set of descriptors
 	std::vector<ExtendedDescriptor> descriptors;
 

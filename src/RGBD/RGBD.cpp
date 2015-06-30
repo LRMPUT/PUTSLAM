@@ -146,6 +146,47 @@ Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat&
     return normal;
 }
 
+//compute rgb gradient (min)
+Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix){
+    Vec3 grad;
+    cv::Mat grayframe;
+    cv::cvtColor(rgbImage, grayframe, CV_RGB2GRAY);
+    float_type gradx; float_type grady;
+    if ((u-1>0)&&(v-1>0)&&(u+1<rgbImage.cols)&&(v+1<rgbImage.rows)){
+        cv::Mat patch = cv::Mat(rgbImage, cv::Rect(u-1,v-1,3,3));
+        gradx = -3*patch.at<uint16_t>(0,0)-10*patch.at<uint16_t>(0,1)-3*patch.at<uint16_t>(0,2) +
+                +3*patch.at<uint16_t>(2,0)+10*patch.at<uint16_t>(2,1)+3*patch.at<uint16_t>(2,2);
+        grady = -3*patch.at<uint16_t>(0,0)-10*patch.at<uint16_t>(1,0)-3*patch.at<uint16_t>(2,0) +
+                +3*patch.at<uint16_t>(0,2)+10*patch.at<uint16_t>(1,2)+3*patch.at<uint16_t>(2,2);
+    }
+    else {
+        return Vec3(1, 1, 1);
+    }
+    float_type angle = atan2(grady, gradx) + (M_PI/2.0);
+    int coord1[2]={int(sqrt(2)*sin(angle)), int(sqrt(2)*cos(angle))};
+    int coord2[2]={int(sqrt(2)*sin(angle+M_PI)), int(sqrt(2)*cos(angle+M_PI))};
+    Eigen::Vector3f pointCenter = point2Dto3D(cv::Point2f(u, v),depthImage, cameraMatrix);
+    Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+coord1[0], v+coord1[1]),depthImage, cameraMatrix);
+    Eigen::Vector3f pointBeg = point2Dto3D(cv::Point2f(u+coord2[0], v+coord2[1]),depthImage, cameraMatrix);
+    if (pointEnd(2)>0&&pointBeg(2)){
+        grad = Vec3(pointEnd(0)- pointBeg(0), pointEnd(1)- pointBeg(1), pointEnd(2)- pointBeg(2));
+    }
+    else {
+        if (pointCenter(2)>0&&pointBeg(2)){
+            grad = Vec3(pointCenter(0)- pointBeg(0), pointCenter(1)- pointBeg(1), pointCenter(2)- pointBeg(2));
+        }
+        else if (pointCenter(2)>0&&pointEnd(2)){
+            grad = Vec3(pointEnd(0)- pointCenter(0), pointEnd(1)- pointCenter(1), pointEnd(2)- pointCenter(2));
+        }
+        else{
+            grad = Vec3(coord1[0], coord1[1], 0);
+        }
+    }
+    float_type norm = grad.vector().norm();
+    grad.x() /= norm;    grad.y() /= norm;    grad.z() /= norm;
+    return grad;
+}
+
 void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage) {
 	// Lambda expression
