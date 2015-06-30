@@ -8,7 +8,7 @@
 #include <limits>
 #include <vector>
 //#include <windows.h>
-#include "ConfigParams.h" 
+#include "../include/USAC/ConfigParams.h"
 
 struct UsacResults {
 	void reset() {
@@ -169,10 +169,9 @@ class USAC
 		void storeSolution(unsigned int modelIndex, unsigned int numInliers);
 };
 
-
 // ============================================================================================
-// initParamsUSAC: initializes USAC 
-// this function is called once to initialize the basic USAC parameters 
+// initParamsUSAC: initializes USAC
+// this function is called once to initialize the basic USAC parameters
 // all problem specific/data-specific initialization is done using initDataUSAC()
 // ============================================================================================
 template <class ProblemType>
@@ -297,13 +296,24 @@ void USAC<ProblemType>::initDataUSAC(const ConfigParams& cfg)
 template <class ProblemType>
 bool USAC<ProblemType>::solve()
 {
-	unsigned int adaptive_stopping_count = usac_max_hypotheses_;   // initialize with worst case	
-	bool update_sprt_stopping = true;	
+	unsigned int adaptive_stopping_count = usac_max_hypotheses_;   // initialize with worst case
+	bool update_sprt_stopping = true;
+
+	std::cout << "Initial condition: " << std::endl;
+	std::cout << "usac_num_data_points_: " << usac_num_data_points_ << std::endl;
+	std::cout << "usac_min_sample_size_: " << usac_min_sample_size_ << std::endl;
+
+	unsigned int i = 0;
+	for(i=0; i<1000000; ++i)
+	{
+		asm("nop");
+	}
 
 	// abort if too few data points
-	if (usac_num_data_points_ < usac_min_sample_size_ || (usac_sampling_method_ == USACConfig::SAMP_PROSAC && 
+	if (usac_num_data_points_ < usac_min_sample_size_ || (usac_sampling_method_ == USACConfig::SAMP_PROSAC &&
 		usac_num_data_points_ < prosac_min_stop_length_))
 	{
+		std::cout << "Wrong number of data points" << std::endl;
 		return false;
 	}
 
@@ -315,6 +325,8 @@ bool USAC<ProblemType>::solve()
 	// main USAC loop
 	while (usac_results_.hyp_count_ < adaptive_stopping_count && usac_results_.hyp_count_ < usac_max_hypotheses_)
 	{
+		std::cout << "Iteration: " << usac_results_.hyp_count_ << std::endl;
+
 		++usac_results_.hyp_count_;
 
 		// -----------------------------------------
@@ -337,9 +349,16 @@ bool USAC<ProblemType>::solve()
 			{
 				generatePROSACMinSample(usac_results_.hyp_count_, &min_sample_);
 				break;
-			} 
+			}
 		}
-		
+
+		std::cout << "Generated sample (indexes): " << std::endl;
+		for(auto index : min_sample_)
+		{
+			std::cout << index << ", ";
+		}
+		std::cout << std::endl;
+
 		// -----------------------------------------
 		// 2. validate sample
 		if (usac_prevalidate_sample_)
@@ -395,7 +414,7 @@ bool USAC<ProblemType>::solve()
 					}
 					break;
 				} // end case standard verification
-				
+
 				case USACConfig::VERIF_SPRT:
 				{
 					if (!good)
@@ -406,7 +425,7 @@ bool USAC<ProblemType>::solve()
 						if (delta_new > 0 && abs(sprt_delta_ - delta_new)/sprt_delta_ > 0.1)
 						{
 							// update parameters
-							wald_test_history_ = addTestHistorySPRT(sprt_epsilon_, sprt_delta_, 
+							wald_test_history_ = addTestHistorySPRT(sprt_epsilon_, sprt_delta_,
 								usac_results_.hyp_count_, wald_test_history_, &last_wald_history_update_);
 							sprt_delta_ = delta_new;
 							designSPRTTest();
@@ -421,7 +440,7 @@ bool USAC<ProblemType>::solve()
 							// and best so far
 							update_best = true;
 							usac_results_.best_inlier_count_ = inlier_count;
-							wald_test_history_ = addTestHistorySPRT(sprt_epsilon_, sprt_delta_, 
+							wald_test_history_ = addTestHistorySPRT(sprt_epsilon_, sprt_delta_,
 								usac_results_.hyp_count_, wald_test_history_, &last_wald_history_update_);
 							sprt_epsilon_ = (double)usac_results_.best_inlier_count_/usac_num_data_points_;
 							designSPRTTest();
@@ -481,11 +500,11 @@ bool USAC<ProblemType>::solve()
 			// update the number of samples required
 			if ( usac_sampling_method_ == USACConfig::SAMP_PROSAC && usac_results_.hyp_count_ <= prosac_growth_max_samples_ )
 			{
-				adaptive_stopping_count = updatePROSACStopping(usac_results_.hyp_count_); 
+				adaptive_stopping_count = updatePROSACStopping(usac_results_.hyp_count_);
 			}
 			else
 			{
-				adaptive_stopping_count = updateStandardStopping(usac_results_.best_inlier_count_, usac_num_data_points_, usac_min_sample_size_); 
+				adaptive_stopping_count = updateStandardStopping(usac_results_.best_inlier_count_, usac_num_data_points_, usac_min_sample_size_);
 			}
 		}
 		// update adaptive stopping count to take SPRT test into account
@@ -498,16 +517,19 @@ bool USAC<ProblemType>::solve()
 			}
 		}
 
+		//std::cout << "Press Enter to Continue";
+		//std::cin.ignore();
+
 	} // end the main USAC loop
 
-	// ------------------------------------------------------------------------	
+	// ------------------------------------------------------------------------
 	// output statistics
 	//QueryPerformanceCounter(&tock);
 	//QueryPerformanceFrequency(&freq);
 	std::cout << "Number of hypotheses/models: " << usac_results_.hyp_count_ << "/" << usac_results_.model_count_ << std::endl;
 	std::cout << "Number of samples rejected by pre-validation: " << usac_results_.rejected_sample_count_ << std::endl;
 	std::cout << "Number of models rejected by pre-validation: " << usac_results_.rejected_model_count_ << std::endl;
-	std::cout << "Number of verifications per model: " << 
+	std::cout << "Number of verifications per model: " <<
 		(double)usac_results_.total_points_verified_/(usac_results_.model_count_-usac_results_.rejected_model_count_) << std::endl;
 	std::cout << "Max inliers/total points: " << usac_results_.best_inlier_count_ << "/" << usac_num_data_points_ << std::endl;
 
@@ -533,12 +555,12 @@ bool USAC<ProblemType>::solve()
 
 
 // ============================================================================================
-// generateUniformRandomSample: generate random sample uniformly distributed between 
+// generateUniformRandomSample: generate random sample uniformly distributed between
 // [0...dataSize-1]
 // note that the sample vector needs to be properly sized before calling this function
 // ============================================================================================
 template <class ProblemType>
-void USAC<ProblemType>::generateUniformRandomSample(unsigned int dataSize, unsigned int sampleSize, 
+void USAC<ProblemType>::generateUniformRandomSample(unsigned int dataSize, unsigned int sampleSize,
 													std::vector<unsigned int>* sample)
 {
 	unsigned int count=0;
@@ -559,7 +581,7 @@ void USAC<ProblemType>::generateUniformRandomSample(unsigned int dataSize, unsig
 
 // ============================================================================================
 // initPROSAC: initializes PROSAC
-// sets up growth function and stopping criterion 
+// sets up growth function and stopping criterion
 // ============================================================================================
 template <class ProblemType> inline
 void USAC<ProblemType>::initPROSAC()
@@ -569,7 +591,7 @@ void USAC<ProblemType>::initPROSAC()
 
 	growth_function_prosac_.clear(); growth_function_prosac_.resize(usac_num_data_points_);
 	double T_n;
-	unsigned int T_n_p = 1; 
+	unsigned int T_n_p = 1;
 	// compute initial value for T_n
 	T_n = prosac_growth_max_samples_;
 	for (unsigned int i = 0; i < usac_min_sample_size_; ++i)
@@ -596,7 +618,7 @@ void USAC<ProblemType>::initPROSAC()
 	// non-randomness constraint
 	// i-th entry - inlier counts for termination up to i-th point (term length = i+1)
 	non_random_inliers_prosac_.clear();
-	non_random_inliers_prosac_.resize(usac_num_data_points_, 0);  
+	non_random_inliers_prosac_.resize(usac_num_data_points_, 0);
 	double pn_i = 1.0;    // prob(i inliers) with subset size n
 	for (size_t n = usac_min_sample_size_+1; n <= usac_num_data_points_; ++n)
 	{
@@ -642,7 +664,7 @@ void USAC<ProblemType>::initPROSAC()
 	// maximality constraint
 	// i-th entry - number of samples for pool [0...i] (pool length = i+1)
 	maximality_samples_prosac_.clear();
-	maximality_samples_prosac_.resize(usac_num_data_points_);	
+	maximality_samples_prosac_.resize(usac_num_data_points_);
 	for (size_t i = 0; i < usac_num_data_points_; ++i)
 	{
 		maximality_samples_prosac_[i] = usac_max_hypotheses_;
@@ -665,14 +687,14 @@ void USAC<ProblemType>::generatePROSACMinSample(unsigned int hypCount, std::vect
 	// revert to RANSAC-style sampling if maximum number of PROSAC samples have been tested
 	if (hypCount > prosac_growth_max_samples_)
 	{
-		generateUniformRandomSample(usac_num_data_points_, usac_min_sample_size_, sample);	
+		generateUniformRandomSample(usac_num_data_points_, usac_min_sample_size_, sample);
 		return;
 	}
 
 	// if current stopping length is less than size of current pool, use only points up to the stopping length
 	if (subset_size_prosac_ > stop_len_prosac_)
 	{
-		generateUniformRandomSample(stop_len_prosac_, usac_min_sample_size_, sample);	
+		generateUniformRandomSample(stop_len_prosac_, usac_min_sample_size_, sample);
 	}
 
 	// increment the size of the sampling pool if required
@@ -707,7 +729,7 @@ template <class ProblemType> inline
 unsigned int USAC<ProblemType>::updatePROSACStopping(unsigned int hypCount)
 {
 	unsigned int max_samples = maximality_samples_prosac_[stop_len_prosac_-1];
-	
+
 	// go through sorted points and track inlier counts
 	unsigned int inlier_count = 0;
 
@@ -715,7 +737,7 @@ unsigned int USAC<ProblemType>::updatePROSACStopping(unsigned int hypCount)
 	for (unsigned int i = 0; i < prosac_min_stop_length_; ++i)
 	{
 		inlier_count += usac_results_.inlier_flags_[prosac_sorted_point_indices_[i]];
-	}	
+	}
 
 	// after this initial subset, try to update the stopping length if possible
 	for (unsigned int i = prosac_min_stop_length_; i < usac_num_data_points_; ++i)
@@ -727,7 +749,7 @@ unsigned int USAC<ProblemType>::updatePROSACStopping(unsigned int hypCount)
 			non_random_inliers_prosac_[i] = inlier_count;	// update the best inliers for the the subset [0...i]
 
 			// update the number of samples based on this inlier count
-			if ( (i == usac_num_data_points_-1) || 
+			if ( (i == usac_num_data_points_-1) ||
 				 (usac_results_.inlier_flags_[prosac_sorted_point_indices_[i]] && !usac_results_.inlier_flags_[prosac_sorted_point_indices_[i+1]]) )
 			{
 				unsigned int new_samples = updateStandardStopping(inlier_count, i+1, usac_min_sample_size_);
@@ -755,7 +777,7 @@ unsigned int USAC<ProblemType>::updatePROSACStopping(unsigned int hypCount)
 
 
 // ============================================================================================
-// designSPRTTest: designs a new SPRT test (i.e., updates the SPRT decision threshold) based 
+// designSPRTTest: designs a new SPRT test (i.e., updates the SPRT decision threshold) based
 // on current values of delta and epsilon
 // ============================================================================================
 template <class ProblemType> inline
@@ -763,7 +785,7 @@ void USAC<ProblemType>::designSPRTTest()
 {
 	double An_1, An, C, K;
 
-	C = (1 - sprt_delta_)*log( (1 - sprt_delta_)/(1-sprt_epsilon_) ) 
+	C = (1 - sprt_delta_)*log( (1 - sprt_delta_)/(1-sprt_epsilon_) )
 		+ sprt_delta_*(log( sprt_delta_/sprt_epsilon_ ));
 	K = (sprt_tM_*C)/sprt_mS_ + 1;
 	An_1 = K;
@@ -773,7 +795,7 @@ void USAC<ProblemType>::designSPRTTest()
 	for (unsigned int i = 0; i < 10; ++i)
     {
 		An = K + log(An_1);
-		if (An - An_1 < 1.5e-8) 
+		if (An - An_1 < 1.5e-8)
 		{
 			break;
 		}
@@ -790,7 +812,7 @@ template <class ProblemType> inline
 unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestInliers)
 {
 	// return if insufficient number of points
-	if (bestInliers < 2*lo_inner_sample_size) 
+	if (bestInliers < 2*lo_inner_sample_size)
 	{
 		return 0;
 	}
@@ -801,13 +823,13 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 	std::vector<unsigned int> iter_inliers(usac_num_data_points_);
 	unsigned int num_points_tested;
 
-	// find all inliers less than threshold 
+	// find all inliers less than threshold
 	unsigned int lo_inliers = bestInliers;
 	unsigned int temp_inliers = 0;
-	findInliers(err_ptr_[1], usac_inlier_threshold_, &orig_inliers);	
+	findInliers(err_ptr_[1], usac_inlier_threshold_, &orig_inliers);
 #if 0
 	// check if there is substantial overlap between the current and the best inlier sets
-	// if yes, the local refinement is unlikely to help 
+	// if yes, the local refinement is unlikely to help
 	std::vector<unsigned int> ind_best, ind_curr(bestInliers);
 	for (size_t i = 0; i < usac_num_data_points_; ++i)
 	{
@@ -818,8 +840,8 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 		ind_curr[i] = orig_inliers[i];
 	}
 	std::vector<unsigned int> temp_intersection(bestInliers);
-	std::vector<unsigned int>::iterator it = std::set_intersection (ind_best.begin(), ind_best.end(), 
-																	ind_curr.begin(), ind_curr.end(), 
+	std::vector<unsigned int>::iterator it = std::set_intersection (ind_best.begin(), ind_best.end(),
+																	ind_curr.begin(), ind_curr.end(),
 																	temp_intersection.begin());
 	unsigned int num_elements_intersection = it - temp_intersection.begin();
 	std::cout << " (" << num_elements_intersection << ") " ;
@@ -831,13 +853,13 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 #endif
 	++usac_results_.num_local_optimizations_;
 
-	double *weights = new double[usac_num_data_points_];	
+	double *weights = new double[usac_num_data_points_];
 	double threshold_step_size = (lo_threshold_multiplier_*usac_inlier_threshold_ - usac_inlier_threshold_)
-								  /lo_num_iterative_steps_;	
+								  /lo_num_iterative_steps_;
 	// perform number of inner RANSAC repetitions
 	for (unsigned int i = 0; i < lo_num_inner_ransac_reps_; ++i)
 	{
-		// generate non-minimal sample model and find inliers 
+		// generate non-minimal sample model and find inliers
 		generateUniformRandomSample(bestInliers, lo_sample_size, &sample);
 		for (unsigned int j = 0; j < lo_sample_size; ++j)
 		{
@@ -868,7 +890,7 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 			{
 				continue;
 			}
-			findInliers(err_ptr_[0], (lo_threshold_multiplier_*usac_inlier_threshold_) - (j+1)*threshold_step_size, &iter_inliers);		
+			findInliers(err_ptr_[0], (lo_threshold_multiplier_*usac_inlier_threshold_) - (j+1)*threshold_step_size, &iter_inliers);
 			static_cast<ProblemType *>(this)->findWeights(0, iter_inliers, temp_inliers, weights);
 			if (! static_cast<ProblemType *>(this)->generateRefinedModel(iter_inliers, temp_inliers, true, weights) )
 			{
@@ -881,7 +903,7 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 		{
 			continue;
 		}
-		//findInliers(err_ptr_[0], iter_inliers, usac_inlier_threshold_);	
+		//findInliers(err_ptr_[0], iter_inliers, usac_inlier_threshold_);
 
 		if (temp_inliers > lo_inliers)
 		{
@@ -893,14 +915,14 @@ unsigned int USAC<ProblemType>::locallyOptimizeSolution(const unsigned int bestI
 
 	delete[] weights;
 	return lo_inliers;
-}	
+}
 
 
 // ============================================================================================
 // findInliers: given an error vector and threshold, returns the indices of inliers
 // ============================================================================================
 template <class ProblemType> inline
-unsigned int USAC<ProblemType>::findInliers(const std::vector<double>::iterator& errPtr, double threshold, 
+unsigned int USAC<ProblemType>::findInliers(const std::vector<double>::iterator& errPtr, double threshold,
 											std::vector<unsigned int>* inliers)
 {
 	unsigned int inlier_count = 0;
@@ -941,7 +963,7 @@ unsigned int USAC<ProblemType>::updateStandardStopping(unsigned int numInliers, 
 	{
 		return 1;
 	}
-	else 
+	else
 	{
 		double nusample_s = log(1-usac_conf_threshold_)/log(1-prob_good_model);
 		return (unsigned int) ceil(nusample_s);
@@ -950,7 +972,7 @@ unsigned int USAC<ProblemType>::updateStandardStopping(unsigned int numInliers, 
 
 
 // ============================================================================================
-// updateSPRTStopping: updates the stopping criterion accounting for erroneous rejections in 
+// updateSPRTStopping: updates the stopping criterion accounting for erroneous rejections in
 // the SPRT test
 // ============================================================================================
 template <class ProblemType> inline
@@ -988,7 +1010,7 @@ unsigned int USAC<ProblemType>::updateSPRTStopping(unsigned int numInliers, unsi
 	}
 
 	double nusample_s = k + ( log(1-usac_conf_threshold_) - log_eta ) / log( 1-prob_good_model * (1-(1/decision_threshold_sprt_)) );
-	return (unsigned int) ceil(nusample_s);	
+	return (unsigned int) ceil(nusample_s);
 }
 
 
@@ -1014,13 +1036,13 @@ double USAC<ProblemType>::computeExpSPRT(double newEpsilon, double epsilon, doub
 
 
 // ============================================================================================
-// addTestHistorySPRT: store statistics for each SPRT test (since each test is adjusted to 
+// addTestHistorySPRT: store statistics for each SPRT test (since each test is adjusted to
 // reflect current estimates of these parameters)
 // this is required to compute the number of samples for termination
 // ============================================================================================
 template <class ProblemType> inline
-typename USAC<ProblemType>::TestHistorySPRT* USAC<ProblemType>::addTestHistorySPRT(double epsilon, double delta, unsigned int numHyp, 
-																				   TestHistorySPRT* testHistory, 
+typename USAC<ProblemType>::TestHistorySPRT* USAC<ProblemType>::addTestHistorySPRT(double epsilon, double delta, unsigned int numHyp,
+																				   TestHistorySPRT* testHistory,
 																				   unsigned int* lastUpdate)
 {
 	TestHistorySPRT *new_test_history = new TestHistorySPRT;

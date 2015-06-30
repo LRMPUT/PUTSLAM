@@ -1,13 +1,12 @@
 #include "../include/USAC/USAC_wrapper.h"
 
-//#include "../include/TransformEst/RANSAC.h"
-#include "../include/TransformEst/g2oEst.h"
-#include "../include/RGBD/RGBD.h"
-
-#include "../include/USAC/PUTSLAMEstimator.h"
+//#include "../include/TransformEst/g2oEst.h"
+//#include "../include/RGBD/RGBD.h"
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
+
+#include "../include/USAC/PUTSLAMEstimator.h"
 
 #include <time.h>		// for srand
 
@@ -16,40 +15,11 @@ RANSAC_USAC::RANSAC_USAC(PUTSLAMEstimator::parameters _RANSACParameters, cv::Mat
 	//RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
 	srand(time(0));
 
-	this->putslamest = new PUTSLAMEstimator(_RANSACParameters, _cameraMatrix);
-
-	RANSACParams.verbose = _RANSACParameters.verbose;
-	RANSACParams.errorVersion = _RANSACParameters.errorVersion;
-	RANSACParams.usedPairs = _RANSACParameters.usedPairs;
-	RANSACParams.inlierThresholdEuclidean =
-		_RANSACParameters.inlierThresholdEuclidean;
-	RANSACParams.inlierThresholdReprojection =
-		_RANSACParameters.inlierThresholdReprojection;
-	RANSACParams.inlierThresholdMahalanobis =
-		_RANSACParameters.inlierThresholdMahalanobis;
-	RANSACParams.minimalInlierRatioThreshold =
-		_RANSACParameters.minimalInlierRatioThreshold;
-
 	// MF:
 	// why this does not compile (had to add last two parameters)
-	RANSACParams.iterationCount = computeRANSACIteration(0.20, 0.99, RANSACParams.usedPairs);
+	_RANSACParameters.iterationCount = computeRANSACIteration(0.20, 0.99, _RANSACParameters.usedPairs);
 
-	if (RANSACParams.verbose > 0) {
-		std::cout << "RANSACParams.verbose --> " << RANSACParams.verbose
-			<< std::endl;
-		std::cout << "RANSACParams.usedPairs --> " << RANSACParams.usedPairs
-			<< std::endl;
-		std::cout << "RANSACParams.errorVersion --> "
-			<< RANSACParams.errorVersion << std::endl;
-		std::cout << "RANSACParams.inlierThresholdEuclidean --> "
-			<< RANSACParams.inlierThresholdEuclidean << std::endl;
-		std::cout << "RANSACParams.inlierThresholdMahalanobis --> "
-			<< RANSACParams.inlierThresholdMahalanobis << std::endl;
-		std::cout << "RANSACParams.inlierThresholdReprojection --> "
-			<< RANSACParams.inlierThresholdReprojection << std::endl;
-		std::cout << "RANSACParams.minimalInlierRatioThreshold --> "
-			<< RANSACParams.minimalInlierRatioThreshold << std::endl;
-	}
+	this->putslamest = new PUTSLAMEstimator(_RANSACParameters, _cameraMatrix);
 }
 
 RANSAC_USAC::~RANSAC_USAC()
@@ -94,13 +64,16 @@ ConfigParamsPUTSLAM RANSAC_USAC::init_usac_configuration(void)
 	ConfigParamsPUTSLAM cfg;
 
 	cfg.common.confThreshold = 0.99;
-	cfg.common.minSampleSize = 7;
-	cfg.common.inlierThreshold = 1.5;
+	cfg.common.minSampleSize = 3;
+	// IMPORTANT:
+	cfg.common.inlierThreshold = 0.02;
 	cfg.common.maxHypotheses = 850000;
 	cfg.common.maxSolutionsPerSample = 1;
 	cfg.common.prevalidateSample = false;
 	cfg.common.prevalidateModel = false;
-	//cfg.common.numDataPoints
+	// MF
+	// different for each sample
+	cfg.common.numDataPoints = 133;
 	cfg.common.testDegeneracy = false;
 	cfg.common.randomSamplingMethod = USACConfig::SAMP_UNIFORM;
 	cfg.common.verifMethod = USACConfig::VERIF_STANDARD;
@@ -110,6 +83,7 @@ ConfigParamsPUTSLAM RANSAC_USAC::init_usac_configuration(void)
 	cfg.prosac.beta = 0.99;
 	cfg.prosac.minStopLen = 20;
 	cfg.prosac.nonRandConf = 0.99;
+	// TODO: correct
 	cfg.prosac.sortedPointsFile = "F:\\Amin\\Desktop\\USAC\\data\\fundmatrix\\test1\\sorting.txt";
 
 	cfg.sprt.tM = 200.0;
@@ -136,10 +110,10 @@ Eigen::Matrix4f RANSAC_USAC::estimateTransformation(
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
 	float bestInlierRatio = 0.0;
 
-	// MF addition:
+	// MF addition (just packed some code into a function):
 	remove_matches_with_invalid_depth(matches, prevFeatures, features);
 
-	if (RANSACParams.verbose > 0)
+	if (this->putslamest->RANSACParams.verbose > 0)
 		std::cout << "RANSAC: matches.size() = " << matches.size() << std::endl;
 
 	// TODO: DO IT NICER!
@@ -158,13 +132,16 @@ Eigen::Matrix4f RANSAC_USAC::estimateTransformation(
 		bestInlierRatio
 	);
 
+	// MF:
+	// Reestimate from inliers - done in USAC_run (at the end)
+
 	// Test the number of inliers
-	if (bestInlierRatio < RANSACParams.minimalInlierRatioThreshold) {
+	if (bestInlierRatio < this->putslamest->RANSACParams.minimalInlierRatioThreshold) {
 		bestTransformationModel = Eigen::Matrix4f::Identity();
 	}
 
 	// Test for minimal inlierRatio of bestModel
-	if (RANSACParams.verbose > 0) {
+	if (this->putslamest->RANSACParams.verbose > 0) {
 		std::cout << "RANSAC best model : inlierRatio = "
 			<< bestInlierRatio * 100.0 << "%" << std::endl;
 		std::cout << "RANSAC best model : " << std::endl
@@ -182,6 +159,7 @@ int RANSAC_USAC::USAC_run(
 	float &bestInlierRatio
 )
 {
+	// MF:
 	// already done in RANSAC constructor
 	// seed random number generator
 	//srand((unsigned int)time(NULL));
@@ -202,10 +180,7 @@ int RANSAC_USAC::USAC_run(
 	putslamest->initPUTSLAMData(
 		prevFeatures, 
 		features, 
-		matches, 
-		bestInlierMatches, 
-		bestTransformationModel,
-		bestInlierRatio
+		matches
 	);
 
 	if (!putslamest->solve())
@@ -216,8 +191,18 @@ int RANSAC_USAC::USAC_run(
 
 	std::cout << "USAC_Wrapper: " << "putslam->solve()" << " succeed." << std::endl;
 
+	// get all the data from PUTSLAMEstimator class
+	putslamest->deInitPUTSLAMData(
+		bestInlierMatches,
+		bestTransformationModel,
+		bestInlierRatio
+	);
+
 	// additional logic from PUTSLAM (reestimation of the model)
 	// Reestimate from inliers
+	// MF TODO:
+	// is this correct? Why using euclidean inlier ratio?
+	/*
 	putslamest->computeTransformationModel(
 		prevFeatures, 
 		features, 
@@ -234,6 +219,7 @@ int RANSAC_USAC::USAC_run(
 		newBestInlierMatches
 	);
 	newBestInlierMatches.swap(bestInlierMatches);
+	*/
 
 	return (EXIT_SUCCESS);
 }

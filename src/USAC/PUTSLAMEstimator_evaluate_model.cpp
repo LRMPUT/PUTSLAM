@@ -1,5 +1,10 @@
 #include "../include/USAC/PUTSLAMEstimator.h"
 
+#include <opencv2/opencv.hpp>
+#include <Eigen/Eigen>
+
+#include "../include/RGBD/RGBD.h"
+
 //// THERE IS NOTHING LIKE THIS IN PUTSLAM
 
 //// COPIED FROM PUTSLAM:
@@ -39,6 +44,8 @@ float PUTSLAMEstimator::computeInlierRatioEuclidean(
 			modelConsistentMatches.push_back(*it);
 		}
 	}
+
+	std::cout << "Inlier count: " << inlierCount << std::endl;
 
 	// Percent of correct matches
 	return float(inlierCount) / matches.size();
@@ -249,9 +256,13 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		std::cout << "RANSAC: evaluating the model" << std::endl;
 
 	// Choose proper error computation version based on provided parameters
-	float inlierRatio = 0;
+	float inlierRatio = 0.0;
 	if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
 		(RANSACParams.errorVersion == ADAPTIVE_ERROR)){
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Euclidean" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioEuclidean(
 			this->prevFeatures,
 			this->features,
@@ -261,6 +272,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Reprojection" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioReprojection(
 			this->prevFeatures,
 			this->features,
@@ -270,6 +285,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == EUCLIDEAN_AND_REPROJECTION_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using EuclideanAndReprojection" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioEuclideanAndReprojection(
 			this->prevFeatures, 
 			this->features, 
@@ -279,6 +298,10 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 		);
 	}
 	else if (RANSACParams.errorVersion == MAHALANOBIS_ERROR) {
+		if (RANSACParams.verbose > 1) {
+			std::cout << "Evaluation using Mahalanobis" << std::endl;
+		}
+
 		inlierRatio = computeInlierRatioMahalanobis(
 			this->prevFeatures, 
 			this->features, 
@@ -290,6 +313,9 @@ bool PUTSLAMEstimator::evaluateModel(unsigned int modelIndex, unsigned int* numI
 	else {
 		std::cout << "RANSAC: incorrect error version" << std::endl;
 	}
+
+	this->inlierRatio = inlierRatio;
+	std::cout << "Inlier ratio: " << this->inlierRatio << std::endl;
 
 	// MF:
 	// TODO:
