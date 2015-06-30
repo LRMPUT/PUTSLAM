@@ -31,8 +31,8 @@ int main(int argc, char * argv[])
             //add some data to the map
             Mat34 cameraPose(Quaternion(1,0,0,0)*Vec3(0.01,0.02,0));
             std::vector<RGBDFeature> features;
-            for (int j=0;j<10;j++){
-                RGBDFeature f(Vec3(0.2, 0.3, 2.2), 0, 0, std::vector<ExtendedDescriptor>());
+            for (int j=0;j<1;j++){
+                RGBDFeature f(Vec3(0.2+i*0.1, 0.3+i*0.2, 2.2), 0, 0, std::vector<ExtendedDescriptor>());
                 features.push_back(f);
             }
             unsigned int id  = map->addNewPose(cameraPose, (std::chrono::high_resolution_clock::now() - startTime).count());
@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
                 feat.id = it->id;
                 Mat34 poseGlob (it->position);
                 Mat34 meas = cameraPose.inverse()*poseGlob;
-                feat.position.x() = meas(0,3)-0.01; feat.position.y() = meas(1,3)+0.01; feat.position.z() = meas(2,3);
+                feat.position.x() = meas(0,3)+i*0.01; feat.position.y() = meas(1,3)-i*0.01; feat.position.z() = meas(2,3);
                 if (feat.id<10000+i*10)
                     measurements.push_back(feat);
             }
@@ -56,6 +56,7 @@ int main(int argc, char * argv[])
         std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
         std::cout << visibleFeatures.size() << "\n";
         std::cout << "cameraPose:\n" << map->getSensorPose().matrix() << "\n";
+        std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
         map->save2file("../../resources/map.map", "../../resources/mapGraph.g2o");
     }
     catch (const std::exception& ex) {

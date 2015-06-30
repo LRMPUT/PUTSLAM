@@ -153,6 +153,9 @@ public:
 	/// feature location on the rgb image
 	float_type v;
 
+    /// normal vector
+    Vec3 normal;
+
 	/// set of descriptors
 	std::vector<ExtendedDescriptor> descriptors;
 

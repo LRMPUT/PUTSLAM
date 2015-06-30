@@ -100,6 +100,52 @@ cv::Point2f RGBD::point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix) {
 	return cv::Point2f(u, v);
 }
 
+///compute normal
+Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix){
+    cv::Point2f center2D(u,v);
+    Eigen::Vector3f center = point2Dto3D(center2D,depthImage, cameraMatrix);
+    std::vector<Vec3> vecs;
+    std::vector<int> uidx = {-1, -1, -1, 0, 1, 1, 1, 0};
+    std::vector<int> vidx = {-1, 0, 1, 1, 1, 0, -1, -1};
+    //std::cout << "center <<" << center(0) << ", " << center(1) << ", "<< center(2) << "\n";
+    for(int i=0;i<uidx.size();i++){
+            Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+uidx[i], v+vidx[i]),depthImage, cameraMatrix);
+            if (pointEnd(2)>0){
+                vecs.push_back(Vec3(pointEnd(0)-center(0),pointEnd(1)-center(1),pointEnd(2)-center(2)));
+            }
+            //std::cout << "plot3(" << pointEnd(0) << ", " << pointEnd(1) << ", "<< pointEnd(2) << ",'ro');\n";
+            //std::cout << "plot3([" << pointEnd(0) << ", " << center(0) <<"], ["<< pointEnd(1) << ", " << center(1) <<"], ["<< pointEnd(2) << ", " << center(2) <<"],"<< "'-r');\n";
+            //std::cout << "vec <<" << vecs.back().x() << ", " << vecs.back().y() << ", "<< vecs.back().z() << "\n";
+    }
+    //compute normals
+    std::vector<Vec3> normals;
+    for (int i = 0; i<vecs.size();i++){
+        if (i==vecs.size()-1){
+            Vec3 norm(vecs[i].vector().cross(vecs[0].vector()));
+            //std::cout << "plot3([" << center(0) << ", " << center(0)+30*norm.x() <<"], ["<< center(1) << ", " << center(1)+30*norm.y() <<"], ["<< center(2) << ", " << center(2)+30*norm.z() <<"],"<< "'-g');\n";
+            normals.push_back(norm);
+        }
+        else{
+            Vec3 norm(vecs[i].vector().cross(vecs[i+1].vector()));
+            normals.push_back(norm);
+            //std::cout << "plot3([" << center(0) << ", " << center(0)+30*norm.x() <<"], ["<< center(1) << ", " << center(1)+30*norm.y() <<"], ["<< center(2) << ", " << center(2)+30*norm.z() <<"],"<< "'-g');\n";
+        }
+        //std::cout << "norm <<" << normals.back().x() << ", " << normals.back().y() << ", "<< normals.back().z() << "\n";
+    }
+    Vec3 normal;
+    // compute average normal
+    float_type sumX=0, sumY=0, sumZ=0;
+    for (auto it=normals.begin();it!=normals.end();it++){
+        sumX+=(*it).x(); sumY+=(*it).y(); sumZ+=(*it).z();
+    }
+    normal.x()=sumX/normals.size();
+    normal.y()=sumY/normals.size();
+    normal.z()=sumZ/normals.size();
+    float_type norm = normal.vector().norm();
+    normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
+    return normal;
+}
+
 void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage) {
 	// Lambda expression

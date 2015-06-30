@@ -1,6 +1,7 @@
 #include "../include/Map/featuresMap.h"
 #include "../include/PoseGraph/graph.h"
 #include "../include/Grabber/xtionGrabber.h"
+#include "../include/TransformEst/g2oEst.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -50,6 +51,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 	mtxCamTraj.unlock();
     if (poseId==-1) poseId = camTrajectory.size() - 1;
 
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
             it != features.end(); it++) { // update the graph
 
@@ -88,9 +90,14 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
-		if (config.useUncertainty)
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+        if (config.useUncertainty){
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
+        }
 
 		Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
@@ -98,6 +105,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 						Vec3(featurePos(0, 3), featurePos(1, 3),
 								featurePos(2, 3))));
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
 		featureIdNo++;
     }
 
@@ -107,7 +115,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
     emptyMap = false;
-    this->notify(bufferMapVisualization);
+    notify(bufferMapVisualization);
+    notify(features2visualization);
 }
 
 /// add new pose of the camera, returns id of the new pose
@@ -174,6 +183,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 
@@ -187,8 +197,12 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 //		info = sensorModel.informationMatrix((*it).position.x(),
 //				(*it).position.y(), (*it).position.z());
         if (config.useUncertainty){
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
         }
 
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
@@ -196,7 +210,9 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 
 		Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
     }
+    notify(features2visualization);
 }
 
 /// add measurement between two poses
@@ -221,9 +237,9 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 }
 
 /// Get feature position
-Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
+Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 	mtxMapFrontend.lock();
-    Vec3 feature(featuresMapFrontend[id].position);
+    Vec3 feature = featuresMapFrontend.at(id).position;
 	mtxMapFrontend.unlock();
 	return feature;
 }
@@ -373,7 +389,7 @@ void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, in
 }
 
 /// get pose of the sensor (default: last pose)
-Mat34 FeaturesMap::getSensorPose(int poseId) {
+Mat34 FeaturesMap::getSensorPose(int poseId) const {
     mtxCamTraj.lock();
     Mat34 pose;
     if (poseId < 0){
@@ -914,6 +930,20 @@ void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
 /// disable Robust Kernel
 void FeaturesMap::disableRobustKernel(void) {
 	((PoseGraphG2O*) poseGraph)->disableRobustKernel();
+}
+
+/// get uncertainty of the pose
+Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
+    Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
+    Mat66 unc = G2OEst::computeCovarianceMatrix(incCov, getSensorPose(id).inverse());
+    return unc;
+}
+
+/// get uncertainty of the feature
+Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
+    Mat33 incCov = ((PoseGraphG2O*) poseGraph)->getFeatureIncrementCovariance(id);
+    Mat33 unc = G2OEst::computeCovarianceMatrix(incCov, getFeaturePosition(id).inverse());
+    return unc;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

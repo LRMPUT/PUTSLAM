@@ -42,6 +42,9 @@ class DepthSensorModel {
     /// Create point cloud from current RGB and depth image
     void convert2cloud(const cv::Mat& color, const cv::Mat& depth, PointCloud& cloud);
 
+    /// compute uncertainty from normal vector
+    Mat33 uncertinatyFromNormal(Vec3 normal);
+
     class Config{
       public:
         Config() :
@@ -87,9 +90,12 @@ class DepthSensorModel {
 
     Config config;
 
-    private:
+    protected:
         Mat33 PHCPModel;//pin-hole camera projection model
         Mat33 Ruvd; //covariance matrix for [u,v,disp]
+
+        /// normalize vector
+        void normalizeVector(Vec3& normal) const;
 };
 
 #endif // DEPTH_SENSOR_MODEL_H_INCLUDED

@@ -6,7 +6,6 @@
  */
 
 #include "../include/Matcher/matcher.h"
-#include "../include/RGBD/RGBD.h"
 #include "../include/Matcher/dbscan.h"
 
 #include <chrono>

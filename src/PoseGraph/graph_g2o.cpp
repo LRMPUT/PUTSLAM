@@ -768,6 +768,7 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 
     // Lock the graph
     mtxGraph.lock();
+    HessianInv.resize(0,0);
 
     optimizer.initializeOptimization();
     //optimizer.computeInitialGuess();
@@ -1074,58 +1075,71 @@ Mat34 PoseGraphG2O::getTransform(int vertexId){
     return tmp;
 }
 
-///return Hessian
-Mat66 PoseGraphG2O::getHessian(int vertexId){
-    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
-    //g2o::OptimizableGraph::Vertex v;
-    Eigen::MatrixXd Hessian((vertices.size()-2)*3+6,(vertices.size()-2)*3+6);
-    Hessian.setZero();
-    g2o::OptimizableGraph::VertexContainer verts;
-    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
-        std::cout << "cinh" << (*it)->colInHessian() << "\n";
-        if ((*it)->id()==vertexId){
-            std::vector<double> res;
-            (*it)->getEstimateData(res);
-            std::cout << "g2o est: \n";
-            for (int i=0;i<res.size();i++){
-                std::cout << " " << res[i];
-            }
-            std::cout << "\n";
-            verts.push_back(*it);
-        }
+/// Get Hessian
+void PoseGraphG2O::getHessian(Eigen::MatrixXd& hessian, const g2o::OptimizableGraph::VertexContainer& vertices){
+    hessian.setZero();
+    for (g2o::OptimizableGraph::VertexContainer::const_iterator it = vertices.begin(); it!=vertices.end(); it++){
         if ((*it)->colInHessian()>=0){
-
-            std::cout << " dim " << (*it)->dimension() << "\n";
-            std::cout << " colinhes " << (*it)->colInHessian() << "\n";
             for (int i=0;i<(*it)->dimension();i++){
                 for (int j=0;j<(*it)->dimension();j++){
-                    Hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
+                    hessian(i+(*it)->colInHessian(),j+(*it)->colInHessian()) = (*it)->hessian(i,j);
                 }
             }
         }
     }
-    std::cout << "Hessian:\n";// << Hessian.block<12,12>(0,0) << "\n";
-    //Hessian=Hessian.inverse();
-    optimizer.initializeOptimization();
-    optimizer.computeInitialGuess();
-    g2o::SparseBlockMatrix<g2o::MatrixXD> spinv;
-    //optimizer.initializeOptimization(optimizer.VertexSet);
-    if (!optimizer.computeMarginals(spinv,verts))
-        std::cout << "not supported\n";
-    else{
-        std::cout << "Hessian supported\n";
-    }
-    std::cout << spinv.cols() << ", " << spinv.rows() <<"\n";
-getchar();
-    //std::cout << "Hessian inv:\n" << Hessian.block<12,12>(0,0) << "\n";
-    //getchar();
+}
 
-    Mat66 tmp = Hessian.block<6,6>(0,0);
-    /*std::cout << "\ntmp: \n" << tmp << "  " << verts.size() <<  "\n";
-    std::cout << "spinv: \n" << spinv.rows() << " " << spinv.cols() << "\n";
-    getchar();*/
-    //std::cout << tmp << "\n";
-    //getchar();
+///return Hessian
+Mat66 PoseGraphG2O::getPoseIncrementCovariance(int vertexId){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    int dim=0;
+    int vertDim=0;
+    int colInHessian=-1;
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        dim+=(*it)->dimension();
+        if ((*it)->id()==vertexId){
+            colInHessian = (*it)->colInHessian();
+            vertDim = (*it)->dimension();//just check if vertexId is pose vertex
+        }
+    }
+    dim-=6; //first vertex is not optimized!
+    Eigen::MatrixXd Hessian(dim,dim);
+    getHessian(Hessian, vertices);
+
+    if (HessianInv.rows()==0){
+        HessianInv.resize(dim, dim);
+        HessianInv=Hessian.inverse();
+    }
+    Mat66 tmp;
+    if (colInHessian>=0&&vertDim==6)
+        tmp = HessianInv.block<6, 6>(colInHessian, colInHessian);
+    return tmp;
+}
+
+///return Hessian
+Mat33 PoseGraphG2O::getFeatureIncrementCovariance(int vertexId){
+    g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
+    int dim=0;
+    int vertDim=0;
+    int colInHessian=-1;
+    for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        dim+=(*it)->dimension();
+        if ((*it)->id()==vertexId){
+            colInHessian = (*it)->colInHessian();
+            vertDim = (*it)->dimension();//just check if vertexId is pose vertex
+        }
+    }
+    dim-=6; //first vertex is not optimized!
+    Eigen::MatrixXd Hessian(dim,dim);
+    getHessian(Hessian, vertices);
+
+    if (HessianInv.rows()==0){
+        HessianInv.resize(dim, dim);
+        HessianInv=Hessian.inverse();
+    }
+    Mat33 tmp;
+    if (colInHessian>=0&&vertDim==3)
+        tmp = HessianInv.block<3, 3>(colInHessian, colInHessian);
     return tmp;
 }
 
