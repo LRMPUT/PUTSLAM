@@ -17,32 +17,30 @@ class Visualizer {
 public:
 
     /// Visualizer type
-    enum Type {
+    enum VisualizerType {
         /// QGLViewer-based
         VISUALIZER_QGL,
     };
 
     /// overloaded constructor
-    Visualizer(const std::string _name, Type _type) :
-            name(_name), type(_type) {
+    Visualizer(const std::string _name, VisualizerType _type) :
+            visualizerName(_name), visualizerType(_type) {
     };
 
     /// Name of the visualizer
-    virtual const std::string& getName() const = 0;
+    virtual const std::string& getName() const {return visualizerName;};
 
     /// Virtual descrutor
     virtual ~Visualizer() {
+        std::cout << "destructor Visualizer\n";
     }
-
-    /// visualize
-    virtual void visualize(void) = 0;
 
 protected:
     /// Visualizer type
-    Type type;
+    VisualizerType visualizerType;
 
     /// Visualizer name
-    const std::string name;
+    const std::string visualizerName;
 };
 };
 

@@ -6,7 +6,6 @@
  */
 
 #include "../include/Matcher/matcher.h"
-#include "../include/RGBD/RGBD.h"
 #include "../include/Matcher/dbscan.h"
 
 #include <chrono>
@@ -43,7 +42,8 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 
 	// Associate depth
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
-			sensorData.depthImage, matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
+			sensorData.depthImage, matcherParameters.cameraMatrixMat,
+			sensorData.depthImageScale);
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -116,33 +116,28 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
-	if ( prevFeaturesUndistorted.size() == 0 )
-	{
+	if (prevFeaturesUndistorted.size() == 0) {
 		estimatedTransformation = Eigen::Matrix4f::Identity();
-	}
-	else
-	{
+	} else {
 		// Tracking features and creating potential matches
-		matches = performTracking(prevRgbImage,
-				sensorData.rgbImage, prevFeaturesUndistorted,
-				undistortedFeatures2D);
-
+		matches = performTracking(prevRgbImage, sensorData.rgbImage,
+				prevFeaturesUndistorted, undistortedFeatures2D);
 
 		// Show detected features
-		if (matcherParameters.verbose > 1)
-		{
+		if (matcherParameters.verbose > 1) {
 			cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
 			showFeatures(sensorData.rgbImage, prevFeatures);
 		}
 
 		// Associate depth
-		features3D = RGBD::keypoints2Dto3D(
-				undistortedFeatures2D, sensorData.depthImage,
-				matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
+		features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
+				sensorData.depthImage, matcherParameters.cameraMatrixMat,
+				sensorData.depthImageScale);
 
 		// RANSAC
 		// - neglect inlierMatches if you do not need them
-		matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
+		matcherParameters.RANSACParams.errorVersion =
+				matcherParameters.RANSACParams.errorVersionVO;
 		RANSAC ransac(matcherParameters.RANSACParams,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
@@ -199,7 +194,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
 
-	if ( matches.size() == 0)
+	if (matches.size() == 0)
 		return 0.0;
 
 	return double(inlierMatches.size()) / double(matches.size());
@@ -260,7 +255,7 @@ double Matcher::match(const SensorFrame& sensorData,
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
 			undistortedFeatures2D, sensorData.depthImage,
-			matcherParameters.cameraMatrixMat,  sensorData.depthImageScale);
+			matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
 
 	// Visualize matches
 	if (matcherParameters.verbose > 0)
@@ -269,7 +264,8 @@ double Matcher::match(const SensorFrame& sensorData,
 
 	// RANSAC
 	// - neglect inlierMatches if you do not need them
-	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
+	matcherParameters.RANSACParams.errorVersion =
+			matcherParameters.RANSACParams.errorVersionVO;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 //	auto start = std::chrono::high_resolution_clock::now();
@@ -342,7 +338,8 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
-	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
+	matcherParameters.RANSACParams.errorVersion =
+			matcherParameters.RANSACParams.errorVersionMap;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -378,15 +375,15 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation,  std::vector<int> frameIds) {
+		Eigen::Matrix4f &estimatedTransformation, std::vector<int> frameIds) {
 
 	// The current pose descriptors are renamed to make it less confusing
 	// TODO: TESTING the computation of descriptors on current image!!!
 	//cv::Mat currentPoseDescriptors(prevDescriptors);
 	std::vector<cv::KeyPoint> prevKeypoints;
 	cv::KeyPoint::convert(prevFeaturesUndistorted, prevKeypoints);
-	cv::Mat currentPoseDescriptors = describeFeatures(prevRgbImage, prevKeypoints);
-
+	cv::Mat currentPoseDescriptors = describeFeatures(prevRgbImage,
+			prevKeypoints);
 
 	// Perform matching
 	std::vector<cv::DMatch> matches;
@@ -403,15 +400,14 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
 		int mapFeatureClosestFrameId = 0;
-		if ( frameIds.size() > 0) {
-			for (int k=0;k<it->descriptors.size();k++) {
+		if (frameIds.size() > 0) {
+			for (int k = 0; k < it->descriptors.size(); k++) {
 				if (frameIds[j] == it->descriptors[k].poseId) {
 					mapFeatureClosestFrameId = k;
 					break;
 				}
 			}
 		}
-
 
 		// Possible matches for considered feature
 		std::vector<int> possibleMatchId;
@@ -431,10 +427,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
-
-
-			cv::Mat x =
-					(it->descriptors[mapFeatureClosestFrameId].descriptor - prevDescriptors.row(id));
+			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
+					- prevDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
 			if (value < bestVal) {
 				bestVal = value;
@@ -442,7 +436,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			}
 		}
 
-		if ( bestVal < 0.1) {
+		if (bestVal < 0.1) {
 			perfectMatchCounter++;
 		}
 
@@ -471,14 +465,17 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 //		}
 	}
 
-	std::cout << "MatchesXYZ - we found : " << matches.size() << " (Perfect matches = " << perfectMatchCounter << ")" << std::endl;
+	std::cout << "MatchesXYZ - we found : " << matches.size()
+			<< " (Perfect matches = " << perfectMatchCounter << ")"
+			<< std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;
 
 	// RANSAC
 	std::vector<cv::DMatch> inlierMatches;
-	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
+	matcherParameters.RANSACParams.errorVersion =
+			matcherParameters.RANSACParams.errorVersionMap;
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -517,8 +514,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		std::vector<putslam::Mat34> cameraPoses,
 		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
 		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation,
-		double depthImageScale,
+		Eigen::Matrix4f &estimatedTransformation, double depthImageScale,
 		std::vector<std::pair<double, double>> &errorLog,
 		bool withRANSAC) {
 
@@ -649,7 +645,6 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 					patchMap, prevRgbImage, mapFeatures[i].u, mapFeatures[i].v,
 					gradientX, gradientY, InvHessian);
 
-
 			// Save ok
 			if (featureOK) {
 				double error2D = std::sqrt(
@@ -659,9 +654,11 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				std::cout << "Patches 2D diff: " << error2D << std::endl;
 				Eigen::Vector3f p3D = RGBD::point2Dto3D(
 						cv::Point2f(mapFeatures[i].u, mapFeatures[i].v),
-						prevDepthImage, matcherParameters.cameraMatrixMat, depthImageScale);
+						prevDepthImage, matcherParameters.cameraMatrixMat,
+						depthImageScale);
 				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f(uOld, vOld),
-						prevDepthImage, matcherParameters.cameraMatrixMat, depthImageScale);
+						prevDepthImage, matcherParameters.cameraMatrixMat,
+						depthImageScale);
 				double error3D = (r3D - p3D).norm();
 				std::cout << "Patches 3D diff: " << error3D << std::endl;
 
@@ -710,7 +707,8 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 
 	// should we use RANSAC?
 	if (withRANSAC) {
-		matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionMap;
+		matcherParameters.RANSACParams.errorVersion =
+				matcherParameters.RANSACParams.errorVersionMap;
 		RANSAC ransac(matcherParameters.RANSACParams,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(

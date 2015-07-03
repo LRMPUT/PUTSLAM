@@ -20,6 +20,7 @@
 #include "../include/Matcher/matcherOpenCV.h"
 #include "../include/Map/featuresMap.h"
 #include "../include/RGBD/RGBD.h"
+#include "../include/Visualizer/Qvisualizer.h"
 
 using namespace std;
 using namespace putslam;
@@ -56,6 +57,13 @@ public:
 
 	void startProcessing();
 
+    ///Attach visualizer
+    void attachVisualizer(QGLVisualizer * visualizer);
+
+    /// get depth sensor model
+    inline DepthSensorModel getDepthSensorModel(){
+        return map->getDepthSensorModel();
+    }
 
 private:
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
@@ -70,6 +78,7 @@ private:
 	std::vector<double> MapMatchingRansacInlierRatioLog;
 	std::vector<std::pair<double, double>> patchesErrorLog;
 	void saveLogs();
+    void saveFPS(float_type fps);
 
 	// Evaluate results
 	void evaluateResults(std::string basePath, std::string datasetName);

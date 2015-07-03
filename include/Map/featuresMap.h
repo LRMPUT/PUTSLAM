@@ -9,10 +9,12 @@
 
 #include "map.h"
 #include "../PoseGraph/graph_g2o.h"
-#include <iostream>
+#include "../include/Utilities/observer.h"
 #include <memory>
 #include <atomic>
 #include "../include/Grabber/depthSensorModel.h"
+#include <iostream>
+#include <deque>
 
 #define FEATURES_START_ID 10000
 
@@ -25,30 +27,8 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 
 using namespace putslam;
 
-class MapModifier{
-public:
-    /// Features to update
-    std::map<int,MapFeature> features2update;
-
-    /// Features to remove
-    std::vector<int> removeIds;
-
-    /// Features to update
-    std::map<int,MapFeature> features2add;
-
-    /// Update features?
-    inline bool updateFeatures() { return (features2update.size()>0) ?  true : false;};
-    /// Remove feaures?
-    inline bool removeFeatures() { return (removeIds.size()>0) ?  true : false;};
-    /// add features?
-    inline bool addFeatures() { return (features2add.size()>0) ?  true : false;};
-
-    /// mutex to lock access
-    std::recursive_mutex mtxBuffer;
-};
-
 /// Map implementation
-class FeaturesMap: public Map {
+class FeaturesMap: public Map, public Subject {
 public:
 	/// Pointer
 	typedef std::unique_ptr<FeaturesMap> Ptr;
@@ -84,7 +64,7 @@ public:
 	std::vector<MapFeature> getAllFeatures(void);
 
 	/// Get feature position
-	Vec3 getFeaturePosition(unsigned int id);
+    Vec3 getFeaturePosition(unsigned int id) const;
 
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
@@ -100,7 +80,7 @@ public:
     void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14);
 
 	/// get pose of the sensor (default: last pose)
-	Mat34 getSensorPose(int poseId = -1);
+    Mat34 getSensorPose(int poseId = -1) const;
 
 	/// get size of poses
 	int getPoseCounter();
@@ -156,8 +136,6 @@ public:
 		return config.addPoseToPoseEdges;
 	}
 
-
-
     /// set Robust Kernel
     void setRobustKernel(std::string name, float_type delta);
 
@@ -169,6 +147,12 @@ public:
 
     /// Update pose
     void updatePose(VertexSE3& newPose, bool updateGraph = false);
+
+    /// get uncertainty of the pose
+    Mat66 getPoseUncertainty(unsigned int id) const;
+
+    /// get uncertainty of the feature
+    Mat33 getFeatureUncertainty(unsigned int id) const;
 
     class Config{
       public:
@@ -183,6 +167,7 @@ public:
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("uncertaintyModel", &uncertaintyModel);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("addPoseToPoseEdges", &addPoseToPoseEdges);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("minMeasurementsToAddPoseToFeatureEdge", &minMeasurementsToAddPoseToFeatureEdge);
@@ -210,10 +195,17 @@ public:
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
             filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
             model->FirstChildElement( "mapManager" )->QueryFloatAttribute("distThreshold", &distThreshold);
+            model->FirstChildElement( "featuresDistribution" )->QueryBoolAttribute("exportDistribution", &exportDistribution);
+            model->FirstChildElement( "featuresDistribution" )->QueryUnsignedAttribute("frameNo", &frameNo);
+            filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
+            model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
             bool useUncertainty;// true - use uncertainty model
+
+            // uncetainty model
+            int uncertaintyModel;
 
             // before final optimization remove features with measuremets less than threshold
             int weakFeatureThr;
@@ -257,6 +249,18 @@ public:
 
             /// m-file computing map properties
             std::string filenameData;
+
+            /// draw each detected feature in the common coordinate system
+            bool exportDistribution;
+
+            /// m-file ploting features distribution
+            std::string filenameFeatDistr;
+
+            /// common frame no for features distribution
+            unsigned int frameNo;
+
+            /// Update point cloud visualizer ever n-th frame
+            int frameNo2updatePointCloud;
     };
 
 private:
@@ -276,7 +280,7 @@ private:
     std::deque<cv::Mat> depthSeq;
 
     /// mutex for camera trajectory
-    std::mutex mtxCamTraj;
+    mutable std::mutex mtxCamTraj;
 
 	///Pose graph
 	Graph * poseGraph;
@@ -306,13 +310,7 @@ private:
     std::map<int,MapFeature> featuresMapFrontend;
 
     /// mutex for critical section - map frontend
-    std::recursive_mutex mtxMapFrontend;
-
-    ///Set of features (map for the visualization thread)
-    std::vector<MapFeature> featuresMapVisualization;
-
-    /// mutex for critical section - map visualization
-    std::recursive_mutex mtxMapVisualization;
+    mutable std::recursive_mutex mtxMapFrontend;
 
     ///Set of features (map for the map management thread)
     std::map<int,MapFeature> featuresMapManagement;
@@ -349,6 +347,9 @@ private:
 
     /// plot all features
     void plotFeatures(std::string filenamePlot, std::string filenameData);
+
+    /// plot all features on the i-th image
+    void plotFeaturesOnImage(std::string filename, unsigned int frameId);
 
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);

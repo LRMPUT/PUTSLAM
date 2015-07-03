@@ -1,6 +1,9 @@
 //source: http://www.cplusplus.com/forum/beginner/26251/
 //@author: m4ster r0shi
 
+#ifndef _CLPARSER_H_
+#define _CLPARSER_H_
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -25,3 +28,5 @@ private:
     bool switches_on;
     std::map<std::string,std::string> switch_map;
 };
+
+#endif // _CLPARSER_H_

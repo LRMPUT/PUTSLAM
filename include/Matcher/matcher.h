@@ -9,6 +9,7 @@
 #define _MATCHER_H_
 
 #include "../Defs/putslam_defs.h"
+#include "../include/RGBD/RGBD.h"
 #include <string>
 #include <vector>
 #include "opencv/cv.h"
@@ -62,6 +63,18 @@ public:
 
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
+
+    /// compute normals to rgbd features
+    template <class T>
+    void computeNormals(const cv::Mat& depthImage, T& features){
+        RGBD::computeNormals(depthImage,features, matcherParameters.cameraMatrixMat);
+    }
+
+    /// compute RGB gradients to rgbd features
+    template <class T>
+    void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage, T& features){
+        RGBD::computeRGBGradients(rgbImage, depthImage, features, matcherParameters.cameraMatrixMat);
+    }
 
 	// VO
 	double runVO(const SensorFrame& currentSensorFrame,
@@ -128,6 +141,9 @@ public:
 			params->QueryIntAttribute("verbose", &verbose);
 			params->QueryIntAttribute("VOVersion", &VOVersion);
 			params->QueryIntAttribute("MapMatchingVersion", &MapMatchingVersion);
+            params->QueryBoolAttribute("showRGBframe", &showRGBframe);
+            params->QueryBoolAttribute("showDepthFrame", &showDepthFrame);
+
 
 //			std::cout<<"VOVersion: " << VOVersion << std::endl;
 //			std::cout<<"MapMatchingVersion: " << MapMatchingVersion << std::endl;
@@ -141,9 +157,11 @@ public:
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("errorVersionMap",
 								&RANSACParams.errorVersionMap);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
-					"inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
-			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+                    "inlierThresholdEuclidean", &RANSACParams.inlierThresholdEuclidean);
+            params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
 					"inlierThresholdReprojection", &RANSACParams.inlierThresholdReprojection);
+            params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
+                    "inlierThresholdMahalanobis", &RANSACParams.inlierThresholdMahalanobis);
 			params->FirstChildElement("RANSAC")->QueryDoubleAttribute(
 					"minimalInlierRatioThreshold",
 					&RANSACParams.minimalInlierRatioThreshold);
@@ -238,6 +256,7 @@ public:
 		}
 	public:
 		int verbose, VOVersion, MapMatchingVersion;
+        bool showRGBframe, showDepthFrame;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 		MatchingOnPatches::parameters PatchesParams;

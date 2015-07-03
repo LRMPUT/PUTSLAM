@@ -100,6 +100,95 @@ cv::Point2f RGBD::point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix) {
 	return cv::Point2f(u, v);
 }
 
+///compute normal
+Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale){
+    cv::Point2f center2D(u,v);
+    Eigen::Vector3f center = point2Dto3D(center2D,depthImage, cameraMatrix, depthImageScale);
+    std::vector<Vec3> vecs;
+    std::vector<int> uidx = {-1, -1, -1, 0, 1, 1, 1, 0};
+    std::vector<int> vidx = {-1, 0, 1, 1, 1, 0, -1, -1};
+    //std::cout << "center <<" << center(0) << ", " << center(1) << ", "<< center(2) << "\n";
+    for(int i=0;i<uidx.size();i++){
+            Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+uidx[i], v+vidx[i]),depthImage, cameraMatrix, depthImageScale);
+            if (pointEnd(2)>0){
+                vecs.push_back(Vec3(pointEnd(0)-center(0),pointEnd(1)-center(1),pointEnd(2)-center(2)));
+            }
+            //std::cout << "plot3(" << pointEnd(0) << ", " << pointEnd(1) << ", "<< pointEnd(2) << ",'ro');\n";
+            //std::cout << "plot3([" << pointEnd(0) << ", " << center(0) <<"], ["<< pointEnd(1) << ", " << center(1) <<"], ["<< pointEnd(2) << ", " << center(2) <<"],"<< "'-r');\n";
+            //std::cout << "vec <<" << vecs.back().x() << ", " << vecs.back().y() << ", "<< vecs.back().z() << "\n";
+    }
+    //compute normals
+    std::vector<Vec3> normals;
+    for (int i = 0; i<vecs.size();i++){
+        if (i==vecs.size()-1){
+            Vec3 norm(vecs[i].vector().cross(vecs[0].vector()));
+            //std::cout << "plot3([" << center(0) << ", " << center(0)+30*norm.x() <<"], ["<< center(1) << ", " << center(1)+30*norm.y() <<"], ["<< center(2) << ", " << center(2)+30*norm.z() <<"],"<< "'-g');\n";
+            normals.push_back(norm);
+        }
+        else{
+            Vec3 norm(vecs[i].vector().cross(vecs[i+1].vector()));
+            normals.push_back(norm);
+            //std::cout << "plot3([" << center(0) << ", " << center(0)+30*norm.x() <<"], ["<< center(1) << ", " << center(1)+30*norm.y() <<"], ["<< center(2) << ", " << center(2)+30*norm.z() <<"],"<< "'-g');\n";
+        }
+        //std::cout << "norm <<" << normals.back().x() << ", " << normals.back().y() << ", "<< normals.back().z() << "\n";
+    }
+    Vec3 normal;
+    // compute average normal
+    float_type sumX=0, sumY=0, sumZ=0;
+    for (auto it=normals.begin();it!=normals.end();it++){
+        sumX+=(*it).x(); sumY+=(*it).y(); sumZ+=(*it).z();
+    }
+    normal.x()=sumX/normals.size();
+    normal.y()=sumY/normals.size();
+    normal.z()=sumZ/normals.size();
+    float_type norm = normal.vector().norm();
+    normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
+    return normal;
+}
+
+//compute rgb gradient (min)
+Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage,
+		const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix,
+		double depthImageScale) {
+	Vec3 grad;
+	cv::Mat grayframe;
+	cv::cvtColor(rgbImage, grayframe, CV_RGB2GRAY);
+    float_type gradx; float_type grady;
+    if ((u-1>0)&&(v-1>0)&&(u+1<rgbImage.cols)&&(v+1<rgbImage.rows)){
+        cv::Mat patch = cv::Mat(rgbImage, cv::Rect(u-1,v-1,3,3));
+        gradx = -3*patch.at<uint16_t>(0,0)-10*patch.at<uint16_t>(0,1)-3*patch.at<uint16_t>(0,2) +
+                +3*patch.at<uint16_t>(2,0)+10*patch.at<uint16_t>(2,1)+3*patch.at<uint16_t>(2,2);
+        grady = -3*patch.at<uint16_t>(0,0)-10*patch.at<uint16_t>(1,0)-3*patch.at<uint16_t>(2,0) +
+                +3*patch.at<uint16_t>(0,2)+10*patch.at<uint16_t>(1,2)+3*patch.at<uint16_t>(2,2);
+    }
+    else {
+        return Vec3(1, 1, 1);
+    }
+    float_type angle = atan2(grady, gradx) + (M_PI/2.0);
+    int coord1[2]={int(sqrt(2)*sin(angle)), int(sqrt(2)*cos(angle))};
+    int coord2[2]={int(sqrt(2)*sin(angle+M_PI)), int(sqrt(2)*cos(angle+M_PI))};
+    Eigen::Vector3f pointCenter = point2Dto3D(cv::Point2f(u, v),depthImage, cameraMatrix, depthImageScale);
+    Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+coord1[0], v+coord1[1]),depthImage, cameraMatrix, depthImageScale);
+    Eigen::Vector3f pointBeg = point2Dto3D(cv::Point2f(u+coord2[0], v+coord2[1]),depthImage, cameraMatrix, depthImageScale);
+    if (pointEnd(2)>0&&pointBeg(2)){
+        grad = Vec3(pointEnd(0)- pointBeg(0), pointEnd(1)- pointBeg(1), pointEnd(2)- pointBeg(2));
+    }
+    else {
+        if (pointCenter(2)>0&&pointBeg(2)){
+            grad = Vec3(pointCenter(0)- pointBeg(0), pointCenter(1)- pointBeg(1), pointCenter(2)- pointBeg(2));
+        }
+        else if (pointCenter(2)>0&&pointEnd(2)){
+            grad = Vec3(pointEnd(0)- pointCenter(0), pointEnd(1)- pointCenter(1), pointEnd(2)- pointCenter(2));
+        }
+        else{
+            grad = Vec3(coord1[0], coord1[1], 0);
+        }
+    }
+    float_type norm = grad.vector().norm();
+    grad.x() /= norm;    grad.y() /= norm;    grad.z() /= norm;
+    return grad;
+}
+
 void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage) {
 	// Lambda expression
@@ -123,7 +212,8 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
 	std::vector<int>::iterator frameIdsIter = frameIds.begin();
 	std::vector<float_type>::iterator anglesIter = angles.begin();
 
-	for (; featuresIter != features.end();) {
+	for (;featuresIter!=features.end();)
+    {
 		int uRounded = roundSize(featuresIter->u, depthImage.cols);
 		int vRounded = roundSize(featuresIter->v, depthImage.rows);
 
@@ -134,7 +224,7 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
 			frameIdsIter = frameIds.erase(frameIdsIter);
 			anglesIter = angles.erase(anglesIter);
 		}
-		else {
+        else {
 			++featuresIter;
 			++frameIdsIter;
 			++anglesIter;

@@ -1,4 +1,5 @@
 #include "../include/Utilities/simulator.h"
+#include <fstream>
 #include <Eigen/Dense>
 #include <vector>
 

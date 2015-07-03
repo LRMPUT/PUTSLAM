@@ -1,5 +1,7 @@
 #include "../include/Map/featuresMap.h"
 #include "../include/PoseGraph/graph.h"
+#include "../include/Grabber/xtionGrabber.h"
+#include "../include/TransformEst/g2oEst.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>
@@ -47,8 +49,9 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     mtxCamTraj.lock();
     int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
+    if (poseId==-1) poseId = camTrajectory.size() - 1;
 
-	bufferMapFrontend.mtxBuffer.lock();
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
             it != features.end(); it++) { // update the graph
 
@@ -64,37 +67,59 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		std::vector<unsigned int> poseIds;
         poseIds.push_back(poseId);
 
+        /// image coordinates: std::map<index_of_the_frame,<u,v>>
+        std::map<unsigned int, ImageFeature> imageCoordinates;
+        imageCoordinates.insert(std::make_pair(poseId,ImageFeature(it->u, it->v,it->position.z())));
+
 		//add each feature to map structure...
 		Vec3 featurePositionInGlobal(featurePos.translation());
+        bufferMapFrontend.mtxBuffer.lock();
         bufferMapFrontend.features2add[featureIdNo] = MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
-                        poseIds, (*it).descriptors);
+                        poseIds, (*it).descriptors, imageCoordinates);
+        bufferMapFrontend.mtxBuffer.unlock();
         bufferMapManagement.mtxBuffer.lock();
         bufferMapManagement.features2add[featureIdNo] =
                 MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
-                        poseIds, (*it).descriptors);
+                        poseIds, (*it).descriptors, imageCoordinates);
         bufferMapManagement.mtxBuffer.unlock();
+        bufferMapVisualization.mtxBuffer.lock();
+        bufferMapVisualization.features2add[featureIdNo] =
+                MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
+                        poseIds, (*it).descriptors, imageCoordinates);
+        bufferMapVisualization.mtxBuffer.unlock();
+
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
-		if (config.useUncertainty)
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+        if (config.useUncertainty){
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
+            else if (config.uncertaintyModel==2){
+                info = sensorModel.uncertinatyFromRGBGradient(it->RGBgradient).inverse();
+            }
+        }
 
-		Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
+        Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 		poseGraph->addVertexFeature(
 				Vertex3D(featureIdNo,
 						Vec3(featurePos(0, 3), featurePos(1, 3),
 								featurePos(2, 3))));
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
 		featureIdNo++;
-	}
-	bufferMapFrontend.mtxBuffer.unlock();
+    }
 
     bufferMapManagement.mtxBuffer.unlock();
     //try to update the map
     updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
-	emptyMap = false;
+    emptyMap = false;
+    notify(bufferMapVisualization);
+    notify(features2visualization);
 }
 
 /// add new pose of the camera, returns id of the new pose
@@ -113,6 +138,10 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		camTrajectory.push_back(camPose);
 		mtxCamTraj.unlock();
 
+        bufferMapVisualization.mtxBuffer.unlock();
+        bufferMapVisualization.poses2add.push_back(camPose);
+        bufferMapVisualization.mtxBuffer.unlock();
+
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
 
@@ -124,9 +153,21 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 		camTrajectory.push_back(camPose);
 		mtxCamTraj.unlock();
 
+        bufferMapVisualization.mtxBuffer.unlock();
+        bufferMapVisualization.poses2add.push_back(camPose);
+        bufferMapVisualization.mtxBuffer.unlock();
+
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
     }
+    if (config.frameNo2updatePointCloud>=0){
+        if (trajSize%config.frameNo2updatePointCloud==0){
+            //PointCloud cloud;
+            //sensorModel.convert2cloud(image, depthImage, cloud);
+            this->notify(image, depthImage, trajSize);
+        }
+    }
+
 	return trajSize;
 }
 
@@ -145,6 +186,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
 	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
+    std::vector<Edge3D> features2visualization;
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 
@@ -158,15 +200,25 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 //		info = sensorModel.informationMatrix((*it).position.x(),
 //				(*it).position.y(), (*it).position.z());
         if (config.useUncertainty){
-			info = sensorModel.informationMatrixFromImageCoordinates(it->u,
-					it->v, (*it).position.z());
+            if (config.uncertaintyModel==0){
+                info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
+            }
+            else if (config.uncertaintyModel==1){
+                info = sensorModel.uncertinatyFromNormal(it->normal).inverse();
+            }
+            else if (config.uncertaintyModel==2){
+                info = sensorModel.uncertinatyFromRGBGradient(it->RGBgradient).inverse();
+            }
         }
 
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
+        featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
 
-		Edge3D e((*it).position, info, _poseId, (*it).id);
+        Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
+        features2visualization.push_back(e);
     }
+    notify(features2visualization);
 }
 
 /// add measurement between two poses
@@ -191,9 +243,9 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 }
 
 /// Get feature position
-Vec3 FeaturesMap::getFeaturePosition(unsigned int id) {
+Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 	mtxMapFrontend.lock();
-    Vec3 feature(featuresMapFrontend[id].position);
+    Vec3 feature = featuresMapFrontend.at(id).position;
 	mtxMapFrontend.unlock();
 	return feature;
 }
@@ -343,7 +395,7 @@ void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, in
 }
 
 /// get pose of the sensor (default: last pose)
-Mat34 FeaturesMap::getSensorPose(int poseId) {
+Mat34 FeaturesMap::getSensorPose(int poseId) const {
     mtxCamTraj.lock();
     Mat34 pose;
     if (poseId < 0){
@@ -400,6 +452,9 @@ void FeaturesMap::exportOutput(std::string trajectoryFilename,
         std::cout << "save map to file\n";
         plotFeatures(config.filenameMap,config.filenameData);
         std::cout << "save map to file end\n";
+    }
+    if (config.exportDistribution){
+        plotFeaturesOnImage(config.filenameFeatDistr, config.frameNo);
     }
 }
 
@@ -464,7 +519,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 			disableRobustKernel();
         poseGraph->optimize(iterNo, verbose);
 		std::vector<MapFeature> optimizedFeatures;
-		((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
+        ((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
+
         bufferMapFrontend.mtxBuffer.lock(); // update frontend buffer
         for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
             bufferMapFrontend.features2update[it->id] = *it;
@@ -473,6 +529,11 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
             bufferMapManagement.features2update[it->id] = *it;
         bufferMapManagement.mtxBuffer.unlock();
+        bufferMapVisualization.mtxBuffer.lock(); // update management buffer
+        for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
+            bufferMapVisualization.features2update[it->id] = *it;
+        bufferMapVisualization.mtxBuffer.unlock();
+
 		//try to update the map
 		updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
         updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
@@ -482,6 +543,12 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
 		updateCamTrajectory(optimizedPoses);
+
+        bufferMapVisualization.mtxBuffer.lock(); // update management buffer
+        for (auto it = optimizedPoses.begin(); it!=optimizedPoses.end();it++)
+            bufferMapVisualization.poses2update.push_back(*it);
+        bufferMapVisualization.mtxBuffer.unlock();
+
         if (config.fixVertices)
             ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
 		if (verbose)
@@ -506,9 +573,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 
 	std::vector<MapFeature> optimizedFeatures;
 	((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
-	bufferMapFrontend.mtxBuffer.lock();
 
-    // update buffer frontend
+    bufferMapFrontend.mtxBuffer.lock();// update buffer frontend
     for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
         bufferMapFrontend.features2update[it->id] = *it;
     bufferMapFrontend.mtxBuffer.unlock();
@@ -516,6 +582,10 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
     for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
         bufferMapManagement.features2update[it->id] = *it;
     bufferMapManagement.mtxBuffer.unlock();
+    bufferMapVisualization.mtxBuffer.lock(); // update visualization buffer
+    for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
+        bufferMapVisualization.features2update[it->id] = *it;
+    bufferMapVisualization.mtxBuffer.unlock();
 
 //    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
 	//try to update the map
@@ -582,9 +652,9 @@ void FeaturesMap::updatePose(VertexSE3& newPose, bool updateGraph) {
 
 /// Save map to file
 void FeaturesMap::save2file(std::string mapFilename,
-		std::string graphFilename) {
-	poseGraph->save2file(graphFilename);
-	std::ofstream file(mapFilename);
+        std::string graphFilename) {
+    poseGraph->save2file(graphFilename);
+    std::ofstream file(mapFilename);
 	mtxMapFrontend.lock();
 	file << "#Legend:\n";
 	file << "#Pose pose_id pose(0,0) pose(1,0) ... pose(2,3)\n";
@@ -593,8 +663,8 @@ void FeaturesMap::save2file(std::string mapFilename,
 	file << "#FeaturePosesIds pose_id1 pose_id2 ...\n";
 	file
 			<< "#FeatureExtendedDescriptors size pose_id1 descriptor.cols descriptor.rows desc1(0,0) desc1(1,0)...\n";
-	for (std::vector<VertexSE3>::iterator it = camTrajectory.begin();
-			it != camTrajectory.end(); it++) {
+    for (std::vector<VertexSE3>::iterator it = camTrajectory.begin();
+            it != camTrajectory.end(); it++) {
 		file << "Pose " << it->vertexId;
 		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 4; j++)
@@ -602,7 +672,7 @@ void FeaturesMap::save2file(std::string mapFilename,
 		file << "\n";
 	}
     for (auto it = featuresMapFrontend.begin();
-			it != featuresMapFrontend.end(); it++) {
+            it != featuresMapFrontend.end(); it++) {
         file << "Feature " << it->second.id << " " << it->second.position.x() << " "
                 << it->second.position.y() << " " << it->second.position.z() << " " << it->second.u
                 << " " << it->second.v << "\n";
@@ -610,20 +680,20 @@ void FeaturesMap::save2file(std::string mapFilename,
         for (std::vector<unsigned int>::iterator iter = it->second.posesIds.begin();
                 iter != it->second.posesIds.end(); iter++) {
 			file << " " << *iter;
-		}
+        }
 		file << "\n";
         file << "FeatureExtendedDescriptors " << it->second.descriptors.size() << " ";
-		for (std::vector<ExtendedDescriptor>::iterator iter =
+        /*for (std::vector<ExtendedDescriptor>::iterator iter =
                 it->second.descriptors.begin(); iter != it->second.descriptors.end();
-				iter++) {
+                iter++) {
 			file << iter->poseId << " " << iter->descriptor.cols << " "
-					<< iter->descriptor.rows;
-			for (int i = 0; i < iter->descriptor.cols; i++)
-				for (int j = 0; j < iter->descriptor.rows; j++) {
-					file << " " << iter->descriptor.at<double>(i, j);
-				}
+                    << iter->descriptor.rows;
+            for (int i = 0; i < iter->descriptor.cols; i++)
+                for (int j = 0; j < iter->descriptor.rows; j++) {
+                    file << " " << iter->descriptor.at<double>(i, j);
+                }
 			file << "\n";
-		}
+        }*/
         file << "\n";
 	}
 	mtxMapFrontend.unlock();
@@ -646,6 +716,42 @@ void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& m
             std=0;
 }
 
+/// plot all features on the i-th image
+void FeaturesMap::plotFeaturesOnImage(std::string filename, unsigned int frameId){
+    std::ofstream file(filename);
+    file << "close all;\nclear all;\nhold on;\n";
+    file << "I=imread('rgb_00000.png');\n";
+    file << "imshow(I);\n";
+    Mat34 camPose = getSensorPose(frameId);
+    //std::cout << "camPose\n" << camPose.matrix() << "\n";
+    std::default_random_engine generator(time(NULL));
+    std::uniform_real_distribution<double> distribution(0,1);
+    for (int i=FEATURES_START_ID;i<featureIdNo;i++){
+        MapFeature tmpFeature = featuresMapFrontend[i];
+        // for each frame position
+        file << "%feature id: " << i << "\n";
+        if (tmpFeature.posesIds.size()>10){
+            double red = distribution(generator); double green = distribution(generator); double blue = distribution(generator);
+            for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
+                Mat34 currCamPose = getSensorPose(*it);
+                //std::cout << "CurrCamPose\n" << currCamPose.matrix() << "\n";
+                Eigen::Vector3d point;
+                sensorModel.getPoint(tmpFeature.imageCoordinates[*it].u, tmpFeature.imageCoordinates[*it].v, tmpFeature.imageCoordinates[*it].depth, point);
+                //compute point coordinates in camera frame
+                Mat34 point3d(Quaternion(1,0,0,0)*Vec3(point.x(), point.y(), point.z()));
+                Mat34 cam2cam = (camPose.inverse()*currCamPose)*point3d;
+                //std::cout << "cam2cam\n" << cam2cam.matrix() << "\n";
+                Eigen::Vector3d pointUV = sensorModel.inverseModel(cam2cam(0,3),cam2cam(1,3),cam2cam(2,3));
+                if (pointUV(0)!=-1){
+                    file << "plot(" << pointUV(0) << ", " << pointUV(1) << ",'o','MarkerEdgeColor', [" << red << ", " << green << ", " << blue
+                    << "],'MarkerFaceColor',[" << red << ", " << green << ", " << blue << "]);\n";
+                }
+            }
+        }
+    }
+    file << "%imwrite (I, \"my_output_image.img\");\n";
+}
+
 /// plot all features
 void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameData){
     std::ofstream file(filenamePlot);
@@ -662,7 +768,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
         file << "%measured from frames ";
         MapFeature tmpFeature = featuresMapFrontend[i];
         for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
-            file << *it << ", ";
+            file << *it << "(" << tmpFeature.imageCoordinates[*it].u << "," << tmpFeature.imageCoordinates[*it].v << "), ";
         }
         file << "\n";
         std::vector<float_type> dist4estim;
@@ -830,6 +936,20 @@ void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
 /// disable Robust Kernel
 void FeaturesMap::disableRobustKernel(void) {
 	((PoseGraphG2O*) poseGraph)->disableRobustKernel();
+}
+
+/// get uncertainty of the pose
+Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
+    Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
+    Mat66 unc = G2OEst::computeCovarianceMatrix(incCov, getSensorPose(id).inverse());
+    return unc;
+}
+
+/// get uncertainty of the feature
+Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
+    Mat33 incCov = ((PoseGraphG2O*) poseGraph)->getFeatureIncrementCovariance(id);
+    Mat33 unc = G2OEst::computeCovarianceMatrix(incCov, getFeaturePosition(id).inverse());
+    return unc;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

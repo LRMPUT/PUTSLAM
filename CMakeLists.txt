@@ -38,6 +38,8 @@ option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
+mark_as_advanced(BUILD_PUTSLAM_USAC)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" ON)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
@@ -74,12 +76,12 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 FIND_PACKAGE(OpenCV REQUIRED)
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 # PCL
-FIND_PACKAGE(PCL REQUIRED)
+#FIND_PACKAGE(PCL REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+#include_directories(${PCL_INCLUDE_DIRS})
 
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 #g2o library
 find_package(G2O REQUIRED)
@@ -92,9 +94,13 @@ include_directories(${LIBCSPARSE_INCLUDE_DIR})
 link_directories(${LIBCSPARSE_LIBRARY})
 
 #Eigen
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/3rdParty/Eigen)
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
 
 #QGLViewer library
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 FIND_PACKAGE(OpenGL)
 include_directories(${OPENGL_INCLUDE_DIR})
 link_directories(${OPENGL_LIBRARY})
@@ -256,10 +262,30 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst RGBD)
+        TARGET_LINK_LIBRARIES(TransformEst USAC RGBD)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
+
+###############################################################################
+#
+# PUTSLAM USAC library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+        file(GLOB USAC_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
+        )
+        file(GLOB USAC_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
+        )
+
+        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
+        TARGET_LINK_LIBRARIES(USAC RGBD)
+        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
 
 ###############################################################################
 #
@@ -290,7 +316,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
         file(GLOB RGBD_SOURCES
             "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
         )
-        file(GLOB MATCHER_HEADERS
+        file(GLOB RGBD_HEADERS
             "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
         )
 
@@ -374,7 +400,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
         )
 
         ADD_LIBRARY(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
-        TARGET_LINK_LIBRARIES(Map PoseGraph Grabber)
+        TARGET_LINK_LIBRARIES(Map PoseGraph Grabber Utilities)
         INSTALL(TARGETS Map RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MAP_HEADERS} DESTINATION include/putslam/Map/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
@@ -570,7 +596,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
         SET(DEMO_SOURCES ./demos/demoMap.cpp)
         ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
         add_dependencies(demoMap g2o)
-        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map LDB ${OpenCV_LIBS} boost_system)
+        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map TransformEst LDB ${OpenCV_LIBS} boost_system)
         INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
@@ -602,7 +628,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
         ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
 #        add_dependencies(demoVisualizer Map)
-        TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} boost_system)
+        TARGET_LINK_LIBRARIES(demoVisualizer Visualizer tinyxml2 Map LIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)

@@ -70,10 +70,10 @@ public:
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
 
 	/// Get feature position
-	virtual Vec3 getFeaturePosition(unsigned int id) = 0;
+    virtual Vec3 getFeaturePosition(unsigned int id) const = 0;
 
 	/// get pose of the sensor (default: last pose)
-	virtual Mat34 getSensorPose(int poseId = -1) = 0;
+    virtual Mat34 getSensorPose(int poseId = -1) const = 0;
 
 	// get number of poses stored in map
 	virtual int getPoseCounter() = 0;
@@ -108,6 +108,12 @@ public:
 
     /// get n-th image and depth image from the sequence
     virtual void getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage) = 0;
+
+    /// get uncertainty of the pose
+    virtual Mat66 getPoseUncertainty(unsigned int id) const = 0;
+
+    /// get uncertainty of the feature
+    virtual Mat33 getFeatureUncertainty(unsigned int id) const = 0;
 
 protected:
 	/// Map type

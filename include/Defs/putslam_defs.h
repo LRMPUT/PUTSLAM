@@ -13,8 +13,11 @@
 #include <cmath>
 #include "opencv2/core/core.hpp"
 #include "../../3rdParty/Eigen/Geometry"
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+//#include <pcl/point_types.h>
+//#include <pcl/io/pcd_io.h>
+#include <mutex>
+#include <set>
+#include <iostream>
 
 /// putslam name space
 namespace putslam {
@@ -50,10 +53,13 @@ public:
 };
 
 /// 3D point representation
-typedef pcl::PointXYZRGBA Point3D;
+class Point3D{
+public:
+    float_type x,y,z,r,g,b,a;
+};
 
 /// 3D point cloud representation
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+typedef std::vector<Point3D> PointCloud;
 
 /// Sensor Frame representation
 class SensorFrame {
@@ -92,13 +98,8 @@ public:
 	typedef std::vector<ImageFeature> Seq;
 
 	/// 2D feature location
-	union {
-		struct {
-			uint_fast16_t u;
-			uint_fast16_t v;
-		};
-		uint_fast16_t coord[2];
-	};
+    float_type u;
+    float_type v;
 
 	/// Image patch
 	cv::Mat patch;
@@ -110,6 +111,11 @@ public:
 	inline ImageFeature() :
 			u(0), v(0) {
 	}
+
+    /// Overloaded constructor
+    inline ImageFeature(float_type _u, float_type _v, float_type _depth) :
+            u(_u), v(_v), depth(_depth) {
+    }
 };
 
 class ExtendedDescriptor {
@@ -150,6 +156,12 @@ public:
 	/// feature location on the rgb image
 	float_type v;
 
+    /// normal vector
+    Vec3 normal;
+
+    /// RGB gradient vector
+    Vec3 RGBgradient;
+
 	/// set of descriptors
 	std::vector<ExtendedDescriptor> descriptors;
 
@@ -171,6 +183,9 @@ public:
 	/// poses ids
 	std::vector<unsigned int> posesIds;
 
+    /// image coordinates: std::map<index_of_the_frame,<u,v,d>>
+    std::map<unsigned int, ImageFeature> imageCoordinates;
+
 	/// Constructor
 	MapFeature() {
     };
@@ -178,9 +193,10 @@ public:
 	/// Constructor
 	MapFeature(unsigned int _id, float_type u, float_type  v,
 			const Vec3 _position, std::vector<unsigned int> _posesIds,
-			std::vector<ExtendedDescriptor> _descriptors) :
+            std::vector<ExtendedDescriptor> _descriptors,
+            std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
-                    _posesIds) {
+                    _posesIds), imageCoordinates(_imageCoordinates) {
     };
 
 	/// Constructor
@@ -470,6 +486,38 @@ public:
 	VertexSet vertices;
 };
 //exception class goes here
+
+class MapModifier{
+public:
+    /// Features to update
+    std::map<int,MapFeature> features2update;
+
+    /// Features to remove
+    std::vector<int> removeIds;
+
+    /// Features to update
+    std::map<int,MapFeature> features2add;
+
+    ///poses to update
+    std::vector<VertexSE3> poses2update;
+
+    ///poses to add
+    std::vector<VertexSE3> poses2add;
+
+    /// Update features?
+    inline bool updateFeatures() const { return (features2update.size()>0) ?  true : false;};
+    /// Remove feaures?
+    inline bool removeFeatures() const { return (removeIds.size()>0) ?  true : false;};
+    /// add features?
+    inline bool addFeatures() const { return (features2add.size()>0) ?  true : false;};
+    /// add poses?
+    inline bool addPoses() const { return (poses2add.size()>0) ?  true : false;};
+    /// Update features?
+    inline bool updatePoses() const { return (poses2update.size()>0) ?  true : false;};
+
+    /// mutex to lock access
+    std::recursive_mutex mtxBuffer;
+};
 
 }
 
