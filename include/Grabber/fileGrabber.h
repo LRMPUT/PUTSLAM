@@ -99,10 +99,15 @@ class FileGrabber : public Grabber {
 			basePath = params->Attribute("base");
 			datasetName = params->Attribute("datasetName");
 			fullPath = basePath + "/" + datasetName + "/";
+
+			params->QueryDoubleAttribute("depthImageScale", &depthImageScale);
 		}
 	public:
 		 /// path of the dataset
 		 std::string basePath, datasetName, fullPath;
+
+		 /// DepthImageScale
+		 double depthImageScale;
 
 		 /// Play parameters
 		 int playEveryNth;

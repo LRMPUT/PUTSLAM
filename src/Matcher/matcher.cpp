@@ -43,7 +43,7 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 
 	// Associate depth
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
-			sensorData.depthImage, matcherParameters.cameraMatrixMat);
+			sensorData.depthImage, matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -112,31 +112,42 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	// TODO:
 	// - if no motion than skip frame
 
-	// Tracking features and creating potential matches
 	std::vector<cv::Point2f> undistortedFeatures2D;
-	std::vector<cv::DMatch> matches = performTracking(prevRgbImage,
-			sensorData.rgbImage, prevFeaturesUndistorted,
-			undistortedFeatures2D);
+	std::vector<Eigen::Vector3f> features3D;
+	std::vector<cv::DMatch> matches;
 
-	// Show detected features
-	if (matcherParameters.verbose > 1)
+	if ( prevFeaturesUndistorted.size() == 0 )
 	{
-		cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
-		showFeatures(sensorData.rgbImage, prevFeatures);
+		estimatedTransformation = Eigen::Matrix4f::Identity();
 	}
+	else
+	{
+		// Tracking features and creating potential matches
+		matches = performTracking(prevRgbImage,
+				sensorData.rgbImage, prevFeaturesUndistorted,
+				undistortedFeatures2D);
 
-	// Associate depth
-	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
-			undistortedFeatures2D, sensorData.depthImage,
-			matcherParameters.cameraMatrixMat);
 
-	// RANSAC
-	// - neglect inlierMatches if you do not need them
-	matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
-	RANSAC ransac(matcherParameters.RANSACParams,
-			matcherParameters.cameraMatrixMat);
-	estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
-			features3D, matches, inlierMatches);
+		// Show detected features
+		if (matcherParameters.verbose > 1)
+		{
+			cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
+			showFeatures(sensorData.rgbImage, prevFeatures);
+		}
+
+		// Associate depth
+		features3D = RGBD::keypoints2Dto3D(
+				undistortedFeatures2D, sensorData.depthImage,
+				matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
+
+		// RANSAC
+		// - neglect inlierMatches if you do not need them
+		matcherParameters.RANSACParams.errorVersion = matcherParameters.RANSACParams.errorVersionVO;
+		RANSAC ransac(matcherParameters.RANSACParams,
+				matcherParameters.cameraMatrixMat);
+		estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
+				features3D, matches, inlierMatches);
+	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
 	// TODO: Parameters
@@ -187,6 +198,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
+
+	if ( matches.size() == 0)
+		return 0.0;
 
 	return double(inlierMatches.size()) / double(matches.size());
 }
@@ -246,7 +260,7 @@ double Matcher::match(const SensorFrame& sensorData,
 	// Associate depth
 	std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
 			undistortedFeatures2D, sensorData.depthImage,
-			matcherParameters.cameraMatrixMat);
+			matcherParameters.cameraMatrixMat,  sensorData.depthImageScale);
 
 	// Visualize matches
 	if (matcherParameters.verbose > 0)
@@ -504,6 +518,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation,
+		double depthImageScale,
 		std::vector<std::pair<double, double>> &errorLog,
 		bool withRANSAC) {
 
@@ -541,7 +556,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		// Project those 4 points into space
 		std::vector<Eigen::Vector3f> warpingPoints3D = RGBD::keypoints2Dto3D(
 				warpingPoints, prevDepthImage,
-				matcherParameters.cameraMatrixMat);
+				matcherParameters.cameraMatrixMat, depthImageScale);
 
 		// Check if all points are correct - reject those without depth as those invalidate the patch planarity assumption
 		bool correctPoints3D = true;
@@ -644,9 +659,9 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				std::cout << "Patches 2D diff: " << error2D << std::endl;
 				Eigen::Vector3f p3D = RGBD::point2Dto3D(
 						cv::Point2f(mapFeatures[i].u, mapFeatures[i].v),
-						prevDepthImage, matcherParameters.cameraMatrixMat);
+						prevDepthImage, matcherParameters.cameraMatrixMat, depthImageScale);
 				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f(uOld, vOld),
-						prevDepthImage, matcherParameters.cameraMatrixMat);
+						prevDepthImage, matcherParameters.cameraMatrixMat, depthImageScale);
 				double error3D = (r3D - p3D).norm();
 				std::cout << "Patches 3D diff: " << error3D << std::endl;
 
@@ -677,7 +692,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 	// Project optimized features into 3D features
 	std::vector<Eigen::Vector3f> optimizedMapLocations3D =
 			RGBD::keypoints2Dto3D(optimizedLocations, prevDepthImage,
-					matcherParameters.cameraMatrixMat);
+					matcherParameters.cameraMatrixMat, depthImageScale);
 
 	// Extract 3D from map
 	std::vector<Eigen::Vector3f> mapFeaturePositions3D =

@@ -101,6 +101,7 @@ public:
 			std::vector<cv::Mat> mapDepthImages,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation,
+			double depthImageScale,
 			std::vector<std::pair<double, double>> &errorLog,
 			bool withRANSAC = true);
 

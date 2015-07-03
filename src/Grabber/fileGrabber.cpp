@@ -51,6 +51,7 @@ bool FileGrabber::grab(void) {
 
 	// sensorFrame to read rgb image, depth image and timestamp
 	SensorFrame tmpSensorFrame;
+	tmpSensorFrame.depthImageScale = parameters.depthImageScale;
 
 
 	double timestamp;

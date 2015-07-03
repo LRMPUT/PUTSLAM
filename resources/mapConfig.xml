@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <!-- Sensor configuration -->
-  <MapConfig>
-  	<name>FeaturesMap</name>
-  	<!--
+<!-- Sensor configuration -->
+<MapConfig>
+    <name>FeaturesMap</name>
+    <!--
 	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
 	weakFeatureThr				- before final optimization remove features with measuremets less than threshold (-1 disabbled)
 	edges3DPrunningThreshold		- 3D edges pruning
@@ -15,18 +15,7 @@
   	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
   	-->
-	<parameters useUncertainty="false"
-				weakFeatureThr="-1"
-				edges3DPrunningThreshold="-1"
-				fixVertices = "false"
-				addPoseToPoseEdges = "true"
-				minMeasurementsToAddPoseToFeatureEdge="25"
-				addFeaturesWhenMapSizeLessThan="80" 
-				addFeaturesWhenMeasurementSizeLessThan="25" 
-				maxOnceFeatureAdd="40"
-				minEuclideanDistanceOfFeatures="0.05"
-				minImageDistanceOfFeatures="8"
-				addNoFeaturesWhenMapSizeGreaterThan="1000"></parameters>
-	<mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"></mapOutput>
-	<mapManager distThreshold="0.03"></mapManager>
-  </MapConfig>
+    <parameters useUncertainty="false" weakFeatureThr="-1" edges3DPrunningThreshold="-1" fixVertices="false" addPoseToPoseEdges="true" minMeasurementsToAddPoseToFeatureEdge="10" addFeaturesWhenMapSizeLessThan="80" addFeaturesWhenMeasurementSizeLessThan="25" maxOnceFeatureAdd="40" minEuclideanDistanceOfFeatures="0.006994" minImageDistanceOfFeatures="2.621986" addNoFeaturesWhenMapSizeGreaterThan="1000"/>
+    <mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"/>
+    <mapManager distThreshold="0.03"/>
+</MapConfig>

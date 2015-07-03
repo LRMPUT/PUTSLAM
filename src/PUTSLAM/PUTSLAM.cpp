@@ -34,6 +34,8 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		// We only add features of proper depth
 		if (features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0) {
 
+			//std::cout << "Correct depth of feature" << std::endl;
+
 			bool featureOk = true;
 
 			// Lets remove features too close to existing features
@@ -142,6 +144,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 void PUTSLAM::startProcessing() {
 
 	bool ifStart = true;
+	bool onlyVO = false;
 
 	// Optimize during trajectory acquisition
     if (optimizationThreadVersion == OPTTHREAD_ON)
@@ -169,6 +172,8 @@ void PUTSLAM::startProcessing() {
 			((FeaturesMap*) map)->getMinMeasurementsToAddPoseToFeatureEdge();
 	bool addPoseToPoseEdges =
 			((FeaturesMap*) map)->getAddPoseToPoseEdges();
+
+	double depthImageScale = ((FileGrabber*) grabber)->parameters.depthImageScale;
 
     ///for inverse SLAM problem
     //Simulator simulator;
@@ -206,9 +211,11 @@ void PUTSLAM::startProcessing() {
             Mat34 cameraPose = Mat34(robotPose.cast<double>());
 
 			// Add new position to the map
-			cameraPoseId = map->addNewPose(cameraPose,
-					currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
-					currentSensorFrame.depthImage);
+            if (!onlyVO) {
+				cameraPoseId = map->addNewPose(cameraPose,
+						currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+						currentSensorFrame.depthImage);
+            }
 
 			// Correct motionModel
 			motionModelLastTime = currentSensorFrame.timestamp;
@@ -254,167 +261,169 @@ void PUTSLAM::startProcessing() {
 				motionModelPose =  Eigen::Matrix4f (x.matrix().cast<float>());
 			}
 
-			// Add new position to the map
-			cameraPoseId = map->addNewPose(cameraPoseIncrement,
-					currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
-					currentSensorFrame.depthImage);
+			if (!onlyVO) {
+				// Add new position to the map
+				cameraPoseId = map->addNewPose(cameraPoseIncrement,
+						currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+						currentSensorFrame.depthImage);
 
-			// Get the visible features
-            Mat34 cameraPose = map->getSensorPose();
-            mapFeatures = map->getVisibleFeatures(cameraPose);
-            //mapFeatures = map->getVisibleFeatures(cameraPose, 500, 10.05);
+				// Get the visible features
+				Mat34 cameraPose = map->getSensorPose();
+				mapFeatures = map->getVisibleFeatures(cameraPose);
+				//mapFeatures = map->getVisibleFeatures(cameraPose, 500, 10.05);
 
-            //map->removeDistantFeatures(mapFeatures, 500, 10.01);
+				//map->removeDistantFeatures(mapFeatures, 500, 10.01);
 
-            // Find the ids of frames for which feature observations have the most similar angle
-            std::vector<int> frameIds;
-            std::vector<float_type> angles;
-            map->findNearestFrame(mapFeatures, frameIds, angles, matcher->matcherParameters.maxAngleBetweenFrames);
+				// Find the ids of frames for which feature observations have the most similar angle
+				std::vector<int> frameIds;
+				std::vector<float_type> angles;
+				map->findNearestFrame(mapFeatures, frameIds, angles, matcher->matcherParameters.maxAngleBetweenFrames);
 
-            //Remove features that we do not have a good observation angle
-            std::vector<MapFeature>::iterator mapFeaturesIter = mapFeatures.begin();
-            std::vector<int>::iterator	frameIdsIter = frameIds.begin();
-            std::vector<float_type>::iterator anglesIter = angles.begin();
+				//Remove features that we do not have a good observation angle
+				std::vector<MapFeature>::iterator mapFeaturesIter = mapFeatures.begin();
+				std::vector<int>::iterator	frameIdsIter = frameIds.begin();
+				std::vector<float_type>::iterator anglesIter = angles.begin();
 
-            for(;mapFeaturesIter!=mapFeatures.end();)
-            {
-            	if (*frameIdsIter == -1) {
-            		mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
-            		frameIdsIter = frameIds.erase(frameIdsIter);
-            		anglesIter = angles.erase(anglesIter);
-            	}
-            	else
-            	{
-            		++mapFeaturesIter;
-            		++frameIdsIter;
-            		++anglesIter;
-                }
-            }
-
-			// Move mapFeatures to local coordinate system
-			moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
-
-
-
-			std::cout
-					<< "Returned visible map feature size before if not cover test: "
-					<< mapFeatures.size() << std::endl;
-
-			// Now lets check if those features are not behind sth
-			RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
-					currentSensorFrame.depthImage, 0.15f, frameIds, angles);
-
-			std::cout << "Returned visible map feature size: "
-					<< mapFeatures.size() << std::endl;
-
-			// Show map features
-			if ( matcher->matcherParameters.verbose > 0)
-				showMapFeatures(currentSensorFrame.rgbImage, mapFeatures);
-
-			// Perform RANSAC matching and return measurements for found inliers in map compatible format
-			// Remember! The match returns the list of inlier features from current pose!
-			std::vector<MapFeature> measurementList;
-			Eigen::Matrix4f mapEstimatedTransformation;
-
-			double mapMatchingInlierRatio = 0.0f;
-			if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS)
-			{
-				mapMatchingInlierRatio = matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
-			}
-			else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS)
-			{
-				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
-					measurementList, mapEstimatedTransformation, frameIds);
-			}
-			else if (matcher->matcherParameters.MapMatchingVersion
-					== Matcher::MatcherParameters::MAPMATCH_PATCHES
-					|| matcher->matcherParameters.MapMatchingVersion
-							== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES)
-			{
-				// Prepare set of images
-				std::vector<cv::Mat> mapRgbImages(frameIds.size()),
-						mapDepthImages(frameIds.size());
-				std::vector<putslam::Mat34> cameraPoses(frameIds.size());
-				for (int i = 0; i < frameIds.size(); i++) {
-					map->getImages(frameIds[i], mapRgbImages[i],
-							mapDepthImages[i]);
-					cameraPoses[i] = map->getSensorPose(frameIds[i]);
+				for(;mapFeaturesIter!=mapFeatures.end();)
+				{
+					if (*frameIdsIter == -1) {
+						mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
+						frameIdsIter = frameIds.erase(frameIdsIter);
+						anglesIter = angles.erase(anglesIter);
+					}
+					else
+					{
+						++mapFeaturesIter;
+						++frameIdsIter;
+						++anglesIter;
+					}
 				}
 
-				if (matcher->matcherParameters.MapMatchingVersion
-						== Matcher::MatcherParameters::MAPMATCH_PATCHES) {
-					std::vector<std::pair<double, double>> tmp;
-					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
-							mapFeatures, cameraPoseId, cameraPose, frameIds,
-							cameraPoses, mapRgbImages, mapDepthImages,
-							measurementList, mapEstimatedTransformation, tmp);
-				} else if (matcher->matcherParameters.MapMatchingVersion
-						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
-					// XYZ+desc
-					std::vector<MapFeature> probablyInliers;
-					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
-							mapFeatures, cameraPoseId, probablyInliers,
-							mapEstimatedTransformation);
-
-					std::cout << "Measurement list size before patches : " << probablyInliers.size()
-										<< std::endl;
-					// PATCHES
-					std::vector<std::pair<double, double>> errorLog;
-					mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
-							probablyInliers, cameraPoseId, cameraPose, frameIds,
-							cameraPoses, mapRgbImages, mapDepthImages,
-							measurementList, mapEstimatedTransformation, errorLog, false);
-
-					// Add error to log
-					patchesErrorLog.insert(patchesErrorLog.end(), errorLog.begin(), errorLog.end());
+				// Move mapFeatures to local coordinate system
+				moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 
 
+
+				std::cout
+						<< "Returned visible map feature size before if not cover test: "
+						<< mapFeatures.size() << std::endl;
+
+				// Now lets check if those features are not behind sth
+				RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+						currentSensorFrame.depthImage, 0.15f, frameIds, angles, currentSensorFrame.depthImageScale);
+
+				std::cout << "Returned visible map feature size: "
+						<< mapFeatures.size() << std::endl;
+
+				// Show map features
+				if ( matcher->matcherParameters.verbose > 0)
+					showMapFeatures(currentSensorFrame.rgbImage, mapFeatures);
+
+				// Perform RANSAC matching and return measurements for found inliers in map compatible format
+				// Remember! The match returns the list of inlier features from current pose!
+				std::vector<MapFeature> measurementList;
+				Eigen::Matrix4f mapEstimatedTransformation;
+
+				double mapMatchingInlierRatio = 0.0f;
+				if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS)
+				{
+					mapMatchingInlierRatio = matcher->Matcher::match(mapFeatures, cameraPoseId, measurementList, mapEstimatedTransformation);
 				}
-			}
-			else {
-				std::cout<<"Unrecognized map matching version -- double check matcherOpenCVParameters.xml" << std::endl;
-			}
-			MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
+				else if (matcher->matcherParameters.MapMatchingVersion == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS)
+				{
+					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures, cameraPoseId,
+						measurementList, mapEstimatedTransformation, frameIds);
+				}
+				else if (matcher->matcherParameters.MapMatchingVersion
+						== Matcher::MatcherParameters::MAPMATCH_PATCHES
+						|| matcher->matcherParameters.MapMatchingVersion
+								== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES)
+				{
+					// Prepare set of images
+					std::vector<cv::Mat> mapRgbImages(frameIds.size()),
+							mapDepthImages(frameIds.size());
+					std::vector<putslam::Mat34> cameraPoses(frameIds.size());
+					for (int i = 0; i < frameIds.size(); i++) {
+						map->getImages(frameIds[i], mapRgbImages[i],
+								mapDepthImages[i]);
+						cameraPoses[i] = map->getSensorPose(frameIds[i]);
+					}
 
-            /// for inverse slam problem (ver. A)
-            //mapEstimatedTransformation.setIdentity();
-			// TESTING VO with map corrections
-			VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
+					if (matcher->matcherParameters.MapMatchingVersion
+							== Matcher::MatcherParameters::MAPMATCH_PATCHES) {
+						std::vector<std::pair<double, double>> tmp;
+						mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
+								mapFeatures, cameraPoseId, cameraPose, frameIds,
+								cameraPoses, mapRgbImages, mapDepthImages,
+								measurementList, mapEstimatedTransformation, currentSensorFrame.depthImageScale, tmp);
+					} else if (matcher->matcherParameters.MapMatchingVersion
+							== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
+						// XYZ+desc
+						std::vector<MapFeature> probablyInliers;
+						mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
+								mapFeatures, cameraPoseId, probablyInliers,
+								mapEstimatedTransformation);
 
-			std::cout << "Measurement list size : " << measurementList.size()
-					<< std::endl;
+						std::cout << "Measurement list size before patches : " << probablyInliers.size()
+											<< std::endl;
+						// PATCHES
+						std::vector<std::pair<double, double>> errorLog;
+						mapMatchingInlierRatio = matcher->matchToMapUsingPatches(
+								probablyInliers, cameraPoseId, cameraPose, frameIds,
+								cameraPoses, mapRgbImages, mapDepthImages,
+								measurementList, mapEstimatedTransformation, currentSensorFrame.depthImageScale, errorLog, false);
 
-			// Compare VO and VOMap estimate -> decide whether to add measurements to map
-			float distanceDiff =
-					mapEstimatedTransformation.block<3, 1>(0, 3).norm();
-            std::cout << "Difference between VO and Map : " << distanceDiff
-					<< " meters" << std::endl;
+						// Add error to log
+						patchesErrorLog.insert(patchesErrorLog.end(), errorLog.begin(), errorLog.end());
 
 
-            // Add pose-pose constrain - depends on config file
-            if (addPoseToPoseEdges) {
-            	map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-            						cameraPoseIncrement);
-            }
+					}
+				}
+				else {
+					std::cout<<"Unrecognized map matching version -- double check matcherOpenCVParameters.xml" << std::endl;
+				}
+				MapMatchingRansacInlierRatioLog.push_back(mapMatchingInlierRatio);
 
-            // Add pose-feature constrain
-            measurementToMapSizeLog.push_back(measurementList.size());
-			if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
-				map->addMeasurements(measurementList);
-			}
+				/// for inverse slam problem (ver. A)
+				//mapEstimatedTransformation.setIdentity();
+				// TESTING VO with map corrections
+				VoMapPose = VoMapPose * transformation * mapEstimatedTransformation;
 
-			// Insufficient number of features -> time to add some features
-			if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
-					|| (measurementList.size()
-							< addFeaturesWhenMeasurementSizeLessThan
-							&& mapFeatures.size()
-									< addNoFeaturesWhenMapSizeGreaterThan)) {
-				addFeatureToMap = true;
+				std::cout << "Measurement list size : " << measurementList.size()
+						<< std::endl;
+
+				// Compare VO and VOMap estimate -> decide whether to add measurements to map
+				float distanceDiff =
+						mapEstimatedTransformation.block<3, 1>(0, 3).norm();
+				std::cout << "Difference between VO and Map : " << distanceDiff
+						<< " meters" << std::endl;
+
+
+				// Add pose-pose constrain - depends on config file
+				if (addPoseToPoseEdges) {
+					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+										cameraPoseIncrement);
+				}
+
+				// Add pose-feature constrain
+				measurementToMapSizeLog.push_back(measurementList.size());
+				if (measurementList.size() > minMeasurementsToAddPoseToFeatureEdge) {
+					map->addMeasurements(measurementList);
+				}
+
+				// Insufficient number of features -> time to add some features
+				if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
+						|| (measurementList.size()
+								< addFeaturesWhenMeasurementSizeLessThan
+								&& mapFeatures.size()
+										< addNoFeaturesWhenMapSizeGreaterThan)) {
+					addFeatureToMap = true;
+				}
 			}
 		}
 
 		// Should we add some features to the map?
-		if (addFeatureToMap) {
+		if (addFeatureToMap && !onlyVO) {
 			std::cout << "Adding features to map " << std::endl;
 
 			// Getting observed features
@@ -458,6 +467,7 @@ void PUTSLAM::startProcessing() {
 
 		saveTrajectoryFreiburgFormat(motionModelPose, trajectoryMotionModelStream,
 						currentSensorFrame.timestamp);
+
 	}
 
 	// Save statistics
@@ -498,29 +508,29 @@ void PUTSLAM::startProcessing() {
 	evaluateResults(((FileGrabber*) grabber)->parameters.basePath, ((FileGrabber*) grabber)->parameters.datasetName);
 
 	// Save map
-	std::cout<<"Saving to octomap" << std::endl;
-	int size = map->getPoseCounter();
-	for (int i = 0; i < size; i = i + size / 15) {
-
-		std::cout<<"Octomap uses point clouds with id = " << i << std::endl;
-
-		cv::Mat rgbImage, depthImage;
-		map->getImages(i, rgbImage, depthImage);
-		Mat34 pose = map->getSensorPose(0).inverse() * map->getSensorPose(i);
-		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
-
-		// Save for octomap
-		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-				rgbImage, depthImage,
-				matcher->matcherParameters.cameraMatrixMat, tmpPose);
-		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
-
+//	std::cout<<"Saving to octomap" << std::endl;
+//	int size = map->getPoseCounter();
+//	for (int i = 0; i < size; i = i + size / 15) {
+//
+//		std::cout<<"Octomap uses point clouds with id = " << i << std::endl;
+//
+//		cv::Mat rgbImage, depthImage;
+//		map->getImages(i, rgbImage, depthImage);
+//		Mat34 pose = map->getSensorPose(0).inverse() * map->getSensorPose(i);
+//		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
+//
+//		// Save for octomap
 //		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
 //				rgbImage, depthImage,
-//				matcher->matcherParameters.cameraMatrixMat, Eigen::Matrix4f::Identity());
-//		RGBD::saveToFile(pointCloud, "octomap.log", i == 0, tmpPose);
-
-	}
+//				matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
+//		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
+//
+////		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+////				rgbImage, depthImage,
+////				matcher->matcherParameters.cameraMatrixMat, Eigen::Matrix4f::Identity());
+////		RGBD::saveToFile(pointCloud, "octomap.log", i == 0, tmpPose);
+//
+//	}
 
 	std::cout<<"Job finished! Good bye :)" << std::endl;
 }
@@ -747,10 +757,10 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 				+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res";
 	try
 	{
-//		int tmp = std::system(evalATEVO.c_str());
-//		tmp = std::system(evalATEMap.c_str());
-//		tmp = std::system(evalRPEVO.c_str());
-//		tmp = std::system(evalRPEMap.c_str());
+		int tmp = std::system(evalATEVO.c_str());
+		tmp = std::system(evalATEMap.c_str());
+		tmp = std::system(evalRPEVO.c_str());
+		tmp = std::system(evalRPEMap.c_str());
 	}
 	catch (std::system_error& error) {
 	        std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
