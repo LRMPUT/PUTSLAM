@@ -29,16 +29,16 @@
 namespace RGBD {
 
 /// Depth image scale
-const double depthScale = 5000;
+//const double depthScale = 5000;
 
 // Convert keypoints to 3D points using depth image
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
-		cv::Mat depthImage);
+		cv::Mat depthImage, double depthImageScale);
 std::vector<Eigen::Vector3f> keypoints2Dto3D(std::vector<cv::Point2f> undistortedFeatures2D,
-		cv::Mat depthImage, cv::Mat cameraMatrix, int startingID = 0);
+		cv::Mat depthImage, cv::Mat cameraMatrix, double depthImageScale, int startingID = 0);
 
 Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
-		cv::Mat depthImage, cv::Mat cameraMatrix);
+		cv::Mat depthImage, cv::Mat cameraMatrix, double depthImageScale);
 Eigen::Vector3f point2Dto3D(cv::Point2f undistortedFeatures2D,
 		float depth, cv::Mat cameraMatrix);
 
@@ -55,14 +55,14 @@ void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage);
 
 void removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
-		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles);
+		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles, double depthImageScale);
 
 std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
 		cv::Mat distCoeffs);
 
 // Building a point cloud
-std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose);
+std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose, double depthImageScale);
 
 void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName,
 		bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());

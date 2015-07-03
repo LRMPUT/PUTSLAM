@@ -15,7 +15,7 @@ int RGBD::roundSize(double x, int size) {
 }
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
-		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage) {
+		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage, double depthImageScale) {
 
 	// Assume standard distortion
 	float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
@@ -23,12 +23,12 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 
 	// Call method with additional parameters
 	return keypoints2Dto3D(undistortedFeatures2D, depthImage,
-			cv::Mat(3, 3, CV_32FC1, &cameraMatrix));
+			cv::Mat(3, 3, CV_32FC1, &cameraMatrix), depthImageScale);
 }
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage,
-		cv::Mat cameraMatrix, int startingID) {
+		cv::Mat cameraMatrix, double depthImageScale, int startingID) {
 
 	// Lets create 3D points
 	std::vector<Eigen::Vector3f> features3D(undistortedFeatures2D.size() - startingID);
@@ -36,7 +36,7 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 	for (std::vector<cv::Point2f>::iterator it = undistortedFeatures2D.begin() + startingID;
 			it != undistortedFeatures2D.end(); ++it) {
 
-		features3D[i] = point2Dto3D(*it, depthImage, cameraMatrix);
+		features3D[i] = point2Dto3D(*it, depthImage, cameraMatrix, depthImageScale);
 		i++;
 	}
 
@@ -44,14 +44,14 @@ std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 }
 
 Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
-		cv::Mat depthImage, cv::Mat cameraMatrix) {
+		cv::Mat depthImage, cv::Mat cameraMatrix, double depthImageScale) {
 
 	// Feature are extracted with subpixel precision, so find closest pixel
 	int uRounded = roundSize(feature2D.x, depthImage.cols);
 	int vRounded = roundSize(feature2D.y, depthImage.rows);
 
 	// Convert it using the scaling of depth image
-	float Z = depthImage.at<uint16_t>(vRounded, uRounded) / RGBD::depthScale;
+	float Z = depthImage.at<uint16_t>(vRounded, uRounded) / depthImageScale;
 
 	// Compute the feature position in normalized image coordinates
 	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
@@ -106,7 +106,7 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 	auto it =
 			std::remove_if(features.begin(), features.end(),
 					[depthImage](cv::KeyPoint kp) {
-						if (depthImage.at<uint16_t>(kp.pt) / RGBD::depthScale > 0.0) {
+						if (depthImage.at<uint16_t>(kp.pt)  > 0.0) {
 							return false;
 						}
 						return true;
@@ -115,19 +115,20 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 }
 
 void RGBD::removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
-		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles) {
+		cv::Mat depthImage, float additionalDistance,
+		std::vector<int> &frameIds, std::vector<float_type> &angles,
+		double depthImageScale) {
 
 	std::vector<MapFeature>::iterator featuresIter = features.begin();
 	std::vector<int>::iterator frameIdsIter = frameIds.begin();
 	std::vector<float_type>::iterator anglesIter = angles.begin();
 
-	for (;featuresIter!=features.end();)
-	{
+	for (; featuresIter != features.end();) {
 		int uRounded = roundSize(featuresIter->u, depthImage.cols);
 		int vRounded = roundSize(featuresIter->v, depthImage.rows);
 
 		if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))
-				/ RGBD::depthScale
+				/ depthImageScale
 				<= featuresIter->position.z() - additionalDistance) {
 			featuresIter = features.erase(featuresIter);
 			frameIdsIter = frameIds.erase(frameIdsIter);
@@ -174,13 +175,13 @@ std::vector<cv::Point2f> RGBD::removeImageDistortion(
 }
 
 std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
-		cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose) {
+		cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose, double depthImageScale) {
 	std::vector<Eigen::Vector3f> pointCloud;
 
 	for(int j = 0;j < rgbImage.rows;j++){
 	    for(int i = 0;i < rgbImage.cols;i++){
 
-	    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / RGBD::depthScale;
+	    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / depthImageScale;
 
 	    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
 	    			depth, cameraMatrix);

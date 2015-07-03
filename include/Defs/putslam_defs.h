@@ -67,6 +67,9 @@ public:
 	/// 2D image
 	cv::Mat depthImage;
 
+	/// Scale of the data in depthImage
+	double depthImageScale;
+
 	/// XYZRGBA point cloud
 	PointCloud cloud;
 
