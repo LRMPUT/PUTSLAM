@@ -30,11 +30,23 @@ class DepthSensorModel {
     /// u,v [px], depth [m]
     void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov);
 
+    /// point xyz in camera frame
+    void computeCov(Eigen::Vector3f point, Mat33& cov);
+
     /// compute information matrix
     Mat33 informationMatrix(float_type x, float_type y, float_type z);
 
     /// compute information matrix using image coordinates
     Mat33 informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z);
+
+    /// Create point cloud from current RGB and depth image
+    void convert2cloud(const cv::Mat& color, const cv::Mat& depth, PointCloud& cloud);
+
+    /// compute uncertainty from normal vector
+    Mat33 uncertinatyFromNormal(const Vec3& normal);
+
+    /// compute uncertainty from rgb gradient vector
+    Mat33 uncertinatyFromRGBGradient(const Vec3& grad);
 
     class Config{
       public:
@@ -50,7 +62,7 @@ class DepthSensorModel {
             std::cout<<"CONFIG FILENAME: " << configFilename << std::endl;
             config.LoadFile(filename.c_str());
             if (config.ErrorID())
-                std::cout << "unable to load Kinect config file: error = " << config.ErrorID() << std::endl;;
+                std::cout << "unable to load sensor config file: error = " << config.ErrorID() << std::endl;;
 
             tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
@@ -63,6 +75,8 @@ class DepthSensorModel {
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeU", &imageSize[0]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeV", &imageSize[1]);
+            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyNormal", &scaleUncertaintyNormal);
+            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyGradient", &scaleUncertaintyGradient);
             tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
             double query[4];
             posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
@@ -77,13 +91,18 @@ class DepthSensorModel {
             float_type distVarCoefs[4];
             int imageSize[2];//[sizeU, sizeV]
             Mat34 pose; // kinect pose in robot's coordination frame
+            float_type scaleUncertaintyNormal;
+            float_type scaleUncertaintyGradient;
     };
 
     Config config;
 
-    private:
+    protected:
         Mat33 PHCPModel;//pin-hole camera projection model
         Mat33 Ruvd; //covariance matrix for [u,v,disp]
+
+        /// normalize vector
+        void normalizeVector(Vec3& normal) const;
 };
 
 #endif // DEPTH_SENSOR_MODEL_H_INCLUDED

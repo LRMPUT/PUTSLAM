@@ -1,32 +1,65 @@
-#include <iostream>
 #include "../include/Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include "../include/Visualizer/Qvisualizer.h"
+#include "../include/PUTSLAM/PUTSLAM.h"
+#include <GL/glut.h>
 #include <qapplication.h>
+#include <iostream>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
+
+std::unique_ptr<PUTSLAM> slam;
+
+// run PUTSLAM
+void runPUTSLAM(){
+    std::cout << "Press Enter to start\n";
+    getchar();
+    slam.get()->startProcessing();
+}
 
 int main(int argc, char** argv)
 {
     try {
-        using namespace putslam;
         tinyxml2::XMLDocument config;
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Visualizer" )->FirstChildElement( "parametersFile" )->GetText());
 
+        QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
+        //object is created. libTinyxml can read only ints from xml file
+
+        cv::Mat im(480,680, CV_8UC3);
+        cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
+        cv::imshow( "PUTSLAM RGB frame", im );
+        cv::namedWindow( "PUTSLAM Depth frame", cv::WINDOW_AUTOSIZE );
+        cv::imshow( "PUTSLAM Depth frame", im );
+
+        slam.reset(new PUTSLAM);
+
         QApplication application(argc,argv);
 
-        Visualizer* visu = createVisualizerQGL(configFile);
+        glutInit(&argc, argv);
 
-        ((QGLVisualizer*)visu)->setWindowTitle("QGLViewer");
+        QGLVisualizer visu(configVis);
+        visu.setDepthSensorModel(slam.get()->getDepthSensorModel());
+
+        visu.setWindowTitle("PUT SLAM map viewer");
 
         // Make the viewer window visible on screen.
-        ((QGLVisualizer*)visu)->show();
+        visu.show();
+        slam.get()->attachVisualizer(&visu);
+
+        // run PUTSLAM
+        std::thread tSLAM(runPUTSLAM);
 
         // Run main loop.
-        return application.exec();
+        application.exec();
+        tSLAM.join();
+
+        return 1;
     }
     catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;

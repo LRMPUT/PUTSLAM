@@ -13,14 +13,14 @@
 #include <string>
 
 // Podst PCL
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include "pcl/io/pcd_io.h"
+//#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
+//#include "pcl/io/pcd_io.h"
 
 // OpenCV
 #include "opencv/cv.h"
 #include <opencv2/opencv.hpp>
-#include <Eigen/Eigen>
+#include <eigen3/Eigen/Core>
 
 
 // Out types
@@ -66,6 +66,28 @@ std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthIm
 
 void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName,
 		bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());
+
+///compute normal
+Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
+
+/// compute normals to rgbd features
+template<class T>
+void computeNormals(const cv::Mat& depthImage, T& features, const cv::Mat& cameraMatrix, double depthImageScale){
+    for(auto it = features.begin();it!=features.end();it++){
+        it->normal = computeNormal(depthImage,it->u, it->v, cameraMatrix, depthImageScale);
+    }
+}
+
+//compute rgb gradient
+Vec3 computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
+
+/// compute rgbd gradients
+template<class T>
+void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage, T& features, const cv::Mat& cameraMatrix, double depthImageScale){
+    for(auto it = features.begin();it!=features.end();it++){
+        it->RGBgradient = computeRGBGradient(rgbImage, depthImage, it->u, it->v, cameraMatrix, depthImageScale);
+    }
+}
 
 //static Eigen::Vector3f point2Dto3D(cv::Point2f p, float z, cv::Mat cameraMatrix, cv::Mat distCoeffs);
 
