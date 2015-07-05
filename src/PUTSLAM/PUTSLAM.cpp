@@ -542,24 +542,24 @@ void PUTSLAM::startProcessing() {
 			((FileGrabber*) grabber)->parameters.datasetName);
 
 	// Save map
-	std::cout << "Saving to octomap" << std::endl;
-	int size = map->getPoseCounter();
-	for (int i = 0; i < size; i = i + size / 15) {
-
-		std::cout << "Octomap uses point clouds with id = " << i << std::endl;
-
-		cv::Mat rgbImage, depthImage;
-		map->getImages(i, rgbImage, depthImage);
-		Mat34 pose = map->getSensorPose(i);
-		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
-
-		// Save for octomap
-		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-				rgbImage, depthImage,
-				matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
-		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
-
-	}
+//	std::cout << "Saving to octomap" << std::endl;
+//	int size = map->getPoseCounter();
+//	for (int i = 0; i < size; i = i + size / 15) {
+//
+//		std::cout << "Octomap uses point clouds with id = " << i << std::endl;
+//
+//		cv::Mat rgbImage, depthImage;
+//		map->getImages(i, rgbImage, depthImage);
+//		Mat34 pose = map->getSensorPose(i);
+//		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
+//
+//		// Save for octomap
+//		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+//				rgbImage, depthImage,
+//				matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
+//		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
+//
+//	}
 
 	std::cout << "Job finished! Good bye :)" << std::endl;
 }
@@ -588,12 +588,27 @@ void PUTSLAM::loadConfigs() {
 	}
 
 	// Create map
+	if (verbose > 0) {
+		std::cout<<"Getting grabber config" << std::endl;
+	}
 	std::string configFileGrabber(
 			config.FirstChildElement("Grabber")->FirstChildElement(
 					"calibrationFile")->GetText());
+
+	if (verbose > 0) {
+		std::cout<<"Getting map config" << std::endl;
+	}
 	std::string configFileMap(
 			config.FirstChildElement("Map")->FirstChildElement("parametersFile")->GetText());
+
+	if (verbose > 0) {
+		std::cout << "Creating features map" << std::endl;
+	}
 	map = createFeaturesMap(configFileMap, configFileGrabber);
+
+	if (verbose > 0) {
+		std::cout << "Features map is initialized" << std::endl;
+	}
 
 	std::string grabberType(
 			config.FirstChildElement("Grabber")->FirstChildElement("name")->GetText());
@@ -601,6 +616,11 @@ void PUTSLAM::loadConfigs() {
 	std::string grabberConfigFile(
 			config.FirstChildElement("Grabber")->FirstChildElement(
 					"calibrationFile")->GetText());
+
+	if (verbose > 0) {
+		std::cout << "Creating grabber with type = " << grabberType << std::endl;
+	}
+
 	if (grabberType == "Kinect") {
 		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
 	} else if (grabberType == "Xtion") {
@@ -616,13 +636,21 @@ void PUTSLAM::loadConfigs() {
 		grabber = createGrabberKinect();
 
 	// create objects and print configuration
-	cout << "Current grabber: " << grabber->getName() << std::endl;
+	if (verbose > 0) {
+		cout << "Current grabber: " << grabber->getName() << std::endl;
+	}
 	string matcherParameters =
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFile")->GetText();
 
+	if (verbose > 0) {
+		std::cout<<"Creating matcher" << std::endl;
+	}
 	matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
-	cout << "Current matcher: " << matcher->getName() << std::endl;
+	if (verbose > 0) {
+		cout << "Current matcher: " << matcher->getName() << std::endl;
+	}
+
 }
 
 void PUTSLAM::saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,

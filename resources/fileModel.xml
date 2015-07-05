@@ -34,6 +34,7 @@
     <!--		PS model-->
     <variance sigmaU="1.1046" sigmaV="0.64160"/>
     <varianceDepth c3="0.567602" c2="0.888951" c1="0.418786" c0="0.964182"/>
+    <alternateModel scaleUncertaintyNormal="0.7" scaleUncertaintyGradient="0.75"/>
     <imageSize sizeU="640" sizeV="480"/>
     <!--	<imageSize sizeU="1920" sizeV="1080"></imageSize> -->
 </Model>

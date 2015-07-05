@@ -40,4 +40,4 @@
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
   -->
-  <ThreadSettings verbose="1" optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>
+  <ThreadSettings verbose="0" optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>
