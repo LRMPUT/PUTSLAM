@@ -30,7 +30,7 @@
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.089779" inlierThresholdReprojection="2.0" minimalInlierRatioThreshold="0.1" usedPairs="3"/>
+    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.04" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.1" usedPairs="3"/>
     <!-- Matching settings
     	detector : 		FAST, ORB, SURF, SIFT
     	descriptor :	BRIEF, ORB, LDB, SURF, SIFT

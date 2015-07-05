@@ -19,8 +19,22 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
 	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
-    <parameters useUncertainty="false" weakFeatureThr="-1" uncertaintyModel="2" edges3DPrunningThreshold="-1" fixVertices="false" addPoseToPoseEdges="true" minMeasurementsToAddPoseToFeatureEdge="10" addFeaturesWhenMapSizeLessThan="80" addFeaturesWhenMeasurementSizeLessThan="25" maxOnceFeatureAdd="40" minEuclideanDistanceOfFeatures="0.006994" minImageDistanceOfFeatures="2.621986" addNoFeaturesWhenMapSizeGreaterThan="1000"/>
+    <parameters verbose="0"
+		useUncertainty="false" 
+		weakFeatureThr="-1" 
+		uncertaintyModel="2" 
+		edges3DPrunningThreshold="-1" 
+		fixVertices="false" 
+		addPoseToPoseEdges="true" 
+		minMeasurementsToAddPoseToFeatureEdge="25" 
+		addFeaturesWhenMapSizeLessThan="80" 
+		addFeaturesWhenMeasurementSizeLessThan="25" 
+		maxOnceFeatureAdd="40" 
+		minEuclideanDistanceOfFeatures="0.05" 
+		minImageDistanceOfFeatures="8" 
+		addNoFeaturesWhenMapSizeGreaterThan="1000"/>
     <mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"/>
+    <featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"></featuresDistribution>
     <mapManager distThreshold="0.03"/>
     <visualization frameNo2updatePointCloud="60"></visualization>
 </MapConfig>

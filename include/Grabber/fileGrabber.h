@@ -75,6 +75,9 @@ class FileGrabber : public Grabber {
 		}
 		;
 		Parameters(std::string configFilename) {
+			if ( verbose > 2) {
+				std::cout<<"File grabber constructor" << std::endl;
+			}
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());
@@ -101,6 +104,14 @@ class FileGrabber : public Grabber {
 			fullPath = basePath + "/" + datasetName + "/";
 
 			params->QueryDoubleAttribute("depthImageScale", &depthImageScale);
+
+			if ( verbose > 1) {
+				std::cout<<"File grabber read parameters: " << std::endl;
+				std::cout<<"\t verbose = " << verbose << std::endl;
+				std::cout<<"\t playEveryNthFrame = " << playEveryNth << std::endl;
+				std::cout<<"\t realTime = " << realTime << std::endl;
+				std::cout<<"\t maxNumberOfFrames = " << maxNumberOfFrames << std::endl;
+			}
 		}
 	public:
 		 /// path of the dataset

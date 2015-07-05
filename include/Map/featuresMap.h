@@ -160,6 +160,10 @@ public:
             useUncertainty(true){
         }
         Config(std::string configFilename){
+
+
+        	std::cout << "Features map - reading parameters" << std::endl;
+
             tinyxml2::XMLDocument config;
             std::string filename = "../../resources/" + configFilename;
             config.LoadFile(filename.c_str());
@@ -199,6 +203,9 @@ public:
             model->FirstChildElement( "featuresDistribution" )->QueryUnsignedAttribute("frameNo", &frameNo);
             filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
             model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
+
+            std::cout << "Features map - finished reading parameters" << std::endl;
+
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
