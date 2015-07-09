@@ -5,7 +5,7 @@
     <!--	<focalLength fu="480.6" fv="-480.6"></focalLength>  -->
     <!--	<focalAxis Cu="319.5" Cv="239.5"></focalAxis>  		-->
     <!--	<rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"></rgbDistortion> -->
-    <!-- freiburg1/desk freiburg1/room -->
+    <!-- freiburg1/desk freiburg1/desk2 freiburg1/room -->
     <focalLength fu="517.3" fv="516.5"/>
     <focalAxis Cu="318.6" Cv="255.3"/>
     <rgbDistortion k1="-0.0410" k2="0.3286" p1="0.0087" p2="0.0051" k3="-0.5643"/>
@@ -40,16 +40,17 @@
 </Model>
 
 <!-- ICL -->
-<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj1_loop"></datasetPath>-->
-<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop"></datasetPath> -->
-<!-- freiburg1/desk -->
-<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk" depthImageScale="5000"/>
+<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj1_loop" depthImageScale="5000"> </datasetPath>-->
+<!--   <datasetPath base="../../../Datasets" datasetName="office_room_traj2_loop" depthImageScale="5000"></datasetPath> -->
+<!-- freiburg1 -->
+<!-- <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk" depthImageScale="5000"/> -->
+<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_desk2" depthImageScale="5000"/>
 
-<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_room"></datasetPath> -->
-<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_360"></datasetPath>-->
-<!-- 	<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg2_desk"></datasetPath>  -->
+<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_room" depthImageScale="5000"></datasetPath> -->
+<!--   <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg1_360" depthImageScale="5000"></datasetPath>-->
+<!-- 	<datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg2_desk" depthImageScale="5000"></datasetPath>  -->
 <!-- freiburg3/long_household -->
-<!--    <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household"></datasetPath> -->
+<!--    <datasetPath base="../../../Datasets" datasetName="rgbd_dataset_freiburg3_long_office_household" depthImageScale="5000"></datasetPath> -->
 <!-- Wozek Kinect2 -->
 <!-- <datasetPath base="../../../Datasets/Kinect1vs2" datasetName="dataset5_Kinect1" depthImageScale="1000"/> -->
 <!--<datasetPath base="../../../Datasets/Kinect1vs2" datasetName="dataset5_Kinect2" depthImageScale="1000"></datasetPath>-->
