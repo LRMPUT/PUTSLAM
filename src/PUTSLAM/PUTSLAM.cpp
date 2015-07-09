@@ -183,9 +183,7 @@ void PUTSLAM::startProcessing() {
 	//Simulator simulator;
 	//simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
 	//std::vector<Mat34> traj = simulator.getTrajectory();
-	//int trajIt=1;
-
-	std::cout << "A" << std::endl;
+	int frameCounter=0;
 
 	std::unique_ptr<MotionModel> motionModel;
 	motionModel.reset(new DecayingVelocityModel(1000, 1, 0.9));
@@ -500,10 +498,10 @@ void PUTSLAM::startProcessing() {
 		saveTrajectoryFreiburgFormat(motionModelPose,
 				trajectoryMotionModelStream, currentSensorFrame.timestamp);
 
-//        trajIt++;
+        frameCounter++;
 	}
-//    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
-//    saveFPS(double(trajIt)/(elapsed.count()/1000.0));
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
+    saveFPS(double(frameCounter)/(elapsed.count()/1000.0));
 
 	// Save statistics
 	std::cout << "Saving logs to file" << std::endl;
