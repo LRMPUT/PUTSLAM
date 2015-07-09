@@ -75,7 +75,7 @@ class FileGrabber : public Grabber {
 		}
 		;
 		Parameters(std::string configFilename) {
-			if ( verbose > 2) {
+			if ( verbosePlayParameters > 2) {
 				std::cout<<"File grabber constructor" << std::endl;
 			}
 			tinyxml2::XMLDocument config;
@@ -88,7 +88,7 @@ class FileGrabber : public Grabber {
 
 			// Play parameters
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
-					"verbose", &verbose);
+					"verbose", &verbosePlayParameters);
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
 					"playEveryNthFrame", &playEveryNth);
 			config.FirstChildElement("playParameters")->QueryBoolAttribute(
@@ -97,9 +97,22 @@ class FileGrabber : public Grabber {
 					"maxNumberOfFrames", &maxNumberOfFrames);
 
 
+			if ( verbosePlayParameters > 0) {
+				std::cout<<"File grabber play parameters: " << std::endl;
+				std::cout<<"\t verbose = " << verbosePlayParameters << std::endl;
+				std::cout<<"\t playEveryNthFrame = " << playEveryNth << std::endl;
+				std::cout<<"\t realTime = " << realTime << std::endl;
+				std::cout<<"\t maxNumberOfFrames = " << maxNumberOfFrames << std::endl;
+
+				if ( verbosePlayParameters > 1) {
+					getchar();
+				}
+			}
+
 			// Get dataset config
 			std::string datasetCfgFilename =
 					config.FirstChildElement("Model")->Attribute("datasetFile");
+			config.FirstChildElement("Model")->QueryIntAttribute("verbose", &verboseModel);
 			tinyxml2::XMLDocument datasetCfg;
 			filename = "../../resources/" + datasetCfgFilename;
 			datasetCfg.LoadFile(filename.c_str());
@@ -119,15 +132,14 @@ class FileGrabber : public Grabber {
 
 			params->QueryDoubleAttribute("depthImageScale", &depthImageScale);
 
-			if ( verbose > 1) {
-				std::cout<<"File grabber read parameters: " << std::endl;
-				std::cout<<"\t verbose = " << verbose << std::endl;
-				std::cout<<"\t playEveryNthFrame = " << playEveryNth << std::endl;
-				std::cout<<"\t realTime = " << realTime << std::endl;
-				std::cout<<"\t maxNumberOfFrames = " << maxNumberOfFrames << std::endl;
-
+			if ( verboseModel > 0) {
+				std::cout<<"File grabber model: " << std::endl;
 				std::cout<<"\t depthImageScale = " << depthImageScale << std::endl;
 				std::cout<<"\t fullPath = " << fullPath << std::endl;
+
+				if ( verboseModel > 1) {
+					getchar();
+				}
 			}
 
 		}
@@ -146,7 +158,8 @@ class FileGrabber : public Grabber {
 		 int maxNumberOfFrames;
 
 		 /// Verbose
-		 int verbose;
+		 int verbosePlayParameters;
+		 int verboseModel;
 	};
 
     private:

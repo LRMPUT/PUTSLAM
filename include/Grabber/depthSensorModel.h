@@ -67,6 +67,7 @@ class DepthSensorModel {
 			// Get dataset config
 			std::string datasetCfgFilename =
 					config.FirstChildElement("Model")->Attribute("datasetFile");
+			config.FirstChildElement("Model")->QueryIntAttribute("verbose", &verbose);
 			tinyxml2::XMLDocument datasetCfg;
 			filename = "../../resources/" + datasetCfgFilename;
 			datasetCfg.LoadFile(filename.c_str());
@@ -97,15 +98,33 @@ class DepthSensorModel {
             pose = Quaternion (query[0], query[1], query[2], query[3])*Vec3(queryPos[0], queryPos[1], queryPos[2]);
 
 
-            std::cout<<"Parameters : " << std::endl;
+            if ( verbose > 0)
+            {
+				std::cout<<"DepthSensorModel.h readParameters:" << std::endl;
 
-            std::cout<<"fu = " << focalLength[0] << " fv = " << focalLength[1] << std::endl;
+				std::cout << "\t fu = " << focalLength[0] << std::endl;
+				std::cout << "\t fv = " << focalLength[1] << std::endl;
+				std::cout << "\t Cu = " << focalAxis[0] << std::endl;
+				std::cout << "\t Cv = " << focalAxis[1] << std::endl;
+				std::cout << "\t sigmaU = " << varU << std::endl;
+				std::cout << "\t sigmaV = " << varV << std::endl;
+				std::cout << "\t c3 = " << distVarCoefs[0] << std::endl;
+				std::cout << "\t c2 = " << distVarCoefs[1] << std::endl;
+				std::cout << "\t sizeU = " << imageSize[0] << std::endl;
+				std::cout << "\t sizeV = " << imageSize[1] << std::endl;
+				std::cout << "\t scaleUncertaintyNormal = "
+						<< scaleUncertaintyNormal << std::endl;
+				std::cout << "\t scaleUncertaintyGradient = "
+						<< scaleUncertaintyGradient << std::endl;
 
-            int a;
-            std::cin>>a;
+				if ( verbose > 1)
+					getchar();
+            }
+
 
         }
         public:
+        	int verbose;
             float_type focalLength[2];
             float_type focalAxis[2];
             float_type varU, varV;// variance u,v

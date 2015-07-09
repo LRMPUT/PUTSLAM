@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- File Model-->
 
-<!--	Supported files:
+<!--	
+	verbose :	0 - no debugging information
+			1 - print read parameters
+			2 - print read parameters & getchar
+
+	Supported files:
 		TUM Freiburg dataset:
 		- freiburg1_360.xml
 		- freiburg1_desk.xml
@@ -24,13 +29,16 @@
 		- kin1vs2_dataset5_kinect1.xml
 		- kin1vs2_dataset5_kinect2.xml
 -->
-<Model datasetFile="datasetConfig/freiburg1_desk.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/freiburg1_desk.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
-  			verbose				-> verbose level (0 - no debug, 1 - some debug inf)
-  			playEveryNthFrame 	-> only every Nth frame is used in motion estimation
-  			realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
- 			maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
+  	verbose :	0 - no debugging information
+			1 - print read parameters
+			2 - print read parameters & getchar
+
+	playEveryNthFrame 	-> only every Nth frame is used in motion estimation
+  	realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
+ 	maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
 <playParameters verbose="2" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="40000"/>
 
 <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"/>

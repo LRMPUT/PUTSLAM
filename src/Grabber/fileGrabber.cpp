@@ -41,7 +41,7 @@ bool FileGrabber::grab(void) {
 	if (timestampFile.eof())
 		return false;
 
-	if ( parameters.verbose > 0)
+	if ( parameters.verbosePlayParameters > 0)
 		std::cout << "FileGrabber: proccesingFileCounter vs maxNumberOfFrames : " << proccesingFileCounter << " "
 			<< parameters.maxNumberOfFrames << std::endl;
 	// Check max number of frames
@@ -93,7 +93,7 @@ bool FileGrabber::grab(void) {
 					> (std::chrono::high_resolution_clock::now()
 							- startPlayTimestamp).count()/1000.0;
 
-			if (parameters.verbose > 1)
+			if (parameters.verbosePlayParameters > 1)
 				std::cout<<"Considering " << fileNo << ":\tplayTime=" << msPlay << " [s]\tsequenceTime=" << msSeq <<" [s]"<< std::endl;
 
 			// Sequence time is ahead of processing or we just started
@@ -118,7 +118,7 @@ bool FileGrabber::grab(void) {
 		}
 	}
 
-	if (parameters.verbose > 0)
+	if (parameters.verbosePlayParameters > 0)
 		std::cout << "Measurement timestamp : " << convertToHighPrecisionString(timestamp) << std::endl;
 	tmpSensorFrame.readId = fileNo;
 	tmpSensorFrame.timestamp = timestamp;
@@ -126,7 +126,7 @@ bool FileGrabber::grab(void) {
 	// RGB
 	std::ostringstream oss;
 	oss <<  std::setfill('0') << std::setw(5) << fileNo;
-	if (parameters.verbose > 0)
+	if (parameters.verbosePlayParameters > 0)
 		std::cout << "Loading file: " << "rgb_" + oss.str() << ".png" << std::endl;
     tmpSensorFrame.rgbImage = cv::imread(parameters.fullPath + "rgb_" +  oss.str() +".png", CV_LOAD_IMAGE_COLOR );
     if(!tmpSensorFrame.rgbImage.data ) {
@@ -136,7 +136,7 @@ bool FileGrabber::grab(void) {
     //Depth
     std::ostringstream ossDepth;
     ossDepth << std::setfill('0') << std::setw(5) <<  fileNo ;
-    if (parameters.verbose > 0)
+    if (parameters.verbosePlayParameters > 0)
     	std::cout << "Loading file: " << "depth_" << ossDepth.str() << ".png" << std::endl;
     tmpSensorFrame.depthImage = cv::imread(parameters.fullPath + "depth_" + ossDepth.str() + ".png", CV_LOAD_IMAGE_ANYDEPTH );
     if(!tmpSensorFrame.rgbImage.data ) {
