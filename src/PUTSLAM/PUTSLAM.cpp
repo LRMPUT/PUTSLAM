@@ -26,6 +26,10 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		float minEuclideanDistanceOfFeatures, float minImageDistanceOfFeatures,
 		int cameraPoseId, std::vector<RGBDFeature>& mapFeaturesToAdd) {
 
+	std::cout << "SIZES: " << features.feature3D.size() << " "
+			<< features.undistortedFeature2D.size() << " "
+			<< features.descriptors.rows << std::endl;
+
 	// Lets process possible features to add
 	for (int j = 0;
 			j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd;
@@ -34,7 +38,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		// We only add features of proper depth
 		if (features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0) {
 
-			//std::cout << "Correct depth of feature" << std::endl;
+//			std::cout << "Correct depth of feature" << std::endl;
 
 			bool featureOk = true;
 
@@ -104,7 +108,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 //						<< features.undistortedFeature2D[j].x << ", "
 //						<< features.undistortedFeature2D[j].y << ")"
 //						<< std::endl;
-//
+////
 //				std::cout << "VALUE: " << features.descriptors.empty() << " j="
 //						<< j << " " <<features.descriptors.rows << " " << features.descriptors.cols << 	std::endl;
 
@@ -114,9 +118,13 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 					descMat = features.descriptors.row(j).clone();
 				}
 
+//				std::cout<<"!"<<std::endl;
+
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
 						features.undistortedFeature2D[j].y, descMat); // TODO: change between descriptor based and descriptor free versions -
+
+//				std::cout<<"!!"<<std::endl;
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
@@ -125,6 +133,8 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				Eigen::Translation<double, 3> featurePosition(
 						features.feature3D[j].cast<double>());
 
+//				std::cout<<"!!!"<<std::endl;
+
 				// Add to set added later to map
 				RGBDFeature f(featurePosition,
 						features.undistortedFeature2D[j].x,
@@ -132,6 +142,8 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				mapFeaturesToAdd.push_back(f);
 
 				addedCounter++;
+
+//				std::cout<<"!!!!"<<std::endl;
 			}
 		}
 	}
@@ -454,9 +466,6 @@ void PUTSLAM::startProcessing() {
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
-
-			std::cout << "Feature size: "
-					<< features.undistortedFeature2D.size() << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeaturesToAdd;

@@ -134,6 +134,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				sensorData.depthImage, matcherParameters.cameraMatrixMat,
 				sensorData.depthImageScale);
 
+		std::cout<<"TrackKLT: " << undistortedFeatures2D.size() << " " << features3D.size() << std::endl;
+
 		// RANSAC
 		// - neglect inlierMatches if you do not need them
 		matcherParameters.RANSACParams.errorVersion =
@@ -181,10 +183,14 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				matcherParameters.cameraMatrixMat, features3D.size());
 
 		// Merge 3D positions
-		features3D.reserve(features3D.size() + newFeatures3D.size());
-		features3D.insert(features3D.end(), newFeatures3D.begin(),
-				newFeatures3D.end());
+		// TODO: It was a bug???
+		newFeatures3D.swap(features3D);
+//		features3D.reserve(features3D.size() + newFeatures3D.size());
+//		features3D.insert(features3D.end(), newFeatures3D.begin(),
+//				newFeatures3D.end());
 	}
+
+	std::cout<<"TrackKLT2: " << undistortedFeatures2D.size() << " " << features3D.size() << std::endl;
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
