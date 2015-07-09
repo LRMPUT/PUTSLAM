@@ -222,7 +222,21 @@ public:
 				std::cout << "Unable to load camera config file: "
 						<< configFilename << std::endl;
 			}
-			tinyxml2::XMLElement * params2 = config.FirstChildElement("Model");
+
+
+			// Get dataset config
+			std::string datasetCfgFilename =
+					config.FirstChildElement("Model")->Attribute("datasetFile");
+			tinyxml2::XMLDocument datasetCfg;
+			filename = "../../resources/" + datasetCfgFilename;
+			datasetCfg.LoadFile(filename.c_str());
+			if (datasetCfg.ErrorID()) {
+				std::cout << "Unable to load dataset config file: "
+						<< configFilename << std::endl;
+			}
+
+			tinyxml2::XMLElement * params2 = datasetCfg.FirstChildElement("Model");
+
 
 			params2->FirstChildElement("focalLength")->QueryFloatAttribute(
 					"fu", &cameraMatrixMat.at<float>(0, 0));
@@ -252,7 +266,8 @@ public:
 					&distortionCoeffsMat.at<float>(4));
 			config.Clear();
 
-			//std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
+			std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
+
 		}
 	public:
 		int verbose, VOVersion, MapMatchingVersion;

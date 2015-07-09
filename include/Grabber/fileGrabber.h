@@ -86,7 +86,6 @@ class FileGrabber : public Grabber {
 						<< configFilename << std::endl;
 			}
 
-
 			// Play parameters
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
 					"verbose", &verbose);
@@ -97,8 +96,23 @@ class FileGrabber : public Grabber {
 			config.FirstChildElement("playParameters")->QueryIntAttribute(
 					"maxNumberOfFrames", &maxNumberOfFrames);
 
+
+			// Get dataset config
+			std::string datasetCfgFilename =
+					config.FirstChildElement("Model")->Attribute("datasetFile");
+			tinyxml2::XMLDocument datasetCfg;
+			filename = "../../resources/" + datasetCfgFilename;
+			datasetCfg.LoadFile(filename.c_str());
+			if (datasetCfg.ErrorID()) {
+				std::cout << "Unable to load dataset config file: "
+						<< configFilename << std::endl;
+			}
+
+
+
+
 			// dataset path
-			tinyxml2::XMLElement *params = config.FirstChildElement("datasetPath");
+			tinyxml2::XMLElement *params = datasetCfg.FirstChildElement("datasetPath");
 			basePath = params->Attribute("base");
 			datasetName = params->Attribute("datasetName");
 			fullPath = basePath + "/" + datasetName + "/";
@@ -111,7 +125,11 @@ class FileGrabber : public Grabber {
 				std::cout<<"\t playEveryNthFrame = " << playEveryNth << std::endl;
 				std::cout<<"\t realTime = " << realTime << std::endl;
 				std::cout<<"\t maxNumberOfFrames = " << maxNumberOfFrames << std::endl;
+
+				std::cout<<"\t depthImageScale = " << depthImageScale << std::endl;
+				std::cout<<"\t fullPath = " << fullPath << std::endl;
 			}
+
 		}
 	public:
 		 /// path of the dataset
