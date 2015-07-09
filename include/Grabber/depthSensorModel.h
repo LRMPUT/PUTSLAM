@@ -64,7 +64,19 @@ class DepthSensorModel {
             if (config.ErrorID())
                 std::cout << "unable to load sensor config file: error = " << config.ErrorID() << std::endl;;
 
-            tinyxml2::XMLElement * model = config.FirstChildElement( "Model" );
+			// Get dataset config
+			std::string datasetCfgFilename =
+					config.FirstChildElement("Model")->Attribute("datasetFile");
+			tinyxml2::XMLDocument datasetCfg;
+			filename = "../../resources/" + datasetCfgFilename;
+			datasetCfg.LoadFile(filename.c_str());
+			if (datasetCfg.ErrorID()) {
+				std::cout << "Unable to load dataset config file: "
+						<< configFilename << std::endl;
+			}
+
+
+            tinyxml2::XMLElement * model = datasetCfg.FirstChildElement( "Model" );
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fv", &focalLength[1]);
             model->FirstChildElement( "focalAxis" )->QueryDoubleAttribute("Cu", &focalAxis[0]);
@@ -83,6 +95,15 @@ class DepthSensorModel {
             double queryPos[4];
             posXML->QueryDoubleAttribute("x", &queryPos[0]); posXML->QueryDoubleAttribute("y", &queryPos[1]); posXML->QueryDoubleAttribute("z", &queryPos[2]);
             pose = Quaternion (query[0], query[1], query[2], query[3])*Vec3(queryPos[0], queryPos[1], queryPos[2]);
+
+
+            std::cout<<"Parameters : " << std::endl;
+
+            std::cout<<"fu = " << focalLength[0] << " fv = " << focalLength[1] << std::endl;
+
+            int a;
+            std::cin>>a;
+
         }
         public:
             float_type focalLength[2];
