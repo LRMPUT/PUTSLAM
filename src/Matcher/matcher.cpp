@@ -9,6 +9,7 @@
 #include "../include/Matcher/dbscan.h"
 
 #include <chrono>
+#include <assert.h>
 
 using namespace putslam;
 
@@ -16,16 +17,12 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	// Detect salient features
 	prevFeatures = detectFeatures(sensorData.rgbImage);
 
-	std::cout << prevFeatures.size() << std::endl;
-
 	// DBScan
-	DBScan dbscan(6, 2, 1);
+	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 	dbscan.run(prevFeatures);
 
-	std::cout << prevFeatures.size() << std::endl;
-
 	// Show detected features
-	if (matcherParameters.verbose > 1)
+	if (matcherParameters.verbose > 2)
 		showFeatures(sensorData.rgbImage, prevFeatures);
 
 	// Describe salient features if needed
@@ -61,9 +58,7 @@ Matcher::featureSet Matcher::getFeatures() {
 
 void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
-		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
-		float euclideanDistance, cv::Mat& descriptors,
-		cv::Mat &featuresSandboxDescriptors) {
+		const std::vector<cv::Point2f>& featuresSandBoxUndistorted) {
 
 	// Merging features - rejecting feature too close to existing ones
 	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
@@ -71,17 +66,13 @@ void Matcher::mergeTrackedFeatures(
 		for (int j = 0; j < undistortedFeatures2D.size(); j++) {
 			if (cv::norm(
 					featuresSandBoxUndistorted[i] - undistortedFeatures2D[j])
-					< euclideanDistance) {
+					< matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
 				addFeature = false;
 				break;
 			}
 		}
 		if (addFeature) {
 			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
-
-			if (!featuresSandboxDescriptors.empty()) {
-				descriptors.push_back(featuresSandboxDescriptors.row(i));
-			}
 		}
 	}
 
@@ -91,13 +82,16 @@ double Matcher::runVO(const SensorFrame& currentSensorFrame,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
 
+	// Matching
 	if (matcherParameters.VOVersion
 			== Matcher::MatcherParameters::VO_MATCHING) {
 		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
+	// Tracking
 	} else if (matcherParameters.VOVersion
 			== Matcher::MatcherParameters::VO_TRACKING) {
 		return trackKLT(currentSensorFrame, estimatedTransformation,
 				inlierMatches);
+	// Something unrecognized
 	} else {
 		std::cout
 				<< "Unrecognized VO choice -> double check matcherOpenCVParameters.xml"
@@ -109,13 +103,13 @@ double Matcher::runVO(const SensorFrame& currentSensorFrame,
 double Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
-	// TODO:
-	// - if no motion than skip frame
 
+	// Current 2D positions, 3D positions and found matches
 	std::vector<cv::Point2f> undistortedFeatures2D;
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
+	// No features so identity()
 	if (prevFeaturesUndistorted.size() == 0) {
 		estimatedTransformation = Eigen::Matrix4f::Identity();
 	} else {
@@ -124,22 +118,24 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				prevFeaturesUndistorted, undistortedFeatures2D);
 
 		// Show detected features
-		if (matcherParameters.verbose > 1) {
+		if (matcherParameters.verbose > 2) {
 			cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
 			showFeatures(sensorData.rgbImage, prevFeatures);
 		}
 
-		// Associate depth
+		// Associate depth -> creating 3D features
 		features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
 				sensorData.depthImage, matcherParameters.cameraMatrixMat,
 				sensorData.depthImageScale);
 
-		std::cout<<"TrackKLT: " << undistortedFeatures2D.size() << " " << features3D.size() << std::endl;
+		// Checking that sizes are correct
+		assert ( ("TrackKLT: After tracking: 2D and 3D sizes", undistortedFeatures2D.size()  == features3D.size()) );
 
-		// RANSAC
-		// - neglect inlierMatches if you do not need them
+		// Setting the version of RANSAC
 		matcherParameters.RANSACParams.errorVersion =
 				matcherParameters.RANSACParams.errorVersionVO;
+
+		// Creating RANSAC and running it
 		RANSAC ransac(matcherParameters.RANSACParams,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
@@ -147,24 +143,16 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
-	// TODO: Parameters
-	int minimalTrackingFeatures = 100;
-	float euclideanDistance = 4;
-	if (undistortedFeatures2D.size() < minimalTrackingFeatures) {
-		// Detect salient features
+	if (undistortedFeatures2D.size() < matcherParameters.OpenCVParams.minimalTrackedFeatures) {
+
+		// Detect new salient features
 		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(
 				sensorData.rgbImage);
 
-		// DBScan on detected
-		DBScan dbscan(6, 2, 1);
+		// DBScan on detected features to remove groups of points
+		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 		dbscan.run(featuresSandbox);
 
-		cv::Mat featuresSandboxDescriptors;
-		if (matcherParameters.MapMatchingVersion
-				!= MatcherParameters::MAPMATCH_PATCHES) {
-			featuresSandboxDescriptors = describeFeatures(sensorData.rgbImage,
-					featuresSandbox);
-		}
 
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> featuresSandBoxUndistorted =
@@ -173,24 +161,45 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 						matcherParameters.distortionCoeffsMat);
 
 		// Merging features - rejecting feature too close to existing ones
-		// Parameters: (existing features and vector to add new features, new features, minimal euclidean distance between features)
-		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted,
-				euclideanDistance, prevDescriptors, featuresSandboxDescriptors);
+		// Parameters: (existing features and vector to add new features, new features, minimal image distance between features)
+		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted);
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
 				undistortedFeatures2D, sensorData.depthImage,
-				matcherParameters.cameraMatrixMat, features3D.size());
+				matcherParameters.cameraMatrixMat, sensorData.depthImageScale, features3D.size());
 
-		// Merge 3D positions
-		// TODO: It was a bug???
-		newFeatures3D.swap(features3D);
-//		features3D.reserve(features3D.size() + newFeatures3D.size());
-//		features3D.insert(features3D.end(), newFeatures3D.begin(),
-//				newFeatures3D.end());
+		// Merge 3D positions of old and new features
+		features3D.reserve(features3D.size() + newFeatures3D.size());
+		features3D.insert(features3D.end(), newFeatures3D.begin(),
+				newFeatures3D.end());
 	}
 
-	std::cout<<"TrackKLT2: " << undistortedFeatures2D.size() << " " << features3D.size() << std::endl;
+	// In case we need descriptors
+	if (matcherParameters.MapMatchingVersion
+			!= MatcherParameters::MAPMATCH_PATCHES) {
+
+		// Converting features to keypoints
+		std::vector<cv::KeyPoint> prevKeypoints;
+		cv::KeyPoint::convert(undistortedFeatures2D, prevKeypoints);
+
+		// Computing descriptors
+		prevDescriptors = describeFeatures(sensorData.rgbImage,
+				prevKeypoints);
+
+		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
+		if ( prevKeypoints.size() != undistortedFeatures2D.size() )
+		{
+			cv::KeyPoint::convert(prevKeypoints, undistortedFeatures2D);
+			features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
+					sensorData.depthImage, matcherParameters.cameraMatrixMat,
+					sensorData.depthImageScale);
+		}
+	}
+
+	// Check that the sizes are ok
+	assert ( ("TrackKLT: 2D and 3D sizes at the end", undistortedFeatures2D.size()  == features3D.size()) );
+	assert ( ("TrackKLT: 2D and 3D sizes at the end 2", undistortedFeatures2D.size()  == prevDescriptors.rows) );
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
@@ -264,7 +273,7 @@ double Matcher::match(const SensorFrame& sensorData,
 			matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
 
 	// Visualize matches
-	if (matcherParameters.verbose > 0)
+	if (matcherParameters.verbose > 1)
 		showMatches(prevRgbImage, prevFeatures, sensorData.rgbImage, features,
 				matches);
 
@@ -281,6 +290,12 @@ double Matcher::match(const SensorFrame& sensorData,
 //				> (std::chrono::high_resolution_clock::now() - start);
 //		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
 //				<< " ms" << std::endl;
+
+
+	// Check
+	assert ( ("Match sizes", features.size() == undistortedFeatures2D.size()) );
+	assert ( ("Match sizes 2", undistortedFeatures2D.size()  == features3D.size()) );
+	assert ( ("Match sizes 3", features3D.size() == descriptors.rows) );
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
@@ -331,21 +346,16 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	std::vector<cv::DMatch> matches = performMatching(mapDescriptors,
 			prevDescriptors);
 
-	std::cout << "Matching to map: descriptors - " << mapDescriptors.rows << " "
-			<< mapDescriptors.cols << " " << prevDescriptors.rows << " "
-			<< prevDescriptors.cols << std::endl;
-
-	std::cout << "Matching to map: feature3D positions - "
-			<< mapFeaturePositions3D.size() << " " << prevFeatures3D.size()
-			<< std::endl;
-
+	// No matches -> impossible to estimate transformation
 	if (matches.size() <= 0)
 		return -1.0;
 
-	// RANSAC
+	// Choosing version of RANSAC
 	std::vector<cv::DMatch> inlierMatches;
 	matcherParameters.RANSACParams.errorVersion =
 			matcherParameters.RANSACParams.errorVersionMap;
+
+	// Creating and estimating transformation
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -360,14 +370,13 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
 
-		// TODO: Test corrections after Dominic question
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
 		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
 
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
-		// TODO: take into account the future orientation
+
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
 				prevDescriptors.row(currentPoseId));
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
@@ -383,13 +392,15 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, std::vector<int> frameIds) {
 
+	double matchingXYZSphereRadius = 0.15;
+	double matchingXYZacceptRatioOfBestMatch = 0.85;
+
+	// Check some asserts
+	assert ( ("matchXYZ: 2D and 3D sizes", prevDescriptors.rows  == prevFeaturesUndistorted.size()) );
+	assert ( ("matchXYZ: 2D and 3D sizes 2", prevDescriptors.rows  == prevFeatures3D.size()) );
+
 	// The current pose descriptors are renamed to make it less confusing
-	// TODO: TESTING the computation of descriptors on current image!!!
-	//cv::Mat currentPoseDescriptors(prevDescriptors);
-	std::vector<cv::KeyPoint> prevKeypoints;
-	cv::KeyPoint::convert(prevFeaturesUndistorted, prevKeypoints);
-	cv::Mat currentPoseDescriptors = describeFeatures(prevRgbImage,
-			prevKeypoints);
+	cv::Mat currentPoseDescriptors(prevDescriptors);
 
 	// Perform matching
 	std::vector<cv::DMatch> matches;
@@ -400,11 +411,11 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			extractMapFeaturesPositions(mapFeatures);
 
 	// For all features in the map
-	int j = 0;
-	int perfectMatchCounter = 0;
-
+	int j = 0, perfectMatchCounter = 0;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
+
+		// Find the closest view in a map for a feature
 		int mapFeatureClosestFrameId = 0;
 		if (frameIds.size() > 0) {
 			for (int k = 0; k < it->descriptors.size(); k++) {
@@ -418,41 +429,46 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Possible matches for considered feature
 		std::vector<int> possibleMatchId;
 
+		// Reject all matches that are further away than threshold
 		for (int i = 0; i < prevFeatures3D.size(); i++) {
 			Eigen::Vector3f tmp((float) it->position.x(),
 					(float) it->position.y(), (float) it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
-			if (norm < 0.15) {
+
+			if (norm < matchingXYZSphereRadius) {
 				possibleMatchId.push_back(i);
 			}
 		}
 
+		// Find best match based on descriptors
 		int bestId = -1;
-		float bestVal = 9999;
+		float bestVal;
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
 			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
-					- prevDescriptors.row(id));
+					- currentPoseDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
-			if (value < bestVal) {
+			if (value < bestVal || bestId == -1) {
 				bestVal = value;
 				bestId = id;
 			}
 		}
 
+		// Pretty nice match
 		if (bestVal < 0.1) {
 			perfectMatchCounter++;
 		}
 
+		// Check the rest compared to the best
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
 			cv::Mat x =
-					(it->descriptors[0].descriptor - prevDescriptors.row(id));
+					(it->descriptors[mapFeatureClosestFrameId].descriptor - currentPoseDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
-			if (0.85 * value <= bestVal) {
+			if (matchingXYZacceptRatioOfBestMatch * value <= bestVal) {
 				cv::DMatch tmpMatch;
 				tmpMatch.distance = value;
 				tmpMatch.queryIdx = j;
@@ -460,28 +476,22 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 				matches.push_back(tmpMatch);
 			}
 		}
-
-//		if ( bestId != -1) {
-////			std::cout<<"BEST VALUE : " << bestVal << std::endl;
-//			cv::DMatch tmpMatch;
-//			tmpMatch.distance = bestVal;
-//			tmpMatch.queryIdx = j;
-//			tmpMatch.trainIdx = bestId;
-//			matches.push_back(tmpMatch);
-//		}
 	}
 
-	std::cout << "MatchesXYZ - we found : " << matches.size()
-			<< " (Perfect matches = " << perfectMatchCounter << ")"
-			<< std::endl;
+	if (matcherParameters.verbose > 0)
+		std::cout << "MatchesXYZ - we found : " << matches.size()
+				<< " (Perfect matches = " << perfectMatchCounter << ")"
+				<< std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;
 
-	// RANSAC
+	// Choosing RANSAC version
 	std::vector<cv::DMatch> inlierMatches;
 	matcherParameters.RANSACParams.errorVersion =
 			matcherParameters.RANSACParams.errorVersionMap;
+
+	// Creating and estimating transformation
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
@@ -496,16 +506,15 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		MapFeature mapFeature;
 		mapFeature.id = mapFeatures[mapId].id;
 
-		// TODO: Test corrections after Dominic question
 		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
 		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
 
 		mapFeature.position = Vec3(
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
-		// TODO: take into account the future orientation
+
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-				prevDescriptors.row(currentPoseId));
+				currentPoseDescriptors.row(currentPoseId));
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement

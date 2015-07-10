@@ -75,9 +75,7 @@ class FileGrabber : public Grabber {
 		}
 		;
 		Parameters(std::string configFilename) {
-			if ( verbosePlayParameters > 2) {
-				std::cout<<"File grabber constructor" << std::endl;
-			}
+
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());

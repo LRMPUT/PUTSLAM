@@ -59,7 +59,6 @@ class DepthSensorModel {
         Config(std::string configFilename){
             tinyxml2::XMLDocument config;
             std::string filename = "../../resources/" + configFilename;
-            std::cout<<"CONFIG FILENAME: " << configFilename << std::endl;
             config.LoadFile(filename.c_str());
             if (config.ErrorID())
                 std::cout << "unable to load sensor config file: error = " << config.ErrorID() << std::endl;;

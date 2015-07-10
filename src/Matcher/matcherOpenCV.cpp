@@ -153,10 +153,9 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
 /// Describe features
 cv::Mat MatcherOpenCV::describeFeatures(cv::Mat rgbImage,
-		std::vector<cv::KeyPoint> features) {
+		std::vector<cv::KeyPoint> &features) {
 
 	cv::Mat descriptors;
-
 	// almost in OpenCV
 	if (matcherParameters.OpenCVParams.descriptor == "LDB") {
 		//LDB ldb;

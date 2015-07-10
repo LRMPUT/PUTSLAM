@@ -27,10 +27,17 @@
   	<name>Visualizer</name>
   	<parametersFile>visualizerConfig.xml</parametersFile>
   </Visualizer>
-  
+
   <!--
 	verbose :	0 - off
   				1 - on  
+  -->
+  <PUTSLAM verbose="0"/>
+  
+	
+
+  <!--
+	
   	
   	optimizationThreadVersion : 	0 - off
   									1 - at the end
@@ -40,4 +47,4 @@
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
   -->
-  <ThreadSettings verbose="0" optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>
+  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>

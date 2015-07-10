@@ -40,6 +40,13 @@ public:
 		int maxLevels;
 		int maxIter;
 		float eps;
+
+		int minimalTrackedFeatures;
+		double minimalReprojDistanceNewTrackingFeatures;
+		double DBScanEps;
+
+		double matchingXYZSphereRadius;
+		double matchingXYZacceptRatioOfBestMatch;
 	};
 
 	/// Overloaded constructor
@@ -196,6 +203,17 @@ public:
 					"maxIter", &OpenCVParams.maxIter);
 			params->FirstChildElement("MatcherOpenCV")->QueryFloatAttribute(
 					"eps", &OpenCVParams.eps);
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+								"minimalTrackedFeatures", &OpenCVParams.minimalTrackedFeatures);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+								"minimalReprojDistanceNewTrackingFeatures", &OpenCVParams.minimalReprojDistanceNewTrackingFeatures);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+					"DBScanEps", &OpenCVParams.DBScanEps);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+								"matchingXYZSphereRadius", &OpenCVParams.matchingXYZSphereRadius);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+								"matchingXYZacceptRatioOfBestMatch", &OpenCVParams.matchingXYZacceptRatioOfBestMatch);
 
 
 			// Patches params
@@ -266,7 +284,7 @@ public:
 					&distortionCoeffsMat.at<float>(4));
 			config.Clear();
 
-			std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
+//			std::cout<<"READ CAMERA MODEL:" << std::endl << cameraMatrixMat << std::endl << distortionCoeffsMat << std::endl;
 
 		}
 	public:
@@ -317,7 +335,7 @@ protected:
 
 	/// Describe features
 	virtual cv::Mat describeFeatures(cv::Mat rgbImage,
-			std::vector<cv::KeyPoint> features) = 0;
+			std::vector<cv::KeyPoint> &features) = 0;
 
 	/// Perform matching
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,
@@ -337,8 +355,7 @@ private:
 private:
 	// Method used to combine old tracking features with new features
 	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
-			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
-			float euclideanDistance, cv::Mat& descriptors, cv::Mat& featuresSandboxDescriptors);
+			const std::vector<cv::Point2f>& featuresSandBoxUndistorted);
 };
 }
 ;
