@@ -47,7 +47,7 @@ public:
 
 	/// Describe features
 	virtual cv::Mat describeFeatures(cv::Mat rgbImage,
-			std::vector<cv::KeyPoint> features);
+			std::vector<cv::KeyPoint> & features);
 
 	/// Perform matching
 	virtual std::vector<cv::DMatch> performMatching(cv::Mat prevDescriptors,

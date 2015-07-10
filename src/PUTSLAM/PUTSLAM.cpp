@@ -2,6 +2,8 @@
 #include "../include/Utilities/simulator.h"
 #include "../include/MotionModel/decayingVelocityModel.h"
 
+#include <assert.h>
+
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
 	// Move mapFeatures to local coordinate system
@@ -26,9 +28,9 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		float minEuclideanDistanceOfFeatures, float minImageDistanceOfFeatures,
 		int cameraPoseId, std::vector<RGBDFeature>& mapFeaturesToAdd) {
 
-	std::cout << "SIZES: " << features.feature3D.size() << " "
-			<< features.undistortedFeature2D.size() << " "
-			<< features.descriptors.rows << std::endl;
+	assert ( ("chooseFeaturesToAddToMap", features.feature3D.size() == features.undistortedFeature2D.size()) );
+	assert ( ("chooseFeaturesToAddToMap 2", features.feature3D.size() == features.descriptors.rows) );
+
 
 	// Lets process possible features to add
 	for (int j = 0;
@@ -191,6 +193,10 @@ void PUTSLAM::startProcessing() {
 	double depthImageScale =
 			((FileGrabber*) grabber)->parameters.depthImageScale;
 
+
+	double getVisibleFeaturesGraphMaxDepth = 5000;
+	double getVisibleFeatureDistanceThreshold = 15.0;
+
 	///for inverse SLAM problem
 	//Simulator simulator;
 	//simulator.loadTrajectory("../../resources/traj_living_room_kt2.txt");
@@ -257,6 +263,8 @@ void PUTSLAM::startProcessing() {
 			std::vector<cv::DMatch> inlierMatches;
 
 			// Running VO - matching or tracking depending on parameters
+			// TODO:
+			// - if no motion than skip frame
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame,
 					transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
@@ -294,9 +302,7 @@ void PUTSLAM::startProcessing() {
 				// Get the visible features
 				Mat34 cameraPose = map->getSensorPose();
 				mapFeatures = map->getVisibleFeatures(cameraPose);
-				//mapFeatures = map->getVisibleFeatures(cameraPose, 500, 10.05);
-
-				//map->removeDistantFeatures(mapFeatures, 500, 10.01);
+				//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
 
 				// Find the ids of frames for which feature observations have the most similar angle
 				std::vector<int> frameIds;
@@ -322,20 +328,24 @@ void PUTSLAM::startProcessing() {
 					}
 				}
 
+				// Check some asserts
+				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+								== frameIds.size()));
+				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+								== angles.size()));
+
 				// Move mapFeatures to local coordinate system
 				moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 
-				std::cout
-						<< "Returned visible map feature size before if not cover test: "
-						<< mapFeatures.size() << std::endl;
-
 				// Now lets check if those features are not behind sth
+				const double additionalDistance = 0.15f;
 				RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
-						currentSensorFrame.depthImage, 0.15f, frameIds, angles,
+						currentSensorFrame.depthImage, additionalDistance, frameIds, angles,
 						depthImageScale);
 
-				std::cout << "Returned visible map feature size: "
-						<< mapFeatures.size() << std::endl;
+				if ( verbose > 0)
+					std::cout << "Returned visible map feature size: "
+							<< mapFeatures.size() << std::endl;
 
 				// Show map features
 				if (matcher->matcherParameters.verbose > 0)
@@ -346,6 +356,8 @@ void PUTSLAM::startProcessing() {
 				std::vector<MapFeature> measurementList;
 				Eigen::Matrix4f mapEstimatedTransformation;
 
+
+				// Map matching based only on descriptors
 				double mapMatchingInlierRatio = 0.0f;
 				if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS) {
@@ -354,11 +366,15 @@ void PUTSLAM::startProcessing() {
 							mapFeatures, cameraPoseId, measurementList,
 							mapEstimatedTransformation);
 
-				} else if (matcher->matcherParameters.MapMatchingVersion
+				}
+				// Map matching based on descriptors, but in a sphere around feature with set radius
+				else if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS) {
 					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
 							mapFeatures, cameraPoseId, measurementList,
 							mapEstimatedTransformation, frameIds);
+
+				// Map matching with patches
 				} else if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_PATCHES
 						|| matcher->matcherParameters.MapMatchingVersion
@@ -403,9 +419,6 @@ void PUTSLAM::startProcessing() {
 										currentSensorFrame.depthImageScale,
 										errorLog, false);
 
-						std::cout << "Measurement list size : "
-								<< measurementList.size() << std::endl;
-
 						// Add error to log
 						patchesErrorLog.insert(patchesErrorLog.end(),
 								errorLog.begin(), errorLog.end());
@@ -425,14 +438,15 @@ void PUTSLAM::startProcessing() {
 				VoMapPose = VoMapPose * transformation
 						* mapEstimatedTransformation;
 
-				std::cout << "Measurement list size : "
-						<< measurementList.size() << std::endl;
+				if ( verbose > 0)
+					std::cout << "Measurement to features in graph size : "
+							<< measurementList.size() << std::endl;
 
 				// Compare VO and VOMap estimate -> decide whether to add measurements to map
 				float distanceDiff = mapEstimatedTransformation.block<3, 1>(0,
 						3).norm();
-				std::cout << "Difference between VO and Map : " << distanceDiff
-						<< " meters" << std::endl;
+//				std::cout << "Difference between VO and Map : " << distanceDiff
+//						<< " meters" << std::endl;
 
 				// Add pose-pose constrain - depends on config file
 				if (addPoseToPoseEdges) {
@@ -462,7 +476,8 @@ void PUTSLAM::startProcessing() {
 
 		// Should we add some features to the map?
 		if (addFeatureToMap && !onlyVO) {
-			std::cout << "Adding features to map " << std::endl;
+			if ( verbose > 0)
+				std::cout << "Adding features to map " << std::endl;
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
@@ -472,14 +487,10 @@ void PUTSLAM::startProcessing() {
 			int addedCounter = 0;
 
 			// Lets process possible features to add
-			// TODO: change between descriptor based and descriptor free versions
 			addedCounter = chooseFeaturesToAddToMap(features, addedCounter,
 					maxOnceFeatureAdd, mapFeatures,
 					minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures,
 					cameraPoseId, mapFeaturesToAdd);
-
-			std::cout << "map->addFeatures -> adding " << addedCounter
-					<< " features" << std::endl;
 
 //            matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd);
 //            matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, mapFeaturesToAdd);
@@ -487,7 +498,8 @@ void PUTSLAM::startProcessing() {
 			// Finally, adding to map
 			map->addFeatures(mapFeaturesToAdd, cameraPoseId);
 
-			std::cout << "map->addFeatures -> added " << addedCounter
+			if ( verbose > 0)
+				std::cout << "map->addFeatures -> added " << addedCounter
 					<< " features" << std::endl;
 
 			addFeatureToMap = false;
@@ -508,6 +520,7 @@ void PUTSLAM::startProcessing() {
 				trajectoryMotionModelStream, currentSensorFrame.timestamp);
 
         frameCounter++;
+        std::cout<<frameCounter<<" "<<std::flush;
 	}
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
     saveFPS(double(frameCounter)/(elapsed.count()/1000.0));
@@ -578,6 +591,10 @@ void PUTSLAM::loadConfigs() {
 	config.LoadFile("../../resources/configGlobal.xml");
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
+
+	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("verbose",
+				&verbose);
+
 
 	// Thread settings
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("verbose",

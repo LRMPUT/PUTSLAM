@@ -518,7 +518,6 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
-        SET(DEMO_SOURCES ./demos/demoPruning.cpp)
         ADD_EXECUTABLE(demoPruning ${DEMO_SOURCES})
         add_dependencies(demoPruning g2o)
         TARGET_LINK_LIBRARIES(demoPruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)

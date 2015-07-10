@@ -267,9 +267,9 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
     for (std::vector<int>::iterator it = neighborsIds.begin();it!=neighborsIds.end();){
         Mat34 sensorPose = getSensorPose(*it);
         float_type dist = pow(cameraPose(0,3)-sensorPose(0,3),2.0) + pow(cameraPose(1,3)-sensorPose(1,3),2.0) + pow(cameraPose(2,3)-sensorPose(2,3),2.0);
-        std::cout << "id: " << *it <<  " dist: " << dist << " thresh " << distanceThreshold << "\n";
+       // std::cout << "id: " << *it <<  " dist: " << dist << " thresh " << distanceThreshold << "\n";
         if (dist>distanceThreshold){
-            std::cout << "erase\n";
+         //   std::cout << "erase\n";
             it = neighborsIds.erase(it);
         }
         else
