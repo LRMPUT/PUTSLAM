@@ -86,12 +86,12 @@ double Matcher::runVO(const SensorFrame& currentSensorFrame,
 	if (matcherParameters.VOVersion
 			== Matcher::MatcherParameters::VO_MATCHING) {
 		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
-	// Tracking
+		// Tracking
 	} else if (matcherParameters.VOVersion
 			== Matcher::MatcherParameters::VO_TRACKING) {
 		return trackKLT(currentSensorFrame, estimatedTransformation,
 				inlierMatches);
-	// Something unrecognized
+		// Something unrecognized
 	} else {
 		std::cout
 				<< "Unrecognized VO choice -> double check matcherOpenCVParameters.xml"
@@ -129,7 +129,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				sensorData.depthImageScale);
 
 		// Checking that sizes are correct
-		assert ( ("TrackKLT: After tracking: 2D and 3D sizes", undistortedFeatures2D.size()  == features3D.size()) );
+		assert(
+				("TrackKLT: After tracking: 2D and 3D sizes", undistortedFeatures2D.size()
+						== features3D.size()));
 
 		// Setting the version of RANSAC
 		matcherParameters.RANSACParams.errorVersion =
@@ -143,7 +145,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
-	if (undistortedFeatures2D.size() < matcherParameters.OpenCVParams.minimalTrackedFeatures) {
+	if (undistortedFeatures2D.size()
+			< matcherParameters.OpenCVParams.minimalTrackedFeatures) {
 
 		// Detect new salient features
 		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(
@@ -152,7 +155,6 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		// DBScan on detected features to remove groups of points
 		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 		dbscan.run(featuresSandbox);
-
 
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> featuresSandBoxUndistorted =
@@ -167,7 +169,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
 				undistortedFeatures2D, sensorData.depthImage,
-				matcherParameters.cameraMatrixMat, sensorData.depthImageScale, features3D.size());
+				matcherParameters.cameraMatrixMat, sensorData.depthImageScale,
+				features3D.size());
 
 		// Merge 3D positions of old and new features
 		features3D.reserve(features3D.size() + newFeatures3D.size());
@@ -184,12 +187,10 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		cv::KeyPoint::convert(undistortedFeatures2D, prevKeypoints);
 
 		// Computing descriptors
-		prevDescriptors = describeFeatures(sensorData.rgbImage,
-				prevKeypoints);
+		prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeypoints);
 
 		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
-		if ( prevKeypoints.size() != undistortedFeatures2D.size() )
-		{
+		if (prevKeypoints.size() != undistortedFeatures2D.size()) {
 			cv::KeyPoint::convert(prevKeypoints, undistortedFeatures2D);
 			features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
 					sensorData.depthImage, matcherParameters.cameraMatrixMat,
@@ -198,8 +199,12 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	}
 
 	// Check that the sizes are ok
-	assert ( ("TrackKLT: 2D and 3D sizes at the end", undistortedFeatures2D.size()  == features3D.size()) );
-	assert ( ("TrackKLT: 2D and 3D sizes at the end 2", undistortedFeatures2D.size()  == prevDescriptors.rows) );
+	assert(
+			("TrackKLT: 2D and 3D sizes at the end", undistortedFeatures2D.size()
+					== features3D.size()));
+	assert(
+			("TrackKLT: 2D and 3D sizes at the end 2", undistortedFeatures2D.size()
+					== prevDescriptors.rows));
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
@@ -291,11 +296,11 @@ double Matcher::match(const SensorFrame& sensorData,
 //		std::cout << "---->Time:\t RANSAC: " << duration.count() / 1000.0
 //				<< " ms" << std::endl;
 
-
 	// Check
-	assert ( ("Match sizes", features.size() == undistortedFeatures2D.size()) );
-	assert ( ("Match sizes 2", undistortedFeatures2D.size()  == features3D.size()) );
-	assert ( ("Match sizes 3", features3D.size() == descriptors.rows) );
+	assert(("Match sizes", features.size() == undistortedFeatures2D.size()));
+	assert(
+			("Match sizes 2", undistortedFeatures2D.size() == features3D.size()));
+	assert(("Match sizes 3", features3D.size() == descriptors.rows));
 
 	// Save computed values for next iteration
 	features.swap(prevFeatures);
@@ -388,6 +393,152 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	return double(inlierMatches.size()) / double(matches.size());
 }
 
+void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
+		std::vector<int> frameIds, std::vector<int> &closestFrameIndex) {
+	int j = 0;
+	for (std::vector<MapFeature>::iterator it = featureSet.begin();
+			it != featureSet.end(); ++it, ++j) {
+		// Find the closest view in a map for a feature
+		if (frameIds.size() > 0) {
+			for (int k = 0; k < it->descriptors.size(); k++) {
+				if (frameIds[j] == it->descriptors[k].poseId) {
+					closestFrameIndex[j] = k;
+					break;
+				}
+			}
+		}
+	}
+}
+
+double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
+		std::vector<int> frameIds[2],
+		std::vector<std::pair<int, int>> &pairedFeatures,
+		Eigen::Matrix4f &estimatedTransformation) {
+	double matchingXYZSphereRadius = 0.15;
+	double matchingXYZacceptRatioOfBestMatch = 0.85;
+
+
+	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
+	cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
+			extractMapDescriptors(featureSet[1]) };
+
+	std::vector<Eigen::Vector3f> featurePositions3D[2] = {
+			extractMapFeaturesPositions(featureSet[0]),
+			extractMapFeaturesPositions(featureSet[1]) };
+
+	// For all features in the map
+	std::vector<int> closestFrameIndex[2] = { std::vector<int>(
+			frameIds[0].size()), std::vector<int>(frameIds[1].size()) };
+
+	// Finding the index of the closest descriptor for all features in two provided sets
+	for (int i = 0; i < 2; i++)
+		framesIds2framesIndex(featureSet[i], frameIds[i], closestFrameIndex[i]);
+
+	// For all features in the map find potential matches
+	std::vector<cv::DMatch> matches;
+	int perfectMatchCounter = 0,  featureFirstSetIndex = 0;
+	for (std::vector<MapFeature>::iterator it = featureSet[0].begin();
+			it != featureSet[0].end(); ++it, ++featureFirstSetIndex) {
+
+		// Possible matches for considered feature
+		std::vector<int> possibleMatchId;
+
+		// Accept all matches that are closer than threshold
+		for (int featureSecondSetIndex = 0;
+				featureSecondSetIndex < featureSet[1].size();
+				featureSecondSetIndex++) {
+
+			double norm =
+					(featurePositions3D[0][featureFirstSetIndex] - featurePositions3D[1][featureSecondSetIndex]).norm();
+
+			if (norm < matchingXYZSphereRadius) {
+				possibleMatchId.push_back(featureSecondSetIndex);
+			}
+		}
+
+		// Find best match based on descriptors -- difference of descriptors
+		int bestId = -1;
+		float bestVal;
+		std::vector<double> possibleMatchDiff;
+		for (int i = 0; i < possibleMatchId.size(); i++) {
+
+			std::cout << "Possible match: " << featureFirstSetIndex << " "
+					<< possibleMatchId[i] << std::endl;
+
+			// The index of feature from second set
+			int featureSecondSetIndex = possibleMatchId[i];
+
+			// The index of the closest view for feature from first set
+			int indexOfClosestView = closestFrameIndex[0][featureFirstSetIndex];
+			cv::Mat firstSetDescriptor = it->descriptors[indexOfClosestView].descriptor;
+
+			// The index of the closest view for feature from second set
+			indexOfClosestView = closestFrameIndex[1][featureSecondSetIndex];
+			MapFeature & secondSetFeature = featureSet[1][featureSecondSetIndex];
+			cv::Mat secondSetDescriptor = secondSetFeature.descriptors[indexOfClosestView].descriptor;
+
+			// The difference between descriptors
+			double value = norm(firstSetDescriptor - secondSetDescriptor, cv::NORM_L2);
+			possibleMatchDiff.push_back(value);
+
+			// Store the best match between descriptors
+			if (value < bestVal || bestId == -1) {
+				bestVal = value;
+				bestId = featureSecondSetIndex;
+			}
+		}
+
+		// Pretty nice match
+		if (bestVal < 0.1) {
+			perfectMatchCounter++;
+		}
+
+		// Check the rest compared to the best
+		for (int i = 0; i < possibleMatchId.size(); i++) {
+			if (matchingXYZacceptRatioOfBestMatch * possibleMatchDiff[i] <= bestVal) {
+				cv::DMatch tmpMatch;
+				tmpMatch.distance = possibleMatchDiff[i];
+				tmpMatch.queryIdx = featureFirstSetIndex;
+				tmpMatch.trainIdx = possibleMatchId[i];
+				matches.push_back(tmpMatch);
+			}
+		}
+	}
+
+	if (matcherParameters.verbose > 0)
+		std::cout << "MatchPose2Pose - we found : " << matches.size()
+				<< " (Perfect matches = " << perfectMatchCounter << ")"
+				<< std::endl;
+
+	if (matches.size() <= 0)
+		return -1.0;
+
+	// Choosing RANSAC version
+	std::vector<cv::DMatch> inlierMatches;
+	matcherParameters.RANSACParams.errorVersion =
+			matcherParameters.RANSACParams.errorVersionMap;
+
+	// Creating and estimating transformation
+	RANSAC ransac(matcherParameters.RANSACParams,
+			matcherParameters.cameraMatrixMat);
+	estimatedTransformation = ransac.estimateTransformation(
+			featurePositions3D[0], featurePositions3D[1], matches,
+			inlierMatches);
+
+	// for all inliers, store the matched ids of features
+	pairedFeatures.clear();
+	for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin();
+			it != inlierMatches.end(); ++it) {
+
+		int firstSetId = it->queryIdx, secondSetId = it->trainIdx;
+		std::pair<int, int> matchedIds = std::make_pair(
+				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
+		pairedFeatures.push_back(matchedIds);
+	}
+
+	return double(inlierMatches.size()) / double(matches.size());
+}
+
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, std::vector<int> frameIds) {
@@ -396,8 +547,12 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
 
 	// Check some asserts
-	assert ( ("matchXYZ: 2D and 3D sizes", prevDescriptors.rows  == prevFeaturesUndistorted.size()) );
-	assert ( ("matchXYZ: 2D and 3D sizes 2", prevDescriptors.rows  == prevFeatures3D.size()) );
+	assert(
+			("matchXYZ: 2D and 3D sizes", prevDescriptors.rows
+					== prevFeaturesUndistorted.size()));
+	assert(
+			("matchXYZ: 2D and 3D sizes 2", prevDescriptors.rows
+					== prevFeatures3D.size()));
 
 	// The current pose descriptors are renamed to make it less confusing
 	cv::Mat currentPoseDescriptors(prevDescriptors);
@@ -435,7 +590,6 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 					(float) it->position.y(), (float) it->position.z());
 			float norm = (tmp - (prevFeatures3D[i])).norm();
 
-
 			if (norm < matchingXYZSphereRadius) {
 				possibleMatchId.push_back(i);
 			}
@@ -465,8 +619,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
-			cv::Mat x =
-					(it->descriptors[mapFeatureClosestFrameId].descriptor - currentPoseDescriptors.row(id));
+			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
+					- currentPoseDescriptors.row(id));
 			float value = norm(x, cv::NORM_L2);
 			if (matchingXYZacceptRatioOfBestMatch * value <= bestVal) {
 				cv::DMatch tmpMatch;
