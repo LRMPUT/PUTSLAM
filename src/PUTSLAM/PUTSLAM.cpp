@@ -311,22 +311,9 @@ void PUTSLAM::startProcessing() {
 						matcher->matcherParameters.maxAngleBetweenFrames);
 
 				//Remove features that we do not have a good observation angle
-				std::vector<MapFeature>::iterator mapFeaturesIter =
-						mapFeatures.begin();
-				std::vector<int>::iterator frameIdsIter = frameIds.begin();
-				std::vector<float_type>::iterator anglesIter = angles.begin();
+				removeMapFeaturesWithoutGoodObservationAngle(mapFeatures,
+						frameIds, angles);
 
-				for (; mapFeaturesIter != mapFeatures.end();) {
-					if (*frameIdsIter == -1) {
-						mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
-						frameIdsIter = frameIds.erase(frameIdsIter);
-						anglesIter = angles.erase(anglesIter);
-					} else {
-						++mapFeaturesIter;
-						++frameIdsIter;
-						++anglesIter;
-					}
-				}
 
 				// Check some asserts
 				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
@@ -880,4 +867,24 @@ void PUTSLAM::showMapFeatures(cv::Mat rgbImage,
 
 	cv::imshow("Map features", img2draw);
 	cv::waitKey(10000);
+}
+
+void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
+		std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
+		std::vector<float_type> &angles) {
+	std::vector<MapFeature>::iterator mapFeaturesIter = mapFeatures.begin();
+	std::vector<int>::iterator frameIdsIter = frameIds.begin();
+	std::vector<float_type>::iterator anglesIter = angles.begin();
+
+	for (; mapFeaturesIter != mapFeatures.end();) {
+		if (*frameIdsIter == -1) {
+			mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
+			frameIdsIter = frameIds.erase(frameIdsIter);
+			anglesIter = angles.erase(anglesIter);
+		} else {
+			++mapFeaturesIter;
+			++frameIdsIter;
+			++anglesIter;
+		}
+	}
 }

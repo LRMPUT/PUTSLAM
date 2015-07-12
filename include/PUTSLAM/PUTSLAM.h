@@ -102,6 +102,13 @@ private:
 
 	// Show features from map
 	void showMapFeatures(cv::Mat rgbImage,std::vector<MapFeature> mapFeatures);
+
+	// Remove features that we do not have a good observation angle
+	void removeMapFeaturesWithoutGoodObservationAngle(
+			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
+			std::vector<float_type> &angles);
+
+
 };
 
 #endif // _PUTSLAM_
