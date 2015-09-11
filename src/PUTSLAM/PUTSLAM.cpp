@@ -162,7 +162,6 @@ void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer) {
 void PUTSLAM::startProcessing() {
 
 	bool ifStart = true;
-	bool onlyVO = false;
 
 	// Optimize during trajectory acquisition
 	if (optimizationThreadVersion == OPTTHREAD_ON)
@@ -220,9 +219,6 @@ void PUTSLAM::startProcessing() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
-		// TODO DOMINIK - I have about 40 different config files for tests and now they are invalid as you introduced addiitional parameter.
-		// Let me know about some changes like that or at least send me new config file ...
-
 //        if (matcher->matcherParameters.showRGBframe)
 //            cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
 //        if (matcher->matcherParameters.showDepthFrame)
@@ -278,8 +274,9 @@ void PUTSLAM::startProcessing() {
 			//			Matcher::featureSet features = matcher->getFeatures();
 			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
+			robotPose = robotPose * transformation;
+
 			if (!onlyVO) {
-				robotPose = robotPose * transformation;
 
 				// cameraPose as Eigen::Transform
 				Mat34 cameraPoseIncrement = Mat34(
@@ -536,7 +533,8 @@ void PUTSLAM::startProcessing() {
 //        VertexSE3 vert(i, traj[i], i);
 //        ((FeaturesMap*) map)->updatePose(vert, true);
 //    }
-	map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+	if (optimizationThreadVersion != OPTTHREAD_OFF)
+		map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
@@ -581,6 +579,8 @@ void PUTSLAM::loadConfigs() {
 
 	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("verbose",
 				&verbose);
+	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("onlyVO",
+					&onlyVO);
 
 
 	// Thread settings
