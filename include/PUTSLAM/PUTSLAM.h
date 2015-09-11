@@ -68,7 +68,7 @@ public:
 private:
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
 	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
-	int verbose, mapManagmentThreadVersion, optimizationThreadVersion;
+	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion;
 
 
 

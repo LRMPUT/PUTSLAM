@@ -109,6 +109,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
+	std::cout<<"Tracking : " << prevFeaturesUndistorted.size() << " " ;
+
 	// No features so identity()
 	if (prevFeaturesUndistorted.size() == 0) {
 		estimatedTransformation = Eigen::Matrix4f::Identity();
@@ -142,6 +144,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 				features3D, matches, inlierMatches);
+		std::cout<<"inlier size : " << inlierMatches.size() << std::endl ;
 	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
