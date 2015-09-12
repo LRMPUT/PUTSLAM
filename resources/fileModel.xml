@@ -28,7 +28,7 @@
 		- kin1vs2_dataset5_kinect1.xml
 		- kin1vs2_dataset5_kinect2.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/icl_office_room_traj2_loop.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/freiburg1_desk.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information

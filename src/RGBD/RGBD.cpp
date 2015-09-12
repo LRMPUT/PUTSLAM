@@ -264,6 +264,36 @@ std::vector<cv::Point2f> RGBD::removeImageDistortion(
 	return returnVector;
 }
 
+std::vector<cv::Point2f> RGBD::removeImageDistortion(
+		std::vector<cv::Point2f>& features, cv::Mat cameraMatrix,
+		cv::Mat distCoeffs) {
+
+	// Check if the vector is not empty
+	if (features.size() == 0)
+		return std::vector<cv::Point2f>();
+
+	// Initialize
+	cv::Mat pointsDisorted(features), pointsUndistorted;
+
+	// Undistortion
+	cv::undistortPoints(pointsDisorted, pointsUndistorted, cameraMatrix,
+			distCoeffs);
+
+	std::vector<cv::Point2f> returnVector;
+	for (int i = 0; i < pointsUndistorted.rows; i++) {
+
+		// u = (u_normalized*fx) + cx
+		float u = pointsUndistorted.at<cv::Vec2f>(i)[0]
+				* cameraMatrix.at<float>(0, 0) + cameraMatrix.at<float>(0, 2);
+
+		// v = (v_normalized*fy) + cy
+		float v = pointsUndistorted.at<cv::Vec2f>(i)[1]
+				* cameraMatrix.at<float>(1, 1) + cameraMatrix.at<float>(1, 2);
+		returnVector.push_back(cv::Point2f(u, v));
+	}
+	return returnVector;
+}
+
 std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
 		cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose, double depthImageScale) {
 	std::vector<Eigen::Vector3f> pointCloud;

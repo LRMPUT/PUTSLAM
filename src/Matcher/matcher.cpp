@@ -32,6 +32,9 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 		prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
 	}
 
+	// Extract 2D points from keypoints
+	cv::KeyPoint::convert(prevFeatures,prevFeaturesDistorted);
+
 	// Remove distortion
 	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
 			matcherParameters.cameraMatrixMat,
@@ -58,7 +61,9 @@ Matcher::featureSet Matcher::getFeatures() {
 
 void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
-		const std::vector<cv::Point2f>& featuresSandBoxUndistorted) {
+		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+		std::vector<cv::Point2f>& distortedFeatures2D,
+		const std::vector<cv::Point2f>& featuresSandBoxDistorted) {
 
 	// Merging features - rejecting feature too close to existing ones
 	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
@@ -73,6 +78,7 @@ void Matcher::mergeTrackedFeatures(
 		}
 		if (addFeature) {
 			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
+			distortedFeatures2D.push_back(featuresSandBoxDistorted[i]);
 		}
 	}
 
@@ -105,23 +111,41 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		std::vector<cv::DMatch> &inlierMatches) {
 
 	// Current 2D positions, 3D positions and found matches
-	std::vector<cv::Point2f> undistortedFeatures2D;
+	//std::vector<cv::Point2f> undistortedFeatures2D(prevFeaturesUndistorted), distortedFeatures2D;
+	std::vector<cv::Point2f> undistortedFeatures2D, distortedFeatures2D;
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
-	std::cout<<"Tracking : " << prevFeaturesUndistorted.size() << " " ;
-
 	// No features so identity()
-	if (prevFeaturesUndistorted.size() == 0) {
+	if (prevFeaturesUndistorted.size() == 0 || prevFeaturesDistorted.size() == 0) {
 		estimatedTransformation = Eigen::Matrix4f::Identity();
 	} else {
 		// Tracking features and creating potential matches
 		matches = performTracking(prevRgbImage, sensorData.rgbImage,
-				prevFeaturesUndistorted, undistortedFeatures2D);
+						prevFeaturesDistorted, distortedFeatures2D, undistortedFeatures2D);
 
+		// Remove distortion
+		undistortedFeatures2D = RGBD::removeImageDistortion(distortedFeatures2D,
+					matcherParameters.cameraMatrixMat,
+					matcherParameters.distortionCoeffsMat);
+
+		// Check that we have the same number of undistorted and distorted features
+		assert(("TrackKLT: distorted vs undistorted sizes", undistortedFeatures2D.size()
+								== distortedFeatures2D.size()));
+
+		// Visualize matches
+		if (matcherParameters.verbose > 1)
+		{
+			std::vector<cv::KeyPoint> featuresToShow[2];
+			cv::KeyPoint::convert(prevFeaturesDistorted, featuresToShow[0]);
+			cv::KeyPoint::convert(distortedFeatures2D, featuresToShow[1]);
+			showMatches(prevRgbImage, featuresToShow[0], sensorData.rgbImage, featuresToShow[1],
+					matches);
+
+		}
 		// Show detected features
 		if (matcherParameters.verbose > 2) {
-			cv::KeyPoint::convert(undistortedFeatures2D, prevFeatures);
+			cv::KeyPoint::convert(distortedFeatures2D, prevFeatures);
 			showFeatures(sensorData.rgbImage, prevFeatures);
 		}
 
@@ -144,7 +168,6 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				matcherParameters.cameraMatrixMat);
 		estimatedTransformation = ransac.estimateTransformation(prevFeatures3D,
 				features3D, matches, inlierMatches);
-		std::cout<<"inlier size : " << inlierMatches.size() << std::endl ;
 	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
@@ -159,6 +182,10 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 		dbscan.run(featuresSandbox);
 
+		// Extract 2D points from keypoints
+		std::vector<cv::Point2f> featuresSandBoxDistorted;
+		cv::KeyPoint::convert(featuresSandbox, featuresSandBoxDistorted);
+
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> featuresSandBoxUndistorted =
 				RGBD::removeImageDistortion(featuresSandbox,
@@ -167,7 +194,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Merging features - rejecting feature too close to existing ones
 		// Parameters: (existing features and vector to add new features, new features, minimal image distance between features)
-		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted);
+		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted, distortedFeatures2D, featuresSandBoxDistorted);
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
@@ -179,6 +206,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		features3D.reserve(features3D.size() + newFeatures3D.size());
 		features3D.insert(features3D.end(), newFeatures3D.begin(),
 				newFeatures3D.end());
+
 	}
 
 	// In case we need descriptors
@@ -192,14 +220,33 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		// Computing descriptors
 		prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeypoints);
 
+
 		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
 		if (prevKeypoints.size() != undistortedFeatures2D.size()) {
-			cv::KeyPoint::convert(prevKeypoints, undistortedFeatures2D);
-			features3D = RGBD::keypoints2Dto3D(undistortedFeatures2D,
-					sensorData.depthImage, matcherParameters.cameraMatrixMat,
-					sensorData.depthImageScale);
+
+			std::vector<cv::KeyPoint> allKeypoints;
+			cv::KeyPoint::convert(undistortedFeatures2D, allKeypoints);
+
+			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
+			std::vector<Eigen::Vector3f> tmp3D;
+
+			for(int i=0, j=0;i<allKeypoints.size();i++) {
+				if ( j == prevKeypoints.size())
+					break;
+				if (cv::norm(allKeypoints[i].pt - prevKeypoints[j].pt) < 0.0001)
+				{
+					tmpDistorted.push_back(distortedFeatures2D[i]);
+					tmpUndistorted.push_back(undistortedFeatures2D[i]);
+					tmp3D.push_back(features3D[i]);
+					j++;
+				}
+			}
+			tmpDistorted.swap(distortedFeatures2D);
+			tmpUndistorted.swap(undistortedFeatures2D);
+			tmp3D.swap(features3D);
 		}
 	}
+
 
 	// Check that the sizes are ok
 	assert(
@@ -211,6 +258,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
+	distortedFeatures2D.swap(prevFeaturesDistorted);
 	features3D.swap(prevFeatures3D);
 
 	// Save rgb/depth images

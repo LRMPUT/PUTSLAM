@@ -30,7 +30,7 @@
 	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.056549" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.1" usedPairs="3"/>
+    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.04" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.1" usedPairs="3"/>
     <!-- Matching settings
     	detector : 		FAST, ORB, SURF, SIFT
     	descriptor :	BRIEF, ORB, LDB, SURF, SIFT
@@ -47,7 +47,7 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" minimalTrackedFeatures="100" minimalReprojDistanceNewTrackingFeatures="6" DBScanEps="6"
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" minimalTrackedFeatures="100" minimalReprojDistanceNewTrackingFeatures="4" DBScanEps="6"
 	matchingXYZSphereRadius = "0.15"
 	matchingXYZacceptRatioOfBestMatch = "0.85"
 />
