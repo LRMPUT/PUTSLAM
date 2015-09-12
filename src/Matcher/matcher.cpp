@@ -122,7 +122,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	} else {
 		// Tracking features and creating potential matches
 		matches = performTracking(prevRgbImage, sensorData.rgbImage,
-						prevFeaturesDistorted, distortedFeatures2D, undistortedFeatures2D);
+						prevFeaturesDistorted, distortedFeatures2D);
 
 		// Remove distortion
 		undistortedFeatures2D = RGBD::removeImageDistortion(distortedFeatures2D,
