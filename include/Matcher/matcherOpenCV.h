@@ -56,7 +56,7 @@ public:
 	// Perform tracking
 	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
 			cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
-			std::vector<cv::Point2f> &features, std::vector<cv::Point2f> &features2);
+			std::vector<cv::Point2f> &features);
 
 //
 //        /// Returns current set of features

@@ -361,7 +361,7 @@ protected:
 	// Perform tracking
 	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
 			cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
-			std::vector<cv::Point2f> &features, std::vector<cv::Point2f> &features2) = 0;
+			std::vector<cv::Point2f> &features) = 0;
 
 private:
 	// We need to extract values in OpenCV types from classes/structures
