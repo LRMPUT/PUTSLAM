@@ -61,6 +61,10 @@ std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
 		cv::Mat distCoeffs);
 
+std::vector<cv::Point2f> removeImageDistortion(
+		std::vector<cv::Point2f>& features, cv::Mat cameraMatrix,
+		cv::Mat distCoeffs);
+
 // Building a point cloud
 std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose, double depthImageScale);
 

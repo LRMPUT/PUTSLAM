@@ -179,8 +179,8 @@ std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 
 /// Perform tracking
 std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
-		cv::Mat img, std::vector<cv::Point2f> prevFeatures,
-		std::vector<cv::Point2f> &features) {
+		cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
+		std::vector<cv::Point2f> &features, std::vector<cv::Point2f> &features2) {
 
 	std::vector<uchar> status;
 	std::vector<float> err;
@@ -202,7 +202,7 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	int i = 0, j = 0;
 	std::vector<cv::DMatch> matches;
 
-	std::vector<cv::Point2f>::iterator itFeatures = features.begin();
+	std::vector<cv::Point2f>::iterator itFeatures = features.begin();//, itFeatures2 = features2.begin();
 	std::vector<uchar>::iterator it = status.begin();
 	for (; it != status.end(); ++it, i++) {
 
@@ -211,10 +211,12 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 			matches.push_back(cv::DMatch(i, j, 0));
 			j++;
 			++itFeatures;
+			//++itFeatures2;
 		}
 		// Tracking failed -- we remove those features
 		else {
 			itFeatures = features.erase(itFeatures);
+			//itFeatures2 = features2.erase(itFeatures2);
 		}
 	}
 

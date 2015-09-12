@@ -24,7 +24,7 @@ class Matcher {
 public:
 	struct featureSet {
 		std::vector<cv::KeyPoint> feature2D;
-		std::vector<cv::Point2f> undistortedFeature2D;
+		std::vector<cv::Point2f> undistortedFeature2D, distortedFeature2D;
 		cv::Mat descriptors;
 		std::vector<Eigen::Vector3f> feature3D;
 	};
@@ -329,7 +329,7 @@ protected:
 
 	/// Information about previous keypoints + descriptors
 	std::vector<cv::KeyPoint> prevFeatures;
-	std::vector<cv::Point2f> prevFeaturesUndistorted;
+	std::vector<cv::Point2f> prevFeaturesUndistorted, prevFeaturesDistorted;
 	cv::Mat prevDescriptors;
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
@@ -360,8 +360,8 @@ protected:
 
 	// Perform tracking
 	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
-			cv::Mat img, std::vector<cv::Point2f> prevFeatures,
-			std::vector<cv::Point2f> &features) = 0;
+			cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
+			std::vector<cv::Point2f> &features, std::vector<cv::Point2f> &features2) = 0;
 
 private:
 	// We need to extract values in OpenCV types from classes/structures
@@ -372,7 +372,9 @@ private:
 private:
 	// Method used to combine old tracking features with new features
 	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
-			const std::vector<cv::Point2f>& featuresSandBoxUndistorted);
+			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
+			std::vector<cv::Point2f>& distortedFeatures2D,
+			const std::vector<cv::Point2f>& featuresSandBoxDistorted);
 	void framesIds2framesIndex(std::vector<MapFeature> featureSet,
 			std::vector<int> frameIds,
 			std::vector<int> &closestFrameIndex);
