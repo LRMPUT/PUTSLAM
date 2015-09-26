@@ -47,4 +47,4 @@
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
   -->
-  <ThreadSettings optimizationThreadVersion="0" mapManagmentThreadVersion="0"></ThreadSettings>
+  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>

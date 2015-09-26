@@ -19,9 +19,18 @@
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
 	featuresDistribution 			- draw each detected feature in the common coordinate system
   	-->
-    <parameters verbose="0" useUncertainty="false" weakFeatureThr="-1" uncertaintyModel="2" edges3DPrunningThreshold="-1" fixVertices="false" addPoseToPoseEdges="true" minMeasurementsToAddPoseToFeatureEdge="21" addFeaturesWhenMapSizeLessThan="80" addFeaturesWhenMeasurementSizeLessThan="25" maxOnceFeatureAdd="40" minEuclideanDistanceOfFeatures="0.010555" minImageDistanceOfFeatures="13.651884" addNoFeaturesWhenMapSizeGreaterThan="1000" inlierThresholdEuclidean="0.03"/>
+    <parameters verbose="0" useUncertainty="false" uncertaintyModel="2" weakFeatureThr="-1" edges3DPrunningThreshold="-1" fixVertices="false" addPoseToPoseEdges="true" minMeasurementsToAddPoseToFeatureEdge="21" addFeaturesWhenMapSizeLessThan="80" addFeaturesWhenMeasurementSizeLessThan="25" maxOnceFeatureAdd="40" minEuclideanDistanceOfFeatures="0.010555" minImageDistanceOfFeatures="13.651884" addNoFeaturesWhenMapSizeGreaterThan="1000" inlierThresholdEuclidean="0.03"/>
+<!--    Export map to m-file:
+    filenameMap - map file
+    filenameData - statistics for the map-->
     <mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"/>
+<!--    Export features exportDistribution
+	  draws features from the map in the 'frameNo' image-->
     <featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"/>
+<!--     Map management thread - options:
+	  distThreshold - alert when two diferent features are closer than threshold -->
     <mapManager distThreshold="0.03"/>
+<!--    Map visualization options:
+	  frameNo2updatePointCloud - send point cloud to visualizer every i-th frame-->
     <visualization frameNo2updatePointCloud="60"/>
 </MapConfig>

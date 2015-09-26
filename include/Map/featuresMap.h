@@ -157,6 +157,9 @@ public:
     /// set drawing options
     void setDrawOptions(bool _draw);
 
+    /// use uncertainty
+    bool useUncertainty(void);
+
     class Config{
       public:
         Config() :

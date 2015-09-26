@@ -200,8 +200,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         //add measurement
 		Mat33 info(Mat33::Identity());
 
-//		info = sensorModel.informationMatrix((*it).position.x(),
-//				(*it).position.y(), (*it).position.z());
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
                 info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
@@ -940,6 +938,11 @@ void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
 /// set drawing options
 void FeaturesMap::setDrawOptions(bool _draw){
     config.visualize = _draw;
+}
+
+/// use uncertainty
+bool FeaturesMap::useUncertainty(void){
+    return config.uncertaintyModel;
 }
 
 /// disable Robust Kernel
