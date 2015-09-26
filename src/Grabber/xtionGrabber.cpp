@@ -22,7 +22,6 @@ XtionGrabber::Ptr grabberX;
 XtionGrabber::XtionGrabber(void) : Grabber("Xtion Grabber", TYPE_PRIMESENSE, MODE_BUFFER) {
     rc = openni::STATUS_OK;
     initOpenNI();
-
 }
 
 XtionGrabber::XtionGrabber(std::string modelFilename, Mode _mode) : Grabber("Xtion Grabber", TYPE_PRIMESENSE, _mode), model(modelFilename){
@@ -42,7 +41,6 @@ XtionGrabber::XtionGrabber(std::string modelFilename, Mode _mode) : Grabber("Xti
 }
 
 int XtionGrabber::grabberClose(){
-
     depth.stop();
     color.stop();
     depth.destroy();
@@ -150,7 +148,6 @@ int XtionGrabber::acquireDepthFrame(cv::Mat &m){
         printf("Unexpected frame format\n");
     }
 
-
     openni::DepthPixel* pDepth = (openni::DepthPixel*)m_depthFrame.getData();
     mtx.lock();
     m.create(m_depthFrame.getHeight(),m_depthFrame.getWidth(),CV_16UC1);  //floating point values for depth values. Important -- use 16UC1 in order to properly store data in png file.
@@ -161,7 +158,6 @@ int XtionGrabber::acquireDepthFrame(cv::Mat &m){
 }
 
 int XtionGrabber::acquireColorFrame(cv::Mat &m){
-
     rc = color.readFrame(&m_colorFrame);
     if (rc != openni::STATUS_OK)
     {

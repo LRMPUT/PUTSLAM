@@ -442,8 +442,10 @@ void PUTSLAM::startProcessing() {
 				measurementToMapSizeLog.push_back(measurementList.size());
 				if (measurementList.size()
 						> minMeasurementsToAddPoseToFeatureEdge) {
-//					matcher->computeNormals(currentSensorFrame.depthImage, measurementList);
-//					matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, measurementList);
+                    if (map->useUncertainty()){
+                        matcher->computeNormals(currentSensorFrame.depthImage, measurementList, currentSensorFrame.depthImageScale);
+                        matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, measurementList, currentSensorFrame.depthImageScale);
+                    }
 					map->addMeasurements(measurementList);
 				}
 
@@ -475,9 +477,10 @@ void PUTSLAM::startProcessing() {
 					maxOnceFeatureAdd, mapFeatures,
 					minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures,
 					cameraPoseId, mapFeaturesToAdd);
-
-//            matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd);
-//            matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, mapFeaturesToAdd);
+            if (map->useUncertainty()){
+                matcher->computeNormals(currentSensorFrame.depthImage, mapFeaturesToAdd, currentSensorFrame.depthImageScale);
+                matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, mapFeaturesToAdd, currentSensorFrame.depthImageScale);
+            }
 
 			// Finally, adding to map
 			map->addFeatures(mapFeaturesToAdd, cameraPoseId);
