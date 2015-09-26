@@ -154,6 +154,9 @@ public:
     /// get uncertainty of the feature
     Mat33 getFeatureUncertainty(unsigned int id) const;
 
+    /// set drawing options
+    void setDrawOptions(bool _draw);
+
     class Config{
       public:
         Config() :
@@ -205,7 +208,7 @@ public:
             model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
 
 //            std::cout << "Features map - finished reading parameters" << std::endl;
-
+            visualize = false;
         }
         public:
             // Use uncertinty model of the camera to determine information matrix in the graph
@@ -268,6 +271,9 @@ public:
 
             /// Update point cloud visualizer ever n-th frame
             int frameNo2updatePointCloud;
+
+            /// use visualizer
+            bool visualize;
     };
 
 private:

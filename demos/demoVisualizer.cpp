@@ -31,13 +31,18 @@ int main(int argc, char** argv)
         QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
         //object is created. libTinyxml can read only ints from xml file
 
-        cv::Mat im(480,680, CV_8UC3);
-        cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
-        cv::imshow( "PUTSLAM RGB frame", im );
-        cv::namedWindow( "PUTSLAM Depth frame", cv::WINDOW_AUTOSIZE );
-        cv::imshow( "PUTSLAM Depth frame", im );
-
         slam.reset(new PUTSLAM);
+        if (configVis.showFrames){
+            cv::Mat im(480,680, CV_8UC3);
+            cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
+            cv::imshow( "PUTSLAM RGB frame", im );
+            cv::namedWindow( "PUTSLAM Depth frame", cv::WINDOW_AUTOSIZE );
+            cv::imshow( "PUTSLAM Depth frame", im );
+            slam->setDrawOptions(true, true);
+        }
+        else{
+            slam->setDrawOptions(true, false);
+        }
 
         QApplication application(argc,argv);
 

@@ -169,9 +169,7 @@ public:
 			params->QueryIntAttribute("verbose", &verbose);
 			params->QueryIntAttribute("VOVersion", &VOVersion);
 			params->QueryIntAttribute("MapMatchingVersion",
-					&MapMatchingVersion);
-			params->QueryBoolAttribute("showRGBframe", &showRGBframe);
-			params->QueryBoolAttribute("showDepthFrame", &showDepthFrame);
+                    &MapMatchingVersion);
 
 //			std::cout<<"VOVersion: " << VOVersion << std::endl;
 //			std::cout<<"MapMatchingVersion: " << MapMatchingVersion << std::endl;
@@ -306,8 +304,7 @@ public:
 
 		}
 	public:
-		int verbose, VOVersion, MapMatchingVersion;bool showRGBframe,
-				showDepthFrame;
+        int verbose, VOVersion, MapMatchingVersion;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 		MatchingOnPatches::parameters PatchesParams;

@@ -96,6 +96,8 @@ public:
             model->FirstChildElement( "measurements" )->QueryBoolAttribute("drawEllipsoids", &drawEllipsoids);
             ellipsoidColor.setRedF(rgba[0]); ellipsoidColor.setGreenF(rgba[1]);
             ellipsoidColor.setBlueF(rgba[2]); ellipsoidColor.setAlphaF(rgba[3]);
+
+            model->FirstChildElement( "opencv" )->QueryBoolAttribute("showFrames", &showFrames);
         }
         public:
         /// Background color
@@ -172,6 +174,9 @@ public:
 
         /// measured feature position size
         double ellipsoidScale;
+
+        /// show RGB frames
+        bool showFrames;
     };
 
     /// Construction
