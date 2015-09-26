@@ -219,10 +219,10 @@ void PUTSLAM::startProcessing() {
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
-//        if (matcher->matcherParameters.showRGBframe)
-//            cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
-//        if (matcher->matcherParameters.showDepthFrame)
-//            cv::imshow( "PUTSLAM Depth frame", currentSensorFrame.depthImage );
+        if (drawImages){
+            cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
+            cv::imshow( "PUTSLAM Depth frame", currentSensorFrame.depthImage );
+        }
 
 		int cameraPoseId = 0;
 		bool addFeatureToMap = false;
@@ -887,4 +887,67 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 			++anglesIter;
 		}
 	}
+}
+
+//play trajectory
+void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
+    ///for inverse SLAM problem
+    Simulator simulator;
+    simulator.loadTrajectory(trajectoryFilename);
+    std::vector<Mat34> traj = simulator.getTrajectory();
+    int trajIt=0;
+
+    // Main loop
+    while (true) {
+        bool middleOfSequence = grabber->grab(); // grab frame
+        if (!middleOfSequence)
+            break;
+        ///for inverse SLAM problem
+        if (trajIt>traj.size()-1)
+           break;
+        SensorFrame currentSensorFrame = grabber->getSensorFrame();
+
+        if (drawImages){
+            cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
+            cv::imshow( "PUTSLAM Depth frame", currentSensorFrame.depthImage );
+        }
+        if(trajIt==0){
+            // cameraPose as Eigen::Transform
+            Mat34 cameraPose = Mat34(robotPose.cast<double>());
+
+            // Add new position to the map
+            map->addNewPose(cameraPose,
+                    currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+                    currentSensorFrame.depthImage);
+        }
+        else {
+            Eigen::Matrix4f transformation;
+
+            //for inverse slam problem
+            Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
+                        transformation = transReal.cast<float>().matrix();
+            std::cout << "iteration: " << trajIt << "\n";
+
+            robotPose = robotPose * transformation;
+
+            // cameraPose as Eigen::Transform
+            Mat34 cameraPoseIncrement = Mat34(transformation.cast<double>());
+
+            // Add new position to the map
+            map->addNewPose(cameraPoseIncrement,
+                    currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+                    currentSensorFrame.depthImage);
+        }
+        usleep(delayPlay);
+        trajIt++;
+    }
+
+    std::cout<<"Job finished! Good bye :)" << std::endl;
+}
+
+/// set drawing options
+void PUTSLAM::setDrawOptions(bool _draw, bool _drawImages){
+    visualize = _draw;
+    drawImages = _drawImages;
+    map->setDrawOptions(visualize);
 }

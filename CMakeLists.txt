@@ -38,8 +38,8 @@ option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
-option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
-mark_as_advanced(BUILD_PUTSLAM_USAC)
+#option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
+#mark_as_advanced(BUILD_PUTSLAM_USAC)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" ON)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
@@ -48,6 +48,8 @@ option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
 option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" ON)
 mark_as_advanced(BUILD_PUTSLAM_VISUALIZER)
+option(BUILD_PUTSLAM_DEMO_PLAYER "Build g2o player demo" ON)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_PLAYER)
 
 # demos
 option(BUILD_PUTSLAM_DEMO "Build PUT SLAM demonstration programs and libraries" ON)
@@ -262,7 +264,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         )
 
         ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst USAC RGBD)
+        TARGET_LINK_LIBRARIES(TransformEst RGBD)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
@@ -273,19 +275,19 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
-        file(GLOB USAC_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
-        )
-        file(GLOB USAC_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
-        )
-
-        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
-        TARGET_LINK_LIBRARIES(USAC RGBD)
-        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+#if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+#        file(GLOB USAC_SOURCES
+#            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
+#        )
+#        file(GLOB USAC_HEADERS
+#            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
+#        )
+#
+#        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
+#        TARGET_LINK_LIBRARIES(USAC RGBD)
+#        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+#        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
+#endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
 
 ###############################################################################
 #
@@ -341,7 +343,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         )
 
         ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
-        TARGET_LINK_LIBRARIES(TransformEst LDB RGBD)
+        TARGET_LINK_LIBRARIES(Matcher ${OpenCV_LIBS} LDB RGBD)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
@@ -631,3 +633,19 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
+
+###############################################################################
+#
+# PUTSLAM demo Player
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demos/demoPlayer.cpp)
+        ADD_EXECUTABLE(demoPlayer ${DEMO_SOURCES})
+#        add_dependencies(demoVisualizer Map)
+        TARGET_LINK_LIBRARIES(demoPlayer Visualizer tinyxml2 Map LIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
+        INSTALL(TARGETS demoPlayer RUNTIME DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)

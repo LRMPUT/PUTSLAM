@@ -115,6 +115,9 @@ public:
     /// get uncertainty of the feature
     virtual Mat33 getFeatureUncertainty(unsigned int id) const = 0;
 
+    /// set drawing options
+    virtual void setDrawOptions(bool _draw) = 0;
+
 protected:
 	/// Map type
 	Type type;

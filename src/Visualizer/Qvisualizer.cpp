@@ -199,14 +199,16 @@ void QGLVisualizer::drawPointClouds(void){
     mtxPointClouds.lock();
     for (int i = 0;i<pointClouds.size();i++){
         mtxCamTrajectory.lock();
-        Mat34 camPose = camTrajectory[imagesIds[i]].pose;
-        mtxCamTrajectory.unlock();
-        float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
-        glPushMatrix();
-            glMultMatrixd(GLmat);
-            glPointSize(config.cloudPointSize);
-            glCallList(cloudsList[i]);
-        glPopMatrix();
+        if (camTrajectory.size()>imagesIds[i]){
+            Mat34 camPose = camTrajectory[imagesIds[i]].pose;
+            mtxCamTrajectory.unlock();
+            float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
+            glPushMatrix();
+                glMultMatrixd(GLmat);
+                glPointSize(config.cloudPointSize);
+                glCallList(cloudsList[i]);
+            glPopMatrix();
+        }
     }
     mtxPointClouds.unlock();
 }

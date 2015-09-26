@@ -38,6 +38,10 @@ class PUTSLAM {
     Eigen::Matrix4f VoMapPose;
     Eigen::Matrix4f motionModelPose;
 
+    /// visualization options
+    bool visualize;
+    bool drawImages;
+
 public:
 
 	PUTSLAM() {
@@ -52,7 +56,9 @@ public:
 		trajectoryFreiburgStream.open("VO_trajectory.res");
 		trajectoryVOMapStream.open("VOMap_trajectory.res");
 		trajectoryMotionModelStream.open("MotionModel_trajectory.res");
-
+        drawImages = false;
+        visualize = false;
+        map->setDrawOptions(false);
 	}
 
 	void startProcessing();
@@ -64,13 +70,16 @@ public:
     inline DepthSensorModel getDepthSensorModel(){
         return map->getDepthSensorModel();
     }
+    //play trajectory
+    void startPlaying(std::string trajectoryFilename, int delayPlay);
+
+    /// set drawing options
+    void setDrawOptions(bool _draw, bool _drawImages);
 
 private:
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
 	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
 	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion;
-
-
 
 	// Save some statistics to analyze
 	std::vector<int> measurementToMapSizeLog;
@@ -107,7 +116,6 @@ private:
 	void removeMapFeaturesWithoutGoodObservationAngle(
 			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
 			std::vector<float_type> &angles);
-
 
 };
 
