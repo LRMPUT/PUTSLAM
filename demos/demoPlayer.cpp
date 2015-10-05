@@ -7,21 +7,42 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "Utilities/CLParser.h"
 
 using namespace std;
 
 std::unique_ptr<PUTSLAM> slam;
 
 // run PUTSLAM
-void runPUTSLAM(){
+void runPUTSLAM(std::string trajectoryFilename, int delayPlay){
     std::cout << "Press Enter to start\n";
     getchar();
-    slam.get()->startProcessing();
+    slam.get()->startPlaying(trajectoryFilename, delayPlay);
 }
 
 int main(int argc, char** argv)
 {
     try {
+        CLParser cmd_line(argc,argv,true);
+        if (cmd_line.get_arg("-h").size())
+            std::cout << "To run type: ./demoPlayer -i pathtotrajectoryfile.res -d 1500000\n";
+        std::string trajname;
+        int delay(1000);
+        if (cmd_line.get_arg("-i").length()!=0){
+            trajname = cmd_line.get_arg("-i");
+        }
+        else {
+            std::cout << "No input file specified (-i fileneme)\n";
+            return 0;
+        }
+        if (cmd_line.get_arg("-d").length()!=0){
+            delay = std::stoi(cmd_line.get_arg("-d"));
+        }
+        else {
+            std::cout << "Delay not specified (-d value)\n";
+            return 0;
+        }
+
         tinyxml2::XMLDocument config;
         config.LoadFile("../../resources/configGlobal.xml");
         if (config.ErrorID())
@@ -58,7 +79,7 @@ int main(int argc, char** argv)
         slam.get()->attachVisualizer(&visu);
 
         // run PUTSLAM
-        std::thread tSLAM(runPUTSLAM);
+        std::thread tSLAM(runPUTSLAM, trajname, delay);
 
         // Run main loop.
         application.exec();
