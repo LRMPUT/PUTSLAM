@@ -26,7 +26,7 @@
     <mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"/>
 <!--    Export features exportDistribution
 	  draws features from the map in the 'frameNo' image-->
-    <featuresDistribution exportDistribution="true" frameNo="0" filenameFeatDistr="featuresImage.m"/>
+    <featuresDistribution exportDistribution="false" frameNo="0" filenameFeatDistr="featuresImage.m"/>
 <!--     Map management thread - options:
 	  distThreshold - alert when two diferent features are closer than threshold -->
     <mapManager distThreshold="0.03"/>

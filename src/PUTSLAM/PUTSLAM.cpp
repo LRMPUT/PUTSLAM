@@ -4,8 +4,7 @@
 
 #include <assert.h>
 
-#include <octomap/octomap.h>
-#include <octomap/ColorOcTree.h>
+
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
@@ -162,6 +161,115 @@ void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer) {
 	((FeaturesMap*) map)->attach(visualizer);
 }
 
+void PUTSLAM::createAndSaveOctomap(double depthImageScale) {
+	int size = map->getPoseCounter();
+	// We process every octomapCloudStepSize cloud
+	for (int i = 0; i < size; i = i + octomapCloudStepSize) {
+
+		std::cout << "Octomap uses point cloud with id = " << i << std::endl;
+
+		// Getting pose and images
+		cv::Mat rgbImage, depthImage;
+		map->getImages(i, rgbImage, depthImage);
+		Mat34 pose = map->getSensorPose(i);
+		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
+
+		// Creating color cloud
+		std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> colorPointCloud =
+				RGBD::imageToColorPointCloud(rgbImage, depthImage,
+						matcher->matcherParameters.cameraMatrixMat, tmpPose,
+						depthImageScale);
+
+		// We add every point
+		for (int k = 0; k < colorPointCloud.size(); k++) {
+			octomap::point3d endpoint((float) colorPointCloud[k].first.x(),
+					(float) colorPointCloud[k].first.y(),
+					(float) colorPointCloud[k].first.z());
+			octomap::ColorOcTreeNode* n = octomapTree.get()->updateNode(
+					endpoint,
+					true);
+
+			// Adding also color
+			octomapTree.get()->integrateNodeColor(
+					(float) colorPointCloud[k].first.x(),
+					(float) colorPointCloud[k].first.y(),
+					(float) colorPointCloud[k].first.z(),
+					colorPointCloud[k].second.x(),
+					colorPointCloud[k].second.y(),
+					colorPointCloud[k].second.z());
+		}
+
+	}
+	// We update the colors
+	std::cout << "Updating tree color" << std::endl;
+	octomapTree.get()->updateInnerOccupancy();
+	// Writing octomap to file
+	std::string filename(octomapFileToSave);
+	std::cout << "Writing color tree to " << filename << std::endl;
+	// write color tree
+	octomapTree.get()->write(filename);
+}
+
+void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
+	std::ifstream reconstructStr("reconstruction.res");
+
+	int i = 0;
+	while (1) {
+		bool middleOfSequence = grabber->grab(); // grab frame
+		if (!middleOfSequence)
+			break;
+
+		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+		double timeS, tx, ty, tz, qw, qx, qy, qz;
+		reconstructStr >> timeS >> tx >> ty >> tz >> qx >> qy >> qz >> qw;
+
+		if (i % octomapCloudStepSize == 0) {
+			std::cout << "Octomap uses point clouds with id = " << i
+					<< std::endl;
+			Eigen::Quaternion<float> Q(qw, qx, qy, qz);
+			Eigen::Matrix4f tmpPose;
+			tmpPose.setIdentity();
+			tmpPose.block<3, 3>(0, 0) = Q.toRotationMatrix();
+			tmpPose(0, 3) = tx;
+			tmpPose(1, 3) = ty;
+			tmpPose(2, 3) = tz;
+
+			// Save for octomap
+			std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> colorPointCloud =
+					RGBD::imageToColorPointCloud(currentSensorFrame.rgbImage,
+							currentSensorFrame.depthImage,
+							matcher->matcherParameters.cameraMatrixMat, tmpPose,
+							depthImageScale);
+
+			for (int k = 0; k < colorPointCloud.size(); k++) {
+				octomap::point3d endpoint((float) colorPointCloud[k].first.x(),
+						(float) colorPointCloud[k].first.y(),
+						(float) colorPointCloud[k].first.z());
+				octomap::ColorOcTreeNode* n = octomapTree.get()->updateNode(endpoint, true);
+
+				octomapTree.get()->integrateNodeColor((float) colorPointCloud[k].first.x(),
+						(float) colorPointCloud[k].first.y(),
+						(float) colorPointCloud[k].first.z(),
+						colorPointCloud[k].second.x(),
+						colorPointCloud[k].second.y(),
+						colorPointCloud[k].second.z());
+			}
+
+		}
+		i++;
+	}
+
+	// set inner node colors
+	std::cout << "Updating tree color" << std::endl;
+	octomapTree.get()->updateInnerOccupancy();
+
+	std::string filename(octomapFileToSave);
+	std::cout << "Writing color tree to " << filename << std::endl;
+
+	// write color tree
+	octomapTree.get()->write(filename);
+}
+
 void PUTSLAM::startProcessing() {
 
 	/// TODO: MAKE IT NICER
@@ -187,87 +295,6 @@ void PUTSLAM::startProcessing() {
 	double getVisibleFeatureDistanceThreshold = 15.0;
 
 
-
-
-	double res = 0.01;  // create empty tree with resolution 0.05 (different from default 0.1 for test)
-	octomap::ColorOcTree tree (res);
-
-	std::cout << "Saving to octomap" << std::endl;
-
-	int iii = 0;
-	std::ifstream reconstructStr("reconstruction.res");
-
-	while (1) {
-		bool middleOfSequence = grabber->grab(); // grab frame
-		if (!middleOfSequence)
-			break;
-
-		SensorFrame currentSensorFrame = grabber->getSensorFrame();
-		double timeS, tx, ty, tz, qw, qx, qy, qz;
-		reconstructStr >> timeS >> tx >> ty >> tz >> qx >> qy >> qz >> qw;
-
-		if (iii % 10 == 0 ) {
-			std::cout << "Octomap uses point clouds with id = " << iii
-					<< std::endl;
-			std::cout << "Pos = (" << tx << "," << ty << "," << tz << ") quatX="
-					<< qx << " quatY=" << qy << " quatZ=" << qz << " quatW="
-					<< qw << std::endl;
-			Eigen::Quaternion<float> Q(qw, qx, qy, qz);
-			Eigen::Matrix4f tmpPose;
-			tmpPose.setIdentity();
-			tmpPose.block<3, 3>(0, 0) = Q.toRotationMatrix();
-			tmpPose(0, 3) = tx;
-			tmpPose(1, 3) = ty;
-			tmpPose(2, 3) = tz;
-
-			// Save for octomap
-			std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-					currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
-					matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
-			RGBD::saveToFile(pointCloud, "octomap.log", iii == 0);
-
-
-			std::vector<std::pair<Eigen::Vector3f,Eigen::Vector3i>> colorPointCloud = RGBD::imageToColorPointCloud(
-								currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
-								matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
-
-			for (int k=0;k<colorPointCloud.size();k++)
-			{
-				octomap::point3d endpoint(
-						(float) colorPointCloud[k].first.x(),
-						(float) colorPointCloud[k].first.y(),
-						(float) colorPointCloud[k].first.z());
-				octomap::ColorOcTreeNode* n = tree.updateNode(endpoint, true);
-
-				tree.integrateNodeColor((float) colorPointCloud[k].first.x(),
-						(float) colorPointCloud[k].first.y(),
-						(float) colorPointCloud[k].first.z(), colorPointCloud[k].second.x(),
-												colorPointCloud[k].second.y(),
-												colorPointCloud[k].second.z());
-//				n->setColor(colorPointCloud[k].second.x(),
-//						colorPointCloud[k].second.y(),
-//						colorPointCloud[k].second.z()); // set color to red
-			}
-
-		}
-		iii++;
-	}
-
-	// set inner node colors
-	std::cout << "Updating tree color" << std::endl;
-	tree.updateInnerOccupancy();
-
-	cout << endl;
-
-	std::string filename("simple_color_test.ot");
-	std::cout << "Writing color tree to " << filename << std::endl;
-	// write color tree
-	tree.write(filename);
-
-	std::cout << "KONIEC OCTOMAP" << std::endl;
-	int aaaa;
-	std::cin >> aaaa;
-
 	bool ifStart = true;
 
 	// Optimize during trajectory acquisition
@@ -280,7 +307,15 @@ void PUTSLAM::startProcessing() {
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)
 		map->startMapManagerThread(1);
 
+	// Creating octomap
+	if ( octomap > 0)
+		octomapTree.reset(new octomap::ColorOcTree(octomapResolution));
 
+	if ( octomapOffline > 0)
+	{
+		createAndSaveOctomapOffline(depthImageScale);
+		exit(0);
+	}
 
 	///for inverse SLAM problem
 	//Simulator simulator;
@@ -636,24 +671,10 @@ void PUTSLAM::startProcessing() {
 			((FileGrabber*) grabber)->parameters.datasetName);
 
 	// Save map
-//	std::cout << "Saving to octomap" << std::endl;
-//	int size = map->getPoseCounter();
-//	for (int i = 0; i < size; i = i + size / 15) {
-//
-//		std::cout << "Octomap uses point clouds with id = " << i << std::endl;
-//
-//		cv::Mat rgbImage, depthImage;
-//		map->getImages(i, rgbImage, depthImage);
-//		Mat34 pose = map->getSensorPose(i);
-//		Eigen::Matrix4f tmpPose = Eigen::Matrix4f(pose.matrix().cast<float>());
-//
-//		// Save for octomap
-//		std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
-//				rgbImage, depthImage,
-//				matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
-//		RGBD::saveToFile(pointCloud, "octomap.log", i == 0);
-//
-//	}
+	std::cout << "Saving to octomap" << std::endl;
+	if ( octomap > 0)
+		createAndSaveOctomap(depthImageScale);
+
 
 	std::cout << "Job finished! Good bye :)" << std::endl;
 }
@@ -670,6 +691,15 @@ void PUTSLAM::loadConfigs() {
 				&verbose);
 	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("onlyVO",
 					&onlyVO);
+	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("octomap",
+						&octomap);
+	config.FirstChildElement("PUTSLAM")->QueryDoubleAttribute("octomapResolution",
+						&octomapResolution);
+	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("octomapCloudStepSize",
+							&octomapCloudStepSize);
+	octomapFileToSave = config.FirstChildElement( "PUTSLAM" )->Attribute("octomapFileToSave");
+	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("octomapOffline",
+								&octomapOffline);
 
 
 	// Thread settings

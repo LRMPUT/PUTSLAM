@@ -22,15 +22,18 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
         config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(
 				sensorConfig), lastOptimizedPose(0), Map("Features Map",
 				MAP_FEATURES) {
+
 	tinyxml2::XMLDocument config;
 	std::string filename = "../../resources/" + configMap;
 	config.LoadFile(filename.c_str());
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
+
 	poseGraph = createPoseGraphG2O();
 
 	// set that map is currently empty
 	emptyMap = true;
+
 }
 
 /// Destruction
