@@ -75,17 +75,17 @@ public:
 
 	/// compute normals to rgbd features
 	template<class T>
-	void computeNormals(const cv::Mat& depthImage, T& features) {
+    void computeNormals(const cv::Mat& depthImage, T& features, double depthImageScale) {
 		RGBD::computeNormals(depthImage, features,
-				matcherParameters.cameraMatrixMat);
+                matcherParameters.cameraMatrixMat, depthImageScale);
 	}
 
 	/// compute RGB gradients to rgbd features
 	template<class T>
 	void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage,
-			T& features) {
+            T& features, double depthImageScale) {
 		RGBD::computeRGBGradients(rgbImage, depthImage, features,
-				matcherParameters.cameraMatrixMat);
+                matcherParameters.cameraMatrixMat, depthImageScale);
 	}
 
 	// VO
@@ -169,9 +169,7 @@ public:
 			params->QueryIntAttribute("verbose", &verbose);
 			params->QueryIntAttribute("VOVersion", &VOVersion);
 			params->QueryIntAttribute("MapMatchingVersion",
-					&MapMatchingVersion);
-			params->QueryBoolAttribute("showRGBframe", &showRGBframe);
-			params->QueryBoolAttribute("showDepthFrame", &showDepthFrame);
+                    &MapMatchingVersion);
 
 //			std::cout<<"VOVersion: " << VOVersion << std::endl;
 //			std::cout<<"MapMatchingVersion: " << MapMatchingVersion << std::endl;
@@ -306,8 +304,7 @@ public:
 
 		}
 	public:
-		int verbose, VOVersion, MapMatchingVersion;bool showRGBframe,
-				showDepthFrame;
+        int verbose, VOVersion, MapMatchingVersion;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 		MatchingOnPatches::parameters PatchesParams;

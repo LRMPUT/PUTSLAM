@@ -118,8 +118,10 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
     updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
 
     emptyMap = false;
-    notify(bufferMapVisualization);
-    notify(features2visualization);
+    if (config.visualize){
+        notify(bufferMapVisualization);
+        notify(features2visualization);
+    }
 }
 
 /// add new pose of the camera, returns id of the new pose
@@ -160,12 +162,13 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
     }
-    if (config.frameNo2updatePointCloud>=0){
-        if (trajSize%config.frameNo2updatePointCloud==0){
-            //PointCloud cloud;
-            //sensorModel.convert2cloud(image, depthImage, cloud);
-            this->notify(image, depthImage, trajSize);
+    if (config.visualize){
+        if (config.frameNo2updatePointCloud>=0){
+            if (trajSize%config.frameNo2updatePointCloud==0){
+                this->notify(image, depthImage, trajSize);
+            }
         }
+        notify(bufferMapVisualization);
     }
 
 	return trajSize;
@@ -197,8 +200,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         //add measurement
 		Mat33 info(Mat33::Identity());
 
-//		info = sensorModel.informationMatrix((*it).position.x(),
-//				(*it).position.y(), (*it).position.z());
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
                 info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
@@ -218,7 +219,8 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 		poseGraph->addEdge3D(e);
         features2visualization.push_back(e);
     }
-    notify(features2visualization);
+    if (config.visualize)
+        notify(features2visualization);
 }
 
 /// add measurement between two poses
@@ -931,6 +933,16 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
 /// set Robust Kernel
 void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
 	((PoseGraphG2O*) poseGraph)->setRobustKernel(name, delta);
+}
+
+/// set drawing options
+void FeaturesMap::setDrawOptions(bool _draw){
+    config.visualize = _draw;
+}
+
+/// use uncertainty
+bool FeaturesMap::useUncertainty(void){
+    return config.uncertaintyModel;
 }
 
 /// disable Robust Kernel

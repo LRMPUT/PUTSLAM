@@ -87,8 +87,9 @@ class DepthSensorModel {
             model->FirstChildElement( "varianceDepth" )->QueryDoubleAttribute("c2", &distVarCoefs[1]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeU", &imageSize[0]);
             model->FirstChildElement( "imageSize" )->QueryIntAttribute("sizeV", &imageSize[1]);
-            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyNormal", &scaleUncertaintyNormal);
-            model->FirstChildElement( "alternateModel" )->QueryDoubleAttribute("scaleUncertaintyGradient", &scaleUncertaintyGradient);
+            model->FirstChildElement( "normalModel" )->QueryDoubleAttribute("scaleUncertaintyNormal", &scaleUncertaintyNormal);
+            model->FirstChildElement( "gradientModel" )->QueryDoubleAttribute("scaleUncertaintyGradient", &scaleUncertaintyGradient);
+            datasetCfg.FirstChildElement( "datasetPath" )->QueryDoubleAttribute("depthImageScale", &depthImageScale);
             tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
             double query[4];
             posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);
@@ -111,6 +112,7 @@ class DepthSensorModel {
 				std::cout << "\t c2 = " << distVarCoefs[1] << std::endl;
 				std::cout << "\t sizeU = " << imageSize[0] << std::endl;
 				std::cout << "\t sizeV = " << imageSize[1] << std::endl;
+                std::cout << "\t depthImageScale = " << depthImageScale << std::endl;
 				std::cout << "\t scaleUncertaintyNormal = "
 						<< scaleUncertaintyNormal << std::endl;
 				std::cout << "\t scaleUncertaintyGradient = "
@@ -132,6 +134,7 @@ class DepthSensorModel {
             Mat34 pose; // kinect pose in robot's coordination frame
             float_type scaleUncertaintyNormal;
             float_type scaleUncertaintyGradient;
+            float_type depthImageScale;
     };
 
     Config config;

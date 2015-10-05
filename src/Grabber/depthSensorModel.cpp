@@ -108,7 +108,7 @@ void DepthSensorModel::convert2cloud(const cv::Mat& color, const cv::Mat& depth,
             const cv::Point3_ <uchar>* p = color.ptr<cv::Point3_<uchar> >(i,j);
             putslam::Point3D point;
             Eigen::Vector3d pointxyz;
-            getPoint(j,i, (double)depth.at<uint16_t>(i, j)/5000.0, pointxyz);//5000 - depth scale
+            getPoint(j,i, (double)depth.at<uint16_t>(i, j)/config.depthImageScale, pointxyz);//5000 - depth scale
             point.x = pointxyz(0); point.y = pointxyz(1); point.z = pointxyz(2);
             point.r = p->z; point.g = p->y; point.b = p->x;
             cloud.push_back(point);
