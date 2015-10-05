@@ -75,7 +75,6 @@ class DepthSensorModel {
 						<< configFilename << std::endl;
 			}
 
-
             tinyxml2::XMLElement * model = datasetCfg.FirstChildElement( "Model" );
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fu", &focalLength[0]);
             model->FirstChildElement( "focalLength" )->QueryDoubleAttribute("fv", &focalLength[1]);
@@ -90,6 +89,7 @@ class DepthSensorModel {
             model->FirstChildElement( "normalModel" )->QueryDoubleAttribute("scaleUncertaintyNormal", &scaleUncertaintyNormal);
             model->FirstChildElement( "gradientModel" )->QueryDoubleAttribute("scaleUncertaintyGradient", &scaleUncertaintyGradient);
             datasetCfg.FirstChildElement( "datasetPath" )->QueryDoubleAttribute("depthImageScale", &depthImageScale);
+
             tinyxml2::XMLElement * posXML = config.FirstChildElement( "pose" );
             double query[4];
             posXML->QueryDoubleAttribute("qw", &query[0]); posXML->QueryDoubleAttribute("qx", &query[1]); posXML->QueryDoubleAttribute("qy", &query[2]); posXML->QueryDoubleAttribute("qz", &query[3]);

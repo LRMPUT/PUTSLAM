@@ -9,6 +9,9 @@
 #include <chrono>
 #include <fstream>
 
+#include <octomap/octomap.h>
+#include <octomap/ColorOcTree.h>
+
 #include "../include/Defs/putslam_defs.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
@@ -79,7 +82,12 @@ public:
 private:
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
 	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
-	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion;
+	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion, octomap, octomapCloudStepSize, octomapOffline;
+	double octomapResolution;
+	std::string octomapFileToSave;
+
+	// Octomap pointer
+	std::unique_ptr<octomap::ColorOcTree> octomapTree;
 
 	// Save some statistics to analyze
 	std::vector<int> measurementToMapSizeLog;
@@ -117,6 +125,8 @@ private:
 			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
 			std::vector<float_type> &angles);
 
+	void createAndSaveOctomap(double depthImageScale);
+	void createAndSaveOctomapOffline( double depthImageScale);
 };
 
 #endif // _PUTSLAM_

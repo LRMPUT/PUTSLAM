@@ -31,8 +31,15 @@
   <!--
 	verbose :	0 - off
   				1 - on  
+
+	onlyVO - turns on/off the map
+	octomap - turns on/off the octomap
+	octomapResolution - minimal resolution of created octomap in metres
+	octomapCloudStepSize - we take every octomapCloudStepSize cloud for octomap
+	octomapFileToSave - name of the file to save octomap
+	octomapOffline  - turns on/off processing the octomap before SLAM based on "reconstruction.res"
   -->
-  <PUTSLAM verbose="0" onlyVO="0"/>
+  <PUTSLAM verbose="0" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
   
 	
 
