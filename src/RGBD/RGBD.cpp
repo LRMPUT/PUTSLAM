@@ -306,14 +306,40 @@ std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
 	    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
 	    			depth, cameraMatrix);
 
-	    	point3D = pose.block<3,3>(0,0) * point3D + pose.block<3,1>(0,3);
-
 	    	if ( point3D.z() > 0.0001) {
+	    		point3D = pose.block<3,3>(0,0) * point3D + pose.block<3,1>(0,3);
+
 	    		pointCloud.push_back(point3D);
 	    	}
 	    }
 	}
 	return pointCloud;
+}
+
+std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> RGBD::imageToColorPointCloud(
+		cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix,
+		Eigen::Matrix4f pose, double depthImageScale) {
+	std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> colorPointCloud;
+
+		for(int j = 0;j < rgbImage.rows;j++){
+		    for(int i = 0;i < rgbImage.cols;i++){
+
+		    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / depthImageScale;
+
+		    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
+		    			depth, cameraMatrix);
+
+		    	cv::Vec3i colorBGR = rgbImage.at<cv::Vec3b>(cv::Point2f(i,j));
+		    	Eigen::Vector3i color3 = Eigen::Vector3i(colorBGR.val[2],colorBGR.val[1],colorBGR.val[0]);
+
+		    	if ( point3D.z() > 0.0001) {
+		    		point3D = pose.block<3,3>(0,0) * point3D + pose.block<3,1>(0,3);
+
+		    		colorPointCloud.push_back(std::make_pair(point3D, color3));
+		    	}
+		    }
+		}
+		return colorPointCloud;
 }
 
 void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first, Eigen::Matrix4f tmpPose)

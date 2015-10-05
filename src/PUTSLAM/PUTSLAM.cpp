@@ -4,6 +4,9 @@
 
 #include <assert.h>
 
+#include <octomap/octomap.h>
+#include <octomap/ColorOcTree.h>
+
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
 	// Move mapFeatures to local coordinate system
@@ -161,18 +164,6 @@ void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer) {
 
 void PUTSLAM::startProcessing() {
 
-	bool ifStart = true;
-
-	// Optimize during trajectory acquisition
-	if (optimizationThreadVersion == OPTTHREAD_ON)
-		map->startOptimizationThread(1, 0);
-	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
-		map->startOptimizationThread(1, 0, "Cauchy", 1);
-
-	// Thread looking for too close features
-	if (mapManagmentThreadVersion == MAPTHREAD_ON)
-		map->startMapManagerThread(1);
-
 	/// TODO: MAKE IT NICER
 	int addFeaturesWhenMapSizeLessThan =
 			((FeaturesMap*) map)->getAddFeaturesWhenMapSizeLessThan();
@@ -192,9 +183,104 @@ void PUTSLAM::startProcessing() {
 	double depthImageScale =
 			((FileGrabber*) grabber)->parameters.depthImageScale;
 
-
 	double getVisibleFeaturesGraphMaxDepth = 5000;
 	double getVisibleFeatureDistanceThreshold = 15.0;
+
+
+
+
+	double res = 0.01;  // create empty tree with resolution 0.05 (different from default 0.1 for test)
+	octomap::ColorOcTree tree (res);
+
+	std::cout << "Saving to octomap" << std::endl;
+
+	int iii = 0;
+	std::ifstream reconstructStr("reconstruction.res");
+
+	while (1) {
+		bool middleOfSequence = grabber->grab(); // grab frame
+		if (!middleOfSequence)
+			break;
+
+		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+		double timeS, tx, ty, tz, qw, qx, qy, qz;
+		reconstructStr >> timeS >> tx >> ty >> tz >> qx >> qy >> qz >> qw;
+
+		if (iii % 10 == 0 ) {
+			std::cout << "Octomap uses point clouds with id = " << iii
+					<< std::endl;
+			std::cout << "Pos = (" << tx << "," << ty << "," << tz << ") quatX="
+					<< qx << " quatY=" << qy << " quatZ=" << qz << " quatW="
+					<< qw << std::endl;
+			Eigen::Quaternion<float> Q(qw, qx, qy, qz);
+			Eigen::Matrix4f tmpPose;
+			tmpPose.setIdentity();
+			tmpPose.block<3, 3>(0, 0) = Q.toRotationMatrix();
+			tmpPose(0, 3) = tx;
+			tmpPose(1, 3) = ty;
+			tmpPose(2, 3) = tz;
+
+			// Save for octomap
+			std::vector<Eigen::Vector3f> pointCloud = RGBD::imageToPointCloud(
+					currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
+					matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
+			RGBD::saveToFile(pointCloud, "octomap.log", iii == 0);
+
+
+			std::vector<std::pair<Eigen::Vector3f,Eigen::Vector3i>> colorPointCloud = RGBD::imageToColorPointCloud(
+								currentSensorFrame.rgbImage, currentSensorFrame.depthImage,
+								matcher->matcherParameters.cameraMatrixMat, tmpPose, depthImageScale);
+
+			for (int k=0;k<colorPointCloud.size();k++)
+			{
+				octomap::point3d endpoint(
+						(float) colorPointCloud[k].first.x(),
+						(float) colorPointCloud[k].first.y(),
+						(float) colorPointCloud[k].first.z());
+				octomap::ColorOcTreeNode* n = tree.updateNode(endpoint, true);
+
+				tree.integrateNodeColor((float) colorPointCloud[k].first.x(),
+						(float) colorPointCloud[k].first.y(),
+						(float) colorPointCloud[k].first.z(), colorPointCloud[k].second.x(),
+												colorPointCloud[k].second.y(),
+												colorPointCloud[k].second.z());
+//				n->setColor(colorPointCloud[k].second.x(),
+//						colorPointCloud[k].second.y(),
+//						colorPointCloud[k].second.z()); // set color to red
+			}
+
+		}
+		iii++;
+	}
+
+	// set inner node colors
+	std::cout << "Updating tree color" << std::endl;
+	tree.updateInnerOccupancy();
+
+	cout << endl;
+
+	std::string filename("simple_color_test.ot");
+	std::cout << "Writing color tree to " << filename << std::endl;
+	// write color tree
+	tree.write(filename);
+
+	std::cout << "KONIEC OCTOMAP" << std::endl;
+	int aaaa;
+	std::cin >> aaaa;
+
+	bool ifStart = true;
+
+	// Optimize during trajectory acquisition
+	if (optimizationThreadVersion == OPTTHREAD_ON)
+		map->startOptimizationThread(1, 0);
+	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
+		map->startOptimizationThread(1, 0, "Cauchy", 1);
+
+	// Thread looking for too close features
+	if (mapManagmentThreadVersion == MAPTHREAD_ON)
+		map->startMapManagerThread(1);
+
+
 
 	///for inverse SLAM problem
 	//Simulator simulator;

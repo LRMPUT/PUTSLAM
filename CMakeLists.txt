@@ -83,6 +83,11 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 #link_directories(${PCL_LIBRARY_DIRS})
 #add_definitions(${PCL_DEFINITIONS})
 
+#octomap library
+find_package(octomap REQUIRED)
+include_directories(${OCTOMAP_INCLUDE_DIRS})
+link_libraries(${OCTOMAP_LIBRARIES})
+
 #g2o library
 find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIR})

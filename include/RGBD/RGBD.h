@@ -66,10 +66,15 @@ std::vector<cv::Point2f> removeImageDistortion(
 		cv::Mat distCoeffs);
 
 // Building a point cloud
-std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose, double depthImageScale);
+std::vector<Eigen::Vector3f> imageToPointCloud(cv::Mat rgbImage,
+		cv::Mat depthImage, cv::Mat cameraMatrix, Eigen::Matrix4f pose,
+		double depthImageScale);
+std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> imageToColorPointCloud(
+		cv::Mat rgbImage, cv::Mat depthImage, cv::Mat cameraMatrix,
+		Eigen::Matrix4f pose, double depthImageScale);
 
 void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName,
-		bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());
+bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());
 
 ///compute normal
 Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);

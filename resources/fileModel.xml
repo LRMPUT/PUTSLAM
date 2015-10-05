@@ -27,8 +27,11 @@
 		- kin1vs2_dataset4_kinect2.xml
 		- kin1vs2_dataset5_kinect1.xml
 		- kin1vs2_dataset5_kinect2.xml
+		Messor datasets;
+		- messor_3.xml
+		- messor_5.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/freiburg1_desk.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/messor_5.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information
@@ -38,6 +41,6 @@
 	playEveryNthFrame 	-> only every Nth frame is used in motion estimation
   	realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
  	maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
-<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="5000"/>
+<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="15000"/>
 
 <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"/>
