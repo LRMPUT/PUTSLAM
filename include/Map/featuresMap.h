@@ -15,6 +15,7 @@
 #include "../include/Grabber/depthSensorModel.h"
 #include <iostream>
 #include <deque>
+#include <queue>
 
 #define FEATURES_START_ID 10000
 
@@ -26,6 +27,22 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 }
 
 using namespace putslam;
+
+class LCElement{
+public:
+    /// matched poses
+    std::pair<int,int> posesIds;
+
+    /// distance between poses, the smaller the higher priority in the queue
+    double distance;
+
+    bool operator() (const LCElement& elementA, const LCElement& elementB) const {
+        if (elementA.distance>elementB.distance)
+            return true;
+        else
+            return false;
+    }
+};
 
 /// Map implementation
 class FeaturesMap: public Map, public Subject {
@@ -96,6 +113,9 @@ public:
     /// start map management thread
     void startMapManagerThread(int verbose = 0);
 
+    /// start loop closure thread
+    void startLoopClosureThread(int verbose, Matcher* matcher);
+
 	/// Wait for optimization thread to finish
 	void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename);
@@ -106,6 +126,9 @@ public:
 
     /// Wait for map management thread to finish
     void finishManagementThr(void);
+
+    /// Wait for loop closure thread to finish
+    void finishLoopClosureThr(void);
 
     /// Save map to file
     void save2file(std::string mapFilename, std::string graphFilename);
@@ -180,7 +203,7 @@ public:
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("addPoseToPoseEdges", &addPoseToPoseEdges);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("minMeasurementsToAddPoseToFeatureEdge", &minMeasurementsToAddPoseToFeatureEdge);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("weakFeatureThr", &weakFeatureThr);
-            model->FirstChildElement( "parameters" )->QueryFloatAttribute("edges3DPrunningThreshold", &edges3DPrunningThreshold);
+            model->FirstChildElement( "parameters" )->QueryDoubleAttribute("edges3DPrunningThreshold", &edges3DPrunningThreshold);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 					"addFeaturesWhenMapSizeLessThan",
 					&addFeaturesWhenMapSizeLessThan);
@@ -190,10 +213,10 @@ public:
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 								"maxOnceFeatureAdd",
 								&maxOnceFeatureAdd);
-			model->FirstChildElement("parameters")->QueryFloatAttribute(
+            model->FirstChildElement("parameters")->QueryDoubleAttribute(
 					"minEuclideanDistanceOfFeatures",
 					&minEuclideanDistanceOfFeatures);
-			model->FirstChildElement("parameters")->QueryFloatAttribute(
+            model->FirstChildElement("parameters")->QueryDoubleAttribute(
 								"minImageDistanceOfFeatures",
 								&minImageDistanceOfFeatures);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
@@ -202,11 +225,16 @@ public:
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
             filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
-            model->FirstChildElement( "mapManager" )->QueryFloatAttribute("distThreshold", &distThreshold);
+            model->FirstChildElement( "mapManager" )->QueryDoubleAttribute("distThreshold", &distThreshold);
             model->FirstChildElement( "featuresDistribution" )->QueryBoolAttribute("exportDistribution", &exportDistribution);
             model->FirstChildElement( "featuresDistribution" )->QueryUnsignedAttribute("frameNo", &frameNo);
             filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
             model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
+
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minFrameDist", &minFrameDist);
+            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("distThresholdLC", &distThresholdLC);
+            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("rotThresholdLC", &rotThresholdLC);
+            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
 
             visualize = false;
 
@@ -222,7 +250,7 @@ public:
             int weakFeatureThr;
 
             /// 3D edges pruning
-            float edges3DPrunningThreshold;
+            double edges3DPrunningThreshold;
 
             // fix all optimized vertices after optimization
             bool fixVertices;
@@ -243,14 +271,14 @@ public:
             int maxOnceFeatureAdd;
 
             // We do not add features closer to already existing ones than
-            float minEuclideanDistanceOfFeatures;
-            float minImageDistanceOfFeatures;
+            double minEuclideanDistanceOfFeatures;
+            double minImageDistanceOfFeatures;
 
             // If we observe many features, we do not add new
             int addNoFeaturesWhenMapSizeGreaterThan;
 
             /// MapManagement: distance threshold
-            float distThreshold;
+            float_type distThreshold;
 
             /// export map to files
             bool exportMap;
@@ -275,6 +303,18 @@ public:
 
             /// use visualizer
             bool visualize;
+
+            /// LC min distance between frames
+            int minFrameDist;
+
+            /// LoopClosure: distance threshold
+            double distThresholdLC;
+
+            /// LoopClosure: distance threshold
+            double rotThresholdLC;
+
+            /// LoopClosure: matchingRatioThreshold
+            double matchingRatioThresholdLC;
     };
 
 private:
@@ -308,11 +348,23 @@ private:
     /// Optimization thread
     std::unique_ptr<std::thread> managementThr;
 
+    /// Loop closure thread
+    std::unique_ptr<std::thread> loopClosureThr;
+
 	/// optimization flag
 	std::atomic<bool> continueOpt;
 
     /// map management thread flag
     std::atomic<bool> continueManagement;
+
+    /// loop closure thread flag
+    std::atomic<bool> continueLoopClosure;
+
+    ///camera trajectory
+    std::vector<VertexSE3> camTrajectoryLC;
+
+    /// mutex for camera trajectory
+    std::mutex mtxCamTrajLC;
 
 	/// Number of features
 	unsigned int featureIdNo;
@@ -332,6 +384,12 @@ private:
     /// mutex for critical section - map management
     std::recursive_mutex mtxMapManagement;
 
+    ///Set of features (map for the loop closure thread)
+    std::map<int,MapFeature> featuresMapLoopClosure;
+
+    /// mutex for critical section - bufferTrajectoryLC
+    std::recursive_mutex mtxMapLoopClosure;
+
     /// Map frontend -- buffer
     MapModifier bufferMapFrontend;
 
@@ -341,14 +399,23 @@ private:
     /// Map management -- buffer
     MapModifier bufferMapManagement;
 
+    /// Loop closure -- buffer
+    MapModifier bufferMapLoopClosure;
+
     /// Last optimized pose
     int lastOptimizedPose;
+
+    /// loop closure priority queue
+    std::priority_queue<LCElement, std::vector<LCElement>, LCElement > priorityQueueLC;
 
     /// optimization method
     void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);
 
     /// map management method
     void manage(int verbose);
+
+    /// geometric loop closure method
+    void loopClosure(int verbose, Matcher* matcher);
 
     /// Update map
     void updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
@@ -367,6 +434,9 @@ private:
 
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
+
+    ///update priority queue for the loop closure
+    bool updateQueueLC(int frameId);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

@@ -307,6 +307,10 @@ void PUTSLAM::startProcessing() {
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)
 		map->startMapManagerThread(1);
 
+    // thread for geometric loop closure
+    if (loopClosureThreadVersion == LCTHREAD_ON)
+        map->startLoopClosureThread(0, matcher);
+
 	// Creating octomap
 	if ( octomap > 0)
 		octomapTree.reset(new octomap::ColorOcTree(octomapResolution));
@@ -639,6 +643,14 @@ void PUTSLAM::startProcessing() {
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
+    // Wait for management thread to finish
+    if (mapManagmentThreadVersion == MAPTHREAD_ON)
+        map->finishManagementThr();  // Wait for optimization thread to finish
+
+    // thread for geometric loop closure
+    if (loopClosureThreadVersion == LCTHREAD_ON)
+        map->finishLoopClosureThr();
+
 	// We optimize only at the end if that version is chosen
 	if (optimizationThreadVersion == OPTTHREAD_ATEND)
 		map->startOptimizationThread(1, 1);
@@ -647,10 +659,6 @@ void PUTSLAM::startProcessing() {
 	if (optimizationThreadVersion != OPTTHREAD_OFF)
 		map->finishOptimization("graph_trajectory.res",
 				"optimizedGraphFile.g2o");
-
-	// Wait for management thread to finish
-	if (mapManagmentThreadVersion == MAPTHREAD_ON)
-		map->finishManagementThr();  // Wait for optimization thread to finish
 
 	///for inverse SLAM problem
 //    for (int i=0; i<traj.size();i++){
@@ -709,6 +717,8 @@ void PUTSLAM::loadConfigs() {
 			"optimizationThreadVersion", &optimizationThreadVersion);
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute(
 			"mapManagmentThreadVersion", &mapManagmentThreadVersion);
+    config.FirstChildElement("ThreadSettings")->QueryIntAttribute(
+            "loopClosureThreadVersion", &loopClosureThreadVersion);
 
 	if (verbose > 0) {
 		std::cout << "PUTSLAM: optimizationThreadVersion = "

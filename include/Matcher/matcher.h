@@ -9,12 +9,12 @@
 #define _MATCHER_H_
 
 #include "../Defs/putslam_defs.h"
-#include "../include/RGBD/RGBD.h"
 #include <string>
 #include <vector>
 #include "opencv/cv.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../TransformEst/RANSAC.h"
+#include "../include/RGBD/RGBD.h"
 
 #include "MatchingOnPatches.h"
 
@@ -76,7 +76,7 @@ public:
 	/// compute normals to rgbd features
 	template<class T>
     void computeNormals(const cv::Mat& depthImage, T& features, double depthImageScale) {
-		RGBD::computeNormals(depthImage, features,
+        RGBD::computeNormals(depthImage, features,
                 matcherParameters.cameraMatrixMat, depthImageScale);
 	}
 
@@ -84,7 +84,7 @@ public:
 	template<class T>
 	void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage,
             T& features, double depthImageScale) {
-		RGBD::computeRGBGradients(rgbImage, depthImage, features,
+        RGBD::computeRGBGradients(rgbImage, depthImage, features,
                 matcherParameters.cameraMatrixMat, depthImageScale);
 	}
 

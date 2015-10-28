@@ -53,5 +53,7 @@
   	
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
+	loopClosureThreadVersion :		0 - off
+									1 - on  
   -->
-  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>
+  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0" loopClosureThreadVersion="0"></ThreadSettings>

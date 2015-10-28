@@ -80,9 +80,10 @@ public:
     void setDrawOptions(bool _draw, bool _drawImages);
 
 private:
+    enum LOOPCLOSURETHREAD { LCTHREAD_OFF, LCTHREAD_ON };
 	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
 	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
-	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion, octomap, octomapCloudStepSize, octomapOffline;
+    int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion, loopClosureThreadVersion, octomap, octomapCloudStepSize, octomapOffline;
 	double octomapResolution;
 	std::string octomapFileToSave;
 

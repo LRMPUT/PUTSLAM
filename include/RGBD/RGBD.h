@@ -22,9 +22,9 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Core>
 
-
 // Out types
-#include "../include/Map/featuresMap.h"
+#include "../include/Defs/putslam_defs.h"
+//#include "../include/Map/featuresMap.h"
 
 namespace RGBD {
 
@@ -54,8 +54,8 @@ int roundSize(double x, int size);
 void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 		cv::Mat depthImage);
 
-void removeMapFeaturesWithoutDepth(std::vector<MapFeature> &features,
-		cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<float_type> &angles, double depthImageScale);
+void removeMapFeaturesWithoutDepth(std::vector<putslam::MapFeature> &features,
+        cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<putslam::float_type> &angles, double depthImageScale);
 
 std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
@@ -77,7 +77,7 @@ void saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName,
 bool first = false, Eigen::Matrix4f tmpPose = Eigen::Matrix4f::Identity());
 
 ///compute normal
-Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
+putslam::Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
 
 /// compute normals to rgbd features
 template<class T>
@@ -88,7 +88,7 @@ void computeNormals(const cv::Mat& depthImage, T& features, const cv::Mat& camer
 }
 
 //compute rgb gradient
-Vec3 computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
+putslam::Vec3 computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale);
 
 /// compute rgbd gradients
 template<class T>
