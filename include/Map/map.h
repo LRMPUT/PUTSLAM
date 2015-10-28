@@ -8,9 +8,10 @@
 #define _MAP_H_
 
 #include "../Defs/putslam_defs.h"
+#include "../include/Grabber/depthSensorModel.h"
+#include "../include/Matcher/matcherOpenCV.h"
 #include <string>
 #include <vector>
-#include "../include/Grabber/depthSensorModel.h"
 
 namespace putslam {
 
@@ -87,15 +88,22 @@ public:
     /// start map management thread
     virtual void startMapManagerThread(int verbose = 0) = 0;
 
+    /// start loop closure thread
+    virtual void startLoopClosureThread(int verbose, Matcher* matcher) = 0;
+
 	/// Wait for optimization thread to finish
 	virtual void finishOptimization(std::string trajectoryFilename,
 			std::string graphFilename) = 0;
 
-    virtual /// Export graph and trajectory
-    void exportOutput(std::string trajectoryFilename,
+    /// Export graph and trajectory
+    virtual void exportOutput(std::string trajectoryFilename,
             std::string graphFilename) = 0;
+
     /// Wait for map management thread to finish
     virtual void finishManagementThr(void) = 0;
+
+    /// Wait for loop closure thread to finish
+    virtual void finishLoopClosureThr(void) = 0;
 
     /// Save map to file
     virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;
