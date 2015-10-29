@@ -38,8 +38,8 @@ option(BUILD_PUTSLAM_MOTIONMODEL "Build PUTSLAM MotionModel library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MOTIONMODEL)
 option(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR "Build PUTSLAM Transformation Estimation library" ON)
 mark_as_advanced(BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
-#option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
-#mark_as_advanced(BUILD_PUTSLAM_USAC)
+option(BUILD_PUTSLAM_USAC "Build PUTSLAM USAC library" ON)
+mark_as_advanced(BUILD_PUTSLAM_USAC)
 option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global graph) library" ON)
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
@@ -67,6 +67,8 @@ option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" O
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
+option(BUILD_PUTSLAM_DEMO_USAC "Build USAC demo" ON)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_USAC)
 
 #additional dependencies
 
@@ -280,19 +282,19 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 #
 ###############################################################################
 
-#if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
-#        file(GLOB USAC_SOURCES
-#            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
-#        )
-#        file(GLOB USAC_HEADERS
-#            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
-#        )
-#
-#        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
-#        TARGET_LINK_LIBRARIES(USAC RGBD)
-#        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-#        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
-#endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
+        file(GLOB USAC_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
+        )
+        file(GLOB USAC_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
+        )
+
+        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
+        TARGET_LINK_LIBRARIES(USAC RGBD)
+        INSTALL(TARGETS USAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${USAC_HEADERS} DESTINATION include/putslam/USAC/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
 
 ###############################################################################
 #
@@ -525,6 +527,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
                 ${PROJECT_ROOT}/resources/configGlobal.xml
         )
 
+
         ADD_EXECUTABLE(demoPruning ${DEMO_SOURCES})
         add_dependencies(demoPruning g2o)
         TARGET_LINK_LIBRARIES(demoPruning tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph Utilities boost_system)
@@ -638,6 +641,30 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
+
+###############################################################################
+#
+# PUTSLAM demo USAC
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_USAC)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+        SET(DEMO_SOURCES ./demos/demoUSAC.cpp)
+        ADD_EXECUTABLE(demoUSAC ${DEMO_SOURCES})
+        #add_dependencies(demoUSAC g2o)
+        TARGET_LINK_LIBRARIES(demoUSAC USAC tinyxml2 LIBPUTSLAM Utilities Grabber PoseGraph Map Matcher Tracker TransformEst RGBD LDB ${OpenCV_LIBS} boost_system)
+
+        INSTALL(TARGETS demoUSAC RUNTIME DESTINATION bin)
+	INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_USAC)
 
 ###############################################################################
 #

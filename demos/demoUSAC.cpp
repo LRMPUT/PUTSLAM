@@ -123,7 +123,7 @@ class Features
 		std::ifstream in_stream(filename);
 		if (!in_stream)
 		{
-			std::cout << "Error opening the file" << std::endl;
+			std::cout << "Error opening the file!" << std::endl;
 		}
 
 		while (!in_stream.eof())
@@ -167,7 +167,7 @@ std::vector<cv::DMatch> loadMatchesFromFile(std::string filename)
 	std::ifstream in_stream(filename);
 	if (!in_stream)
 	{
-		std::cout << "Error opening the file" << std::endl;
+		std::cout << "Error opening the file!" << std::endl;
 	}
 
 	std::vector<cv::DMatch> matches;
@@ -191,7 +191,7 @@ Eigen::Matrix4f loadTransformationFromFile(std::string filename)
 	std::ifstream in_stream(filename);
 	if (!in_stream)
 	{
-		std::cout << "Error opening the file" << std::endl;
+		std::cout << "Error opening the file!" << std::endl;
 	}
 
 	Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
@@ -252,6 +252,7 @@ int main(int argc, char** argv)
 	std::string directory  = "..//..//resources//USAC//";
 
 	std::vector<cv::DMatch> matches = loadMatchesFromFile(directory + "1311868164.6703196.matches");
+	std::cout << "Matches loaded!" << std::endl;
 	/*
 	std::cout << "Matches: " << std::endl;
 	for (auto& match : matches)
@@ -262,11 +263,13 @@ int main(int argc, char** argv)
 
 	Features features_previous;
 	features_previous.LoadFromFile(directory + "1311868164.5034142.features");
+	std::cout << "Features loaded!" << std::endl;
 	//std::cout << "Features previous: " << std::endl;
 	//features_previous.Show();
 
 	Features features_current;
 	features_current.LoadFromFile(directory +  "1311868164.6703196.features");
+	std::cout << "Features loaded!" << std::endl;
 	//std::cout << "Features previous: " << std::endl;
 	//features_current.Show();
 
@@ -287,7 +290,7 @@ int main(int argc, char** argv)
 
 	std::cout << "Transformation: " << std::endl << transformation << std::endl;
 
-	TEST_Ransac(features_previous_eigen, features_current_eigen, matches);
+	//TEST_Ransac(features_previous_eigen, features_current_eigen, matches);
 	TEST_USAC(features_previous_eigen, features_current_eigen, matches);
 
 	return 1;

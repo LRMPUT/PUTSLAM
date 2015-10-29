@@ -6,6 +6,21 @@
 
 //// it's used in local optimization
 
+/*
+Powinno to dzialac w ten sposob, ze definiuje sie pewien prog w inlier test -
+w zaleznosci od koncepcji moze byc odleglosc Euklidesowa albo blad reprojekcji.
+Punkty, dla ktorych odleglosc w dopasowanych parach jest mniejsza od progu sa inlierami -
+pasuja do modelu. Ta funkcja nastepnie zaciesnia kryterium - redukuje odleglosc i
+wyznacza mniejszy zbior inlierow, odrzucaja, te najmniej pasujace.
+Na podstawie tego zredukowanego zbioru wyznacza sie nowy model (w PUT SLAM metoda Umeyamy)
+i znow mozna zredukowac prog (kolejna iteracja).
+Warunek stopu to minimalna liczba inlierow.
+Poniewaz metoda Umeyamy nie pozwala na uwzglednienie przy wyznaczaniu transformacji zadnych
+wag, w tej implementacji beda one mialy znacznie
+flag boolean - jezeli za wage przyjmiemy wartosc tetsu inlier (odleglosc),
+to pary punktow z waga powyzej pewnego progu sa odrzucane.
+*/
+
 // ============================================================================================
 // generateRefinedModel: compute model using non-minimal set of samples
 // default operation is to use a weight of 1 for every data point

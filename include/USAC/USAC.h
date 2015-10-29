@@ -303,6 +303,8 @@ bool USAC<ProblemType>::solve()
 	std::cout << "usac_num_data_points_: " << usac_num_data_points_ << std::endl;
 	std::cout << "usac_min_sample_size_: " << usac_min_sample_size_ << std::endl;
 
+	// MF:
+	// TODO - delete (?) is this in original USAC?
 	unsigned int i = 0;
 	for(i=0; i<1000000; ++i)
 	{
