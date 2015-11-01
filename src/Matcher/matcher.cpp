@@ -461,6 +461,14 @@ void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
 	}
 }
 
+/// Run the match with two poses from the map. Parameters:
+/// 	featureSet[2] 	-> set of features from the first and the second pose.
+///			Remark: It only makes sense when features are moved to the local
+///					coordinate system of features before calling the function
+///		frameIds[2] 	-> set of ids of poses for features with the closest angle of observations -
+///					in other words for each descriptor, we get the id of the pose so we can take the apprioprate descriptor
+/// 	pairedFeatures 	-> return pairs of ids of features that are matched
+///		estimatedTransformation		-> the estimated transformation
 double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		std::vector<int> frameIds[2],
 		std::vector<std::pair<int, int>> &pairedFeatures,
@@ -588,6 +596,37 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	}
 
 	return double(inlierMatches.size()) / double(matches.size());
+}
+
+/// Run the match with two poses from the map. Parameters:
+/// 	featureSet[2] 	-> set of features from the first and the second pose.
+///			Remark: It only makes sense when features are moved to the local
+///					coordinate system of features before calling the function
+/// 	pairedFeatures 	-> return pairs of ids of features that are matched
+///		estimatedTransformation		-> the estimated transformation
+double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
+		std::vector<std::pair<int, int>> &pairedFeatures,
+		Eigen::Matrix4f &estimatedTransformation) {
+
+	// Place to store the poseIds of the chosen descriptors
+	std::vector<int> frameIds[2];
+
+	// For both poses
+	for (int i = 0; i < 2; i++) {
+
+		// We resize the vectors to have the same size as sets of features
+		frameIds[i].resize(featureSet[i].size(), 0);
+
+		// For every feature, we save the original pose id (the id of the first descriptor)
+		int j = 0;
+		for (std::vector<MapFeature>::iterator it = featureSet[i].begin();
+				it != featureSet[i].end(); ++it, ++j) {
+			frameIds[i][j] = it->descriptors[0].poseId;
+		}
+	}
+
+	// Now, we can all the more complex version
+	matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
 }
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
