@@ -476,7 +476,6 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
 
-
 	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
 	cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
 			extractMapDescriptors(featureSet[1]) };
@@ -492,7 +491,6 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	// Finding the index of the closest descriptor for all features in two provided sets
 	for (int i = 0; i < 2; i++)
 		framesIds2framesIndex(featureSet[i], frameIds[i], closestFrameIndex[i]);
-
 	// For all features in the map find potential matches
 	std::vector<cv::DMatch> matches;
 	int perfectMatchCounter = 0,  featureFirstSetIndex = 0;
@@ -564,7 +562,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		}
 	}
 
-	if (matcherParameters.verbose > 0)
+    if (matcherParameters.verbose > 0)
 		std::cout << "MatchPose2Pose - we found : " << matches.size()
 				<< " (Perfect matches = " << perfectMatchCounter << ")"
 				<< std::endl;
@@ -586,16 +584,15 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 
 	// for all inliers, store the matched ids of features
 	pairedFeatures.clear();
-	for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin();
-			it != inlierMatches.end(); ++it) {
+    for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin();
+            it != inlierMatches.end(); ++it) {
 
-		int firstSetId = it->queryIdx, secondSetId = it->trainIdx;
+        int firstSetId = it->queryIdx, secondSetId = it->trainIdx;
 		std::pair<int, int> matchedIds = std::make_pair(
 				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
 		pairedFeatures.push_back(matchedIds);
-	}
-
-	return double(inlierMatches.size()) / double(matches.size());
+    }
+    return double(inlierMatches.size()) / double(matches.size());
 }
 
 /// Run the match with two poses from the map. Parameters:
@@ -626,7 +623,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	}
 
     // Now, we can all the more complex version
-    matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
+    return matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
 }
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
