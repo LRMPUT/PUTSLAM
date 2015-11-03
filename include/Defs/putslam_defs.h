@@ -166,13 +166,13 @@ public:
 	std::vector<ExtendedDescriptor> descriptors;
 
 	RGBDFeature(void) {
-    };
+    }
 
 	RGBDFeature(const Vec3 _position, float_type _u, float_type _v,
 			const std::vector<ExtendedDescriptor> _descriptors) :
 			position(_position), descriptors(_descriptors), u(_u), v(_v) {
 
-    };
+    }
 };
 
 class MapFeature: public RGBDFeature {

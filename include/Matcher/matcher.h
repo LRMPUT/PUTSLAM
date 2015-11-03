@@ -122,7 +122,7 @@ public:
 			Eigen::Matrix4f &estimatedTransformation);
 
 	/// Version as above, but for each feature it uses only the original descriptor
-	double matchPose2Pose(std::vector<MapFeature> featureSet[2],
+    double matchPose2Pose(std::vector<MapFeature> featureSet[2],
 				std::vector<std::pair<int, int>> &pairedFeatures,
 				Eigen::Matrix4f &estimatedTransformation);
 

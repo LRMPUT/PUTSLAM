@@ -77,6 +77,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
         std::map<unsigned int, ImageFeature> imageCoordinates;
         imageCoordinates.insert(std::make_pair(poseId,ImageFeature(it->u, it->v,it->position.z())));
 
+        if ((*it).descriptors.size()<=0)
+            std::cout << "descriptor\n";
 		//add each feature to map structure...
 		Vec3 featurePositionInGlobal(featurePos.translation());
         bufferMapFrontend.mtxBuffer.lock();
@@ -95,6 +97,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
             bufferMapLoopClosure.features2add[featureIdNo] =
                     MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
                             poseIds, (*it).descriptors, imageCoordinates);
+            if (bufferMapLoopClosure.features2add[featureIdNo].descriptors.size()<=0)
+                std::cout << "descriptor lc\n";
             bufferMapLoopClosure.mtxBuffer.unlock();
         }
         if (config.visualize){
@@ -219,20 +223,20 @@ void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
 
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
-		int poseId) {
+        int poseId) {
 	mtxCamTraj.lock();
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
-	unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
+    unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
     std::vector<Edge3D> features2visualization;
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 
         mtxCamTraj.lock();
-        camTrajectory[_poseId].featuresIds.insert(featureIdNo);
+        camTrajectory[_poseId].featuresIds.insert(it->id);
         mtxCamTraj.unlock();
         mtxCamTrajLC.lock();
-        camTrajectoryLC[_poseId].featuresIds.insert(featureIdNo);
+        camTrajectoryLC[_poseId].featuresIds.insert(it->id);
         mtxCamTrajLC.unlock();
 
         //add measurement
@@ -250,8 +254,15 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
             }
         }
 
+        mtxMapFrontend.lock();
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
         featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
+        mtxMapFrontend.unlock();
+
+        mtxMapLoopClosure.lock();
+        featuresMapLoopClosure[it->id].posesIds.push_back(_poseId);
+        featuresMapLoopClosure[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
+        mtxMapLoopClosure.unlock();
 
         Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
@@ -595,13 +606,18 @@ std::cout << "start\n";
                 mtxMapLoopClosure.unlock();
             }
             mtxCamTrajLC.unlock();
+            //std::cout << "vec size " << featureSetA.size() << " " << featureSetB.size() << "\n";
             std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetB};
-            std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
+            //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
             std::vector<std::pair<int, int>> pairedFeatures;
             Eigen::Matrix4f estimatedTransformation;
-            //double matchingRatio = matcher->matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
-            //if (matchingRatio>config.matchingRatioThresholdLC)
-            //    std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
+            double matchingRatio = matcher->matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+            if (matchingRatio>0){
+                std::cout << "Hurra, matching ratio > 0\n";
+                std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
+            }
+            if (matchingRatio>config.matchingRatioThresholdLC)
+                std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
             priorityQueueLC.pop();
         }
         else{
@@ -785,6 +801,10 @@ void FeaturesMap::updateMap(MapModifier& modifier,
             featuresMap.insert(modifier.features2add.begin(),
 					modifier.features2add.end());
 			modifier.features2add.clear();
+            for (auto& feature : featuresMap){
+                if (feature.second.descriptors.size()<=0)
+                    std::cout << "zero feature vector\n";
+            }
 		}
 		if (modifier.updateFeatures()) {
             for (auto it =

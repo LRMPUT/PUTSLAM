@@ -513,7 +513,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 			if (norm < matchingXYZSphereRadius) {
 				possibleMatchId.push_back(featureSecondSetIndex);
 			}
-		}
+        }
 
 		// Find best match based on descriptors -- difference of descriptors
 		int bestId = -1;
@@ -521,8 +521,8 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		std::vector<double> possibleMatchDiff;
 		for (int i = 0; i < possibleMatchId.size(); i++) {
 
-			std::cout << "Possible match: " << featureFirstSetIndex << " "
-					<< possibleMatchId[i] << std::endl;
+            //std::cout << "Possible match: " << featureFirstSetIndex << " "
+            //		<< possibleMatchId[i] << std::endl;
 
 			// The index of feature from second set
 			int featureSecondSetIndex = possibleMatchId[i];
@@ -618,15 +618,15 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		frameIds[i].resize(featureSet[i].size(), 0);
 
 		// For every feature, we save the original pose id (the id of the first descriptor)
-		int j = 0;
+        int j = 0;
 		for (std::vector<MapFeature>::iterator it = featureSet[i].begin();
-				it != featureSet[i].end(); ++it, ++j) {
+                it != featureSet[i].end(); ++it, ++j) {
 			frameIds[i][j] = it->descriptors[0].poseId;
-		}
+        }
 	}
 
-	// Now, we can all the more complex version
-	matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
+    // Now, we can all the more complex version
+    matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
 }
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
