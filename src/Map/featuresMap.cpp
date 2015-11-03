@@ -607,7 +607,7 @@ std::cout << "start\n";
             }
             mtxCamTrajLC.unlock();
             //std::cout << "vec size " << featureSetA.size() << " " << featureSetB.size() << "\n";
-            std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetB};
+            std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetA};
             //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
             std::vector<std::pair<int, int>> pairedFeatures;
             Eigen::Matrix4f estimatedTransformation;
