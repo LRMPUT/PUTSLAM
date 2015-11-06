@@ -4,6 +4,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
+// float_type problem
+#include "../include/Defs/putslam_defs.h"
+
 #include "../include/USAC/ConfigParamsPUTSLAM.h"
 #include "../include/USAC/USAC.h"
 #include <opencv2/opencv.hpp>

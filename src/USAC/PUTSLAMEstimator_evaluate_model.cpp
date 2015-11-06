@@ -35,7 +35,7 @@ float PUTSLAMEstimator::computeInlierRatioEuclidean(
 		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
-		float_type threshold = RANSACParams.inlierThresholdEuclidean;
+		putslam::float_type threshold = RANSACParams.inlierThresholdEuclidean;
 		if (RANSACParams.errorVersion == ADAPTIVE_ERROR)
 			threshold *= prevFeatures[it->queryIdx].z();
 		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()
@@ -78,7 +78,7 @@ float PUTSLAMEstimator::computeInlierRatioMahalanobis(
 		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
-		Mat33 cov;
+		putslam::Mat33 cov;
 		//sensorModel.computeCov(prevFeatures[it->queryIdx],cov);
 		if (cov.determinant() != 0){
 			double distMah = (estimatedOldPosition - prevFeatures[it->queryIdx]).transpose()*cov.cast<float>()*(estimatedOldPosition - prevFeatures[it->queryIdx]);
