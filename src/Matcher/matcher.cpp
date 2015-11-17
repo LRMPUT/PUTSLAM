@@ -477,8 +477,8 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
 
 	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
-	cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
-			extractMapDescriptors(featureSet[1]) };
+    //cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
+    //		extractMapDescriptors(featureSet[1]) };
 
 	std::vector<Eigen::Vector3f> featurePositions3D[2] = {
 			extractMapFeaturesPositions(featureSet[0]),
@@ -592,7 +592,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
 		pairedFeatures.push_back(matchedIds);
     }
-    return double(inlierMatches.size()) / double(matches.size());
+    return double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()));
 }
 
 /// Run the match with two poses from the map. Parameters:

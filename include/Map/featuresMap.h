@@ -235,6 +235,8 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("distThresholdLC", &distThresholdLC);
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("rotThresholdLC", &rotThresholdLC);
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
 
             visualize = false;
 
@@ -315,6 +317,12 @@ public:
 
             /// LoopClosure: matchingRatioThreshold
             double matchingRatioThresholdLC;
+
+            /// wait [s] until break LC thread
+            int waitUntilFinishedLC;
+
+            /// minimal number of features to check LC
+            int minNumberOfFeaturesLC;
     };
 
 private:

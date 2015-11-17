@@ -530,6 +530,7 @@ void FeaturesMap::finishManagementThr(void){
 
 /// Wait for loop closure thread to finish
 void FeaturesMap::finishLoopClosureThr(void){
+    usleep(config.waitUntilFinishedLC*1000000);
     continueLoopClosure = false;
     loopClosureThr->join();
 }
@@ -573,7 +574,6 @@ void FeaturesMap::manage(int verbose){
 void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
     // graph optimization
     continueLoopClosure = true;
-std::cout << "start\n";
     // Wait for some information in map
     while (continueLoopClosure && featuresMapLoopClosure.size()==0) {
         std::cout << "wait\n";
@@ -593,50 +593,78 @@ std::cout << "start\n";
             LCElement element = priorityQueueLC.top();
             std::vector<MapFeature> featureSetA, featureSetB;
             mtxCamTrajLC.lock();
-            for (auto & featureId : camTrajectoryLC[element.posesIds.first].featuresIds){
-                mtxMapLoopClosure.lock();
-                featureSetA.push_back(featuresMapLoopClosure[featureId]);
-                mtxMapLoopClosure.unlock();
+            if (camTrajectoryLC[element.posesIds.second].featuresIds.size()==0){
+                mtxCamTrajLC.unlock();
+                //std::cout << "element.posesIds.second " << element.posesIds.second <<"\n";
+               //std::cout << "(camTrajectoryLC[element.posesIds.second].featuresIds.size() zero\n";
+               usleep(100000);
+               //std::cout << camTrajectoryLC[element.posesIds.second].featuresIds.size() << "\n";
+               if (camTrajectoryLC[element.posesIds.second].featuresIds.size()==0)
+                   priorityQueueLC.pop();
             }
-            mtxCamTrajLC.unlock();
-            mtxCamTrajLC.lock();
-            for (auto & featureId : camTrajectoryLC[element.posesIds.second].featuresIds){
-                mtxMapLoopClosure.lock();
-                featureSetB.push_back(featuresMapLoopClosure[featureId]);
-                mtxMapLoopClosure.unlock();
+            else if ((camTrajectoryLC[element.posesIds.first].featuresIds.size()>config.minNumberOfFeaturesLC)&&(camTrajectoryLC[element.posesIds.second].featuresIds.size()>config.minNumberOfFeaturesLC)){
+                Mat34 poseAinv = camTrajectoryLC[element.posesIds.first].pose.inverse();
+                Mat34 poseBinv = camTrajectoryLC[element.posesIds.second].pose.inverse();
+                for (auto & featureId : camTrajectoryLC[element.posesIds.first].featuresIds){
+                    mtxMapLoopClosure.lock();
+                    featureSetA.push_back(featuresMapLoopClosure[featureId]);
+                    mtxMapLoopClosure.unlock();
+                    //set relative position
+                    Mat34 featurePose(Mat34::Identity());
+                    featurePose(0,3)=featureSetA.back().position.x();
+                    featurePose(1,3)=featureSetA.back().position.y();
+                    featurePose(2,3)=featureSetA.back().position.z();
+                    featurePose=poseAinv*featurePose;
+                    featureSetA.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
+                    //std::cout << "feature A " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
+                }
+                mtxCamTrajLC.unlock();
+                mtxCamTrajLC.lock();
+                for (auto & featureId : camTrajectoryLC[element.posesIds.second].featuresIds){
+                    mtxMapLoopClosure.lock();
+                    featureSetB.push_back(featuresMapLoopClosure[featureId]);
+                    mtxMapLoopClosure.unlock();
+                    //set relative position
+                    Mat34 featurePose(Mat34::Identity());
+                    featurePose(0,3)=featureSetB.back().position.x();
+                    featurePose(1,3)=featureSetB.back().position.y();
+                    featurePose(2,3)=featureSetB.back().position.z();
+                    featurePose=poseBinv*featurePose;
+                    featureSetB.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
+                    //std::cout << "feature B " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
+                }
+                mtxCamTrajLC.unlock();
+                //std::cout << "features size " << featureSetA.size() << " " << featureSetB.size() << "\n";
+                //getchar();
+                //std::cout << "vec size " << featureSetA.size() << " " << featureSetB.size() << "\n";
+                std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetB};
+                //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
+                std::vector<std::pair<int, int>> pairedFeatures;
+                Eigen::Matrix4f estimatedTransformation;
+                double matchingRatio = matcher->matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+                if (matchingRatio>config.matchingRatioThresholdLC){
+                    std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
+                    std::cout << "matchingRatio " << matchingRatio << "\n";
+                    std::cout << "featureSetA.size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+                    std::cout << "estimated transformation: \n" << estimatedTransformation << "\n";
+                    std::cout << "graph transformation: \n" << (camTrajectoryLC[element.posesIds.first].pose.inverse()*camTrajectoryLC[element.posesIds.second].pose).matrix() << "\n";
+                    std::cout << "priorityQueueLC.size " << priorityQueueLC.size() << "\n";
+                    Mat34 trans(estimatedTransformation.cast<double>());
+                    addMeasurement(element.posesIds.first, element.posesIds.second, trans);
+                }
+                priorityQueueLC.pop();
             }
-            mtxCamTrajLC.unlock();
-            //std::cout << "vec size " << featureSetA.size() << " " << featureSetB.size() << "\n";
-            std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetA};
-            //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
-            std::vector<std::pair<int, int>> pairedFeatures;
-            Eigen::Matrix4f estimatedTransformation;
-            double matchingRatio = matcher->matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
-            if (matchingRatio>0){
-                std::cout << "Hurra, matching ratio > 0\n";
-                std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
+            else{
+                mtxCamTrajLC.unlock();
+                priorityQueueLC.pop();
             }
-            if (matchingRatio>config.matchingRatioThresholdLC)
-                std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
-            priorityQueueLC.pop();
         }
         else{
             std::cout << "wait LC\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
-        /*mtxMapLoopClosure.lock();
-        //compute Euclidean distance
-        for (std::map<int,MapFeature>::iterator itFeature1 = featuresMapManagement.begin(); itFeature1!=featuresMapManagement.end(); itFeature1++){
-            for (std::map<int,MapFeature>::iterator itFeature2 = featuresMapManagement.begin(); itFeature2!=featuresMapManagement.end(); itFeature2++){
-                if (itFeature1->first!=itFeature2->first){
-                    float_type dist = sqrt(pow(itFeature1->second.position.x()-itFeature2->second.position.x(),2.0) + pow(itFeature1->second.position.y()-itFeature2->second.position.y(),2.0) + pow(itFeature1->second.position.z()-itFeature2->second.position.z(),2.0));
-                    if (dist<config.distThreshold)
-                        std::cout << "features " << itFeature1->second.id << " and " << itFeature2->second.id << " are too close\n";
-                }
-            }
-        }
-        mtxMapLoopClosure.unlock();*/
     }
+    std::cout << "priorityQueueLC.size " << priorityQueueLC.size() << "\n";
     if (verbose>0) {
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
         std::cout << "Loop closure finished (t = " << elapsed.count() << "ms)\n";
@@ -730,6 +758,12 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
                 bufferMapVisualization.poses2update.push_back(*it);
             bufferMapVisualization.mtxBuffer.unlock();
         }
+        /*if (continueLoopClosure){
+            bufferMapLoopClosure.mtxBuffer.lock(); // update visualization buffer
+            for (auto it = optimizedPoses.begin(); it!=optimizedPoses.end();it++)
+                bufferMapLoopClosure.poses2update.push_back(*it);
+            bufferMapLoopClosure.mtxBuffer.unlock();
+        }*/
 
         if (config.fixVertices)
             ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
@@ -800,11 +834,7 @@ void FeaturesMap::updateMap(MapModifier& modifier,
 		if (modifier.addFeatures()) {
             featuresMap.insert(modifier.features2add.begin(),
 					modifier.features2add.end());
-			modifier.features2add.clear();
-            for (auto& feature : featuresMap){
-                if (feature.second.descriptors.size()<=0)
-                    std::cout << "zero feature vector\n";
-            }
+            modifier.features2add.clear();
 		}
 		if (modifier.updateFeatures()) {
             for (auto it =
@@ -855,8 +885,6 @@ void FeaturesMap::updatePose(VertexSE3& newPose, bool updateGraph) {
             it->pose = newPose.pose;
         }
     }
-    if (updateGraph)
-        poseGraph->updateVertex(newPose);
     mtxCamTrajLC.unlock();
 }
 
