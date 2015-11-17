@@ -33,5 +33,5 @@
 <!--    Map visualization options:
 	  frameNo2updatePointCloud - send point cloud to visualizer every i-th frame-->
     <visualization frameNo2updatePointCloud="60"/>
-    <loopClosure minFrameDist="60" distThresholdLC="0.26" rotThresholdLC="25" matchingRationThresholdLC="0.5"/>
+    <loopClosure minFrameDist="50" distThresholdLC="0.56" rotThresholdLC="1.7" matchingRatioThresholdLC="0.45" waitUntilFinishedLC="15" minNumberOfFeaturesLC="35"/>
 </MapConfig>
