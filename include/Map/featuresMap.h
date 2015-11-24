@@ -237,6 +237,7 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("measurementTypeLC", &measurementTypeLC);
 
             visualize = false;
 
@@ -323,6 +324,9 @@ public:
 
             /// minimal number of features to check LC
             int minNumberOfFeaturesLC;
+
+            /// type of measurement added to the graph
+            int measurementTypeLC;
     };
 
 private:
