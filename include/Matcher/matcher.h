@@ -126,6 +126,11 @@ public:
 				std::vector<std::pair<int, int>> &pairedFeatures,
 				Eigen::Matrix4f &estimatedTransformation);
 
+    // Versions as above, but works on two sensor frames (it performs detection on its own)
+    double matchPose2Pose(SensorFrame sensorFrames[2],
+    		std::vector<std::pair<int, int>> &pairedFeatures,
+    		Eigen::Matrix4f &estimatedTransformation);
+
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
 	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
