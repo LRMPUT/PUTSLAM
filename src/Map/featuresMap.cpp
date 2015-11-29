@@ -641,7 +641,17 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
                 std::vector<std::pair<int, int>> pairedFeatures;
                 Eigen::Matrix4f estimatedTransformation;
-                double matchingRatio = matcher->matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+                // find ids of the frames where features were observed
+                std::vector<int> frameIds[2];
+                frameIds[0].resize(featureSetA.size()); frameIds[1].resize(featureSetB.size());
+                for (int i=0;i<2;i++){
+                    int featureNo=0;
+                    for (auto& feature : featureSet[i]){
+                        frameIds[i][featureNo] = feature.posesIds[0];
+                        featureNo++;
+                    }
+                }
+                double matchingRatio = matcher->matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
                 if (matchingRatio>config.matchingRatioThresholdLC){
                     std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
                     std::cout << "matchingRatio " << matchingRatio << "\n";
@@ -649,8 +659,24 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                     std::cout << "estimated transformation: \n" << estimatedTransformation << "\n";
                     std::cout << "graph transformation: \n" << (camTrajectoryLC[element.posesIds.first].pose.inverse()*camTrajectoryLC[element.posesIds.second].pose).matrix() << "\n";
                     std::cout << "priorityQueueLC.size " << priorityQueueLC.size() << "\n";
-                    Mat34 trans(estimatedTransformation.cast<double>());
-                    addMeasurement(element.posesIds.first, element.posesIds.second, trans);
+                    if (config.measurementTypeLC==0){//pose-pose
+                        Mat34 trans(estimatedTransformation.cast<double>());
+                        addMeasurement(element.posesIds.first, element.posesIds.second, trans);
+                    }
+                    else if (config.measurementTypeLC==1){//pose-features
+                        std::vector<MapFeature> measuredFeatures;
+                        for (auto& pairFeat : pairedFeatures){
+                            for (auto featureB : featureSetB){
+                                if (featureB.id == pairFeat.second){
+                                    MapFeature featTmp = featureB;
+                                    featTmp.id = pairFeat.first;
+                                    measuredFeatures.push_back(featTmp);
+                                }
+                            }
+                        }
+                        std::cout << "measurements no " << measuredFeatures.size() << " from pose " << element.posesIds.second << "\n";
+                        addMeasurements(measuredFeatures,element.posesIds.second);
+                    }
                 }
                 priorityQueueLC.pop();
             }
