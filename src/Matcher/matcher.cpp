@@ -284,7 +284,7 @@ double Matcher::match(const SensorFrame& sensorData,
 //			<< " ms" << std::endl;
 
 	// DBScan
-	DBScan dbscan(8, 2, 1);
+	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 //	start = std::chrono::high_resolution_clock::now();
 	dbscan.run(features);
 //	duration = std::chrono::duration_cast < std::chrono::microseconds
@@ -475,6 +475,10 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		Eigen::Matrix4f &estimatedTransformation) {
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
+	int normType = cv::NORM_HAMMING;
+	if (matcherParameters.OpenCVParams.descriptor == "SURF"
+				|| matcherParameters.OpenCVParams.descriptor == "SIFT")
+		normType = cv::NORM_L2;
 
 	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
     //cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
@@ -535,7 +539,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 			cv::Mat secondSetDescriptor = secondSetFeature.descriptors[indexOfClosestView].descriptor;
 
 			// The difference between descriptors
-			double value = norm(firstSetDescriptor - secondSetDescriptor, cv::NORM_L2);
+			double value = norm(firstSetDescriptor - secondSetDescriptor, normType);
 			possibleMatchDiff.push_back(value);
 
 			// Store the best match between descriptors
@@ -626,12 +630,76 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
     return matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
 }
 
+
+double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
+		std::vector<std::pair<int, int>> &pairedFeatures,
+		Eigen::Matrix4f &estimatedTransformation) {
+
+	std::vector<MapFeature> featureSet[2];
+	for (int i = 0; i < 2; i++) {
+		// Detect salient features
+		std::vector<cv::KeyPoint> features = detectFeatures(
+				sensorFrames[i].rgbImage);
+
+		// DBScan
+		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
+		dbscan.run(features);
+
+		// Describe salient features
+		cv::Mat descriptors = describeFeatures(sensorFrames[i].rgbImage, features);
+
+		// Perform matching
+		std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
+				descriptors);
+
+		// Find 2D positions without distortion
+
+		std::vector<cv::Point2f> undistortedFeatures2D =
+				RGBD::removeImageDistortion(features,
+						matcherParameters.cameraMatrixMat,
+						matcherParameters.distortionCoeffsMat);
+
+		// Associate depth
+		std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
+				undistortedFeatures2D, sensorFrames[i].depthImage,
+				matcherParameters.cameraMatrixMat, sensorFrames[i].depthImageScale);
+
+		// Convert to map format
+		for (int j=0;j<features3D.size();j++) {
+			MapFeature mapFeature;
+			mapFeature.id = j;
+
+			mapFeature.u = undistortedFeatures2D[j].x;
+			mapFeature.v = undistortedFeatures2D[j].y;
+
+			mapFeature.position = Vec3(
+					features3D[j].cast<double>());
+			mapFeature.posesIds.push_back(i);
+
+			ExtendedDescriptor featureExtendedDescriptor(i,
+					descriptors.row(j));
+			mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+			// Add the measurement
+			featureSet[i].push_back(mapFeature);
+		}
+
+	}
+
+	matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+}
+
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, std::vector<int> frameIds) {
 
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
+
+	int normType = cv::NORM_HAMMING;
+	if (matcherParameters.OpenCVParams.descriptor == "SURF"
+				|| matcherParameters.OpenCVParams.descriptor == "SIFT")
+		normType = cv::NORM_L2;
 
 	// Check some asserts
 	assert(
@@ -690,7 +758,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
 					- currentPoseDescriptors.row(id));
-			float value = norm(x, cv::NORM_L2);
+			float value = norm(x, normType);
 			if (value < bestVal || bestId == -1) {
 				bestVal = value;
 				bestId = id;
@@ -708,7 +776,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
 					- currentPoseDescriptors.row(id));
-			float value = norm(x, cv::NORM_L2);
+			float value = norm(x, normType);
 			if (matchingXYZacceptRatioOfBestMatch * value <= bestVal) {
 				cv::DMatch tmpMatch;
 				tmpMatch.distance = value;
