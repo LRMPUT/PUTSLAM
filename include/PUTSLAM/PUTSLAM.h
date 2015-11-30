@@ -31,7 +31,7 @@ using namespace putslam;
 class PUTSLAM {
 	Map* map;
 	Grabber* grabber;
-	Matcher * matcher;
+	Matcher * matcher, *loopClosureMatcher;
 
 	ofstream trajectoryFreiburgStream;
 	ofstream trajectoryVOMapStream;
