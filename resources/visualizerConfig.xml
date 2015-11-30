@@ -11,5 +11,5 @@
 	<camera flyingCamera="false"></camera>
 <!-- 	draw measurement for selected features (featureIDMin,featureIDMax) -->
 	<measurements drawMeasurements="false" red="0.9" green="0.0" blue="0.0" alpha="1.0" size="3" featureIDMin="10000" featureIDMax="10030" drawEllipsoids="false" ellipsoidRed="0.9" ellipsoidGreen="0.0" ellipsoidBlue="0.0" ellipsoidAlpha="1.0" ellipsoidScale="0.1"></measurements>
-	<opencv showFrames="true"></opencv>
+	<opencv showFrames="false"></opencv>
   </VisualizerConfig>

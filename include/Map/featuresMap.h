@@ -238,6 +238,7 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("measurementTypeLC", &measurementTypeLC);
+            model->FirstChildElement( "loopClosure" )->QueryBoolAttribute("useImagesLC", &useImagesLC);
 
             visualize = false;
 
@@ -327,6 +328,9 @@ public:
 
             /// type of measurement added to the graph
             int measurementTypeLC;
+
+            /// use images to close the loop
+            bool useImagesLC;
     };
 
 private:

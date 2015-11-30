@@ -342,7 +342,7 @@ void PUTSLAM::startProcessing() {
 		// if (trajIt>traj.size()-1)
 		//   break;
 
-		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+        SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
         if (drawImages){
             cv::imshow( "PUTSLAM RGB frame", currentSensorFrame.rgbImage );
@@ -367,7 +367,7 @@ void PUTSLAM::startProcessing() {
 				cameraPoseId = map->addNewPose(cameraPose,
 						currentSensorFrame.timestamp,
 						currentSensorFrame.rgbImage,
-						currentSensorFrame.depthImage);
+                        currentSensorFrame.depthImage);
 			}
 
 			// Correct motionModel
@@ -419,7 +419,7 @@ void PUTSLAM::startProcessing() {
 				cameraPoseId = map->addNewPose(cameraPoseIncrement,
 						currentSensorFrame.timestamp,
 						currentSensorFrame.rgbImage,
-						currentSensorFrame.depthImage);
+                        currentSensorFrame.depthImage);
 
 				// Get the visible features
 				Mat34 cameraPose = map->getSensorPose();
