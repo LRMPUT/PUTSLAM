@@ -15,11 +15,11 @@
 using namespace putslam;
 
 /// A single instance of OpenCV matcher
-MatcherOpenCV::Ptr matcher;
+MatcherOpenCV::Ptr matcherClass, loopClosingMatcherClass;
 
 putslam::Matcher* putslam::createMatcherOpenCV(void) {
-	matcher.reset(new MatcherOpenCV());
-	return matcher.get();
+	matcherClass.reset(new MatcherOpenCV());
+	return matcherClass.get();
 }
 
 //putslam::Matcher* putslam::createMatcherOpenCV(
@@ -31,9 +31,17 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 putslam::Matcher* putslam::createMatcherOpenCV(
 		const std::string _parametersFile,
 		const std::string _grabberParametersFile) {
-	matcher.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
-	return matcher.get();
+	matcherClass.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
+	return matcherClass.get();
 }
+
+putslam::Matcher* putslam::createloopClosingMatcherOpenCV(
+		const std::string _parametersFile,
+		const std::string _grabberParametersFile) {
+	loopClosingMatcherClass.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
+	return loopClosingMatcherClass.get();
+}
+
 
 // MatcherSURF
 MatcherOpenCV::MatcherOpenCV(void) :

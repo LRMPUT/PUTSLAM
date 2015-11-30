@@ -309,7 +309,7 @@ void PUTSLAM::startProcessing() {
 
     // thread for geometric loop closure
     if (loopClosureThreadVersion == LCTHREAD_ON)
-        map->startLoopClosureThread(0, matcher);
+        map->startLoopClosureThread(0, loopClosureMatcher);
 
 	// Creating octomap
 	if ( octomap > 0)
@@ -789,6 +789,10 @@ void PUTSLAM::loadConfigs() {
 	matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
 	if (verbose > 0) {
 		cout << "Current matcher: " << matcher->getName() << std::endl;
+	}
+	loopClosureMatcher = createloopClosingMatcherOpenCV(matcherParameters, grabberConfigFile);
+	if (verbose > 0) {
+		cout << "Loop closure current matcher: " << matcher->getName() << std::endl;
 	}
 
 }
