@@ -603,55 +603,64 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                    priorityQueueLC.pop();
             }
             else if ((camTrajectoryLC[element.posesIds.first].featuresIds.size()>config.minNumberOfFeaturesLC)&&(camTrajectoryLC[element.posesIds.second].featuresIds.size()>config.minNumberOfFeaturesLC)){
-                Mat34 poseAinv = camTrajectoryLC[element.posesIds.first].pose.inverse();
-                Mat34 poseBinv = camTrajectoryLC[element.posesIds.second].pose.inverse();
-                for (auto & featureId : camTrajectoryLC[element.posesIds.first].featuresIds){
-                    mtxMapLoopClosure.lock();
-                    featureSetA.push_back(featuresMapLoopClosure[featureId]);
-                    mtxMapLoopClosure.unlock();
-                    //set relative position
-                    Mat34 featurePose(Mat34::Identity());
-                    featurePose(0,3)=featureSetA.back().position.x();
-                    featurePose(1,3)=featureSetA.back().position.y();
-                    featurePose(2,3)=featureSetA.back().position.z();
-                    featurePose=poseAinv*featurePose;
-                    featureSetA.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
-                    //std::cout << "feature A " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
-                }
-                mtxCamTrajLC.unlock();
-                mtxCamTrajLC.lock();
-                for (auto & featureId : camTrajectoryLC[element.posesIds.second].featuresIds){
-                    mtxMapLoopClosure.lock();
-                    featureSetB.push_back(featuresMapLoopClosure[featureId]);
-                    mtxMapLoopClosure.unlock();
-                    //set relative position
-                    Mat34 featurePose(Mat34::Identity());
-                    featurePose(0,3)=featureSetB.back().position.x();
-                    featurePose(1,3)=featureSetB.back().position.y();
-                    featurePose(2,3)=featureSetB.back().position.z();
-                    featurePose=poseBinv*featurePose;
-                    featureSetB.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
-                    //std::cout << "feature B " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
-                }
-                mtxCamTrajLC.unlock();
-                //std::cout << "features size " << featureSetA.size() << " " << featureSetB.size() << "\n";
-                //getchar();
-                //std::cout << "vec size " << featureSetA.size() << " " << featureSetB.size() << "\n";
-                std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetB};
-                //std::vector<int> frameIds[2] = {std::vector<int>(1,element.posesIds.first), std::vector<int>(1,element.posesIds.second)};
-                std::vector<std::pair<int, int>> pairedFeatures;
-                Eigen::Matrix4f estimatedTransformation;
-                // find ids of the frames where features were observed
-                std::vector<int> frameIds[2];
-                frameIds[0].resize(featureSetA.size()); frameIds[1].resize(featureSetB.size());
-                for (int i=0;i<2;i++){
-                    int featureNo=0;
-                    for (auto& feature : featureSet[i]){
-                        frameIds[i][featureNo] = feature.posesIds[0];
-                        featureNo++;
+                if (!config.useImagesLC){
+                    Mat34 poseAinv = camTrajectoryLC[element.posesIds.first].pose.inverse();
+                    Mat34 poseBinv = camTrajectoryLC[element.posesIds.second].pose.inverse();
+                    for (auto & featureId : camTrajectoryLC[element.posesIds.first].featuresIds){
+                        mtxMapLoopClosure.lock();
+                        featureSetA.push_back(featuresMapLoopClosure[featureId]);
+                        mtxMapLoopClosure.unlock();
+                        //set relative position
+                        Mat34 featurePose(Mat34::Identity());
+                        featurePose(0,3)=featureSetA.back().position.x();
+                        featurePose(1,3)=featureSetA.back().position.y();
+                        featurePose(2,3)=featureSetA.back().position.z();
+                        featurePose=poseAinv*featurePose;
+                        featureSetA.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
+                        //std::cout << "feature A " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
+                    }
+                    mtxCamTrajLC.unlock();
+                    mtxCamTrajLC.lock();
+                    for (auto & featureId : camTrajectoryLC[element.posesIds.second].featuresIds){
+                        mtxMapLoopClosure.lock();
+                        featureSetB.push_back(featuresMapLoopClosure[featureId]);
+                        mtxMapLoopClosure.unlock();
+                        //set relative position
+                        Mat34 featurePose(Mat34::Identity());
+                        featurePose(0,3)=featureSetB.back().position.x();
+                        featurePose(1,3)=featureSetB.back().position.y();
+                        featurePose(2,3)=featureSetB.back().position.z();
+                        featurePose=poseBinv*featurePose;
+                        featureSetB.back().position = Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3));
+                        //std::cout << "feature B " << featureId << " " << Vec3(featurePose(0,3),featurePose(1,3),featurePose(2,3)).vector().transpose() << "\n";
                     }
                 }
-                double matchingRatio = matcher->matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
+                mtxCamTrajLC.unlock();
+                std::vector<MapFeature> featureSet[2] = {featureSetA, featureSetA};
+                std::vector<std::pair<int, int>> pairedFeatures;
+                Eigen::Matrix4f estimatedTransformation;
+                double matchingRatio;
+                if (!config.useImagesLC){
+                    // find ids of the frames where features were observed
+                    std::vector<int> frameIds[2];
+                    frameIds[0].resize(featureSetA.size()); frameIds[1].resize(featureSetA.size());
+                    for (int i=0;i<2;i++){
+                        int featureNo=0;
+                        for (auto& feature : featureSet[i]){
+                            frameIds[i][featureNo] = feature.posesIds[0];
+                            featureNo++;
+                        }
+                    }
+                    matchingRatio = matcher->matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
+                }
+                else{
+                    SensorFrame sensorFrames[2];
+                    // be careful: todo: lock image and depth
+                    getImages(element.posesIds.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
+                    getImages(element.posesIds.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
+                    matchingRatio = matcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
+                    std::cout << "matchingRatio" << matchingRatio << "\n";
+                }
                 if (matchingRatio>config.matchingRatioThresholdLC){
                     std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
                     std::cout << "matchingRatio " << matchingRatio << "\n";
