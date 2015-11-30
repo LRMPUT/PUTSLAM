@@ -656,6 +656,8 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 else{
                     SensorFrame sensorFrames[2];
                     // be careful: todo: lock image and depth
+                    sensorFrames[0].depthImageScale=sensorModel.config.depthImageScale;
+                    sensorFrames[1].depthImageScale=sensorModel.config.depthImageScale;
                     getImages(element.posesIds.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                     getImages(element.posesIds.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
                     matchingRatio = matcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
