@@ -332,6 +332,7 @@ void PUTSLAM::startProcessing() {
 	double motionModelLastTime = -1;
 
 	auto startMainLoop = std::chrono::system_clock::now();
+	SensorFrame lastSensorFrame;
 	// Main loop
 	while (true) {
 
@@ -389,6 +390,14 @@ void PUTSLAM::startProcessing() {
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame,
 					transformation, inlierMatches);
 			VORansacInlierRatioLog.push_back(inlierRatio);
+
+
+			// TESTING
+//			SensorFrame sensorFrames[2]={lastSensorFrame,currentSensorFrame};
+//			std::vector<std::pair<int, int>> pairedFeatures;
+//			Eigen::Matrix4f estimatedTransformation;
+//			double x = loopClosureMatcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
+//			std::cout<<"loopClosureMatcher -> " << x <<std::endl;
 
 			//for inverse slam problem
 			// Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
@@ -633,6 +642,8 @@ void PUTSLAM::startProcessing() {
 
         frameCounter++;
         std::cout<<frameCounter<<" "<<std::flush;
+
+        lastSensorFrame = currentSensorFrame;
 	}
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
     saveFPS(double(frameCounter)/(elapsed.count()/1000.0));
