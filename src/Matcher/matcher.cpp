@@ -596,20 +596,6 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
 		pairedFeatures.push_back(matchedIds);
     }
-    if (double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()))!=1){
-        std::cout << "sie nie kalkuluje!!!!!!!!!!!!!\n\n\n\n\n\n\n";
-        std::cout << "inlierMatches.size() " << inlierMatches.size() << "\n";
-        std::cout << "double(std::min(featureSet[0].size(),featureSet[1].size())) " << double(std::min(featureSet[0].size(),featureSet[1].size())) << "\n";
-
-//        int xxx = 0;
-//        for (auto &x: inlierMatches) {
-//        	std::cout<<"INDEKS = " << xxx++ << x.queryIdx << " " << x.trainIdx << " " << x.distance << std::endl;
-//        	std::cout<<featureSet[0][x.queryIdx].position.translation() << " " << featureSet[1][x.trainIdx].position.translation() << std::endl;
-//        }
-//
-//        exit(-1);
-        getchar();
-    }
     return double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()));
 }
 

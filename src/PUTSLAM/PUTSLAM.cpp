@@ -793,6 +793,9 @@ void PUTSLAM::loadConfigs() {
 	string matcherParameters =
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFile")->GetText();
+    string matcherParametersLC =
+            config.FirstChildElement("Matcher")->FirstChildElement(
+                    "parametersFileLC")->GetText();
 
 	if (verbose > 0) {
 		std::cout<<"Creating matcher" << std::endl;
@@ -801,7 +804,7 @@ void PUTSLAM::loadConfigs() {
 	if (verbose > 0) {
 		cout << "Current matcher: " << matcher->getName() << std::endl;
 	}
-	loopClosureMatcher = createloopClosingMatcherOpenCV(matcherParameters, grabberConfigFile);
+    loopClosureMatcher = createloopClosingMatcherOpenCV(matcherParametersLC, grabberConfigFile);
 	if (verbose > 0) {
 		cout << "Loop closure current matcher: " << matcher->getName() << std::endl;
 	}
