@@ -16,6 +16,7 @@
   <Matcher>
   	<name>OpenCV</name>
   	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
+	<parametersFileLC>matcherOpenCVParametersLC.xml</parametersFileLC>
   </Matcher>
   
   <Map>
