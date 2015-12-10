@@ -25,6 +25,8 @@
 #include "../include/RGBD/RGBD.h"
 #include "../include/Visualizer/Qvisualizer.h"
 
+#include "TimeMeasurement.h"
+
 using namespace std;
 using namespace putslam;
 
@@ -44,6 +46,9 @@ class PUTSLAM {
     /// visualization options
     bool visualize;
     bool drawImages;
+
+
+    TimeMeasurement timeMeasurement;
 
 public:
 

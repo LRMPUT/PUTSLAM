@@ -154,6 +154,10 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 				sensorData.depthImage, matcherParameters.cameraMatrixMat,
 				sensorData.depthImageScale);
 
+		// Remove features based on 2D and 3D distance
+		if ( matcherParameters.OpenCVParams.removeTooCloseFeatures > 0)
+			removeTooCloseFeatures(distortedFeatures2D, undistortedFeatures2D, features3D, matches);
+
 		// Checking that sizes are correct
 		assert(
 				("TrackKLT: After tracking: 2D and 3D sizes", undistortedFeatures2D.size()
@@ -207,6 +211,11 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		features3D.insert(features3D.end(), newFeatures3D.begin(),
 				newFeatures3D.end());
 
+		// Remove features based on 2D and 3D distance
+		if (matcherParameters.OpenCVParams.removeTooCloseFeatures > 0)
+			removeTooCloseFeatures(distortedFeatures2D, undistortedFeatures2D,
+					features3D, matches);
+
 	}
 
 	// In case we need descriptors
@@ -246,7 +255,6 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			tmp3D.swap(features3D);
 		}
 	}
-
 
 	// Check that the sizes are ok
 	assert(
@@ -596,18 +604,18 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
 		pairedFeatures.push_back(matchedIds);
     }
-    if (double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()))!=1){
+    if (double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()))>1){
         std::cout << "sie nie kalkuluje!!!!!!!!!!!!!\n\n\n\n\n\n\n";
         std::cout << "inlierMatches.size() " << inlierMatches.size() << "\n";
         std::cout << "double(std::min(featureSet[0].size(),featureSet[1].size())) " << double(std::min(featureSet[0].size(),featureSet[1].size())) << "\n";
 
-//        int xxx = 0;
-//        for (auto &x: inlierMatches) {
-//        	std::cout<<"INDEKS = " << xxx++ << x.queryIdx << " " << x.trainIdx << " " << x.distance << std::endl;
-//        	std::cout<<featureSet[0][x.queryIdx].position.translation() << " " << featureSet[1][x.trainIdx].position.translation() << std::endl;
-//        }
-//
-//        exit(-1);
+        int xxx = 0;
+        for (auto &x: inlierMatches) {
+        	std::cout<<"INDEKS = " << xxx++ << ": " << x.queryIdx << " " << x.trainIdx << " " << x.distance << std::endl;
+        	std::cout<<featureSet[0][x.queryIdx].position.translation() << " " << featureSet[1][x.trainIdx].position.translation() << std::endl;
+        }
+
+        exit(-1);
         getchar();
     }
     return double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()));
@@ -662,12 +670,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 		// Describe salient features
 		cv::Mat descriptors = describeFeatures(sensorFrames[i].rgbImage, features);
 
-		// Perform matching
-		std::vector<cv::DMatch> matches = performMatching(prevDescriptors,
-				descriptors);
-
 		// Find 2D positions without distortion
-
 		std::vector<cv::Point2f> undistortedFeatures2D =
 				RGBD::removeImageDistortion(features,
 						matcherParameters.cameraMatrixMat,
@@ -699,6 +702,8 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 		}
 
 	}
+
+
 
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
 }
@@ -1101,4 +1106,76 @@ void Matcher::showMatches(cv::Mat prevRgbImage,
 
 	cv::imshow("Showing matches", imageToShow);
 	cv::waitKey(10000);
+}
+
+
+std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
+		std::vector<cv::Point2f>& undistortedFeatures2D,
+		std::vector<Eigen::Vector3f> &features3D, std::vector<cv::DMatch> &matches){
+
+	// Check that we have the same sizes
+	assert(("removeTooCloseFeatures: distorted vs undistorted sizes", undistortedFeatures2D.size()
+							== distortedFeatures2D.size()));
+	assert(("removeTooCloseFeatures: features3D vs undistorted sizes", features3D.size()
+								== distortedFeatures2D.size()));
+
+	std::set<int> featuresToRemove;
+
+	for (int i = 0; i < features3D.size(); i++) {
+		for (int j = i + 1; j < features3D.size(); j++) {
+
+			double x = features3D[i][0] - features3D[j][0];
+			double y = features3D[i][1] - features3D[j][1];
+			double z = features3D[i][2] - features3D[j][2];
+			double dist3D = sqrt(x * x + y * y + z * z);
+
+			double u = undistortedFeatures2D[i].x - undistortedFeatures2D[j].x;
+			double v = undistortedFeatures2D[i].y - undistortedFeatures2D[j].y;
+			double dist2D = sqrt(u * u + v * v);
+
+			if ( dist3D < matcherParameters.OpenCVParams.minimalEuclidDistanceNewTrackingFeatures ||
+					dist2D < matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
+				featuresToRemove.insert(j); // TODO: Arbitrary decision right now
+			}
+		}
+	}
+
+	// Removing from distorted Features
+	int count = 0;
+	distortedFeatures2D.erase(
+			std::remove_if(distortedFeatures2D.begin(),
+					distortedFeatures2D.end(),
+					[&](const cv::Point2f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+			distortedFeatures2D.end());
+
+	// Removing from undistorted Features
+	count = 0;
+	undistortedFeatures2D.erase(
+			std::remove_if(undistortedFeatures2D.begin(),
+					undistortedFeatures2D.end(),
+					[&](const cv::Point2f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+			undistortedFeatures2D.end());
+
+	// Removing from features 3D
+	count = 0;
+	features3D.erase(
+			std::remove_if(features3D.begin(), features3D.end(),
+					[&](const Eigen::Vector3f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+			features3D.end());
+
+	// Removing from matches
+	matches.erase(
+			std::remove_if(matches.begin(), matches.end(),
+					[&](const cv::DMatch & o) {return featuresToRemove.find(o.trainIdx) != featuresToRemove.end();}),
+				matches.end());
+
+	// Check that we have the same sizes
+	assert(
+			("After removeTooCloseFeatures: distorted vs undistorted sizes", undistortedFeatures2D.size()
+					== distortedFeatures2D.size()));
+	assert(
+			("After removeTooCloseFeatures: features3D vs undistorted sizes", features3D.size()
+					== distortedFeatures2D.size()));
+
+	return featuresToRemove;
 }

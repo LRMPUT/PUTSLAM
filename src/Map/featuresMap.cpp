@@ -576,7 +576,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
     continueLoopClosure = true;
     // Wait for some information in map
     while (continueLoopClosure && featuresMapLoopClosure.size()==0) {
-        std::cout << "wait\n";
+//        std::cout << "wait\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
@@ -664,12 +664,12 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                     std::cout << "matchingRatio" << matchingRatio << "\n";
                 }
                 if (matchingRatio>config.matchingRatioThresholdLC){
-                    std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
-                    std::cout << "matchingRatio " << matchingRatio << "\n";
-                    std::cout << "featureSetA.size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
-                    std::cout << "estimated transformation: \n" << estimatedTransformation << "\n";
-                    std::cout << "graph transformation: \n" << (camTrajectoryLC[element.posesIds.first].pose.inverse()*camTrajectoryLC[element.posesIds.second].pose).matrix() << "\n";
-                    std::cout << "priorityQueueLC.size " << priorityQueueLC.size() << "\n";
+//                    std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
+//                    std::cout << "matchingRatio " << matchingRatio << "\n";
+//                    std::cout << "featureSetA.size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+//                    std::cout << "estimated transformation: \n" << estimatedTransformation << "\n";
+//                    std::cout << "graph transformation: \n" << (camTrajectoryLC[element.posesIds.first].pose.inverse()*camTrajectoryLC[element.posesIds.second].pose).matrix() << "\n";
+//                    std::cout << "priorityQueueLC.size " << priorityQueueLC.size() << "\n";
                     if (config.measurementTypeLC==0){//pose-pose
                         Mat34 trans(estimatedTransformation.cast<double>());
                         addMeasurement(element.posesIds.first, element.posesIds.second, trans);
@@ -685,7 +685,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                                 }
                             }
                         }
-                        std::cout << "measurements no " << measuredFeatures.size() << " from pose " << element.posesIds.second << "\n";
+//                        std::cout << "measurements no " << measuredFeatures.size() << " from pose " << element.posesIds.second << "\n";
                         addMeasurements(measuredFeatures,element.posesIds.second);
                     }
                 }
@@ -697,7 +697,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             }
         }
         else{
-            std::cout << "wait LC\n";
+//            std::cout << "wait LC\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }

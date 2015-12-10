@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <set>
 
 #include <opencv2/nonfree/nonfree.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -31,17 +32,18 @@ putslam::Matcher* putslam::createMatcherOpenCV(void) {
 putslam::Matcher* putslam::createMatcherOpenCV(
 		const std::string _parametersFile,
 		const std::string _grabberParametersFile) {
-	matcherClass.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
+	matcherClass.reset(
+			new MatcherOpenCV(_parametersFile, _grabberParametersFile));
 	return matcherClass.get();
 }
 
 putslam::Matcher* putslam::createloopClosingMatcherOpenCV(
 		const std::string _parametersFile,
 		const std::string _grabberParametersFile) {
-	loopClosingMatcherClass.reset(new MatcherOpenCV(_parametersFile, _grabberParametersFile));
+	loopClosingMatcherClass.reset(
+			new MatcherOpenCV(_parametersFile, _grabberParametersFile));
 	return loopClosingMatcherClass.get();
 }
-
 
 // MatcherSURF
 MatcherOpenCV::MatcherOpenCV(void) :
@@ -49,10 +51,6 @@ MatcherOpenCV::MatcherOpenCV(void) :
 	initVariables();
 }
 
-//MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile) :
-//		Matcher("OpenCVMatcher", _parametersFile) {
-//	initVariables();
-//}
 
 MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile,
 		const std::string _grabberParametersFile) :
@@ -116,22 +114,33 @@ const std::string& MatcherOpenCV::getName() const {
 /// Detect features
 std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 
+	// Convert to gray
 	cv::Mat grayImage;
 	cv::cvtColor(rgbImage, grayImage, CV_RGB2GRAY);
 
 	std::vector<cv::KeyPoint> raw_keypoints;
-	//featureDetector.get()->detect(grayImage, raw_keypoints);
-
 	int grayImageWidth = grayImage.cols, grayImageHeight = grayImage.rows;
+
+	int maximalFeaturesInROI =
+						matcherParameters.OpenCVParams.maximalTrackedFeatures * 3
+								/ (matcherParameters.OpenCVParams.gridCols
+										* matcherParameters.OpenCVParams.gridRows);
+
+	// Let's divide image into boxes/rectangles
 	for (int k = 0; k < matcherParameters.OpenCVParams.gridCols; k++) {
 		for (int i = 0; i < matcherParameters.OpenCVParams.gridRows; i++) {
 
 			std::vector<cv::KeyPoint> keypointsInROI;
 			cv::Mat roiBGR(grayImage,
-					cv::Rect(k * grayImageWidth / matcherParameters.OpenCVParams.gridCols,
-							i * grayImageHeight / matcherParameters.OpenCVParams.gridRows,
-							grayImageWidth / matcherParameters.OpenCVParams.gridCols,
-							grayImageHeight / matcherParameters.OpenCVParams.gridRows));
+					cv::Rect(
+							k * grayImageWidth
+									/ matcherParameters.OpenCVParams.gridCols,
+							i * grayImageHeight
+									/ matcherParameters.OpenCVParams.gridRows,
+							grayImageWidth
+									/ matcherParameters.OpenCVParams.gridCols,
+							grayImageHeight
+									/ matcherParameters.OpenCVParams.gridRows));
 
 			featureDetector.get()->detect(roiBGR, keypointsInROI);
 
@@ -139,11 +148,16 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 				std::cout << "MatcherOpenCV: Grid (" << k << ", " << i << ") : "
 						<< keypointsInROI.size() << " keypoints" << std::endl;
 
+			// Sorting keypoints by the response to choose the bests
 			std::sort(keypointsInROI.begin(), keypointsInROI.end(),
 					MatcherOpenCV::compare_response);
-			for (int j = 0; j < keypointsInROI.size() && j < 75; j++) {
-				keypointsInROI[j].pt.x += k * grayImageWidth / matcherParameters.OpenCVParams.gridCols;
-				keypointsInROI[j].pt.y += i * grayImageHeight / matcherParameters.OpenCVParams.gridRows;
+
+			// Adding to final keypoints
+			for (int j = 0; j < keypointsInROI.size() && j < maximalFeaturesInROI; j++) {
+				keypointsInROI[j].pt.x += k * grayImageWidth
+						/ matcherParameters.OpenCVParams.gridCols;
+				keypointsInROI[j].pt.y += i * grayImageHeight
+						/ matcherParameters.OpenCVParams.gridRows;
 				raw_keypoints.push_back(keypointsInROI[j]);
 			}
 		}
@@ -153,8 +167,8 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	std::sort(raw_keypoints.begin(), raw_keypoints.end(),
 			MatcherOpenCV::compare_response);
 
-	if (raw_keypoints.size() > 500)
-		raw_keypoints.resize(500);
+	if (raw_keypoints.size() > matcherParameters.OpenCVParams.maximalTrackedFeatures)
+		raw_keypoints.resize(matcherParameters.OpenCVParams.maximalTrackedFeatures);
 
 	return raw_keypoints;
 }
@@ -190,32 +204,58 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 		cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
 		std::vector<cv::Point2f> &features) {
 
+	// Some needed variables
 	std::vector<uchar> status;
 	std::vector<float> err;
 	cv::TermCriteria termcrit(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS,
 			matcherParameters.OpenCVParams.maxIter,
 			matcherParameters.OpenCVParams.eps);
 
-	int initialFlow = 0;
+	// Setting OpenCV flags based on our parameters
+	int trackingFlags = 0;
 	if (matcherParameters.OpenCVParams.useInitialFlow > 0)
-		initialFlow = cv::OPTFLOW_USE_INITIAL_FLOW;
+		trackingFlags = cv::OPTFLOW_USE_INITIAL_FLOW;
+	if (matcherParameters.OpenCVParams.trackingErrorType > 0)
+			trackingFlags |= cv::OPTFLOW_LK_GET_MIN_EIGENVALS;
 
-	// Calculating movement of features
-	cv::calcOpticalFlowPyrLK(prevImg, img, prevFeatures, features, status, err,
-			cv::Size(matcherParameters.OpenCVParams.winSize,
-					matcherParameters.OpenCVParams.winSize),
-			matcherParameters.OpenCVParams.maxLevels, termcrit, initialFlow);
+	// Calculating the movement of features
+	cv::calcOpticalFlowPyrLK(prevImg, img, prevFeatures, features, status,
+					err,
+					cv::Size(matcherParameters.OpenCVParams.winSize,
+							matcherParameters.OpenCVParams.winSize),
+					matcherParameters.OpenCVParams.maxLevels, termcrit,
+					trackingFlags,
+					matcherParameters.OpenCVParams.trackingMinEigThreshold);
+
+	// This parts removes additional features for which we observed an error above preset threshold
+	int errSize = err.size();
+	for (int i = 0; i < errSize; i++) {
+		if (err[i] > matcherParameters.OpenCVParams.trackingErrorThreshold)
+			status[i] = 0;
+	}
+
+	// Removing features if they are too close to each other - the feature to remove is based on an error from tracking
+	std::set<int> featuresToRemove;
+	for (int i = 0; i < features.size(); i++) {
+		for (int j = i + 1; j < features.size(); j++) {
+			if (cv::norm(features[i] - features[j]) < matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
+				if ( err[i] > err[j])
+					featuresToRemove.insert(i);
+				else
+					featuresToRemove.insert(j);
+			}
+		}
+	}
 
 	// Returning result in matching-compatible format
 	int i = 0, j = 0;
 	std::vector<cv::DMatch> matches;
-
 	std::vector<cv::Point2f>::iterator itFeatures = features.begin();
 	std::vector<uchar>::iterator it = status.begin();
 	for (; it != status.end(); ++it, i++) {
 
-		// Tracking succeed
-		if (*it != 0) {
+		// Tracking succeed and the feature is not too close to feature with more precise tracking
+		if (*it != 0  && featuresToRemove.find(i) == featuresToRemove.end()) {
 			matches.push_back(cv::DMatch(i, j, 0));
 			j++;
 			++itFeatures;
