@@ -46,10 +46,31 @@
     
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
+
+	trackingErrorType:	0 -> default, L1 of patches 
+				1 -> eigen value of a 2x2 normal matrix of optical flow equations 
+	
+	trackingErrorThreshold:		if the tracking exceeds this error - we remove the feature. The error is defined depending on other parameter:
+					- (typical values range from 0 to 8) - as an average pixel difference of corresponding patches (default) 
+					- (typical values range from 0 to 1.5) - as a threshold for minimal eigenvalue of spatial gradient matrix (eigenvalue of 2-order derivative in both directions)
+	trackingMinEigThreshold:	works only with trackingErrorType = 0, checking if the eigenvalue is greater than the minimal eigenvalue during the tracking
+	
+
     -->
-    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" minimalTrackedFeatures="100" minimalReprojDistanceNewTrackingFeatures="4" DBScanEps="6"
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" 
+
+minimalTrackedFeatures="100" 
+maximalTrackedFeatures="500"
+minimalReprojDistanceNewTrackingFeatures="4" 
+minimalEuclidDistanceNewTrackingFeatures="0.02"
+DBScanEps="6"
 	matchingXYZSphereRadius = "0.15"
 	matchingXYZacceptRatioOfBestMatch = "0.85"
+	trackingErrorType = "0"
+	trackingErrorThreshold = "5.0"
+	trackingMinEigThreshold = "0.00"
+
+	removeTooCloseFeatures = "0"
 />
     <!-- Matching using patche 
     

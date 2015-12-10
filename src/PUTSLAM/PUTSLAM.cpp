@@ -42,8 +42,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		// We only add features of proper depth
 		if (features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0) {
 
-//			std::cout << "Correct depth of feature" << std::endl;
-
+			// Assuma that the feature is ok
 			bool featureOk = true;
 
 			// Lets remove features too close to existing features
@@ -55,12 +54,13 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 						mapFeatures[i].position.z());
 				float norm = (tmp - features.feature3D[j]).norm();
 
+				// Euclidean norm test
 				if (norm < minEuclideanDistanceOfFeatures) {
 					featureOk = false;
 					break;
 				}
 
-				// Image error
+				// Reprojection norm
 				Eigen::Vector3d projectedMapPoint =
 						map->getDepthSensorModel().inverseModel(
 								mapFeatures[i].position.x(),
@@ -71,7 +71,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				float imageNorm = cv::norm(
 						point - features.undistortedFeature2D[j]);
 
-				// 5 pixels is a minimum distance
+				// Reprojection norm test
 				if (imageNorm < minImageDistanceOfFeatures) {
 					featureOk = false;
 					break;
@@ -381,79 +381,95 @@ void PUTSLAM::startProcessing() {
 		}
 		// The next pose in the sequence
 		else {
+
+
 			Eigen::Matrix4f transformation;
 			std::vector<cv::DMatch> inlierMatches;
 
 			// Running VO - matching or tracking depending on parameters
 			// TODO:
 			// - if no motion than skip frame
+			Stopwatch<> voTime;
 			double inlierRatio = matcher->Matcher::runVO(currentSensorFrame,
 					transformation, inlierMatches);
+			voTime.stop();
+			timeMeasurement.voTimes.push_back(voTime.elapsed());
+
+
 			VORansacInlierRatioLog.push_back(inlierRatio);
-
-
-			// TESTING
-//			SensorFrame sensorFrames[2]={lastSensorFrame,currentSensorFrame};
-//			std::vector<std::pair<int, int>> pairedFeatures;
-//			Eigen::Matrix4f estimatedTransformation;
-//			double x = loopClosureMatcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
-//			std::cout<<"loopClosureMatcher -> " << x <<std::endl;
-
-			//for inverse slam problem
-			// Mat34 transReal = traj[trajIt-1].inverse()*traj[trajIt];
-			//             transformation = transReal.cast<float>().matrix();
-			//            std::cout << "iteration: " << trajIt << "\n";
-
-			// Saving inliers for Dominic
-			//			Matcher::featureSet features = matcher->getFeatures();
-			//			saveFeaturesToFile(features, inlierMatches, currentSensorFrame.timestamp);
 
 			robotPose = robotPose * transformation;
 
 			if (!onlyVO) {
 
+				Stopwatch<> mapTime, tmp;
+
 				// cameraPose as Eigen::Transform
 				Mat34 cameraPoseIncrement = Mat34(
 						transformation.cast<double>());
 
-				// Motion model
-				if (int(currentSensorFrame.timestamp) % 4 != 0) {
-					Mat34 x = motionModel.get()->predict(
-							motionModelLastTime - currentSensorFrame.timestamp);
-					motionModelPose = Eigen::Matrix4f(x.matrix().cast<float>());
-					motionModelLastTime = currentSensorFrame.timestamp;
-				}
+//				// Motion model
+//				if (int(currentSensorFrame.timestamp) % 4 != 0) {
+//					Mat34 x = motionModel.get()->predict(
+//							motionModelLastTime - currentSensorFrame.timestamp);
+//					motionModelPose = Eigen::Matrix4f(x.matrix().cast<float>());
+//					motionModelLastTime = currentSensorFrame.timestamp;
+//				}
 
 				// Add new position to the map
+				tmp.start();
 				cameraPoseId = map->addNewPose(cameraPoseIncrement,
 						currentSensorFrame.timestamp,
 						currentSensorFrame.rgbImage,
                         currentSensorFrame.depthImage);
+				tmp.stop();
+				timeMeasurement.mapAddNewPoseTimes.push_back(tmp.elapsed());
+
+				// Getting the pose
+				tmp.start();
+				Mat34 cameraPose = map->getSensorPose();
+				tmp.stop();
+				timeMeasurement.mapGetSensorPoseTimes.push_back(tmp.elapsed());
 
 				// Get the visible features
-				Mat34 cameraPose = map->getSensorPose();
+				tmp.start();
 				mapFeatures = map->getVisibleFeatures(cameraPose);
+				tmp.stop();
+				timeMeasurement.mapGetVisibleFeaturesTimes.push_back(tmp.elapsed());
+
+
 				//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
 
 				// Find the ids of frames for which feature observations have the most similar angle
+
 				std::vector<int> frameIds;
 				std::vector<float_type> angles;
+
+				tmp.start();
 				map->findNearestFrame(mapFeatures, frameIds, angles,
 						matcher->matcherParameters.maxAngleBetweenFrames);
+				tmp.stop();
+				timeMeasurement.mapFindNearestFrameTimes.push_back(tmp.elapsed());
 
 				//Remove features that we do not have a good observation angle
+				tmp.start();
 				removeMapFeaturesWithoutGoodObservationAngle(mapFeatures,
 						frameIds, angles);
+				tmp.stop();
+				timeMeasurement.mapRemoveMapFeaturesTimes.push_back(tmp.elapsed());
 
 
 				// Check some asserts
-				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
-								== frameIds.size()));
-				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
-								== angles.size()));
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== frameIds.size()));
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== angles.size()));
 
 				// Move mapFeatures to local coordinate system
+				tmp.start();
 				moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
+				tmp.stop();
+				timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(tmp.elapsed());
 
 				// Now lets check if those features are not behind sth
 				const double additionalDistance = 0.15f;
@@ -477,6 +493,9 @@ void PUTSLAM::startProcessing() {
 
 				// Map matching based only on descriptors
 				double mapMatchingInlierRatio = 0.0f;
+
+
+				tmp.start();
 				if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS) {
 
@@ -547,6 +566,9 @@ void PUTSLAM::startProcessing() {
 							<< "Unrecognized map matching version -- double check matcherOpenCVParameters.xml"
 							<< std::endl;
 				}
+				tmp.stop();
+				timeMeasurement.mapMatchingTimes.push_back(tmp.elapsed());
+
 				MapMatchingRansacInlierRatioLog.push_back(
 						mapMatchingInlierRatio);
 
@@ -567,6 +589,7 @@ void PUTSLAM::startProcessing() {
 //						<< " meters" << std::endl;
 
 				// Add pose-pose constrain - depends on config file
+				tmp.start();
 				if (addPoseToPoseEdges) {
 					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
 							cameraPoseIncrement);
@@ -582,6 +605,8 @@ void PUTSLAM::startProcessing() {
                     }
 					map->addMeasurements(measurementList);
 				}
+				tmp.stop();
+				timeMeasurement.mapAddMeasurementTimes.push_back(tmp.elapsed());
 
 				// Insufficient number of features -> time to add some features
 				if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
@@ -591,6 +616,9 @@ void PUTSLAM::startProcessing() {
 										< addNoFeaturesWhenMapSizeGreaterThan)) {
 					addFeatureToMap = true;
 				}
+
+				mapTime.stop();
+				timeMeasurement.mapTimes.push_back(mapTime.elapsed());
 			}
 		}
 
@@ -647,6 +675,10 @@ void PUTSLAM::startProcessing() {
 	}
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startMainLoop);
     saveFPS(double(frameCounter)/(elapsed.count()/1000.0));
+
+    // Save times
+    std::cout<< "Saving times" << std::endl;
+    timeMeasurement.saveToFile();
 
 	// Save statistics
 	std::cout << "Saving logs to file" << std::endl;

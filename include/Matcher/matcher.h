@@ -17,6 +17,7 @@
 #include "../include/RGBD/RGBD.h"
 
 #include "MatchingOnPatches.h"
+#include "chrono"
 
 namespace putslam {
 /// Grabber interface
@@ -41,13 +42,38 @@ public:
 		int maxIter;
 		float eps;
 
-		int minimalTrackedFeatures;
+		int minimalTrackedFeatures, maximalTrackedFeatures;
 		double minimalReprojDistanceNewTrackingFeatures;
+		double minimalEuclidDistanceNewTrackingFeatures;
 		double DBScanEps;
 
 		double matchingXYZSphereRadius;
 		double matchingXYZacceptRatioOfBestMatch;
+
+		double trackingErrorThreshold, trackingMinEigThreshold;
+		int trackingErrorType;
+
+		int removeTooCloseFeatures;
 	};
+
+
+	class TimeMeasurement {
+		std::vector<long> times;
+
+	public:
+		double getDetectionAverage() {
+			double avgTime = 0;
+			for (auto &x : times) {
+				avgTime += x;
+			}
+			return avgTime/times.size();
+		}
+
+		void addTime(long time) {
+			times.push_back(time);
+		}
+	};
+
 
 	/// Overloaded constructor
 	Matcher(const std::string _name) :
@@ -238,9 +264,15 @@ public:
 			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
 					"minimalTrackedFeatures",
 					&OpenCVParams.minimalTrackedFeatures);
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+								"maximalTrackedFeatures",
+								&OpenCVParams.maximalTrackedFeatures);
 			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
 					"minimalReprojDistanceNewTrackingFeatures",
 					&OpenCVParams.minimalReprojDistanceNewTrackingFeatures);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+								"minimalEuclidDistanceNewTrackingFeatures",
+								&OpenCVParams.minimalEuclidDistanceNewTrackingFeatures);
 			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
 					"DBScanEps", &OpenCVParams.DBScanEps);
 
@@ -250,6 +282,20 @@ public:
 			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
 					"matchingXYZacceptRatioOfBestMatch",
 					&OpenCVParams.matchingXYZacceptRatioOfBestMatch);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+								"trackingErrorThreshold",
+								&OpenCVParams.trackingErrorThreshold);
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+											"trackingErrorType",
+											&OpenCVParams.trackingErrorType);
+			params->FirstChildElement("MatcherOpenCV")->QueryDoubleAttribute(
+														"trackingMinEigThreshold",
+														&OpenCVParams.trackingMinEigThreshold);
+
+			params->FirstChildElement("MatcherOpenCV")->QueryIntAttribute(
+																	"removeTooCloseFeatures",
+																	&OpenCVParams.removeTooCloseFeatures);
+
 
 			// Patches params
 			params->FirstChildElement("MatchingOnPatches")->QueryIntAttribute(
@@ -343,6 +389,9 @@ protected:
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
 
+	// Time measurement
+	TimeMeasurement detectionTimes, trackingTimes, ransacTimes;
+
 	//TODO: TEMPORARILY
 public:
 	/// Parameters
@@ -379,6 +428,10 @@ private:
 			std::vector<MapFeature> mapFeatures);
 
 private:
+	std::set<int> removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
+			std::vector<cv::Point2f>& undistortedFeatures2D,
+			std::vector<Eigen::Vector3f> &features3D, std::vector<cv::DMatch> &matches);
+
 	// Method used to combine old tracking features with new features
 	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
 			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
