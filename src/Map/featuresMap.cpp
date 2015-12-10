@@ -587,8 +587,10 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
         if (verbose>0){
             std::cout << "Loop closure: start new iteration\n";
         }
-        if (updateQueueLC(poseId))
-            poseId++;
+        for (int i=poseId;i<camTrajectoryLC.size();i++){
+            if (updateQueueLC(poseId))
+                poseId++;
+        }
         if (priorityQueueLC.size()>0){
             LCElement element = priorityQueueLC.top();
             std::vector<MapFeature> featureSetA, featureSetB;
@@ -661,7 +663,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                     getImages(element.posesIds.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                     getImages(element.posesIds.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
                     matchingRatio = matcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
-                    std::cout << "matchingRatio" << matchingRatio << "\n";
+                    std::cout << "matchingRatio" << matchingRatio << "between frames: " << element.posesIds.first << "->" << element.posesIds.second << "\n";
                 }
                 if (matchingRatio>config.matchingRatioThresholdLC){
 //                    std::cout << "matched: " << element.posesIds.first << ", " << element.posesIds.second << "\n";
@@ -710,10 +712,10 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 
 ///update priority queue for the loop closure
 bool FeaturesMap::updateQueueLC(int frameId){
-    if (frameId>=camTrajectoryLC.size())
+    if (config.minFrameDist>=camTrajectoryLC.size())
         return false;
     else{
-        for (int i=0;i<camTrajectoryLC.size()-config.minFrameDist;i++){
+        for (int i=0;i<frameId-config.minFrameDist;i++){
             mtxCamTrajLC.lock();
             double dotprod = (double)(1.0-camTrajectoryLC[frameId].pose.matrix().block<3,1>(0,2).adjoint()*camTrajectoryLC[i].pose.matrix().block<3,1>(0,2))/2.0;
             Vec3 p1(camTrajectoryLC[i].pose(0,3),camTrajectoryLC[i].pose(1,3), camTrajectoryLC[i].pose(2,3));
@@ -722,6 +724,7 @@ bool FeaturesMap::updateQueueLC(int frameId){
             LCElement element;
             element.distance = dotprod*euclDist;
             if ((element.distance<config.distThresholdLC)&&(acos(1-dotprod*2)<config.rotThresholdLC)){
+                //std::cout << "add to queque " << i << "->" << frameId << "\n";
                 element.posesIds = std::make_pair(i,frameId);
                 priorityQueueLC.push(element);
             }
