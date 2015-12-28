@@ -197,6 +197,7 @@ public:
             if (config.ErrorID())
                 std::cout << "unable to load Map config file.\n";
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("uncertaintyModel", &uncertaintyModel);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
@@ -244,6 +245,9 @@ public:
 
         }
         public:
+            //verbose
+            int verbose;
+
             // Use uncertinty model of the camera to determine information matrix in the graph
             bool useUncertainty;// true - use uncertainty model
 

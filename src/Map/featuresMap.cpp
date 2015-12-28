@@ -224,6 +224,7 @@ void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         int poseId) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	mtxCamTraj.lock();
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
@@ -271,12 +272,16 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
     }
     if (config.visualize)
         notify(features2visualization);
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+    if (config.verbose)
+        std::cout << "add measurements for features duration = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "us" << std::endl;
 }
 
 /// add measurement between two poses
 void FeaturesMap::addMeasurement(int poseFrom, int poseTo, Mat34 transformation){
     EdgeSE3 e(transformation, Mat66::Identity(), poseFrom, poseTo);
     poseGraph->addEdgeSE3(e);
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 }
 
 /// Get all features
