@@ -599,7 +599,7 @@ void PUTSLAM::startProcessing() {
 				measurementToMapSizeLog.push_back(measurementList.size());
 				if (measurementList.size()
 						> minMeasurementsToAddPoseToFeatureEdge) {
-                    if (map->useUncertainty()){
+					 if (map->useUncertainty()){
                         matcher->computeNormals(currentSensorFrame.depthImage, measurementList, currentSensorFrame.depthImageScale);
                         matcher->computeRGBGradients(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, measurementList, currentSensorFrame.depthImageScale);
                     }
