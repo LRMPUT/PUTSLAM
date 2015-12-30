@@ -224,7 +224,6 @@ void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
 /// add measurements (features measured from the last camera pose)
 void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         int poseId) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	mtxCamTraj.lock();
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
@@ -272,9 +271,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
     }
     if (config.visualize)
         notify(features2visualization);
-    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
-    if (config.verbose)
-        std::cout << "add measurements for features duration = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "us" << std::endl;
 }
 
 /// add measurement between two poses
@@ -1223,7 +1219,7 @@ void FeaturesMap::setDrawOptions(bool _draw){
 
 /// use uncertainty
 bool FeaturesMap::useUncertainty(void){
-    return config.uncertaintyModel;
+    return config.useUncertainty;
 }
 
 /// disable Robust Kernel
