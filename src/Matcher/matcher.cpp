@@ -276,7 +276,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	if (matches.size() == 0)
 		return 0.0;
 
-	return double(inlierMatches.size()) / double(matches.size());
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
 double Matcher::match(const SensorFrame& sensorData,
@@ -371,7 +371,7 @@ double Matcher::match(const SensorFrame& sensorData,
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
 
-	return double(inlierMatches.size()) / double(matches.size());
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
 // We have chosen to use the first descriptor. TODO: Change it to be based on orientation
@@ -449,7 +449,7 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
 
-	return double(inlierMatches.size()) / double(matches.size());
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
 void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
@@ -594,18 +594,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 			featurePositions3D[0], featurePositions3D[1], matches,
 			inlierMatches);
 
-	// for all inliers, store the matched ids of features
-	pairedFeatures.clear();
-    for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin();
-            it != inlierMatches.end(); ++it) {
-
-        int firstSetId = it->queryIdx, secondSetId = it->trainIdx;
-		std::pair<int, int> matchedIds = std::make_pair(
-				featureSet[0][firstSetId].id, featureSet[1][secondSetId].id);
-		pairedFeatures.push_back(matchedIds);
-    }
-
-    return double(inlierMatches.size()) / double(std::min(featureSet[0].size(),featureSet[1].size()));
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
 /// Run the match with two poses from the map. Parameters:
@@ -836,7 +825,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
 
-	return double(inlierMatches.size()) / double(matches.size());
+	// Compute inlier ratio
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
 double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
@@ -1071,7 +1061,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		foundInlierMapFeatures.push_back(mapFeature);
 	}
 
-	return double(inlierMatches2.size()) / double(matches.size());
+	return RANSAC::pointInlierRatio(inlierMatches2, matches);
 }
 
 void Matcher::showFeatures(cv::Mat rgbImage,

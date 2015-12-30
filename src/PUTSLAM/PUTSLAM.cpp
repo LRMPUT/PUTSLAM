@@ -967,38 +967,38 @@ void PUTSLAM::saveLogs() {
 	statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << endl;
 
 	// diff 2D in patches
-	statisticsLogStream << "error2DPatchesSize = np.array([";
-	for (int a = 0; a < patchesErrorLog.size(); a++) {
-		statisticsLogStream << patchesErrorLog[a].first << ", ";
-	}
-	statisticsLogStream << "]);" << std::endl;
-
-	statisticsLogStream << "fig = plt.figure()" << endl;
-	statisticsLogStream << "plt.plot(error2DPatchesSize)" << endl;
-	statisticsLogStream << "fig.suptitle('2D patches diff', fontsize=20)"
-			<< endl;
-	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-			<< endl;
-	statisticsLogStream << "plt.ylabel('diff [px]', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('diff2DPatchesSize.png')" << endl;
-
-	// diff 3D in patches
-	statisticsLogStream << "error3DPatchesSize = np.array([";
-	for (int a = 0; a < patchesErrorLog.size(); a++) {
-		statisticsLogStream << patchesErrorLog[a].second << ", ";
-	}
-	statisticsLogStream << "]);" << std::endl;
-
-	statisticsLogStream << "fig = plt.figure()" << endl;
-	statisticsLogStream << "plt.plot(error3DPatchesSize)" << endl;
-	statisticsLogStream << "fig.suptitle('3D patches diff', fontsize=20)"
-			<< endl;
-	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-			<< endl;
-	statisticsLogStream << "plt.ylabel('diff [m]', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
+//	statisticsLogStream << "error2DPatchesSize = np.array([";
+//	for (int a = 0; a < patchesErrorLog.size(); a++) {
+//		statisticsLogStream << patchesErrorLog[a].first << ", ";
+//	}
+//	statisticsLogStream << "]);" << std::endl;
+//
+//	statisticsLogStream << "fig = plt.figure()" << endl;
+//	statisticsLogStream << "plt.plot(error2DPatchesSize)" << endl;
+//	statisticsLogStream << "fig.suptitle('2D patches diff', fontsize=20)"
+//			<< endl;
+//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
+//			<< endl;
+//	statisticsLogStream << "plt.ylabel('diff [px]', fontsize=16)" << endl;
+//	statisticsLogStream << "plt.legend() " << endl;
+//	statisticsLogStream << "plt.savefig('diff2DPatchesSize.png')" << endl;
+//
+//	// diff 3D in patches
+//	statisticsLogStream << "error3DPatchesSize = np.array([";
+//	for (int a = 0; a < patchesErrorLog.size(); a++) {
+//		statisticsLogStream << patchesErrorLog[a].second << ", ";
+//	}
+//	statisticsLogStream << "]);" << std::endl;
+//
+//	statisticsLogStream << "fig = plt.figure()" << endl;
+//	statisticsLogStream << "plt.plot(error3DPatchesSize)" << endl;
+//	statisticsLogStream << "fig.suptitle('3D patches diff', fontsize=20)"
+//			<< endl;
+//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
+//			<< endl;
+//	statisticsLogStream << "plt.ylabel('diff [m]', fontsize=16)" << endl;
+//	statisticsLogStream << "plt.legend() " << endl;
+//	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
 
 	statisticsLogStream.close();
 }
