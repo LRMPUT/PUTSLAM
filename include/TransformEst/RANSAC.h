@@ -14,6 +14,7 @@
 #include "opencv/cv.h"
 #include <opencv2/opencv.hpp>
 #include <Eigen/Eigen>
+#include <set>
 
 class RANSAC {
 public:
@@ -43,6 +44,24 @@ public:
 			std::vector<Eigen::Vector3f> features,
 			std::vector<cv::DMatch> matches,
 			std::vector<cv::DMatch> & bestInlierMatches);
+
+	/**
+	 * Method used to compute inlier ratio w.r.t. points in the second image
+	 *
+	 * inlierMatches	--	matches found to be inliers by RANSAC
+	 * allMatches		-- 	all matches passed previously to RANSAC
+	 */
+	static double pointInlierRatio(std::vector<cv::DMatch> &inlierMatches,
+			std::vector<cv::DMatch> & allMatches) {
+		std::set<int> inlier, all;
+		for (auto &m : allMatches)
+			all.insert(m.trainIdx);
+
+		for (auto &in : inlierMatches)
+			inlier.insert(in.trainIdx);
+
+		return double(inlier.size()) / double(all.size());
+	}
 
 private:
 	cv::Mat cameraMatrix;
