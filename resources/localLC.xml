@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Local Loop Closure configuration -->
+<LoopClosure>
+    <parameters verbose="0" minFrameDist="5" distThreshold="0.56" rotThreshold="1.7" useImages="true"/>
+</LoopClosure>

@@ -44,6 +44,8 @@ option(BUILD_PUTSLAM_POSE_GRAPH "Build PUTSLAM Pose Graph (local and global grap
 mark_as_advanced(BUILD_PUTSLAM_POSE_GRAPH)
 option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
+option(BUILD_PUTSLAM_LOOPCLOSURE "Build PUTSLAM loop closure library" ON)
+mark_as_advanced(BUILD_PUTSLAM_LOOPCLOSURE)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
 option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" ON)
@@ -392,6 +394,28 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
+
+###############################################################################
+#
+# PUTSLAM LoopClosure library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
+        file(GLOB LOOPCLOSURE_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/LoopClosure/*.cpp"
+        )
+        file(GLOB LOOPCLOSURE_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/LoopClosure/*.h"
+        )
+
+        ADD_LIBRARY(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
+        TARGET_LINK_LIBRARIES(LoopClosure Utilities Matcher RGBD)
+        INSTALL(TARGETS LoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${LOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
+
+
 ###############################################################################
 #
 # PUTSLAM Map library
@@ -407,10 +431,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
         )
 
         ADD_LIBRARY(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
-        TARGET_LINK_LIBRARIES(Map PoseGraph Grabber Utilities Matcher TransformEst RGBD)
+        TARGET_LINK_LIBRARIES(Map PoseGraph Grabber Utilities Matcher TransformEst RGBD LoopClosure)
         INSTALL(TARGETS Map RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MAP_HEADERS} DESTINATION include/putslam/Map/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
+
 
 ###############################################################################
 #
