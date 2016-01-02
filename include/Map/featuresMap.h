@@ -13,6 +13,7 @@
 #include <memory>
 #include <atomic>
 #include "../include/Grabber/depthSensorModel.h"
+#include "LoopClosure/loopClosureLocal.h"
 #include <iostream>
 #include <deque>
 #include <queue>
@@ -27,22 +28,6 @@ Map* createFeaturesMap(std::string configFileGrabber, std::string sensorConfig);
 }
 
 using namespace putslam;
-
-class LCElement{
-public:
-    /// matched poses
-    std::pair<int,int> posesIds;
-
-    /// distance between poses, the smaller the higher priority in the queue
-    double distance;
-
-    bool operator() (const LCElement& elementA, const LCElement& elementB) const {
-        if (elementA.distance>elementB.distance)
-            return true;
-        else
-            return false;
-    }
-};
 
 /// Map implementation
 class FeaturesMap: public Map, public Subject {
@@ -189,8 +174,6 @@ public:
             useUncertainty(true){
         }
         Config(std::string configFilename){
-
-
             tinyxml2::XMLDocument config;
             std::string filename = "../../resources/" + configFilename;
             config.LoadFile(filename.c_str());
@@ -232,14 +215,13 @@ public:
             filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
             model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
 
-            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minFrameDist", &minFrameDist);
-            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("distThresholdLC", &distThresholdLC);
-            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("rotThresholdLC", &rotThresholdLC);
-            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("searchPairsTypeLC", &searchPairsTypeLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("measurementTypeLC", &measurementTypeLC);
-            model->FirstChildElement( "loopClosure" )->QueryBoolAttribute("useImagesLC", &useImagesLC);
+            model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
+            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("typeLC", &typeLC);
+            configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
 
             visualize = false;
 
@@ -312,18 +294,6 @@ public:
             /// use visualizer
             bool visualize;
 
-            /// LC min distance between frames
-            int minFrameDist;
-
-            /// LoopClosure: distance threshold
-            double distThresholdLC;
-
-            /// LoopClosure: distance threshold
-            double rotThresholdLC;
-
-            /// LoopClosure: matchingRatioThreshold
-            double matchingRatioThresholdLC;
-
             /// wait [s] until break LC thread
             int waitUntilFinishedLC;
 
@@ -333,8 +303,17 @@ public:
             /// type of measurement added to the graph
             int measurementTypeLC;
 
-            /// use images to close the loop
-            bool useImagesLC;
+            /// LoopClosure: matchingRatioThreshold
+            double matchingRatioThresholdLC;
+
+            /// type LC
+            int typeLC;
+
+            /// method which pairs poses
+            int searchPairsTypeLC;
+
+            /// config filename LC
+            std::string configFilenameLC;
     };
 
 private:
@@ -425,8 +404,8 @@ private:
     /// Last optimized pose
     int lastOptimizedPose;
 
-    /// loop closure priority queue
-    std::priority_queue<LCElement, std::vector<LCElement>, LCElement > priorityQueueLC;
+    /// loop closure priority queue management
+    LoopClosure* localLC;
 
     /// optimization method
     void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);
@@ -454,9 +433,6 @@ private:
 
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
-
-    ///update priority queue for the loop closure
-    bool updateQueueLC(int frameId);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

@@ -37,5 +37,11 @@
 			      1 - pose-features
     -->
     <visualization frameNo2updatePointCloud="60"/>
-    <loopClosure minFrameDist="850" distThresholdLC="0.56" rotThresholdLC="1.7" matchingRatioThresholdLC="0.2" waitUntilFinishedLC="550" minNumberOfFeaturesLC="35" measurementTypeLC="0" useImagesLC="true"/>
+    <!--typeLC:		0 - use images
+			1 - use map features
+      waitUntilFinishedLC  -  search for LC after frontend stops [s]
+      searchPairsTypeLC 0 - local geometric distance
+			1 - FABMAP
+    -->  
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="5" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.7" measurementTypeLC="0" typeLC="0"/>
 </MapConfig>

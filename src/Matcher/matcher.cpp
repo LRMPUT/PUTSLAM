@@ -675,11 +675,8 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 			// Add the measurement
 			featureSet[i].push_back(mapFeature);
-		}
-
+        }
 	}
-
-
 
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
 }

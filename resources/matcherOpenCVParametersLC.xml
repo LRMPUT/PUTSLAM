@@ -47,9 +47,20 @@
 		TODO: Create description for tracking parameters    
     	-	useInitialFlow, winSize, maxLevels, maxIter, eps
     -->
-    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" minimalTrackedFeatures="100" minimalReprojDistanceNewTrackingFeatures="4" DBScanEps="6"
+    <MatcherOpenCV detector="SURF" descriptor="SURF" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" 
+
+minimalTrackedFeatures="100" 
+maximalTrackedFeatures="500"
+minimalReprojDistanceNewTrackingFeatures="4" 
+minimalEuclidDistanceNewTrackingFeatures="0.02"
+DBScanEps="6"
 	matchingXYZSphereRadius = "0.15"
 	matchingXYZacceptRatioOfBestMatch = "0.85"
+	trackingErrorType = "0"
+	trackingErrorThreshold = "5.0"
+	trackingMinEigThreshold = "0.00"
+
+	removeTooCloseFeatures = "0"
 />
     <!-- Matching using patche 
     
