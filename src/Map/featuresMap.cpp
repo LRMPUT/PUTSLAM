@@ -598,7 +598,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 sensorFrames[1].depthImageScale=sensorModel.config.depthImageScale;
                 getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                 getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
-                matchingRatio = matcher->matchPose2Pose(sensorFrames, pairedFeatures, estimatedTransformation);
+                matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
                 std::cout << "matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
                 std::cout << "paired features " << pairedFeatures.size() << "\n";
             }

@@ -24,6 +24,7 @@ public:
 		int errorVersion, errorVersionVO, errorVersionMap;
         double inlierThresholdEuclidean, inlierThresholdReprojection, inlierThresholdMahalanobis;
 		double minimalInlierRatioThreshold;
+		int minimalNumberOfMatches;
 		int usedPairs;
 		int iterationCount;
 	};
@@ -43,7 +44,7 @@ public:
 			std::vector<Eigen::Vector3f> prevFeatures,
 			std::vector<Eigen::Vector3f> features,
 			std::vector<cv::DMatch> matches,
-			std::vector<cv::DMatch> & bestInlierMatches);
+			std::vector<cv::DMatch> & inlierMatches);
 
 	/**
 	 * Method used to compute inlier ratio w.r.t. points in the second image
@@ -112,7 +113,7 @@ private:
 	 * transformationModel		--	transformation used in evaluation
 	 * modelConsistentMatches	--  returns the matches that are considered inliers using currently evaluated model
 	 */
-	float computeInlierRatioEuclidean(const std::vector<Eigen::Vector3f> prevFeatures,
+	float computeMatchInlierRatioEuclidean(const std::vector<Eigen::Vector3f> prevFeatures,
 			const std::vector<Eigen::Vector3f> features,
 			const std::vector<cv::DMatch> matches,
 			const Eigen::Matrix4f transformationModel,
@@ -177,10 +178,10 @@ private:
 	 * bestInlierMatches		-- 	feature matches that can be considered as inliers using bestTransformation model
 	 */
 
-	inline void saveBetterModel(const float inlierRatio,
+	inline void saveBetterModel(const double inlierRatio,
 			const Eigen::Matrix4f transformationModel,
 			std::vector<cv::DMatch> modelConsistentMatches,
-			float &bestInlierRatio, Eigen::Matrix4f & bestTransformationModel,
+			double &bestInlierRatio, Eigen::Matrix4f & bestTransformationModel,
 			std::vector<cv::DMatch> &bestInlierMatches);
 
 	/**

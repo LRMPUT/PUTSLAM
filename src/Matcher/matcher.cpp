@@ -481,6 +481,8 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		std::vector<int> frameIds[2],
 		std::vector<std::pair<int, int>> &pairedFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
+
+
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
 	int normType = cv::NORM_HAMMING;
@@ -628,9 +630,8 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
     return matchPose2Pose(featureSet, frameIds, pairedFeatures, estimatedTransformation);
 }
 
-
+// Versions as above, but works on two sensor frames (it performs detection on its own)
 double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
-		std::vector<std::pair<int, int>> &pairedFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
 	std::vector<MapFeature> featureSet[2];
@@ -678,6 +679,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
         }
 	}
 
+	std::vector<std::pair<int, int>> pairedFeatures; // dummy
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
 }
 
