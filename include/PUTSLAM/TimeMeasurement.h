@@ -26,6 +26,8 @@ public:
 				<< "mapAddMeasurementTimes" << "\t"
 				<< std::endl;
 
+		checkAndResizeVectors();
+
 		for (int i = 0; i < voTimes.size(); i++) {
 			file << i << "\t"
 				<< voTimes[i] << "\t"
@@ -59,16 +61,33 @@ public:
 
 private:
 	double average(std::vector<long> &vec) {
+		if (vec.size() == 0)
+			return 0.0;
+
 		double s = 0;
 		for (auto &v : vec) {
 			s += v;
 		}
 		return s / vec.size();
 	}
+
+
+	void checkAndResizeVectors() {
+		int size = voTimes.size();
+		mapTimes.resize(size, -1.0);
+		mapAddNewPoseTimes.resize(size, -1.0);
+		mapGetSensorPoseTimes.resize(size, -1.0);
+		mapGetVisibleFeaturesTimes.resize(size, -1.0);
+		mapFindNearestFrameTimes.resize(size, -1.0);
+		mapRemoveMapFeaturesTimes.resize(size, -1.0);
+		mapMoveMapFeaturesToLCSTimes.resize(size, -1.0);
+		mapMatchingTimes.resize(size, -1.0);
+		mapAddMeasurementTimes.resize(size, -1.0);
+	}
 };
 
 // Class to measure time
-template<typename TimeT = std::chrono::milliseconds,
+template<typename TimeT = std::chrono::microseconds,
 		typename ClockT = std::chrono::high_resolution_clock,
 		typename DurationT = double>
 class Stopwatch {

@@ -62,7 +62,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
 	double bestInlierRatio = 0.0;
 
-	// Remove matches with features containing invalid depth
+	// Efficiently remove match if eith of features from the match has an invalid depth
 	// TODO: What does it mean invalid? Only NaNs?
 	matches.erase(
 			std::remove_if(matches.begin(), matches.end(),
