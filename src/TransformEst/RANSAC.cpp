@@ -46,39 +46,42 @@ RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 	}
 }
 
-// TODO: MISSING:
-// - test of minimal inlierRatio of bestModel
+
 Eigen::Matrix4f RANSAC::estimateTransformation(
 		std::vector<Eigen::Vector3f> prevFeatures,
 		std::vector<Eigen::Vector3f> features, std::vector<cv::DMatch> matches,
 		std::vector<cv::DMatch> & bestInlierMatches) {
 
+	// The set of matches is too small to make any sense
+	if (matches.size() < RANSACParams.minimalNumberOfMatches) {
+		bestInlierMatches.clear();
+		return Eigen::Matrix4f::Identity();
+	}
+
+	// We assume identity and 0% inliers
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
-	float bestInlierRatio = 0.0;
+	double bestInlierRatio = 0.0;
 
 	// Remove matches with features containing invalid depth
-	// TODO: It is slow due to the vector rebuilds
-	for (std::vector<cv::DMatch>::iterator it = matches.begin();
-			it != matches.end();) {
-		int prevId = it->queryIdx, id = it->trainIdx;
-
-		if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
-				|| prevFeatures[prevId][2] < 0.1 || prevFeatures[prevId][2] > 6
-				|| features[id][2] < 0.1 || features[id][2] > 6)
-			it = matches.erase(it);
-		else
-			++it;
-	}
+	// TODO: What does it mean invalid? Only NaNs?
+	matches.erase(
+			std::remove_if(matches.begin(), matches.end(),
+					[&](const cv::DMatch & m) {
+				int prevId = m.queryIdx, id = m.trainIdx;
+				if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
+								|| prevFeatures[prevId][2] < 0.1 || prevFeatures[prevId][2] > 6
+								|| features[id][2] < 0.1 || features[id][2] > 6)
+					return true;
+				return false;
+			}),
+			matches.end());
 
 	if (RANSACParams.verbose > 0)
 		std::cout << "RANSAC: matches.size() = " << matches.size() << std::endl;
 
-	// TODO: DO IT NICER!
-	if (matches.size() < 8) {
-		return Eigen::Matrix4f::Identity();
-	}
-
+	// Main iteration loop
 	for (int i = 0; i < RANSACParams.iterationCount; i++) {
+
 		// Randomly select matches
 		if (RANSACParams.verbose > 1)
 			std::cout << "RANSAC: randomly sampling ids of matches"
@@ -93,9 +96,12 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 		bool modelComputation = computeTransformationModel(prevFeatures,
 				features, randomMatches, transformationModel);
 
-		// TODO: Check if the model is feasible ?
+		// TODO: Nothing happens here right now
 		bool correctModel = checkModelFeasibility(transformationModel);
+
+		// Model is correct and feasible
 		if (correctModel && modelComputation) {
+
 			// Evaluate the model
 			if (RANSACParams.verbose > 1)
 				std::cout << "RANSAC: evaluating the model" << std::endl;
@@ -105,7 +111,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
             float inlierRatio = 0;
             if ((RANSACParams.errorVersion == EUCLIDEAN_ERROR) ||
                 (RANSACParams.errorVersion == ADAPTIVE_ERROR)){
-				inlierRatio = computeInlierRatioEuclidean(prevFeatures,
+				inlierRatio = computeMatchInlierRatioEuclidean(prevFeatures,
 						features, matches, transformationModel,
 						modelConsistentMatches);
 			} else if (RANSACParams.errorVersion == REPROJECTION_ERROR) {
@@ -142,16 +148,17 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	computeTransformationModel(prevFeatures, features, bestInlierMatches,
 			bestTransformationModel, UMEYAMA);
 	std::vector<cv::DMatch> newBestInlierMatches;
-	computeInlierRatioEuclidean(prevFeatures, features, bestInlierMatches,
+	computeMatchInlierRatioEuclidean(prevFeatures, features, bestInlierMatches,
 			bestTransformationModel, newBestInlierMatches);
 	newBestInlierMatches.swap(bestInlierMatches);
 
-	// Test the number of inliers
+	// Test the number of inliers to the preset threshold
 	if (bestInlierRatio < RANSACParams.minimalInlierRatioThreshold) {
 		bestTransformationModel = Eigen::Matrix4f::Identity();
+		bestInlierMatches.clear();
 	}
 
-	// Test for minimal inlierRatio of bestModel
+	// Final result
 	if (RANSACParams.verbose > 0) {
 		std::cout << "RANSAC best model : inlierRatio = "
 				<< bestInlierRatio * 100.0 << "%" << std::endl;
@@ -192,8 +199,7 @@ std::vector<cv::DMatch> RANSAC::getRandomMatches(
 	return chosenMatches;
 }
 
-// TODO:
-// - how to handle Grisetti version?
+
 bool RANSAC::computeTransformationModel(
 		const std::vector<Eigen::Vector3f> prevFeatures,
 		const std::vector<Eigen::Vector3f> features,
@@ -238,7 +244,7 @@ bool RANSAC::checkModelFeasibility(Eigen::Matrix4f transformationModel) {
 	return true;
 }
 
-float RANSAC::computeInlierRatioEuclidean(
+float RANSAC::computeMatchInlierRatioEuclidean(
 		const std::vector<Eigen::Vector3f> prevFeatures,
 		const std::vector<Eigen::Vector3f> features,
 		const std::vector<cv::DMatch> matches,
@@ -422,9 +428,9 @@ float RANSAC::computeInlierRatioEuclideanAndReprojection(
 	return float(inlierCount) / matches.size();
 }
 
-inline void RANSAC::saveBetterModel(const float inlierRatio,
+inline void RANSAC::saveBetterModel(const double inlierRatio,
 		const Eigen::Matrix4f transformationModel,
-		std::vector<cv::DMatch> modelConsistentMatches, float &bestInlierRatio,
+		std::vector<cv::DMatch> modelConsistentMatches, double &bestInlierRatio,
 		Eigen::Matrix4f & bestTransformationModel,
 		std::vector<cv::DMatch> &bestInlierMatches) {
 	if (inlierRatio > bestInlierRatio) {
