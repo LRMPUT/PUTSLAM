@@ -39,9 +39,14 @@ public:
 				<< mapRemoveMapFeaturesTimes[i] << "\t"
 				<< mapMoveMapFeaturesToLCSTimes[i] << "\t"
 				<< mapMatchingTimes[i] << "\t"
-				<< mapAddMeasurementTimes[i] << "\t"
-				<< std::endl;
-		}
+				<< mapAddMeasurementTimes[i]
+					<< "\t" << std::endl;
+//			long a = (mapAddNewPoseTimes[i] + mapGetSensorPoseTimes[i]
+//					+ mapGetVisibleFeaturesTimes[i]
+//					+ mapFindNearestFrameTimes[i] + mapRemoveMapFeaturesTimes[i]
+//					+ mapMoveMapFeaturesToLCSTimes[i] + mapMatchingTimes[i] + mapAddMeasurementTimes[i] );
+//			std::cout<< mapTimes[i] << "\t vs \t" << a << std::endl;
+	}
 
 		file << "AVG. " << "\t"
 				<< average(voTimes) << "\t"
@@ -87,7 +92,7 @@ private:
 };
 
 // Class to measure time
-template<typename TimeT = std::chrono::microseconds,
+template<typename TimeT = std::chrono::milliseconds, //
 		typename ClockT = std::chrono::high_resolution_clock,
 		typename DurationT = double>
 class Stopwatch {
