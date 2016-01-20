@@ -395,7 +395,6 @@ void PUTSLAM::startProcessing() {
 			voTime.stop();
 			timeMeasurement.voTimes.push_back(voTime.elapsed());
 
-
 			VORansacInlierRatioLog.push_back(inlierRatio);
 
 			robotPose = robotPose * transformation;
@@ -403,6 +402,7 @@ void PUTSLAM::startProcessing() {
 			if (!onlyVO) {
 
 				Stopwatch<> mapTime, tmp;
+				mapTime.start();
 
 				// cameraPose as Eigen::Transform
 				Mat34 cameraPoseIncrement = Mat34(
@@ -470,6 +470,8 @@ void PUTSLAM::startProcessing() {
 				moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 				tmp.stop();
 				timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(tmp.elapsed());
+
+
 
 				// Now lets check if those features are not behind sth
 				const double additionalDistance = 0.15f;
@@ -568,6 +570,7 @@ void PUTSLAM::startProcessing() {
 				}
 				tmp.stop();
 				timeMeasurement.mapMatchingTimes.push_back(tmp.elapsed());
+
 
 				MapMatchingRansacInlierRatioLog.push_back(
 						mapMatchingInlierRatio);
@@ -1066,6 +1069,22 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 			++anglesIter;
 		}
 	}
+//	auto mapFeaturesIter = mapFeatures.end();
+//	auto frameIdsIter = frameIds.end();
+//	auto anglesIter = angles.end();
+//
+//	for (; mapFeaturesIter != mapFeatures.begin();) {
+//		if (*frameIdsIter == -1) {
+//			mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
+//			frameIdsIter = frameIds.erase(frameIdsIter);
+//			anglesIter = angles.erase(anglesIter);
+//		}
+//
+//		--mapFeaturesIter;
+//		--frameIdsIter;
+//		--anglesIter;
+//
+//	}
 }
 
 //play trajectory
