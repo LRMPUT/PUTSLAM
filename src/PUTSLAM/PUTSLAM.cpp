@@ -745,6 +745,8 @@ void PUTSLAM::loadConfigs() {
 				&verbose);
 	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("onlyVO",
 					&onlyVO);
+    config.FirstChildElement("PUTSLAM")->QueryBoolAttribute("keepCameraFrames",
+                    &keepCameraFrames);
 	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("octomap",
 						&octomap);
 	config.FirstChildElement("PUTSLAM")->QueryDoubleAttribute("octomapResolution",
@@ -754,7 +756,8 @@ void PUTSLAM::loadConfigs() {
 	octomapFileToSave = config.FirstChildElement( "PUTSLAM" )->Attribute("octomapFileToSave");
 	config.FirstChildElement("PUTSLAM")->QueryIntAttribute("octomapOffline",
 								&octomapOffline);
-
+    if (!keepCameraFrames&&octomap)
+        throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). Octomap is not available.\nModify config files.\n"));
 
 	// Thread settings
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("verbose",
@@ -791,6 +794,7 @@ void PUTSLAM::loadConfigs() {
 		std::cout << "Creating features map" << std::endl;
 	}
 	map = createFeaturesMap(configFileMap, configFileGrabber);
+    map->setStoreImages(keepCameraFrames);
 
 	if (verbose > 0) {
 		std::cout << "Features map is initialized" << std::endl;
@@ -844,6 +848,13 @@ void PUTSLAM::loadConfigs() {
 		cout << "Loop closure current matcher: " << matcher->getName() << std::endl;
 	}
 
+    if (matcher->matcherParameters.MapMatchingVersion
+                            == Matcher::MatcherParameters::MAPMATCH_PATCHES
+                            || matcher->matcherParameters.MapMatchingVersion
+                                    == Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
+        if (!keepCameraFrames)
+            throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). Matching with patches is not available.\nModify config files.\n"));
+    }
 }
 
 void PUTSLAM::saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,

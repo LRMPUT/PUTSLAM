@@ -146,8 +146,10 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
         float_type timestamp, cv::Mat image, cv::Mat depthImage) {
     //add camera pose to the map
-    imageSeq.push_back(image);
-    depthSeq.push_back(depthImage);
+    if (config.keepCameraFrames){
+        imageSeq.push_back(image);
+        depthSeq.push_back(depthImage);
+    }
 
 	int trajSize = camTrajectory.size();
     Mat34 cameraPose(cameraPoseChange);
@@ -490,6 +492,8 @@ void FeaturesMap::startMapManagerThread(int verbose){
 
 /// start loop closure thread
 void FeaturesMap::startLoopClosureThread(int verbose, Matcher* matcher){
+    if (!config.keepCameraFrames)
+        throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). LC is not available.\nModify config files.\n"));
     loopClosureThr.reset(
             new std::thread(&FeaturesMap::loopClosure, this, verbose, matcher));
 }
@@ -686,6 +690,11 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
         std::cout << "Loop closure finished (t = " << elapsed.count() << "ms)\n";
     }
+}
+
+/// store camera frames
+void FeaturesMap::setStoreImages(bool storeImages){
+    config.keepCameraFrames = storeImages;
 }
 
 /// optimization thread
