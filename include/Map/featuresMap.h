@@ -168,6 +168,9 @@ public:
     /// use uncertainty
     bool useUncertainty(void);
 
+    /// store camera frames
+    void setStoreImages(bool storeImages);
+
     class Config{
       public:
         Config() :
@@ -314,6 +317,9 @@ public:
 
             /// config filename LC
             std::string configFilenameLC;
+
+            /// store images
+            bool keepCameraFrames;
     };
 
 private:

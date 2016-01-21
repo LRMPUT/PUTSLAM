@@ -129,6 +129,9 @@ public:
     /// use uncertainty
     virtual bool useUncertainty(void) = 0;
 
+    /// store camera frames
+    virtual void setStoreImages(bool storeImages) = 0;
+
 protected:
 	/// Map type
 	Type type;

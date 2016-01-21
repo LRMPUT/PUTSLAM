@@ -90,6 +90,7 @@ private:
 	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
     int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion, loopClosureThreadVersion, octomap, octomapCloudStepSize, octomapOffline;
 	double octomapResolution;
+    bool keepCameraFrames;
 	std::string octomapFileToSave;
 
 	// Octomap pointer
