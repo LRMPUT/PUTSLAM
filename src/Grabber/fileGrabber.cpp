@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <iomanip>
 
 using namespace putslam;
 using namespace std::chrono;
