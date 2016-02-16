@@ -18,6 +18,7 @@
 #include <mutex>
 #include <set>
 #include <iostream>
+#include <map>
 
 /// putslam name space
 namespace putslam {

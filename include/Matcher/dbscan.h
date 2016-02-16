@@ -7,7 +7,7 @@
 #ifndef _DBSCAN
 #define _DBSCAN
 
-#include "opencv2/nonfree/features2d.hpp"
+#include <opencv2/features2d.hpp>
 #include <vector>
 
 class DBScan {

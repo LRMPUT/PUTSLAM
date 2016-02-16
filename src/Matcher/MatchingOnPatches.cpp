@@ -1,5 +1,6 @@
 #include "../include/Matcher/MatchingOnPatches.h"
 #include <stdio.h>
+#include <opencv2/highgui.hpp>
 
 MatchingOnPatches::MatchingOnPatches(int _patchSize, int _maxIter,
 		double _minSqrtIncrement, int _verbose) {

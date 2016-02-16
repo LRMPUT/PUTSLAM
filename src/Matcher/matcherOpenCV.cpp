@@ -10,8 +10,9 @@
 #include <stdexcept>
 #include <set>
 
-#include <opencv2/nonfree/nonfree.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/imgproc.hpp>
 
 using namespace putslam;
 
@@ -64,14 +65,16 @@ void MatcherOpenCV::initVariables() {
 
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")
-		featureDetector.reset(new cv::FastFeatureDetector());
+		featureDetector.reset(cv::FastFeatureDetector::create());
 	else if (matcherParameters.OpenCVParams.detector == "ORB")
-		featureDetector.reset(new cv::OrbFeatureDetector());
+		featureDetector.reset(cv::ORB::create());
 	else if (matcherParameters.OpenCVParams.detector == "SURF") {
-		featureDetector.reset(new cv::SurfFeatureDetector());
-		featureDetector.reset(
-				new cv::DynamicAdaptedFeatureDetector(
-						new cv::SurfAdjuster(2, true), 50, 150));
+		featureDetector.reset(cv::xfeatures2d::SURF::create());
+
+		//TODO Couldn't find opencv 3.0 version
+//		featureDetector.reset(
+//				new cv::DynamicAdaptedFeatureDetector(
+//						new cv::SurfAdjuster(2, true), 50, 150));
 
 //		 int maxFeatures = 500;
 //		 int rows = 5;
@@ -79,19 +82,20 @@ void MatcherOpenCV::initVariables() {
 //		 featureDetector.reset(new cv::GridAdaptedFeatureDetector(new cv::SurfAdjuster(5.0, true), maxFeatures, rows, columns));
 
 	} else if (matcherParameters.OpenCVParams.detector == "SIFT")
-		featureDetector.reset(new cv::SiftFeatureDetector());
+		featureDetector.reset(cv::xfeatures2d::SIFT::create());
 	else
-		featureDetector.reset(new cv::SurfFeatureDetector());
+		featureDetector.reset(cv::xfeatures2d::SURF::create());
 
 	// Initialize description
 	if (matcherParameters.OpenCVParams.descriptor == "BRIEF")
-		descriptorExtractor.reset(new cv::BriefDescriptorExtractor());
+		//TODO In opencv 3.0 there is no BRIEF. Isn't descriptors the same for ORB and BRIEF?
+		descriptorExtractor.reset(cv::ORB::create());
 	else if (matcherParameters.OpenCVParams.descriptor == "ORB")
-		descriptorExtractor.reset(new cv::OrbDescriptorExtractor());
+		descriptorExtractor.reset(cv::ORB::create());
 	else if (matcherParameters.OpenCVParams.descriptor == "SURF")
-		descriptorExtractor.reset(new cv::SurfDescriptorExtractor());
+		descriptorExtractor.reset(cv::xfeatures2d::SURF::create());
 	else if (matcherParameters.OpenCVParams.descriptor == "SIFT")
-		descriptorExtractor.reset(new cv::SiftDescriptorExtractor());
+		descriptorExtractor.reset(cv::xfeatures2d::SIFT::create());
 
 	// Initialize matcher
 	// We are always using the cross-check option to remove false matches
