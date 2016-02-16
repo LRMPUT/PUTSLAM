@@ -33,12 +33,12 @@
 	 -->
     <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.04" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.1" minimalNumberOfMatches="15" usedPairs="3"/>
     <!-- Matching settings
-    	detector : 		FAST, ORB, SURF, SIFT
-    	descriptor :	BRIEF, ORB, LDB, SURF, SIFT
+    	detector : 	 FAST, ORB, SURF, SIFT
+    	descriptor :	 ORB, SURF, SIFT
     		
-    	Recommended configurations: FAST-BRIEF, ORB-ORB, ORB-LDB, SURF-SURF, SIFT-SIFT
+    	Recommended configurations: ORB-ORB, SURF-SURF, SIFT-SIFT
     		
-    	Used norms in matching:  Hamming (ORB, BRIEF, LDB), L2 (SURF, SIFT)
+    	Used norms in matching:  Hamming (ORB, LDB), L2 (SURF, SIFT)
     		
     	TODO: LDB didn't compile due to LDB issues
      

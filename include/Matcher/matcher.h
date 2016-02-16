@@ -194,6 +194,7 @@ public:
 		;
 		MatcherParameters(std::string configFilename,
 				std::string cameraConfigFileName) {
+
 			tinyxml2::XMLDocument config;
 			std::string filename = "../../resources/" + configFilename;
 			config.LoadFile(filename.c_str());
@@ -235,6 +236,9 @@ public:
 					&RANSACParams.minimalNumberOfMatches);
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("usedPairs",
 					&RANSACParams.usedPairs);
+
+
+
 			// general parameters
 			params->FirstChildElement("Parameters")->QueryDoubleAttribute(
 					"maxAngleBetweenFrames", &maxAngleBetweenFrames);
