@@ -68,8 +68,8 @@ public:
 
 private:
 	/// Detector and descriptor
-	std::unique_ptr<cv::FeatureDetector> featureDetector;
-	std::unique_ptr<cv::DescriptorExtractor> descriptorExtractor;
+	cv::Ptr<cv::FeatureDetector> featureDetector;
+	cv::Ptr<cv::DescriptorExtractor> descriptorExtractor;
 	std::unique_ptr<cv::BFMatcher> matcher;
 
 	/// Method to initialize variables in all constructors

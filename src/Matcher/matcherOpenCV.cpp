@@ -60,16 +60,13 @@ MatcherOpenCV::MatcherOpenCV(const std::string _parametersFile,
 }
 
 void MatcherOpenCV::initVariables() {
-	featureDetector = NULL;
-	descriptorExtractor = NULL;
-
 	// Initialize detection
 	if (matcherParameters.OpenCVParams.detector == "FAST")
-		featureDetector.reset(cv::FastFeatureDetector::create());
+		featureDetector = cv::FastFeatureDetector::create();
 	else if (matcherParameters.OpenCVParams.detector == "ORB")
-		featureDetector.reset(cv::ORB::create());
+		featureDetector = cv::ORB::create();
 	else if (matcherParameters.OpenCVParams.detector == "SURF") {
-		featureDetector.reset(cv::xfeatures2d::SURF::create());
+		featureDetector = cv::xfeatures2d::SURF::create();
 
 		//TODO Couldn't find opencv 3.0 version
 //		featureDetector.reset(
@@ -82,20 +79,20 @@ void MatcherOpenCV::initVariables() {
 //		 featureDetector.reset(new cv::GridAdaptedFeatureDetector(new cv::SurfAdjuster(5.0, true), maxFeatures, rows, columns));
 
 	} else if (matcherParameters.OpenCVParams.detector == "SIFT")
-		featureDetector.reset(cv::xfeatures2d::SIFT::create());
+		featureDetector = cv::xfeatures2d::SIFT::create();
 	else
-		featureDetector.reset(cv::xfeatures2d::SURF::create());
+		featureDetector = cv::xfeatures2d::SURF::create();
+
+
 
 	// Initialize description
-	if (matcherParameters.OpenCVParams.descriptor == "BRIEF")
-		//TODO In opencv 3.0 there is no BRIEF. Isn't descriptors the same for ORB and BRIEF?
-		descriptorExtractor.reset(cv::ORB::create());
-	else if (matcherParameters.OpenCVParams.descriptor == "ORB")
-		descriptorExtractor.reset(cv::ORB::create());
+	if (matcherParameters.OpenCVParams.descriptor == "ORB")
+		descriptorExtractor = cv::ORB::create();
 	else if (matcherParameters.OpenCVParams.descriptor == "SURF")
-		descriptorExtractor.reset(cv::xfeatures2d::SURF::create());
+		descriptorExtractor = cv::xfeatures2d::SURF::create();
 	else if (matcherParameters.OpenCVParams.descriptor == "SIFT")
-		descriptorExtractor.reset(cv::xfeatures2d::SIFT::create());
+		descriptorExtractor = cv::xfeatures2d::SIFT::create();
+
 
 	// Initialize matcher
 	// We are always using the cross-check option to remove false matches
@@ -106,6 +103,8 @@ void MatcherOpenCV::initVariables() {
 	// In other case use Hamming distance as descriptors are binary
 	else
 		matcher.reset(new cv::BFMatcher(cv::NORM_HAMMING, true));
+
+
 }
 
 MatcherOpenCV::~MatcherOpenCV(void) {
