@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <chrono>
 
+#include "g2o/types/slam3d/parameter_camera.h"
+
 using namespace putslam;
 
 // we use the 2D and 3D SLAM types here
@@ -49,6 +51,13 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     cameraPose= R; cameraPose.translation() = Eigen::Vector3d(0.0, 0.0, 0.0);
     cameraOffset->setOffset(cameraPose);
     optimizer.addParameter(cameraOffset);
+
+
+    g2o::ParameterCamera *pc = new g2o::ParameterCamera();
+    pc->setKcam(525.0, 525.0, 320.0, 240.0);
+
+    optimizer.addParameter(pc);
+
 }
 
 PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
@@ -309,6 +318,13 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
         element = factory->construct("EDGE_SE3:QUAT", elemBitset);
     else if (type==Edge::EDGE_3D)
         element = factory->construct("EDGE_SE3_TRACKXYZ", elemBitset);
+    else if (type==Edge::EDGE_3D_REPROJ) {
+    	std::cout<<"Trying to add reprojection!" << std::endl;
+    	element = new g2o::EdgeSE3PointXYZReprojectionError();//factory->construct("EDGE_SE3_REPROJECTION", elemBitset);
+    	std::cout<<"Trying to add reprojection! - succes!!" << std::endl;
+    	if ( !element )
+    		std::cout<<"NOT CREATED!" << std::endl;
+    }
     else if (type==Edge::EDGE_SE2)
         element = factory->construct("EDGE_SE2", elemBitset);
     else {
@@ -417,6 +433,14 @@ bool PoseGraphG2O::addEdge3D(const Edge3D& e){
     return true;
 }
 
+bool PoseGraphG2O::addEdge3DReproj(const Edge3DReproj& e){
+    mtxBuffGraph.lock();
+    bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3DReproj(e)));
+    mtxBuffGraph.unlock();
+    updateGraph();//try to update graph
+    return true;
+}
+
 /**
  * Adds an 3D edge to the graph. If the edge is already in the graph, it
  * does nothing and returns false. Otherwise it returns true.
@@ -448,6 +472,38 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
     mtxGraph.unlock();
     return true;
 }
+
+/**
+ * Adds an 3D reproj edge to the graph. If the edge is already in the graph, it
+ * does nothing and returns false. Otherwise it returns true.
+ */
+bool PoseGraphG2O::addEdge(Edge3DReproj& e){
+    mtxGraph.lock();
+    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+        mtxGraph.unlock();
+        Vec3 pos(0.0, 0.0, 0.0);
+        addVertexFeature(putslam::Vertex3D(e.toVertexId, pos));
+        mtxGraph.lock();
+    }
+    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
+        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+        mtxGraph.unlock();
+        Mat34 pose(Mat34::Identity());
+        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
+        mtxGraph.lock();
+    }
+    e.id = graph.edges.size();
+    graph.edges.push_back(std::unique_ptr<Edge>(new Edge3DReproj(e)));
+    std::stringstream currentLine;
+	currentLine << e.u << ' ' << e.v << ' ' << e.info(0, 0) << ' '
+			<< e.info(0, 1) << ' ' << e.info(1, 1);
+    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_3D_REPROJ);
+    mtxGraph.unlock();
+    return true;
+}
+
+
 
 /**
  * Adds an SE2 edge to the graph. If the edge is already in the graph, it
@@ -543,6 +599,14 @@ bool PoseGraphG2O::updateGraph(void){
                     return false;
                 }
             }
+			if (it->get()->type == Edge::EDGE_3D_REPROJ) {
+				//std::cout << "add Edge 3D\n";
+				if (!addEdge(*(Edge3DReproj*) it->get())) {
+					mtxGraph.unlock();
+					std::cout << "could not add edge 3D Reproj\n";
+					return false;
+				}
+			}
             else if (it->get()->type==Edge::EDGE_SE3){
                 //std::cout << "add Edge SE3\n";
                 if (!addEdge(*(EdgeSE3*)it->get())){

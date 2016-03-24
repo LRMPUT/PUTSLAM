@@ -186,10 +186,18 @@ void QGLVisualizer::update(const cv::Mat& color, const cv::Mat& depth, int frame
 }
 
 /// Observer update
-void QGLVisualizer::update(const std::vector<Edge3D>& features){
+void QGLVisualizer::update(std::vector<Edge>& features){
     mtxMeasurementsBuff.lock();
     mtxMeasurements.lock();
-    measurementsBuff.insert(measurementsBuff.end(), features.begin(), features.end());
+
+    for (Edge &e : features) {
+    	Edge *pE = &e;
+    	Edge3D* e3D = dynamic_cast<Edge3D*>(pE);
+    	if (e3D)
+    		measurementsBuff.push_back(*e3D);
+    }
+
+    //measurementsBuff.insert(measurementsBuff.end(), features.begin(), features.end());
     mtxMeasurements.unlock();
     mtxMeasurementsBuff.unlock();
 }

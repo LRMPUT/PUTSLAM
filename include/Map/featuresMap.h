@@ -209,6 +209,10 @@ public:
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 								"addNoFeaturesWhenMapSizeGreaterThan",
 								&addNoFeaturesWhenMapSizeGreaterThan);
+			model->FirstChildElement("parameters")->QueryIntAttribute(
+											"optimizationErrorType",
+											&optimizationErrorType);
+
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
             filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
@@ -225,6 +229,8 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("typeLC", &typeLC);
             configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
+
+
 
             visualize = false;
 
@@ -320,6 +326,14 @@ public:
 
             /// store images
             bool keepCameraFrames;
+
+            /// type of error used in optimization
+            int optimizationErrorType;
+
+            enum OptimizationErrorType {
+            	EUCLIDEAN,
+				REPROJECTION
+            };
     };
 
 private:

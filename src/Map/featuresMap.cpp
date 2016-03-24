@@ -50,7 +50,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 	mtxCamTraj.unlock();
     if (poseId==-1) poseId = camTrajectory.size() - 1;
 
-    std::vector<Edge3D> features2visualization;
+    std::vector<Edge> features2visualization;
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
             it != features.end(); it++) { // update the graph
 
@@ -117,14 +117,32 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
             }
         }
 
-        Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
+
 		poseGraph->addVertexFeature(
 				Vertex3D(featureIdNo,
 						Vec3(featurePos(0, 3), featurePos(1, 3),
 								featurePos(2, 3))));
-		poseGraph->addEdge3D(e);
-        if (config.visualize)
-            features2visualization.push_back(e);
+
+		if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN)
+		{
+			std::cout<<"Edge 3D -- Euclidean error" << std::endl;
+			Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
+			poseGraph->addEdge3D(e);
+
+		    if (config.visualize)
+		            features2visualization.push_back(e);
+		}
+		else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION)
+		{
+			std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
+			Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
+			poseGraph->addEdge3DReproj(e);
+		}
+		else
+		{
+			std::cout<<"Wrong error chosen" << std::endl;
+		}
+
 		featureIdNo++;
     }
 
@@ -223,7 +241,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
     unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
-    std::vector<Edge3D> features2visualization;
+    std::vector<Edge> features2visualization;
 	for (std::vector<MapFeature>::const_iterator it = features.begin();
 			it != features.end(); it++) {
 
@@ -259,6 +277,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         featuresMapLoopClosure[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
         mtxMapLoopClosure.unlock();
 
+        // !!!! TODO !!!!
         Edge3D e((*it).position, info, _poseId, (*it).id);
 		poseGraph->addEdge3D(e);
         if (config.visualize)
@@ -512,7 +531,7 @@ void FeaturesMap::exportOutput(std::string trajectoryFilename,
     poseGraph->export2RGBDSLAM(trajectoryFilename);
     poseGraph->save2file(graphFilename);
     if (config.exportMap){
-        std::cout << "save map to file\n";
+        std::cout << "save map to file TEST\n";
         plotFeatures(config.filenameMap,config.filenameData);
         std::cout << "save map to file end\n";
     }

@@ -70,6 +70,12 @@ class GlobalGraph : public Graph {
         bool addEdge3D(const Edge3D& e);
 
         /**
+         * Adds an 3D reprojection edge to the graph. If the edge is already in the graph, it
+         * does nothing and returns false. Otherwise it returns true.
+         */
+        bool addEdge3DReproj(const Edge3DReproj& e);
+
+        /**
          * Adds an SE2 edge to the graph. If the edge is already in the graph, it
          * does nothing and returns false. Otherwise it returns true.
          */

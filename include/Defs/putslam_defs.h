@@ -246,7 +246,9 @@ public:
 		/// Edge SE(3) -- robot pose
 		EDGE_SE3,
 		/// Edge SE(2) -- robot x,y,theta
-		EDGE_SE2
+		EDGE_SE2,
+		/// EDGE 3D REPROJECTION -- feature position optimized with reproj error
+		EDGE_3D_REPROJ
 	};
 
 	/// Vertex type
@@ -275,6 +277,8 @@ public:
 			uint_fast32_t _toVertexId) :
 			type(_type), fromVertexId(_fromVertexId), toVertexId(_toVertexId) {
 	}
+
+	virtual ~Edge() {}
 };
 
 /// 3D (x,y,z) Edge of a graph
@@ -299,6 +303,31 @@ public:
 			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
 			Edge(EDGE_3D, _fromVertexId, _toVertexId), trans(_trans), info(
 					_info) {
+	}
+};
+
+/// 3D_REPROJ (u,v) Edge of a graph
+class Edge3DReproj: public Edge {
+public:
+	/// set of Edges3D
+	typedef std::vector<Edge3D> Seq;
+
+	/// Image coordinates
+	double u, v;
+
+	/// Information matrix
+	Eigen::Matrix<float_type, 2, 2> info;
+
+	/// Default constructor
+	inline Edge3DReproj() :
+			Edge(EDGE_3D_REPROJ) {
+	}
+
+	/// Overloaded constructor
+	inline Edge3DReproj(double _u, double _v, const Eigen::Matrix<float_type, 2, 2> _info,
+			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+			Edge(EDGE_3D_REPROJ, _fromVertexId, _toVertexId), info(
+					_info), u(_u), v(_v) {
 	}
 };
 
