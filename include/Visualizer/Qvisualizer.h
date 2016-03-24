@@ -198,7 +198,7 @@ public:
     void update(const cv::Mat& color, const cv::Mat& depth, int frameNo);
 
     /// Observer update
-    void update(const std::vector<Edge3D>& features);
+    void update(std::vector<Edge>& features);
 
     /// Set depth sensor model
     inline void setDepthSensorModel(const DepthSensorModel& model){ sensorModel = model;};

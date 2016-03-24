@@ -66,6 +66,12 @@ namespace putslam {
             virtual bool addEdge3D(const Edge3D& e) = 0;
 
             /**
+             * Adds an 3D reprojection edge to the graph. If the edge is already in the graph, it
+             * does nothing and returns false. Otherwise it returns true.
+             */
+            virtual bool addEdge3DReproj(const Edge3DReproj& e) = 0;
+
+            /**
              * Adds an SE2 edge to the graph. If the edge is already in the graph, it
              * does nothing and returns false. Otherwise it returns true.
              */

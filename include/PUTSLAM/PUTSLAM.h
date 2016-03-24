@@ -30,6 +30,9 @@
 using namespace std;
 using namespace putslam;
 
+/*
+ * Class used to process RGBD images to retrieve trajectory!
+ */
 class PUTSLAM {
 	Map* map;
 	Grabber* grabber;
@@ -39,58 +42,26 @@ class PUTSLAM {
 	ofstream trajectoryVOMapStream;
 	ofstream trajectoryMotionModelStream;
 
-    Eigen::Matrix4f robotPose;
-    Eigen::Matrix4f VoMapPose;
-    Eigen::Matrix4f motionModelPose;
+	Eigen::Matrix4f VOPoseEstimate;
+	Eigen::Matrix4f VoMapPose;
 
-    /// visualization options
-    bool visualize;
-    bool drawImages;
+	/// visualization options
+	bool visualize;bool drawImages;
+	TimeMeasurement timeMeasurement;
 
+	// TODO: Some parameters - it is NASTY!
+	int addFeaturesWhenMapSizeLessThan, addFeaturesWhenMeasurementSizeLessThan,
+			maxOnceFeatureAdd;
+	float minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures;
+	int addNoFeaturesWhenMapSizeGreaterThan,
+			minMeasurementsToAddPoseToFeatureEdge;bool addPoseToPoseEdges;
+	double depthImageScale, getVisibleFeaturesGraphMaxDepth,
+			getVisibleFeatureDistanceThreshold;
 
-    TimeMeasurement timeMeasurement;
-
-public:
-
-	PUTSLAM() {
-
-		loadConfigs();
-
-		// Reading robot starting pose
-		robotPose = grabber->getStartingSensorPose();
-		VoMapPose = robotPose;
-
-		// File to save trajectory
-		trajectoryFreiburgStream.open("VO_trajectory.res");
-		trajectoryVOMapStream.open("VOMap_trajectory.res");
-		trajectoryMotionModelStream.open("MotionModel_trajectory.res");
-        drawImages = false;
-        visualize = false;
-        map->setDrawOptions(false);
-	}
-
-	void startProcessing();
-
-    ///Attach visualizer
-    void attachVisualizer(QGLVisualizer * visualizer);
-
-    /// get depth sensor model
-    inline DepthSensorModel getDepthSensorModel(){
-        return map->getDepthSensorModel();
-    }
-    //play trajectory
-    void startPlaying(std::string trajectoryFilename, int delayPlay);
-
-    /// set drawing options
-    void setDrawOptions(bool _draw, bool _drawImages);
-
-private:
-    enum LOOPCLOSURETHREAD { LCTHREAD_OFF, LCTHREAD_ON };
-	enum MAPMANAGMENTTHREAD { MAPTHREAD_OFF, MAPTHREAD_ON };
-	enum OPTIMIZATIONTHREAD { OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL };
-    int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion, loopClosureThreadVersion, octomap, octomapCloudStepSize, octomapOffline;
-	double octomapResolution;
-    bool keepCameraFrames;
+	int verbose, onlyVO, mapManagmentThreadVersion, optimizationThreadVersion,
+			loopClosureThreadVersion, octomap, octomapCloudStepSize,
+			octomapOffline;
+	double octomapResolution;bool keepCameraFrames;
 	std::string octomapFileToSave;
 
 	// Octomap pointer
@@ -101,20 +72,50 @@ private:
 	std::vector<double> VORansacInlierRatioLog;
 	std::vector<double> MapMatchingRansacInlierRatioLog;
 	std::vector<std::pair<double, double>> patchesErrorLog;
-	void saveLogs();
-    void saveFPS(float_type fps);
 
-	// Evaluate results
-	void evaluateResults(std::string basePath, std::string datasetName);
+	enum LOOPCLOSURETHREAD {
+		LCTHREAD_OFF, LCTHREAD_ON
+	};
+	enum MAPMANAGMENTTHREAD {
+		MAPTHREAD_OFF, MAPTHREAD_ON
+	};
+	enum OPTIMIZATIONTHREAD {
+		OPTTHREAD_OFF, OPTTHREAD_ATEND, OPTTHREAD_ON, OPTTHREAD_ON_ROBUSTKERNEL
+	};
 
+public:
+
+	PUTSLAM();
+
+	void startProcessing();
+
+	///Attach visualizer
+	void attachVisualizer(QGLVisualizer * visualizer);
+
+	/// get depth sensor model
+	inline DepthSensorModel getDepthSensorModel() {
+		return map->getDepthSensorModel();
+	}
+
+	//play trajectory
+	void startPlaying(std::string trajectoryFilename, int delayPlay);
+
+	/// set drawing options
+	void setDrawOptions(bool _draw, bool _drawImages);
+
+private:
+	// At beggining
 	void loadConfigs();
+	void readingSomeParameters();
+	void initialization();
 
-	// TODO: Make it nicer
-	void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
-			std::ofstream & estTrajectory, double timestamp);
-	void saveFeaturesToFile(Matcher::featureSet features, double timestamp);
-	void saveFeaturesToFile(Matcher::featureSet features,
-			std::vector<cv::DMatch> inlierMatches, double timestamp);
+	// Processing
+	void processFirstFrame(SensorFrame &currentSensorFrame, int &cameraPoseId);
+
+	Eigen::Matrix4f runVO(SensorFrame &currentSensorFrame, std::vector<cv::DMatch> &inlierMatches);
+	void addPoseToMap(SensorFrame &currentSensorFrame, Eigen::Matrix4f &poseIncrement, int &cameraPoseId );
+	Mat34 getMapPoseEstimate();
+
 	void moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 			std::vector<MapFeature>& mapFeatures);
 	int chooseFeaturesToAddToMap(const Matcher::featureSet& features,
@@ -123,17 +124,25 @@ private:
 			float minEuclideanDistanceOfFeatures,
 			float minImageDistanceOfFeatures, int cameraPoseId,
 			std::vector<RGBDFeature>& mapFeaturesToAdd);
-
-	// Show features from map
-	void showMapFeatures(cv::Mat rgbImage,std::vector<MapFeature> mapFeatures);
-
 	// Remove features that we do not have a good observation angle
-	void removeMapFeaturesWithoutGoodObservationAngle(
-			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
-			std::vector<float_type> &angles);
+		void removeMapFeaturesWithoutGoodObservationAngle(
+				std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
+				std::vector<float_type> &angles);
 
+	// At finish
+	void saveLogs();
+	void saveFPS(float_type fps);
+	void evaluateResults(std::string basePath, std::string datasetName);
+	void saveStatistics();
+
+	void saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
+			std::ofstream & estTrajectory, double timestamp);
+	void saveFeaturesToFile(Matcher::featureSet features, double timestamp);
+	void saveFeaturesToFile(Matcher::featureSet features,
+			std::vector<cv::DMatch> inlierMatches, double timestamp);
+	void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures);
 	void createAndSaveOctomap(double depthImageScale);
-	void createAndSaveOctomapOffline( double depthImageScale);
+	void createAndSaveOctomapOffline(double depthImageScale);
 };
 
 #endif // _PUTSLAM_
