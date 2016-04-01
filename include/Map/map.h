@@ -132,6 +132,9 @@ public:
     /// store camera frames
     virtual void setStoreImages(bool storeImages) = 0;
 
+    /// return the size of the map
+    virtual int getNumberOfFeatures() = 0;
+
 protected:
 	/// Map type
 	Type type;

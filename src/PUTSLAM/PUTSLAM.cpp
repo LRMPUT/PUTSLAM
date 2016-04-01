@@ -294,6 +294,7 @@ void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
 void PUTSLAM::processFirstFrame(SensorFrame &currentSensorFrame,
 		int &cameraPoseId) {
 	matcher->Matcher::loadInitFeatures(currentSensorFrame);
+	VOFeaturesSizeLog.push_back(matcher->getNumberOfFeatures());
 
 	// cameraPose as Eigen::Transform
 	Mat34 cameraPose = Mat34(VOPoseEstimate.cast<double>());
@@ -555,6 +556,7 @@ Eigen::Matrix4f PUTSLAM::runVO(SensorFrame &currentSensorFrame, std::vector<cv::
 	timeMeasurement.voTimes.push_back(voTime.elapsed());
 
 	VORansacInlierRatioLog.push_back(inlierRatio);
+	VOFeaturesSizeLog.push_back(matcher->Matcher::getNumberOfFeatures());
 	return transformation;
 }
 
@@ -579,6 +581,67 @@ Mat34 PUTSLAM::getMapPoseEstimate() {
 	tmp.stop();
 	timeMeasurement.mapGetSensorPoseTimes.push_back(tmp.elapsed());
 	return cameraPose;
+}
+
+Eigen::Matrix4f PUTSLAM::getPoseIncrementFromMap(int frameCounter) {
+
+	if ( frameCounter > 1 ) {
+		Eigen::Matrix4f first( map->getSensorPose(frameCounter-2).matrix().cast<float>() );
+		Eigen::Matrix4f second( map->getSensorPose(frameCounter-1).matrix().cast<float>() );
+		return first.inverse() * second;
+	}
+	return Eigen::Matrix4f::Identity();
+}
+
+std::vector<MapFeature> PUTSLAM::getAndFilterFeaturesFromMap(SensorFrame &currentSensorFrame, Mat34 cameraPose,std::vector<int> &frameIds,
+std::vector<float_type> &angles ) {
+
+	Stopwatch<> tmp;
+	tmp.start();
+	std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+	tmp.stop();
+	timeMeasurement.mapGetVisibleFeaturesTimes.push_back(tmp.elapsed());
+
+	//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
+
+
+
+	tmp.start();
+	map->findNearestFrame(mapFeatures, frameIds, angles,
+			matcher->matcherParameters.maxAngleBetweenFrames);
+	tmp.stop();
+	timeMeasurement.mapFindNearestFrameTimes.push_back(tmp.elapsed());
+
+	//Remove features that we do not have a good observation angle
+	tmp.start();
+	removeMapFeaturesWithoutGoodObservationAngle(mapFeatures, frameIds, angles);
+	tmp.stop();
+	timeMeasurement.mapRemoveMapFeaturesTimes.push_back(tmp.elapsed());
+
+	// Move mapFeatures to local coordinate system
+	tmp.start();
+	moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
+	tmp.stop();
+	timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(
+			tmp.elapsed());
+
+
+
+	// Now lets check if those features are not behind sth
+//	const double additionalDistance = 0.65f;
+//	RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+//			currentSensorFrame.depthImage, additionalDistance,
+//			frameIds, angles, depthImageScale);
+
+	showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
+
+	// Check some asserts
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== frameIds.size()));
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== angles.size()));
+
+	return mapFeatures;
 }
 
 // Processing
@@ -632,59 +695,21 @@ void PUTSLAM::startProcessing() {
 				Stopwatch<> mapTime;
 				mapTime.start();
 
+				// Prediction from map
+				//poseIncrement = getPoseIncrementFromMap(frameCounter);
+
+
 				addPoseToMap(currentSensorFrame, poseIncrement, cameraPoseId);
 
 				// Getting the pose
 				Mat34 cameraPose = getMapPoseEstimate();
 
-				// Get the visible features
-				Stopwatch<> tmp;
-				tmp.start();
-				mapFeatures = map->getVisibleFeatures(cameraPose);
-				tmp.stop();
-				timeMeasurement.mapGetVisibleFeaturesTimes.push_back(
-						tmp.elapsed());
-
-				//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
-
+				// Get and filter the visible features
 				// Find the ids of frames for which feature observations have the most similar angle
-
 				std::vector<int> frameIds;
 				std::vector<float_type> angles;
+				mapFeatures = getAndFilterFeaturesFromMap(currentSensorFrame, cameraPose, frameIds, angles);
 
-				tmp.start();
-				map->findNearestFrame(mapFeatures, frameIds, angles,
-						matcher->matcherParameters.maxAngleBetweenFrames);
-				tmp.stop();
-				timeMeasurement.mapFindNearestFrameTimes.push_back(
-						tmp.elapsed());
-
-				//Remove features that we do not have a good observation angle
-				tmp.start();
-				removeMapFeaturesWithoutGoodObservationAngle(mapFeatures,
-						frameIds, angles);
-				tmp.stop();
-				timeMeasurement.mapRemoveMapFeaturesTimes.push_back(
-						tmp.elapsed());
-
-				// Check some asserts
-//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
-//								== frameIds.size()));
-//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
-//								== angles.size()));
-
-				// Move mapFeatures to local coordinate system
-				tmp.start();
-				moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
-				tmp.stop();
-				timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(
-						tmp.elapsed());
-
-				// Now lets check if those features are not behind sth
-				const double additionalDistance = 0.15f;
-				RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
-						currentSensorFrame.depthImage, additionalDistance,
-						frameIds, angles, depthImageScale);
 
 				if (verbose > 0)
 					std::cout << "Returned visible map feature size: "
@@ -692,7 +717,7 @@ void PUTSLAM::startProcessing() {
 
 				// Show map features
 				if (matcher->matcherParameters.verbose > 0)
-					showMapFeatures(currentSensorFrame.rgbImage, mapFeatures);
+					showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 1);
 
 				// Perform RANSAC matching and return measurements for found inliers in map compatible format
 				// Remember! The match returns the list of inlier features from current pose!
@@ -702,6 +727,7 @@ void PUTSLAM::startProcessing() {
 				// Map matching based only on descriptors
 				double mapMatchingInlierRatio = 0.0f;
 
+				Stopwatch<> tmp;
 				tmp.start();
 				if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS) {
@@ -714,9 +740,11 @@ void PUTSLAM::startProcessing() {
 				// Map matching based on descriptors, but in a sphere around feature with set radius
 				else if (matcher->matcherParameters.MapMatchingVersion
 						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS) {
+
+					bool newDetection = false;
 					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
 							mapFeatures, cameraPoseId, measurementList,
-							mapEstimatedTransformation, frameIds);
+							mapEstimatedTransformation, newDetection, frameIds);
 
 				} else {
 					std::cout
@@ -828,6 +856,8 @@ void PUTSLAM::startProcessing() {
 
 		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
 				currentSensorFrame.timestamp);
+
+		mapSize.push_back(map->getNumberOfFeatures());
 
 		frameCounter++;
 		std::cout << frameCounter << " " << std::flush;
@@ -1000,6 +1030,44 @@ void PUTSLAM::saveLogs() {
 	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream << "plt.savefig('VORansacInlierRatio.png')" << endl;
 
+	// VOFeaturesSizeLog
+	statisticsLogStream << "VOFeaturesSizeLog = np.array([";
+	for (int a = 0; a < VOFeaturesSizeLog.size(); a++) {
+		statisticsLogStream << VOFeaturesSizeLog[a] << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream
+			<< "plt.plot(VOFeaturesSizeLog)"
+			<< endl;
+	statisticsLogStream
+			<< "fig.suptitle('Number of features used in VO', fontsize=20)" << endl;
+	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+	statisticsLogStream << "plt.ylabel('Number of features', fontsize=16)" << endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('VOFeaturesSize.png')" << endl;
+
+
+	// mapSize
+	statisticsLogStream << "mapSize = np.array([";
+		for (int a = 0; a < mapSize.size(); a++) {
+			statisticsLogStream << mapSize[a] << ", ";
+		}
+		statisticsLogStream << "]);" << std::endl;
+
+		statisticsLogStream << "fig = plt.figure()" << endl;
+		statisticsLogStream
+				<< "plt.plot(mapSize)"
+				<< endl;
+		statisticsLogStream
+				<< "fig.suptitle('Number of features in map', fontsize=20)" << endl;
+		statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+		statisticsLogStream << "plt.ylabel('Features counter', fontsize=16)" << endl;
+		statisticsLogStream << "plt.legend() " << endl;
+		statisticsLogStream << "plt.savefig('mapSize.png')" << endl;
+
+
 	// MapMatchingRansacInlierRatioLog
 	statisticsLogStream << "MapMatchingRansacInlierRatioLog = np.array([";
 	for (int a = 0; a < MapMatchingRansacInlierRatioLog.size(); a++) {
@@ -1081,26 +1149,26 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 
 	std::string fullPath = basePath + "/" + datasetName + "/";
 
-	std::string evalATEVO =
-			"python2 ../../scripts/evaluate_ate.py " + fullPath
-					+ "groundtruth.txt VO_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot VOAte.png > VOAte.res";
-	std::string evalATEMap =
-			"python2 ../../scripts/evaluate_ate.py " + fullPath
-					+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res";
-	std::string evalRPEVO =
-			"python2 ../../scripts/evaluate_rpe.py " + fullPath
-					+ "groundtruth.txt VO_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot VORpe.png > VORpe.res";
-	std::string evalRPEMap =
-			"python2 ../../scripts/evaluate_rpe.py " + fullPath
-					+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res";
-	try {
-		int tmp = std::system(evalATEVO.c_str());
-		tmp = std::system(evalATEMap.c_str());
-		tmp = std::system(evalRPEVO.c_str());
-		tmp = std::system(evalRPEMap.c_str());
-	} catch (std::system_error& error) {
-		std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
-	}
+//	std::string evalATEVO =
+//			"python2 ../../scripts/evaluate_ate.py " + fullPath
+//					+ "groundtruth.txt VO_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot VOAte.png > VOAte.res";
+//	std::string evalATEMap =
+//			"python2 ../../scripts/evaluate_ate.py " + fullPath
+//					+ "groundtruth.txt graph_trajectory.res --verbose --scale 1 --save_associations ate_association.res --plot g2oAte.png > g2oAte.res";
+//	std::string evalRPEVO =
+//			"python2 ../../scripts/evaluate_rpe.py " + fullPath
+//					+ "groundtruth.txt VO_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot VORpe.png > VORpe.res";
+//	std::string evalRPEMap =
+//			"python2 ../../scripts/evaluate_rpe.py " + fullPath
+//					+ "groundtruth.txt graph_trajectory.res --verbose --delta_unit 'f' --fixed_delta --plot g2oRpe.png > g2oRpe.res";
+//	try {
+//		int tmp = std::system(evalATEVO.c_str());
+//		tmp = std::system(evalATEMap.c_str());
+//		tmp = std::system(evalRPEVO.c_str());
+//		tmp = std::system(evalRPEMap.c_str());
+//	} catch (std::system_error& error) {
+//		std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
+//	}
 
 	ofstream datasetNameStream("DatasetName");
 	datasetNameStream << fullPath;
@@ -1109,16 +1177,19 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 }
 
 void PUTSLAM::showMapFeatures(cv::Mat rgbImage,
-		std::vector<MapFeature> mapFeatures) {
+		std::vector<MapFeature> mapFeatures, int wait, string windowName) {
 	std::vector<cv::KeyPoint> mapFeatures2D(mapFeatures.size());
 	std::transform(mapFeatures.begin(), mapFeatures.end(),
 			mapFeatures2D.begin(),
 			[](const MapFeature& m) {return cv::KeyPoint(m.u, m.v, 3);});
 
 	cv::Mat img2draw;
-	cv::drawKeypoints(rgbImage, mapFeatures2D, img2draw, cv::Scalar(0, 0, 255));
+	cv::drawKeypoints(rgbImage, mapFeatures2D, img2draw, cv::Scalar(0, 255, 0));
 
-	cv::imshow("Map features", img2draw);
-	cv::waitKey(10000);
+	cv::imshow(windowName.c_str(), img2draw);
+	if ( wait )
+		cv::waitKey(10000);
+	else
+		cv::waitKey(1);
 }
 

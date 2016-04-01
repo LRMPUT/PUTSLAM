@@ -125,7 +125,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 		if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN)
 		{
-			std::cout<<"Edge 3D -- Euclidean error" << std::endl;
+			//std::cout<<"Edge 3D -- Euclidean error" << std::endl;
 			Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3D(e);
 
@@ -134,7 +134,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 		}
 		else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION)
 		{
-			std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
+			//std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
 			Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3DReproj(e);
 		}
@@ -270,6 +270,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
         mtxMapFrontend.lock();
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
         featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
+        featuresMapFrontend[it->id].lifeValue += 2 ;
         mtxMapFrontend.unlock();
 
         mtxMapLoopClosure.lock();
@@ -378,8 +379,9 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 		Eigen::Vector3d pointCam = sensorModel.inverseModel(featureCam(0, 3),
 				featureCam(1, 3), featureCam(2, 3));
         //std::cout << pointCam(0) << " " << pointCam(1) << " " << pointCam(2) << "\n";
-		if (pointCam(0) != -1) {
+		if (pointCam(0) != -1 && it->second.lifeValue > 0) {
             visibleFeatures.push_back(it->second);
+            it->second.lifeValue -- ;
 		}
 	}
 	mtxMapFrontend.unlock();
@@ -572,11 +574,13 @@ void FeaturesMap::manage(int verbose){
         mtxMapManagement.lock();
         //compute Euclidean distance
         for (std::map<int,MapFeature>::iterator itFeature1 = featuresMapManagement.begin(); itFeature1!=featuresMapManagement.end(); itFeature1++){
-            for (std::map<int,MapFeature>::iterator itFeature2 = featuresMapManagement.begin(); itFeature2!=featuresMapManagement.end(); itFeature2++){
+            for (std::map<int,MapFeature>::iterator itFeature2 = itFeature1; itFeature2!=featuresMapManagement.end(); itFeature2++){
                 if (itFeature1->first!=itFeature2->first){
                     float_type dist = sqrt(pow(itFeature1->second.position.x()-itFeature2->second.position.x(),2.0) + pow(itFeature1->second.position.y()-itFeature2->second.position.y(),2.0) + pow(itFeature1->second.position.z()-itFeature2->second.position.z(),2.0));
                     if (dist<config.distThreshold)
+                    {
                         std::cout << "features " << itFeature1->second.id << " and " << itFeature2->second.id << " are too close\n";
+                    }
                 }
             }
         }
@@ -1220,6 +1224,13 @@ Mat33 FeaturesMap::getFeatureUncertainty(unsigned int id) const{
     Mat33 incCov = ((PoseGraphG2O*) poseGraph)->getFeatureIncrementCovariance(id);
     Mat33 unc = G2OEst::computeCovarianceMatrix(incCov, getFeaturePosition(id).inverse());
     return unc;
+}
+
+int FeaturesMap::getNumberOfFeatures() {
+	mtxMapFrontend.lock();
+	int val = featuresMapFrontend.size();
+	mtxMapFrontend.unlock();
+	return val;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

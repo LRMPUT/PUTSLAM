@@ -68,10 +68,10 @@ class PUTSLAM {
 	std::unique_ptr<octomap::ColorOcTree> octomapTree;
 
 	// Save some statistics to analyze
-	std::vector<int> measurementToMapSizeLog;
+	std::vector<int> measurementToMapSizeLog, VOFeaturesSizeLog;
 	std::vector<double> VORansacInlierRatioLog;
-	std::vector<double> MapMatchingRansacInlierRatioLog;
-	std::vector<std::pair<double, double>> patchesErrorLog;
+	std::vector<double> MapMatchingRansacInlierRatioLog, mapSize;
+	std::vector<std::pair<double, double>> patchesErrorLogs;
 
 	enum LOOPCLOSURETHREAD {
 		LCTHREAD_OFF, LCTHREAD_ON
@@ -112,9 +112,12 @@ private:
 	// Processing
 	void processFirstFrame(SensorFrame &currentSensorFrame, int &cameraPoseId);
 
-	Eigen::Matrix4f runVO(SensorFrame &currentSensorFrame, std::vector<cv::DMatch> &inlierMatches);
-	void addPoseToMap(SensorFrame &currentSensorFrame, Eigen::Matrix4f &poseIncrement, int &cameraPoseId );
+	Eigen::Matrix4f runVO(SensorFrame &currentSensorFrame,
+			std::vector<cv::DMatch> &inlierMatches);
+	void addPoseToMap(SensorFrame &currentSensorFrame,
+			Eigen::Matrix4f &poseIncrement, int &cameraPoseId);
 	Mat34 getMapPoseEstimate();
+	Eigen::Matrix4f getPoseIncrementFromMap(int frameCounter);
 
 	void moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 			std::vector<MapFeature>& mapFeatures);
@@ -125,9 +128,12 @@ private:
 			float minImageDistanceOfFeatures, int cameraPoseId,
 			std::vector<RGBDFeature>& mapFeaturesToAdd);
 	// Remove features that we do not have a good observation angle
-		void removeMapFeaturesWithoutGoodObservationAngle(
-				std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
-				std::vector<float_type> &angles);
+	void removeMapFeaturesWithoutGoodObservationAngle(
+			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
+			std::vector<float_type> &angles);
+	std::vector<MapFeature> getAndFilterFeaturesFromMap(
+			SensorFrame &currentSensorFrame, Mat34 cameraPose,
+			std::vector<int> &frameIds, std::vector<float_type> &angles);
 
 	// At finish
 	void saveLogs();
@@ -140,7 +146,7 @@ private:
 	void saveFeaturesToFile(Matcher::featureSet features, double timestamp);
 	void saveFeaturesToFile(Matcher::featureSet features,
 			std::vector<cv::DMatch> inlierMatches, double timestamp);
-	void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures);
+	void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures, int wait, string windowName="Map features");
 	void createAndSaveOctomap(double depthImageScale);
 	void createAndSaveOctomapOffline(double depthImageScale);
 };
