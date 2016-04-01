@@ -641,7 +641,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 	estimatedTransformation = ransac.estimateTransformation(features3D[0], features3D[1], matches, inlierMatches);
 
-	std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
+	//std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
 
 	std::vector<std::pair<int, int>> pairedFeatures; // dummy
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
