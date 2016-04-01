@@ -171,6 +171,9 @@ public:
     /// store camera frames
     void setStoreImages(bool storeImages);
 
+    /// return the size of the map
+    int getNumberOfFeatures();
+
     class Config{
       public:
         Config() :

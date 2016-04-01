@@ -187,6 +187,9 @@ public:
     /// image coordinates: std::map<index_of_the_frame,<u,v,d>>
     std::map<unsigned int, ImageFeature> imageCoordinates;
 
+    /// mapFeature life number
+    unsigned int lifeValue;
+
 	/// Constructor
 	MapFeature() {
     };
@@ -198,6 +201,7 @@ public:
             std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
                     _posesIds), imageCoordinates(_imageCoordinates) {
+		lifeValue = 8;
     };
 
 	/// Constructor

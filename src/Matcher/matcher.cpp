@@ -17,9 +17,15 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	// Detect salient features
 	prevFeatures = detectFeatures(sensorData.rgbImage);
 
+	if (matcherParameters.verbose > 2)
+		std::cout << "Before dbScan: " << prevFeatures.size() << std::endl;
+
 	// DBScan
 	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 	dbscan.run(prevFeatures);
+
+	if (matcherParameters.verbose > 2)
+			std::cout << "After dbScan: " << prevFeatures.size() << std::endl;
 
 	// Show detected features
 	if (matcherParameters.verbose > 2)
@@ -48,6 +54,7 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
+	prevDepthImageScale = sensorData.depthImageScale;
 }
 
 Matcher::featureSet Matcher::getFeatures() {
@@ -198,7 +205,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Merging features - rejecting feature too close to existing ones
 		// Parameters: (existing features and vector to add new features, new features, minimal image distance between features)
+		std::cout<<"We had " << distortedFeatures2D.size() << std::endl;
 		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted, distortedFeatures2D, featuresSandBoxDistorted);
+		std::cout<<"After merging " << distortedFeatures2D.size() << std::endl;
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
@@ -264,6 +273,22 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			("TrackKLT: 2D and 3D sizes at the end 2", undistortedFeatures2D.size()
 					== prevDescriptors.rows));
 
+	double inlierRatio = 0.0;
+	if ( matches.size() > 0)
+		inlierRatio = RANSAC::pointInlierRatio(inlierMatches, matches);
+
+//	if ( inlierRatio < 0.1 )
+//	{
+//		std::cout << "inlierRatio = " << inlierRatio << " Feature sizes: "
+//				<< prevFeaturesDistorted.size() << " "
+//				<< distortedFeatures2D.size() << std::endl;
+//		std::vector<cv::KeyPoint> tmp[2];
+//		cv::KeyPoint::convert(prevFeaturesDistorted, tmp[0]);
+//		cv::KeyPoint::convert(distortedFeatures2D, tmp[1]);
+//		showFeatures(prevRgbImage, tmp[0]);
+//		showFeatures(sensorData.rgbImage, tmp[1]);
+//	}
+
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
 	distortedFeatures2D.swap(prevFeaturesDistorted);
@@ -273,10 +298,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	prevRgbImage = sensorData.rgbImage;
 	prevDepthImage = sensorData.depthImage;
 
-	if (matches.size() == 0)
-		return 0.0;
 
-	return RANSAC::pointInlierRatio(inlierMatches, matches);
+	return inlierRatio;
 }
 
 double Matcher::match(const SensorFrame& sensorData,
@@ -483,8 +506,6 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		Eigen::Matrix4f &estimatedTransformation) {
 
 
-	double matchingXYZSphereRadius = 0.15;
-	double matchingXYZacceptRatioOfBestMatch = 0.85;
 	int normType = cv::NORM_HAMMING;
 	if (matcherParameters.OpenCVParams.descriptor == "SURF"
 				|| matcherParameters.OpenCVParams.descriptor == "SIFT")
@@ -505,6 +526,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	// Finding the index of the closest descriptor for all features in two provided sets
 	for (int i = 0; i < 2; i++)
 		framesIds2framesIndex(featureSet[i], frameIds[i], closestFrameIndex[i]);
+
 	// For all features in the map find potential matches
 	std::vector<cv::DMatch> matches;
 	int perfectMatchCounter = 0,  featureFirstSetIndex = 0;
@@ -522,19 +544,16 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 			double norm =
 					(featurePositions3D[0][featureFirstSetIndex] - featurePositions3D[1][featureSecondSetIndex]).norm();
 
-			if (norm < matchingXYZSphereRadius) {
+			if (norm < matcherParameters.OpenCVParams.matchingXYZSphereRadius) {
 				possibleMatchId.push_back(featureSecondSetIndex);
 			}
         }
 
 		// Find best match based on descriptors -- difference of descriptors
 		int bestId = -1;
-		float bestVal;
+		float bestVal = 99999;
 		std::vector<double> possibleMatchDiff;
 		for (int i = 0; i < possibleMatchId.size(); i++) {
-
-            //std::cout << "Possible match: " << featureFirstSetIndex << " "
-            //		<< possibleMatchId[i] << std::endl;
 
 			// The index of feature from second set
 			int featureSecondSetIndex = possibleMatchId[i];
@@ -566,7 +585,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 
 		// Check the rest compared to the best
 		for (int i = 0; i < possibleMatchId.size(); i++) {
-			if (matchingXYZacceptRatioOfBestMatch * possibleMatchDiff[i] <= bestVal) {
+			if (matcherParameters.OpenCVParams.matchingXYZacceptRatioOfBestMatch * possibleMatchDiff[i] <= bestVal) {
 				cv::DMatch tmpMatch;
 				tmpMatch.distance = possibleMatchDiff[i];
 				tmpMatch.queryIdx = featureFirstSetIndex;
@@ -683,9 +702,52 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
 }
 
+
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation, std::vector<int> frameIds) {
+		Eigen::Matrix4f &estimatedTransformation, bool newDetection,
+		std::vector<int> frameIds) {
+
+	if (!newDetection)
+		return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
+				estimatedTransformation, prevDescriptors, prevFeatures3D);
+
+	// Detect salient features
+	prevFeatures = detectFeatures(prevRgbImage);
+
+	// DBScan
+	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
+	dbscan.run(prevFeatures);
+
+	// Show detected features
+	if (matcherParameters.verbose > 2)
+		showFeatures(prevRgbImage, prevFeatures);
+
+	prevDescriptors = describeFeatures(prevRgbImage, prevFeatures);
+
+	// Extract 2D points from keypoints
+	cv::KeyPoint::convert(prevFeatures, prevFeaturesDistorted);
+
+	// Remove distortion
+	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
+			matcherParameters.cameraMatrixMat,
+			matcherParameters.distortionCoeffsMat);
+
+	// Associate depth
+	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
+			prevDepthImage, matcherParameters.cameraMatrixMat,
+			prevDepthImageScale);
+
+	return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
+			estimatedTransformation, prevDescriptors, prevFeatures3D);
+}
+
+
+double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+		std::vector<MapFeature> &foundInlierMapFeatures,
+		Eigen::Matrix4f &estimatedTransformation,
+		cv::Mat currentPoseDescriptors,
+		std::vector<Eigen::Vector3f> &currentPoseFeatures3D,std::vector<int> frameIds) {
 
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
@@ -703,8 +765,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			("matchXYZ: 2D and 3D sizes 2", prevDescriptors.rows
 					== prevFeatures3D.size()));
 
-	// The current pose descriptors are renamed to make it less confusing
-	cv::Mat currentPoseDescriptors(prevDescriptors);
+
 
 	// Perform matching
 	std::vector<cv::DMatch> matches;
@@ -734,10 +795,10 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<int> possibleMatchId;
 
 		// Reject all matches that are further away than threshold
-		for (int i = 0; i < prevFeatures3D.size(); i++) {
+		for (int i = 0; i < currentPoseFeatures3D.size(); i++) {
 			Eigen::Vector3f tmp((float) it->position.x(),
 					(float) it->position.y(), (float) it->position.z());
-			float norm = (tmp - (prevFeatures3D[i])).norm();
+			float norm = (tmp - (currentPoseFeatures3D[i])).norm();
 
 			if (norm < matchingXYZSphereRadius) {
 				possibleMatchId.push_back(i);
@@ -798,7 +859,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	RANSAC ransac(matcherParameters.RANSACParams,
 			matcherParameters.cameraMatrixMat);
 	estimatedTransformation = ransac.estimateTransformation(
-			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
+			mapFeaturePositions3D, currentPoseFeatures3D, matches, inlierMatches);
 
 	// for all inliers, convert them to map-compatible format
 	foundInlierMapFeatures.clear();
@@ -813,7 +874,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
 
 		mapFeature.position = Vec3(
-				prevFeatures3D[currentPoseId].cast<double>());
+				currentPoseFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
@@ -1154,4 +1215,8 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 					== distortedFeatures2D.size()));
 
 	return featuresToRemove;
+}
+
+int Matcher::getNumberOfFeatures() {
+	return prevFeaturesDistorted.size();
 }

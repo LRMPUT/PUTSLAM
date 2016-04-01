@@ -170,6 +170,9 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	std::sort(raw_keypoints.begin(), raw_keypoints.end(),
 			MatcherOpenCV::compare_response);
 
+	if (matcherParameters.verbose > 1)
+		std::cout << "MatcherOpenCV: After joining we have "<< raw_keypoints.size() << " keypoints" << std::endl;
+
 	if (raw_keypoints.size() > matcherParameters.OpenCVParams.maximalTrackedFeatures)
 		raw_keypoints.resize(matcherParameters.OpenCVParams.maximalTrackedFeatures);
 

@@ -161,7 +161,11 @@ public:
 	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation,
+			bool newDetection,
 			std::vector<int> frameIds = std::vector<int>());
+
+
+
 
 	// Matching to map with patch computation
 	double matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
@@ -173,6 +177,8 @@ public:
 			Eigen::Matrix4f &estimatedTransformation, double depthImageScale,
 			std::vector<std::pair<double, double>> &errorLog,
 			bool withRANSAC = true);
+
+	int getNumberOfFeatures();
 
 	/// Class used to hold all parameters
 	class MatcherParameters {
@@ -394,6 +400,7 @@ protected:
 	cv::Mat prevDescriptors;
 	std::vector<Eigen::Vector3f> prevFeatures3D;
 	cv::Mat prevRgbImage, prevDepthImage;
+	double prevDepthImageScale;
 
 	// Time measurement
 	TimeMeasurement detectionTimes, trackingTimes, ransacTimes;
@@ -433,7 +440,14 @@ private:
 	std::vector<Eigen::Vector3f> extractMapFeaturesPositions(
 			std::vector<MapFeature> mapFeatures);
 
-private:
+	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
+					std::vector<MapFeature> &foundInlierMapFeatures,
+					Eigen::Matrix4f &estimatedTransformation,
+					cv::Mat currentPoseDescriptors,
+					std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
+					std::vector<int> frameIds = std::vector<int>());
+
+
 	std::set<int> removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
 			std::vector<cv::Point2f>& undistortedFeatures2D,
 			std::vector<Eigen::Vector3f> &features3D, std::vector<cv::DMatch> &matches);
