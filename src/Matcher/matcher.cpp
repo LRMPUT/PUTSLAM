@@ -512,93 +512,18 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		normType = cv::NORM_L2;
 
 	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
-    //cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
-    //		extractMapDescriptors(featureSet[1]) };
+    cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
+    		extractMapDescriptors(featureSet[1]) };
 
 	std::vector<Eigen::Vector3f> featurePositions3D[2] = {
 			extractMapFeaturesPositions(featureSet[0]),
 			extractMapFeaturesPositions(featureSet[1]) };
 
-	// For all features in the map
-	std::vector<int> closestFrameIndex[2] = { std::vector<int>(
-			frameIds[0].size()), std::vector<int>(frameIds[1].size()) };
+	std::vector<cv::DMatch> matches = performMatching(descriptors[0], descriptors[1]);
 
-	// Finding the index of the closest descriptor for all features in two provided sets
-	for (int i = 0; i < 2; i++)
-		framesIds2framesIndex(featureSet[i], frameIds[i], closestFrameIndex[i]);
-
-	// For all features in the map find potential matches
-	std::vector<cv::DMatch> matches;
-	int perfectMatchCounter = 0,  featureFirstSetIndex = 0;
-	for (std::vector<MapFeature>::iterator it = featureSet[0].begin();
-			it != featureSet[0].end(); ++it, ++featureFirstSetIndex) {
-
-		// Possible matches for considered feature
-		std::vector<int> possibleMatchId;
-
-		// Accept all matches that are closer than threshold
-		for (int featureSecondSetIndex = 0;
-				featureSecondSetIndex < featureSet[1].size();
-				featureSecondSetIndex++) {
-
-			double norm =
-					(featurePositions3D[0][featureFirstSetIndex] - featurePositions3D[1][featureSecondSetIndex]).norm();
-
-			if (norm < matcherParameters.OpenCVParams.matchingXYZSphereRadius) {
-				possibleMatchId.push_back(featureSecondSetIndex);
-			}
-        }
-
-		// Find best match based on descriptors -- difference of descriptors
-		int bestId = -1;
-		float bestVal = 99999;
-		std::vector<double> possibleMatchDiff;
-		for (int i = 0; i < possibleMatchId.size(); i++) {
-
-			// The index of feature from second set
-			int featureSecondSetIndex = possibleMatchId[i];
-
-			// The index of the closest view for feature from first set
-			int indexOfClosestView = closestFrameIndex[0][featureFirstSetIndex];
-			cv::Mat firstSetDescriptor = it->descriptors[indexOfClosestView].descriptor;
-
-			// The index of the closest view for feature from second set
-			indexOfClosestView = closestFrameIndex[1][featureSecondSetIndex];
-			MapFeature & secondSetFeature = featureSet[1][featureSecondSetIndex];
-			cv::Mat secondSetDescriptor = secondSetFeature.descriptors[indexOfClosestView].descriptor;
-
-			// The difference between descriptors
-			double value = norm(firstSetDescriptor - secondSetDescriptor, normType);
-			possibleMatchDiff.push_back(value);
-
-			// Store the best match between descriptors
-			if (value < bestVal || bestId == -1) {
-				bestVal = value;
-				bestId = featureSecondSetIndex;
-			}
-		}
-
-		// Pretty nice match
-		if (bestVal < 0.1) {
-			perfectMatchCounter++;
-		}
-
-		// Check the rest compared to the best
-		for (int i = 0; i < possibleMatchId.size(); i++) {
-			if (matcherParameters.OpenCVParams.matchingXYZacceptRatioOfBestMatch * possibleMatchDiff[i] <= bestVal) {
-				cv::DMatch tmpMatch;
-				tmpMatch.distance = possibleMatchDiff[i];
-				tmpMatch.queryIdx = featureFirstSetIndex;
-				tmpMatch.trainIdx = possibleMatchId[i];
-				matches.push_back(tmpMatch);
-			}
-		}
-	}
 
     if (matcherParameters.verbose > 0)
-		std::cout << "MatchPose2Pose - we found : " << matches.size()
-				<< " (Perfect matches = " << perfectMatchCounter << ")"
-				<< std::endl;
+		std::cout << "MatchPose2Pose - we found : " << matches.size() << std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;
@@ -653,32 +578,36 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 		Eigen::Matrix4f &estimatedTransformation) {
 
+	cv::Mat wtf[2];
+	std::vector<Eigen::Vector3f> features3D[2];
+	std::vector<cv::KeyPoint> features[2];
+
 	std::vector<MapFeature> featureSet[2];
 	for (int i = 0; i < 2; i++) {
 		// Detect salient features
-		std::vector<cv::KeyPoint> features = detectFeatures(
+		features[i] = detectFeatures(
 				sensorFrames[i].rgbImage);
 
-		// DBScan
-		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
-		dbscan.run(features);
+//		// DBScan
+//		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
+//		dbscan.run(features);
 
 		// Describe salient features
-		cv::Mat descriptors = describeFeatures(sensorFrames[i].rgbImage, features);
+		cv::Mat descriptors = describeFeatures(sensorFrames[i].rgbImage, features[i]);
 
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> undistortedFeatures2D =
-				RGBD::removeImageDistortion(features,
+				RGBD::removeImageDistortion(features[i],
 						matcherParameters.cameraMatrixMat,
 						matcherParameters.distortionCoeffsMat);
 
 		// Associate depth
-		std::vector<Eigen::Vector3f> features3D = RGBD::keypoints2Dto3D(
-				undistortedFeatures2D, sensorFrames[i].depthImage,
-				matcherParameters.cameraMatrixMat, sensorFrames[i].depthImageScale);
+		features3D[i] = RGBD::keypoints2Dto3D(undistortedFeatures2D,
+				sensorFrames[i].depthImage, matcherParameters.cameraMatrixMat,
+				sensorFrames[i].depthImageScale);
 
 		// Convert to map format
-		for (int j=0;j<features3D.size();j++) {
+		for (int j=0;j<features3D[i].size();j++) {
 			MapFeature mapFeature;
 			mapFeature.id = j;
 
@@ -686,7 +615,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 			mapFeature.v = undistortedFeatures2D[j].y;
 
 			mapFeature.position = Vec3(
-					features3D[j].cast<double>());
+					features3D[i][j].cast<double>());
 			mapFeature.posesIds.push_back(i);
 
 			ExtendedDescriptor featureExtendedDescriptor(i,
@@ -696,7 +625,23 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 			// Add the measurement
 			featureSet[i].push_back(mapFeature);
         }
+
+		wtf[i] = descriptors;
 	}
+
+	std::vector<cv::DMatch> matches = performMatching(wtf[0], wtf[1]), inlierMatches;
+
+	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
+							matches);
+
+	matcherParameters.RANSACParams.errorVersion =
+				matcherParameters.RANSACParams.errorVersionVO;
+	RANSAC ransac(matcherParameters.RANSACParams,
+				matcherParameters.cameraMatrixMat);
+
+	estimatedTransformation = ransac.estimateTransformation(features3D[0], features3D[1], matches, inlierMatches);
+
+	std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
 
 	std::vector<std::pair<int, int>> pairedFeatures; // dummy
 	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);

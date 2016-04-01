@@ -22,14 +22,15 @@ LoopClosureLocal::Config::Config(std::string configFilename){
     tinyxml2::XMLDocument config;
     std::string filename = "../../resources/" + configFilename;
     config.LoadFile(filename.c_str());
+
     if (config.ErrorID())
         std::cout << "unable to load Local Loop Closure config file.\n";
     tinyxml2::XMLElement * model = config.FirstChildElement( "LoopClosure" );
     model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
     model->FirstChildElement( "parameters" )->QueryIntAttribute("minFrameDist", &minFrameDist);
-    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("distThresholdLC", &distThreshold);
-    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("rotThresholdLC", &rotThreshold);
-    model->FirstChildElement( "parameters" )->QueryBoolAttribute("useImagesLC", &useImages);
+    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("distThreshold", &distThreshold);
+    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("rotThreshold", &rotThreshold);
+    model->FirstChildElement( "parameters" )->QueryBoolAttribute("useImages", &useImages);
 }
 
 /// start loop closure thread (thread updates priority queue)
@@ -57,13 +58,39 @@ void LoopClosureLocal::updatePriorityQueue(void){
             Mat34 currentPose = cameraPoses[currentFrame];
             for (int i=0;i<currentFrame-config.minFrameDist;i++){
                 Mat34 prevPose  = cameraPoses[i];
-                double dotprod = (double)(1.0-currentPose.matrix().block<3,1>(0,2).adjoint()*prevPose.matrix().block<3,1>(0,2))/2.0;
-                Vec3 p1(prevPose(0,3), prevPose(1,3), prevPose(2,3));
-                Vec3 p2(currentPose(0,3), currentPose(1,3), currentPose(2,3));
-                double euclDist = sqrt(pow(p1.x()-p2.x(),2.0)+pow(p1.y()-p2.y(),2.0)+pow(p1.z()-p2.z(),2.0));
+                // MN: I dont understand this
+                //double dotprod = (double)(1.0-currentPose.matrix().block<3,1>(0,2).adjoint()*prevPose.matrix().block<3,1>(0,2))/2.0;
+                Eigen::Vector3d z1 (prevPose(0,2), prevPose(1,2), prevPose(2,2));
+                Eigen::Vector3d z2 (currentPose(0,2), currentPose(1,2), currentPose(2,2));
+                double dotprod = (double)(z1.transpose()*z2);
+
+
+                Eigen::Vector3d p1(prevPose(0,3), prevPose(1,3), prevPose(2,3));
+                Eigen::Vector3d p2(currentPose(0,3), currentPose(1,3), currentPose(2,3));
+
+                // ???
+                // double euclDist = sqrt(pow(p1.x()-p2.x(),2.0)+pow(p1.y()-p2.y(),2.0)+pow(p1.z()-p2.z(),2.0));
+                //element.distance = dotprod*euclDist;
                 LCElement element;
-                element.distance = dotprod*euclDist;
-                if ((element.distance<config.distThreshold)&&(acos(1-dotprod*2)<config.rotThreshold)){
+                element.distance = (p1-p2).norm();
+
+
+                double angle = acos(dotprod / (z1.norm() * z2.norm()) );
+
+                if (currentFrame > 10) {
+                	 element.distance = 0;
+                	 element.posesIds = std::make_pair(5,10);
+                	 priorityQueueLC.push(element);
+                }
+
+
+
+
+//				std::cout << "LC: pair distance: " << element.distance << " < "
+//						<< config.distThreshold << " && " << angle << " < "
+//						<< config.rotThreshold <<std::endl;
+
+                if ((element.distance<config.distThreshold)&&(angle<config.rotThreshold)){
                     //std::cout << "add to queque " << i << "->" << frameId << "\n";
                     element.posesIds = std::make_pair(i,currentFrame);
                     priorityQueueLC.push(element);
