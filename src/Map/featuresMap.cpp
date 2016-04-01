@@ -594,23 +594,30 @@ void FeaturesMap::manage(int verbose){
 
 /// geometric loop closure method
 void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
-    // graph optimization
+	  // graph optimization
     continueLoopClosure = true;
     // Wait for some information in map
     while (continueLoopClosure && featuresMapLoopClosure.size()==0) {
-//        std::cout << "wait\n";
+        std::cout << "wait\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     // Wait for some information in map
     auto start = std::chrono::system_clock::now();
     while (continueLoopClosure) {
+
         if (verbose>0){
             std::cout << "Loop closure: start new iteration\n";
         }
         std::pair<int,int> candidatePoses;
         if (localLC->getLCPair(candidatePoses)){
             std::vector<MapFeature> featureSetA, featureSetB;
+
+			if (verbose > 0) {
+				std::cout << "Loop closure: pair to analyze - " << candidatePoses.first << " "
+						<< candidatePoses.second << std::endl;
+			}
+
             //mtxCamTrajLC.lock();
             //if (camTrajectoryLC[candidatePoses.first].featuresIds.size()==0){//no measurements
             //    mtxCamTrajLC.unlock();
@@ -626,8 +633,8 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                 getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
                 matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
-                std::cout << "matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
-                std::cout << "paired features " << pairedFeatures.size() << "\n";
+                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
+                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
             }
             mtxCamTrajLC.lock();
             if (config.typeLC == 1){ // use map features
@@ -679,11 +686,11 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 mtxCamTrajLC.unlock();
             }
             if (matchingRatio>config.matchingRatioThresholdLC){
-                std::cout << "matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
-                std::cout << "matchingRatio " << matchingRatio << "\n";
-                std::cout << "features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
-                std::cout << "estimated transformation: \n" << estimatedTransformation << "\n";
-                std::cout << "graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+                std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
+                std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
+                std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+                std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
+                std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
                 if (config.measurementTypeLC==0){//pose-pose
                     Mat34 trans(estimatedTransformation.cast<double>());
                     addMeasurement(candidatePoses.first, candidatePoses.second, trans);
@@ -705,7 +712,8 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             }
         }
         else{
-//            std::cout << "wait LC\n";
+        	if (verbose>0)
+        		std::cout << "Loop closure: priority queue is empty\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }
