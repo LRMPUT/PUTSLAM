@@ -522,8 +522,11 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 	std::vector<cv::DMatch> matches = performMatching(descriptors[0], descriptors[1]);
 
 
-    if (matcherParameters.verbose > 0)
-		std::cout << "MatchPose2Pose - we found : " << matches.size() << std::endl;
+    //if (matcherParameters.verbose > 0)
+		std::cout << "MatchPose2Pose - we found : " << matches.size()
+				<< " Det: " << matcherParameters.OpenCVParams.detector
+				<< " Desc: " << matcherParameters.OpenCVParams.descriptor
+				<< std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;
@@ -631,8 +634,8 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 	std::vector<cv::DMatch> matches = performMatching(wtf[0], wtf[1]), inlierMatches;
 
-	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
-							matches);
+
+
 
 	matcherParameters.RANSACParams.errorVersion =
 				matcherParameters.RANSACParams.errorVersionVO;
@@ -642,9 +645,14 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 	estimatedTransformation = ransac.estimateTransformation(features3D[0], features3D[1], matches, inlierMatches);
 
 	//std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
+	double inlierRatio = RANSAC::pointInlierRatio(inlierMatches, matches);
 
-	std::vector<std::pair<int, int>> pairedFeatures; // dummy
-	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+//	if ( inlierRatio > )
+//	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
+//								matches);
+
+//	std::vector<std::pair<int, int>> pairedFeatures; // dummy
+//	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
 }
 
 

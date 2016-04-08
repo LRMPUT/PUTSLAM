@@ -281,3 +281,4 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	// Return result
 	return matches;
 }
+

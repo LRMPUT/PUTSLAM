@@ -771,13 +771,8 @@ void PUTSLAM::startProcessing() {
 //				std::cout << "Difference between VO and Map : " << distanceDiff
 //						<< " meters" << std::endl;
 
-				// Add pose-pose constrain - depends on config file
+
 				tmp.start();
-				if (addPoseToPoseEdges) {
-					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
-					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-							cameraPoseIncrement);
-				}
 
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back(measurementList.size());
@@ -794,6 +789,15 @@ void PUTSLAM::startProcessing() {
 					}
 					map->addMeasurements(measurementList);
 				}
+				// Add pose-pose constrain - depends on config file
+				//if (addPoseToPoseEdges) {
+				else {
+					Mat34 cameraPoseIncrement = Mat34(
+							poseIncrement.cast<double>());
+					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+							cameraPoseIncrement);
+				}
+
 				tmp.stop();
 				timeMeasurement.mapAddMeasurementTimes.push_back(tmp.elapsed());
 
@@ -896,6 +900,15 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 // At the end
 
 void PUTSLAM::saveStatistics() {
+	// Wait for management thread to finish
+	if (mapManagmentThreadVersion == MAPTHREAD_ON)
+		map->finishManagementThr();  // Wait for optimization thread to finish
+
+	// thread for geometric loop closure
+	if (loopClosureThreadVersion == LCTHREAD_ON)
+		map->finishLoopClosureThr();
+
+
 	// Save times
 	std::cout << "Saving times" << std::endl;
 	timeMeasurement.saveToFile();
@@ -905,14 +918,6 @@ void PUTSLAM::saveStatistics() {
 	saveLogs();
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
-
-	// Wait for management thread to finish
-	if (mapManagmentThreadVersion == MAPTHREAD_ON)
-		map->finishManagementThr();  // Wait for optimization thread to finish
-
-	// thread for geometric loop closure
-	if (loopClosureThreadVersion == LCTHREAD_ON)
-		map->finishLoopClosureThr();
 
 	// We optimize only at the end if that version is chosen
 	if (optimizationThreadVersion == OPTTHREAD_ATEND)
@@ -1005,6 +1010,8 @@ void PUTSLAM::saveFPS(float_type fps) {
 }
 
 void PUTSLAM::saveLogs() {
+
+
 	ofstream statisticsLogStream("statistics.py");
 
 	statisticsLogStream << "import matplotlib.pyplot as plt" << endl;
@@ -1108,41 +1115,33 @@ void PUTSLAM::saveLogs() {
 	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << endl;
 
-	// diff 2D in patches
-//	statisticsLogStream << "error2DPatchesSize = np.array([";
-//	for (int a = 0; a < patchesErrorLog.size(); a++) {
-//		statisticsLogStream << patchesErrorLog[a].first << ", ";
-//	}
-//	statisticsLogStream << "]);" << std::endl;
-//
-//	statisticsLogStream << "fig = plt.figure()" << endl;
-//	statisticsLogStream << "plt.plot(error2DPatchesSize)" << endl;
-//	statisticsLogStream << "fig.suptitle('2D patches diff', fontsize=20)"
-//			<< endl;
-//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-//			<< endl;
-//	statisticsLogStream << "plt.ylabel('diff [px]', fontsize=16)" << endl;
-//	statisticsLogStream << "plt.legend() " << endl;
-//	statisticsLogStream << "plt.savefig('diff2DPatchesSize.png')" << endl;
-//
-//	// diff 3D in patches
-//	statisticsLogStream << "error3DPatchesSize = np.array([";
-//	for (int a = 0; a < patchesErrorLog.size(); a++) {
-//		statisticsLogStream << patchesErrorLog[a].second << ", ";
-//	}
-//	statisticsLogStream << "]);" << std::endl;
-//
-//	statisticsLogStream << "fig = plt.figure()" << endl;
-//	statisticsLogStream << "plt.plot(error3DPatchesSize)" << endl;
-//	statisticsLogStream << "fig.suptitle('3D patches diff', fontsize=20)"
-//			<< endl;
-//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-//			<< endl;
-//	statisticsLogStream << "plt.ylabel('diff [m]', fontsize=16)" << endl;
-//	statisticsLogStream << "plt.legend() " << endl;
-//	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
+
+	// LC matches
+	vector<double> lcMatchingRatiosLog = map->getLoopClosureMatchingRatiosLog();
+	statisticsLogStream << "lcMatchingRatiosLog = np.array([";
+	for (int a = 0; a < lcMatchingRatiosLog.size(); a++) {
+		statisticsLogStream << lcMatchingRatiosLog[a] << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream << "plt.plot(lcMatchingRatiosLog)" << endl;
+	statisticsLogStream << "fig.suptitle('Matching ratio in LC', fontsize=20)"
+			<< endl;
+	statisticsLogStream << "plt.xlabel('Compared pair no.', fontsize=18)"
+			<< endl;
+	statisticsLogStream << "plt.ylabel('Ratio', fontsize=16)" << endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('LCMatchingRatio.png')" << endl;
 
 	statisticsLogStream.close();
+
+	vector<pair<int,int>> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
+	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.txt");
+	for ( auto &p : lcAnalyzedPairsLog) {
+		lcAnalyzedPairsStream << p.first << " " << p.second << std::endl;
+	}
+	lcAnalyzedPairsStream.close();
 }
 
 void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {

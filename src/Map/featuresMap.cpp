@@ -550,8 +550,9 @@ void FeaturesMap::finishManagementThr(void){
 
 /// Wait for loop closure thread to finish
 void FeaturesMap::finishLoopClosureThr(void){
-    usleep(config.waitUntilFinishedLC*1000000);
+   // usleep(config.waitUntilFinishedLC*1000000);
     continueLoopClosure = false;
+    localLC->finishLCsearchingThr();
     loopClosureThr->join();
 }
 
@@ -635,6 +636,9 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
                 std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
                 std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+
+                loopClosureMatchingRatiosLog.push_back(matchingRatio);
+                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
             }
             mtxCamTrajLC.lock();
             if (config.typeLC == 1){ // use map features
@@ -1239,6 +1243,14 @@ int FeaturesMap::getNumberOfFeatures() {
 	int val = featuresMapFrontend.size();
 	mtxMapFrontend.unlock();
 	return val;
+}
+
+std::vector<double> FeaturesMap::getLoopClosureMatchingRatiosLog() {
+	return loopClosureMatchingRatiosLog;
+}
+
+std::vector<std::pair<int,int>> FeaturesMap::getLoopClosureAnalyzedPairsLog() {
+	return loopClosureAnalyzedPairsLog;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {
