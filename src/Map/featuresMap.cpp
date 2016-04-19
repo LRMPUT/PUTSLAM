@@ -29,7 +29,7 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
     //    localLC = createLoopClosureFABMAP(config.configFilenameLC);
 	// set that map is currently empty
 	emptyMap = true;
-
+	loopClosureSuccess = false;
 }
 
 /// Destruction
@@ -219,8 +219,9 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
         }
         notify(bufferMapVisualization);
     }
-    if (continueLoopClosure){
-        localLC->addPose(cameraPose,image);
+    // TODO!!!!
+    if (continueLoopClosure && trajSize % 20 == 0){
+        localLC->addPose(cameraPose,image, trajSize);
     }
 
 	return trajSize;
@@ -607,7 +608,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
     auto start = std::chrono::system_clock::now();
     while (continueLoopClosure) {
 
-        if (verbose>0){
+        if (verbose > 0){
             std::cout << "Loop closure: start new iteration\n";
         }
         std::pair<int,int> candidatePoses;
@@ -634,8 +635,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                 getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
                 matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
-                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
-                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+
 
                 loopClosureMatchingRatiosLog.push_back(matchingRatio);
                 loopClosureAnalyzedPairsLog.push_back(candidatePoses);
@@ -690,11 +690,25 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 mtxCamTrajLC.unlock();
             }
             if (matchingRatio>config.matchingRatioThresholdLC){
-                std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
-                std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
-                std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
-                std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
-                std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+
+            	if (verbose > 0) {
+					std::cout << "Loop closure: matched: "
+							<< candidatePoses.first << ", "
+							<< candidatePoses.second << "\n";
+					std::cout << "Loop closure: matchingRatio " << matchingRatio
+							<< "\n";
+					std::cout << "Loop closure: features sets size(): "
+							<< featureSetA.size() << ", " << featureSetB.size()
+							<< "\n";
+					std::cout << "Loop closure: estimated transformation: \n"
+							<< estimatedTransformation << "\n";
+					std::cout << "Loop closure: graph transformation: \n"
+							<< (camTrajectoryLC[candidatePoses.first].pose.inverse()
+									* camTrajectoryLC[candidatePoses.second].pose).matrix()
+							<< "\n";
+				}
+                loopClosureSuccess = true;
+
                 if (config.measurementTypeLC==0){//pose-pose
                     Mat34 trans(estimatedTransformation.cast<double>());
                     addMeasurement(candidatePoses.first, candidatePoses.second, trans);
@@ -1224,7 +1238,7 @@ void FeaturesMap::disableRobustKernel(void) {
 	((PoseGraphG2O*) poseGraph)->disableRobustKernel();
 }
 
-/// get uncertainty of the pose
+/// get uncertainty of the pos
 Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
     Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
     Mat66 unc = G2OEst::computeCovarianceMatrix(incCov, getSensorPose(id).inverse());
@@ -1251,6 +1265,14 @@ std::vector<double> FeaturesMap::getLoopClosureMatchingRatiosLog() {
 
 std::vector<std::pair<int,int>> FeaturesMap::getLoopClosureAnalyzedPairsLog() {
 	return loopClosureAnalyzedPairsLog;
+}
+
+bool FeaturesMap::getAndResetLoopClosureSuccesful() {
+	if ( loopClosureSuccess ) {
+		loopClosureSuccess = false;
+		return true;
+	}
+	return false;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

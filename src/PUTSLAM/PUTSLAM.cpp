@@ -24,20 +24,73 @@ PUTSLAM::PUTSLAM() {
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
-	// Move mapFeatures to local coordinate system
+
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it) {
+
+		// Feature position in GCS
 		Mat34 featurePos((*it).position);
+
+		// Moving feature from GCS to LCS
 		featurePos = (cameraPose.inverse()).matrix() * featurePos.matrix();
 		it->position = Vec3(featurePos(0, 3), featurePos(1, 3),
 				featurePos(2, 3));
-		//				 Compute image position
+
+		// Feature projection onto image
 		Eigen::Vector3d projectedMapPoint =
 				map->getDepthSensorModel().inverseModel(featurePos(0, 3),
 						featurePos(1, 3), featurePos(2, 3));
+
+		// Saving image position
 		it->u = projectedMapPoint[0];
 		it->v = projectedMapPoint[1];
 	}
+}
+
+
+bool PUTSLAM::removeCloseFeatures(std::vector<RGBDFeature> &existingFeatures,
+		Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures) {
+
+	for (auto &existingFeature : existingFeatures) {
+
+		Eigen::Vector3f tmp(existingFeature.position.x(),
+				existingFeature.position.y(),
+				existingFeature.position.z());
+		float norm = (tmp - feature3D).norm();
+		if (norm < minEuclideanDistanceOfFeatures) {
+			return false;
+		}
+
+		cv::Point2f point(existingFeature.u, existingFeature.v);
+		float imageNorm = cv::norm(point - feature2D);
+		if (imageNorm < minImageDistanceOfFeatures) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool PUTSLAM::removeCloseFeatures(const std::vector<MapFeature> &existingFeatures,
+		Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures) {
+
+	for (auto &existingFeature : existingFeatures) {
+
+		Eigen::Vector3f tmp(existingFeature.position.x(),
+				existingFeature.position.y(),
+				existingFeature.position.z());
+		float norm = (tmp - feature3D).norm();
+		if (norm < minEuclideanDistanceOfFeatures) {
+			return false;
+		}
+
+		cv::Point2f point(existingFeature.u, existingFeature.v);
+		float imageNorm = cv::norm(point - feature2D);
+		if (imageNorm < minImageDistanceOfFeatures) {
+			return false;
+		}
+	}
+	return true;
 }
 
 int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
@@ -61,93 +114,34 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		// We only add features of proper depth
 		if (features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0) {
 
-			// Assuma that the feature is ok
+			// Assume that the feature is ok
 			bool featureOk = true;
 
 			// Lets remove features too close to existing features
-			for (int i = 0; i < mapFeatures.size(); i++) {
-
-				// Euclidean norm
-				Eigen::Vector3f tmp(mapFeatures[i].position.x(),
-						mapFeatures[i].position.y(),
-						mapFeatures[i].position.z());
-				float norm = (tmp - features.feature3D[j]).norm();
-
-				// Euclidean norm test
-				if (norm < minEuclideanDistanceOfFeatures) {
-					featureOk = false;
-					break;
-				}
-
-				// Reprojection norm
-				Eigen::Vector3d projectedMapPoint =
-						map->getDepthSensorModel().inverseModel(
-								mapFeatures[i].position.x(),
-								mapFeatures[i].position.y(),
-								mapFeatures[i].position.z());
-
-				cv::Point2f point(projectedMapPoint[0], projectedMapPoint[1]);
-				float imageNorm = cv::norm(
-						point - features.undistortedFeature2D[j]);
-
-				// Reprojection norm test
-				if (imageNorm < minImageDistanceOfFeatures) {
-					featureOk = false;
-					break;
-				}
-
-			}
+			featureOk = removeCloseFeatures(mapFeatures,
+									features.feature3D[j], features.undistortedFeature2D[j],
+									minEuclideanDistanceOfFeatures,
+									minImageDistanceOfFeatures);
 
 			// Lets remove features too close to features to add :)
-			// TODO: code is repeated -> extract method
 			if (featureOk) {
-				for (int i = 0; i < mapFeaturesToAdd.size(); i++) {
 
-					Eigen::Vector3f tmp(mapFeaturesToAdd[i].position.x(),
-							mapFeaturesToAdd[i].position.y(),
-							mapFeaturesToAdd[i].position.z());
-					float norm = (tmp - features.feature3D[j]).norm();
-
-					if (norm < minEuclideanDistanceOfFeatures) {
-						featureOk = false;
-						break;
-					}
-
-					cv::Point2f point(mapFeaturesToAdd[i].u,
-							mapFeaturesToAdd[i].v);
-					float imageNorm = cv::norm(
-							point - features.undistortedFeature2D[j]);
-
-					// 5 pixels is a minimum distance
-					if (imageNorm < minImageDistanceOfFeatures) {
-						featureOk = false;
-						break;
-					}
-				}
+				featureOk = removeCloseFeatures(mapFeaturesToAdd,
+						features.feature3D[j], features.undistortedFeature2D[j],
+						minEuclideanDistanceOfFeatures,
+						minImageDistanceOfFeatures);
 			}
 
 			if (featureOk) {
-//				std::cout << "Adding feature of (u,v) = ("
-//						<< features.undistortedFeature2D[j].x << ", "
-//						<< features.undistortedFeature2D[j].y << ")"
-//						<< std::endl;
-////
-//				std::cout << "VALUE: " << features.descriptors.empty() << " j="
-//						<< j << " " <<features.descriptors.rows << " " << features.descriptors.cols << 	std::endl;
-
 				// Create an extended descriptor
 				cv::Mat descMat;
 				if (!features.descriptors.empty()) {
 					descMat = features.descriptors.row(j).clone();
 				}
 
-//				std::cout<<"!"<<std::endl;
-
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
 						features.undistortedFeature2D[j].y, descMat); // TODO: change between descriptor based and descriptor free versions -
-
-//				std::cout<<"!!"<<std::endl;
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
@@ -155,8 +149,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				// Convert translation
 				Eigen::Translation<double, 3> featurePosition(
 						features.feature3D[j].cast<double>());
-
-//				std::cout<<"!!!"<<std::endl;
 
 				// Add to set added later to map
 				RGBDFeature f(featurePosition,
@@ -166,7 +158,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 				addedCounter++;
 
-//				std::cout<<"!!!!"<<std::endl;
 			}
 		}
 	}
@@ -408,7 +399,7 @@ void PUTSLAM::initialization() {
 
 	// thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
-		map->startLoopClosureThread(1, loopClosureMatcher);
+		map->startLoopClosureThread(0, loopClosureMatcher);
 
 	// Creating octomap
 	if (octomap > 0)
@@ -656,7 +647,13 @@ void PUTSLAM::startProcessing() {
 	// Main loop
 	while (true) {
 
-		bool middleOfSequence = grabber->grab(); // grab frame
+		// if loop was closed -> wait 10 seconds
+		if (map->getAndResetLoopClosureSuccesful())
+			usleep(10000000);
+
+
+		// Get the frame to processing
+		bool middleOfSequence = grabber->grab();
 		if (!middleOfSequence)
 			break;
 
@@ -697,7 +694,6 @@ void PUTSLAM::startProcessing() {
 
 				// Prediction from map
 				//poseIncrement = getPoseIncrementFromMap(frameCounter);
-
 
 				addPoseToMap(currentSensorFrame, poseIncrement, cameraPoseId);
 
@@ -909,13 +905,7 @@ void PUTSLAM::saveStatistics() {
 		map->finishLoopClosureThr();
 
 
-	// Save times
-	std::cout << "Saving times" << std::endl;
-	timeMeasurement.saveToFile();
 
-	// Save statistics
-	std::cout << "Saving logs to file" << std::endl;
-	saveLogs();
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
@@ -935,6 +925,14 @@ void PUTSLAM::saveStatistics() {
 	//    }
 	if (optimizationThreadVersion != OPTTHREAD_OFF)
 		map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+
+	// Save times
+	std::cout << "Saving times" << std::endl;
+	timeMeasurement.saveToFile();
+
+	// Save statistics
+	std::cout << "Saving logs to file" << std::endl;
+	saveLogs();
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
@@ -1137,7 +1135,7 @@ void PUTSLAM::saveLogs() {
 	statisticsLogStream.close();
 
 	vector<pair<int,int>> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
-	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.txt");
+	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.log");
 	for ( auto &p : lcAnalyzedPairsLog) {
 		lcAnalyzedPairsStream << p.first << " " << p.second << std::endl;
 	}

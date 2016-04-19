@@ -19,15 +19,17 @@
 		- icl_office_room_traj2_loop_noise.xml
 		- icl_office_room_traj3_loop.xml
 		PUT Kin1vs2 dataset:
-		- kin1vs2_dataset2_kinect1.xml
-		- kin1vs2_dataset2_kinect2.xml
+		- putkk_dataset1_kinect1.xml
+		- putkk_dataset1_kinect2.xml
 		- ...
-		- kin1vs2_dataset9_kinect1.xml
-		- kin1vs2_dataset9_kinect2.xml
+		- putkk_dataset8_kinect1.xml
+		- putkk_dataset8_kinect2.xml
 		Messor datasets;
 		- messor_3.xml
+		MIT:
+		- mit_stata_12-04-06-11-15-29.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/icl_office_room_traj2_loop.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/putkk_dataset1_kinect1.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information
@@ -37,6 +39,6 @@
 	playEveryNthFrame 	-> only every Nth frame is used in motion estimation
   	realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
  	maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
-<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="1000"/>
+<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="4000"/>
 
 <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"/>

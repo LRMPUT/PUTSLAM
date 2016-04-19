@@ -31,7 +31,15 @@
 		minimalNumberOfMatches : minimal number of matches to even start RANSAC procedure (sensible values from 15 and up)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.04" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.1" minimalNumberOfMatches="15" usedPairs="3"/>
+    <RANSAC 	verbose="0" 
+		errorVersionVO="0" 
+		errorVersionMap="0" 
+		inlierThresholdEuclidean="0.04" 
+		inlierThresholdReprojection="2.0" 
+		inlierThresholdMahalanobis="0.0002" 
+		minimalInlierRatioThreshold="0.2" 
+		minimalNumberOfMatches="15" 
+		usedPairs="3"/>
     <!-- Matching settings
     	detector : 	 FAST, ORB, SURF, SIFT
     	descriptor :	 ORB, SURF, SIFT
@@ -58,17 +66,17 @@
 	
 
     -->
-    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="4" gridCols="4" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" 
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="1" gridCols="1" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" 
 
-minimalTrackedFeatures="100" 
-maximalTrackedFeatures="500"
-minimalReprojDistanceNewTrackingFeatures="4" 
-minimalEuclidDistanceNewTrackingFeatures="0.02"
-DBScanEps="6"
-	matchingXYZSphereRadius = "0.15"
-	matchingXYZacceptRatioOfBestMatch = "0.85"
+	minimalTrackedFeatures="150" 
+	maximalTrackedFeatures="500"
+	minimalReprojDistanceNewTrackingFeatures="3" 
+	minimalEuclidDistanceNewTrackingFeatures="0.03"
+	DBScanEps="4"
+	matchingXYZSphereRadius = "0.05"
+	matchingXYZacceptRatioOfBestMatch = "0.55"
 	trackingErrorType = "0"
-	trackingErrorThreshold = "5.0"
+	trackingErrorThreshold = "25.0"
 	trackingMinEigThreshold = "0.00"
 
 	removeTooCloseFeatures = "0"
