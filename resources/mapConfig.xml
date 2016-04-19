@@ -18,18 +18,35 @@
   	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
   	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
 	featuresDistribution 			- draw each detected feature in the common coordinate system
+	optimizationErrorType			- euclidean (0) or reprojection (1)
   	-->
-    <parameters verbose="0" useUncertainty="false" weakFeatureThr="-1" uncertaintyModel="2" edges3DPrunningThreshold="-1" fixVertices="false" addPoseToPoseEdges="true" minMeasurementsToAddPoseToFeatureEdge="30" addFeaturesWhenMapSizeLessThan="80" addFeaturesWhenMeasurementSizeLessThan="25" maxOnceFeatureAdd="40" minEuclideanDistanceOfFeatures="0.010555" minImageDistanceOfFeatures="6" addNoFeaturesWhenMapSizeGreaterThan="1000" inlierThresholdEuclidean="0.03"/>
+    <parameters verbose="0" 
+		useUncertainty="false" 
+		weakFeatureThr="-1" 
+		uncertaintyModel="2" 
+		edges3DPrunningThreshold="-1" 
+		fixVertices="false" 
+		addPoseToPoseEdges="true" 
+		minMeasurementsToAddPoseToFeatureEdge="15" 
+		addFeaturesWhenMapSizeLessThan="150" 
+		addFeaturesWhenMeasurementSizeLessThan="100" 
+		maxOnceFeatureAdd="200" 
+		minEuclideanDistanceOfFeatures="0.01" 
+		minImageDistanceOfFeatures="3" 
+		addNoFeaturesWhenMapSizeGreaterThan="500" 
+		inlierThresholdEuclidean="0.03"
+		optimizationErrorType="0"/>
+    <mapCompression compressMap="false" covisibilityKeyframes="0.50"/>
 <!--    Export map to m-file:
     filenameMap - map file
     filenameData - statistics for the map-->
-    <mapOutput exportMap="true" filenameMap="map.m" filenameData="mapData.m"/>
+    <mapOutput exportMap="false" filenameMap="map.m" filenameData="mapData.m"/>
 <!--    Export features exportDistribution
 	  draws features from the map in the 'frameNo' image-->
     <featuresDistribution exportDistribution="false" frameNo="0" filenameFeatDistr="featuresImage.m"/>
 <!--     Map management thread - options:
 	  distThreshold - alert when two diferent features are closer than threshold -->
-    <mapManager distThreshold="0.03"/>
+    <mapManager distThreshold="0.01"/>
 <!--    Map visualization options:
 	  frameNo2updatePointCloud - send point cloud to visualizer every i-th frame
 	  measurementTypeLC - type of measurement added to the graph: 
@@ -43,5 +60,5 @@
       searchPairsTypeLC 0 - local geometric distance
 			1 - FABMAP
     -->  
-    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="5" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.7" measurementTypeLC="0" typeLC="0"/>
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.15" measurementTypeLC="0" typeLC="0"/>
 </MapConfig>

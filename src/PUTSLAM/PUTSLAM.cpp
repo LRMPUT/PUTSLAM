@@ -398,7 +398,7 @@ void PUTSLAM::readingSomeParameters() {
 void PUTSLAM::initialization() {
 	// Optimize during trajectory acquisition
 	if (optimizationThreadVersion == OPTTHREAD_ON)
-		map->startOptimizationThread(1, 0);
+        map->startOptimizationThread(1, 0);
 	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
 		map->startOptimizationThread(1, 0, "Cauchy", 1);
 
@@ -916,7 +916,7 @@ void PUTSLAM::saveStatistics() {
 
 	// We optimize only at the end if that version is chosen
 	if (optimizationThreadVersion == OPTTHREAD_ATEND)
-		map->startOptimizationThread(1, 1);
+        map->startOptimizationThread(1, 1);
 
 	// Wait for optimization thread to finish
 	if (optimizationThreadVersion != OPTTHREAD_OFF)

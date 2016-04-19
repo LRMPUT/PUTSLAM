@@ -9,6 +9,7 @@
 
 #include "map.h"
 #include "../PoseGraph/graph_g2o.h"
+#include "../PoseGraph/weightedGraph.h"
 #include "../include/Utilities/observer.h"
 #include <memory>
 #include <atomic>
@@ -216,6 +217,9 @@ public:
 											"optimizationErrorType",
 											&optimizationErrorType);
 
+            model->FirstChildElement("mapCompression")->QueryBoolAttribute("compressMap", &compressMap);
+            model->FirstChildElement("mapCompression")->QueryDoubleAttribute("covisibilityKeyframes", &covisibilityKeyframes);
+
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
             filenameData = model->FirstChildElement( "mapOutput" )->Attribute("filenameData");
@@ -333,6 +337,12 @@ public:
             /// type of error used in optimization
             int optimizationErrorType;
 
+            /// use map compression
+            bool compressMap;
+
+            /// add keyframe when covisibility smaler than
+            double covisibilityKeyframes;
+
             enum OptimizationErrorType {
             	EUCLIDEAN,
 				REPROJECTION
@@ -345,6 +355,9 @@ private:
 
 	///camera trajectory
     std::vector<VertexSE3> camTrajectory;
+
+    /// last keyframe id
+    int lastKeyframeId;
 
     ///odometry -- transformations beetween camera poses
     std::vector<Mat34> odoMeasurements;
@@ -360,6 +373,9 @@ private:
 
 	///Pose graph
 	Graph * poseGraph;
+
+    /// Covisibility graph
+    WeightedGraph covisibilityGraph;
 
 	/// Depth sensor model
 	DepthSensorModel sensorModel;
