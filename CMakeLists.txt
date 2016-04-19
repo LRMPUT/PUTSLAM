@@ -46,6 +46,8 @@ option(BUILD_PUTSLAM_MAP "Build PUTSLAM Map library" ON)
 mark_as_advanced(BUILD_PUTSLAM_MAP)
 option(BUILD_PUTSLAM_LOOPCLOSURE "Build PUTSLAM loop closure library" ON)
 mark_as_advanced(BUILD_PUTSLAM_LOOPCLOSURE)
+option(BUILD_PUTSLAM_VISUALPLACERECOGNITION "Build PUTSLAM visual place recognition" ON)
+mark_as_advanced(BUILD_PUTSLAM_VISUALPLACERECOGNITION)
 option(BUILD_PUTSLAM_PATCH "Build PUTSLAM Patches" ON)
 mark_as_advanced(BUILD_PUTSLAM_PATCH)
 option(BUILD_PUTSLAM_VISUALIZER "Build PUTSLAM Visualizer" ON)
@@ -414,6 +416,27 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
         INSTALL(TARGETS LoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
+
+
+###############################################################################
+#
+# PUTSLAM visual place recognition
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
+        file(GLOB VISUALPLACERECOGNITION_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/VisualPlaceRecognition/*.cpp"
+        )
+        file(GLOB VISUALPLACERECOGNITION_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/VisualPlaceRecognition/*.h"
+        )
+
+        ADD_LIBRARY(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
+        TARGET_LINK_LIBRARIES(VisualPlaceRecognition RGBD)
+        INSTALL(TARGETS VisualPlaceRecognition RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${VISUALPLACERECOGNITION_HEADERS} DESTINATION include/putslam/VisualPlaceRecognition/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
 
 
 ###############################################################################
