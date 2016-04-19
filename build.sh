@@ -21,6 +21,7 @@ fi;
 if [ ! -e resources/VisualPlaceRecognition/settings.xml ]; then
 	printf "${YELLOW}Unpacking VisualPlaceRecognition.tar.gz ...${NC}\n"
 	cd resources/VisualPlaceRecognition/
+	wget https://dl.dropboxusercontent.com/u/2559505/OPUS/VisualPlaceRecognition.tar.gz
 	tar -xf VisualPlaceRecognition.tar.gz
 	cd ../../
 	printf "${YELLOW}VisualPlaceRecognition.tar.gz unpacked!${NC}\n"
