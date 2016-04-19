@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Local Loop Closure configuration -->
 <LoopClosure>
-    <parameters verbose="0" minFrameDist="5" distThreshold="0.56" rotThreshold="1.7" useImages="true"/>
+    <!--
+	rotThreshold in radians -> 90 deg -> 1.57 rad
+	-->
+    <parameters verbose="0" minFrameDist="600" distThreshold="1.5" rotThreshold="1.57" useImages="true"/>
 </LoopClosure>
