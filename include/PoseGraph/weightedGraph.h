@@ -1,7 +1,7 @@
 /** @file weightedGraph.h
  *
  * Weighted Graph
- *
+ * \author Dominik Belter
  */
 
 #ifndef _WEIGHTEDGRAPH_H_

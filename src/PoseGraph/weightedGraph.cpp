@@ -1,3 +1,9 @@
+/** @file weightedGraph.cpp
+ *
+ * Weighted Graph
+ * \author Dominik Belter
+ */
+
 #include "../include/PoseGraph/weightedGraph.h"
 #include <iostream>
 

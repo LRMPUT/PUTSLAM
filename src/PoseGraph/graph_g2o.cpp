@@ -1,3 +1,9 @@
+/** @file graph_g2o.h
+ *
+ * g2o graph
+ * \author Dominik Belter
+ */
+
 #include "../include/PoseGraph/graph_g2o.h"
 #include "../include/TransformEst/unscented.h"
 #include <stdexcept>
@@ -390,35 +396,41 @@ bool PoseGraphG2O::addEdgeSE3(const EdgeSE3& e){
  */
 bool PoseGraphG2O::addEdge(EdgeSE3& e){
     mtxGraph.lock();
-    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+//    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
+//        std::cout << "Warning: vertex SE3 from " << e.fromVertexId << "  does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Mat34 pose(Mat34::Identity());
+//        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
+//        mtxGraph.lock();
+//    }
+//    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex SE3 to " << e.toVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Mat34 pose(Mat34::Identity());
+//        addVertexPose(putslam::VertexSE3(e.toVertexId, pose));
+//        mtxGraph.lock();
+//    }
+    if (findVertex(e.fromVertexId)!=graph.vertices.end()&&findVertex(e.toVertexId)!=graph.vertices.end()){
+        e.id = graph.edges.size();
+        graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
+        std::stringstream currentLine;
+        Quaternion quat(e.trans.rotation());
+        currentLine << e.trans(0,3) << ' ' << e.trans(1,3) << ' ' << e.trans(2,3)
+                    << ' ' << quat.x() << ' ' << quat.y() << ' ' << quat.z() << ' ' << quat.w()
+                    << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2) << ' ' << e.info(0,3) << ' ' << e.info(0,4) << ' ' << e.info(0,5)
+                    << ' ' << e.info(1,1) << ' ' << e.info(1,2) << ' ' << e.info(1,3) << ' ' << e.info(1,4) << ' ' << e.info(1,5)
+                    << ' ' << e.info(2,2) << ' ' << e.info(2,3) << ' ' << e.info(2,4) << ' ' << e.info(2,5)
+                    << ' ' << e.info(3,3) << ' ' << e.info(3,4) << ' ' << e.info(3,5)
+                    << ' ' << e.info(4,4) << ' ' << e.info(4,5)
+                    << ' ' << e.info(5,5);
+        addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE3);
         mtxGraph.unlock();
-        Mat34 pose(Mat34::Identity());
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
-        mtxGraph.lock();
+        return true;
     }
-    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+    else {
         mtxGraph.unlock();
-        Mat34 pose(Mat34::Identity());
-        addVertexPose(putslam::VertexSE3(e.toVertexId, pose));
-        mtxGraph.lock();
+        return false;
     }
-    e.id = graph.edges.size();
-    graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
-    std::stringstream currentLine;
-    Quaternion quat(e.trans.rotation());
-    currentLine << e.trans(0,3) << ' ' << e.trans(1,3) << ' ' << e.trans(2,3)
-                << ' ' << quat.x() << ' ' << quat.y() << ' ' << quat.z() << ' ' << quat.w()
-                << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2) << ' ' << e.info(0,3) << ' ' << e.info(0,4) << ' ' << e.info(0,5)
-                << ' ' << e.info(1,1) << ' ' << e.info(1,2) << ' ' << e.info(1,3) << ' ' << e.info(1,4) << ' ' << e.info(1,5)
-                << ' ' << e.info(2,2) << ' ' << e.info(2,3) << ' ' << e.info(2,4) << ' ' << e.info(2,5)
-                << ' ' << e.info(3,3) << ' ' << e.info(3,4) << ' ' << e.info(3,5)
-                << ' ' << e.info(4,4) << ' ' << e.info(4,5)
-                << ' ' << e.info(5,5);
-    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE3);
-    mtxGraph.unlock();
-    return true;
 }
 
 /**
@@ -447,30 +459,36 @@ bool PoseGraphG2O::addEdge3DReproj(const Edge3DReproj& e){
  */
 bool PoseGraphG2O::addEdge(Edge3D& e){
     mtxGraph.lock();
-    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+//    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex 3D to " << e.toVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Vec3 pos(0.0, 0.0, 0.0);
+//        addVertexFeature(putslam::Vertex3D(e.toVertexId, pos));
+//        mtxGraph.lock();
+//    }
+//    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex 3D from " << e.fromVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Mat34 pose(Mat34::Identity());
+//        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
+//        mtxGraph.lock();
+//    }
+    if (findVertex(e.toVertexId)!=graph.vertices.end()&&findVertex(e.fromVertexId)!=graph.vertices.end()){
+        e.id = graph.edges.size();
+        graph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
+        std::stringstream currentLine;
+        currentLine <<  0  << ' ' << e.trans.x() << ' ' << e.trans.y() << ' ' << e.trans.z()
+                    << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2)
+                    << ' ' << e.info(1,1) << ' ' << e.info(1,2)
+                    << ' ' << e.info(2,2);
+        addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_3D);
         mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0);
-        addVertexFeature(putslam::Vertex3D(e.toVertexId, pos));
-        mtxGraph.lock();
+        return true;
     }
-    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+    else{
         mtxGraph.unlock();
-        Mat34 pose(Mat34::Identity());
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
-        mtxGraph.lock();
+        return false;
     }
-    e.id = graph.edges.size();
-    graph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
-    std::stringstream currentLine;
-    currentLine <<  0  << ' ' << e.trans.x() << ' ' << e.trans.y() << ' ' << e.trans.z()
-                << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2)
-                << ' ' << e.info(1,1) << ' ' << e.info(1,2)
-                << ' ' << e.info(2,2);
-    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_3D);
-    mtxGraph.unlock();
-    return true;
 }
 
 /**
@@ -479,28 +497,34 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
  */
 bool PoseGraphG2O::addEdge(Edge3DReproj& e){
     mtxGraph.lock();
-    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+//    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex reproj. to " << e.toVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Vec3 pos(0.0, 0.0, 0.0);
+//        addVertexFeature(putslam::Vertex3D(e.toVertexId, pos));
+//        mtxGraph.lock();
+//    }
+//    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex reproj. from " << e.fromVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Mat34 pose(Mat34::Identity());
+//        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
+//        mtxGraph.lock();
+//    }
+    if (findVertex(e.toVertexId)!=graph.vertices.end()&&findVertex(e.fromVertexId)!=graph.vertices.end()){
+        e.id = graph.edges.size();
+        graph.edges.push_back(std::unique_ptr<Edge>(new Edge3DReproj(e)));
+        std::stringstream currentLine;
+        currentLine << e.u << ' ' << e.v << ' ' << e.info(0, 0) << ' '
+                << e.info(0, 1) << ' ' << e.info(1, 1);
+        addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_3D_REPROJ);
         mtxGraph.unlock();
-        Vec3 pos(0.0, 0.0, 0.0);
-        addVertexFeature(putslam::Vertex3D(e.toVertexId, pos));
-        mtxGraph.lock();
+        return true;
     }
-    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+    else {
         mtxGraph.unlock();
-        Mat34 pose(Mat34::Identity());
-        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
-        mtxGraph.lock();
+        return false;
     }
-    e.id = graph.edges.size();
-    graph.edges.push_back(std::unique_ptr<Edge>(new Edge3DReproj(e)));
-    std::stringstream currentLine;
-	currentLine << e.u << ' ' << e.v << ' ' << e.info(0, 0) << ' '
-			<< e.info(0, 1) << ' ' << e.info(1, 1);
-    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_3D_REPROJ);
-    mtxGraph.unlock();
-    return true;
 }
 
 
@@ -511,30 +535,36 @@ bool PoseGraphG2O::addEdge(Edge3DReproj& e){
  */
 bool PoseGraphG2O::addEdge(EdgeSE2& e){
     mtxGraph.lock();
-    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+//    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
+//        std::cout << "Warning: vertex SE2 from " << e.fromVertexId << "  does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+//        addVertexSE2(putslam::VertexSE2(e.fromVertexId, pos, rot));
+//        mtxGraph.lock();
+//    }
+//    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
+//        std::cout << "Warning: vertex SE2 to " << e.toVertexId << " does not exist. adding new vertex...\n";
+//        mtxGraph.unlock();
+//        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+//        addVertexSE2(putslam::VertexSE2(e.toVertexId, pos, rot));
+//        mtxGraph.lock();
+//    }
+    if (findVertex(e.fromVertexId)!=graph.vertices.end()&&findVertex(e.toVertexId)==graph.vertices.end()){
+        e.id = graph.edges.size();
+        graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(e)));
+        std::stringstream currentLine;
+        currentLine << e.trans.x() << ' ' << e.trans.y() << ' ' << e.theta
+                    << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2)
+                    << ' ' << e.info(1,1) << ' ' << e.info(1,2)
+                    << ' ' << e.info(2,2);
+        addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE2);
         mtxGraph.unlock();
-        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
-        addVertexSE2(putslam::VertexSE2(e.fromVertexId, pos, rot));
-        mtxGraph.lock();
+        return true;
     }
-    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
-        std::cout << "Warning: vertex does not exist. adding new vertex...\n";
+    else{
         mtxGraph.unlock();
-        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
-        addVertexSE2(putslam::VertexSE2(e.toVertexId, pos, rot));
-        mtxGraph.lock();
+        return false;
     }
-    e.id = graph.edges.size();
-    graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(e)));
-    std::stringstream currentLine;
-    currentLine << e.trans.x() << ' ' << e.trans.y() << ' ' << e.theta
-                << ' ' << e.info(0,0) << ' ' << e.info(0,1) << ' ' << e.info(0,2)
-                << ' ' << e.info(1,1) << ' ' << e.info(1,2)
-                << ' ' << e.info(2,2);
-    addEdgeG2O(e.id, e.fromVertexId, e.toVertexId, currentLine, Edge::EDGE_SE2);
-    mtxGraph.unlock();
-    return true;
 }
 
 /**
@@ -869,6 +899,7 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
     if (!std::isfinite(optimizer.chi2()))
         return false;
     updateEstimate();
+    updateGraph();//try to update graph
     if (verbose>0) {
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
         std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
@@ -890,46 +921,47 @@ void PoseGraphG2O::updateEstimate(void){
         }
       }
     }
-
     mtxGraph.lock();
     for (std::set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare>::const_iterator it = verticesToCopy.begin(); it != verticesToCopy.end(); ++it){
       g2o::OptimizableGraph::Vertex* v = *it;
       std::vector<double> estimate;
       v->getEstimateData(estimate);
       PoseGraph::VertexSet::iterator itVertex = findVertex(v->id());
-      if (itVertex->get()->type==Vertex::VERTEX3D){
-        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.x() = estimate[0];
-        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.y() = estimate[1];
-        ((Vertex3D*)itVertex->get())->keypoint.depthFeature.z() = estimate[2];
-        /// set of features modified since last optimization
-        std::pair<std::map<int,Vec3>::iterator,bool> ret;
-        mtxOptFeatures.lock();
-        ret =  optimizedFeatures.insert(std::pair<int,Vec3>(((Vertex3D*)itVertex->get())->vertexId, ((Vertex3D*)itVertex->get())->keypoint.depthFeature));
-        if (ret.second==false) {
-            ret.first->second = ((Vertex3D*)itVertex->get())->keypoint.depthFeature;
-        }
-        mtxOptFeatures.unlock();
-      }
-      if (itVertex->get()->type==Vertex::VERTEXSE2){
-        ((VertexSE2*)itVertex->get())->pos.x() = estimate[0];
-        ((VertexSE2*)itVertex->get())->pos.y() = estimate[1];
-        ((VertexSE2*)itVertex->get())->theta = estimate[2];
-      }
-      else if (itVertex->get()->type==Vertex::VERTEXSE3){
-            ((putslam::VertexSE3*)itVertex->get())->pose(0,3) = estimate[0];
-            ((putslam::VertexSE3*)itVertex->get())->pose(1,3) = estimate[1];
-            ((putslam::VertexSE3*)itVertex->get())->pose(2,3) = estimate[2];
-            Quaternion quat(estimate[6],estimate[3],estimate[4],estimate[5]);
-            for (int k=0;k<3;k++)
-                for (int l=0;l<3;l++)
-                    ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);/// set of features modified since last optimization
-            std::pair<std::map<int,Mat34>::iterator,bool> ret;
-            mtxOptPoses.lock();
-            ret =  optimizedPoses.insert(std::pair<int,Mat34>(((VertexSE3*)itVertex->get())->vertexId, ((VertexSE3*)itVertex->get())->pose));
+      if (itVertex!=graph.vertices.end()){
+          if (itVertex->get()->type==Vertex::VERTEX3D){
+            ((Vertex3D*)itVertex->get())->keypoint.depthFeature.x() = estimate[0];
+            ((Vertex3D*)itVertex->get())->keypoint.depthFeature.y() = estimate[1];
+            ((Vertex3D*)itVertex->get())->keypoint.depthFeature.z() = estimate[2];
+            /// set of features modified since last optimization
+            std::pair<std::map<int,Vec3>::iterator,bool> ret;
+            mtxOptFeatures.lock();
+            ret =  optimizedFeatures.insert(std::pair<int,Vec3>(((Vertex3D*)itVertex->get())->vertexId, ((Vertex3D*)itVertex->get())->keypoint.depthFeature));
             if (ret.second==false) {
-                ret.first->second = ((VertexSE3*)itVertex->get())->pose;
+                ret.first->second = ((Vertex3D*)itVertex->get())->keypoint.depthFeature;
             }
-            mtxOptPoses.unlock();
+            mtxOptFeatures.unlock();
+          }
+          if (itVertex->get()->type==Vertex::VERTEXSE2){
+            ((VertexSE2*)itVertex->get())->pos.x() = estimate[0];
+            ((VertexSE2*)itVertex->get())->pos.y() = estimate[1];
+            ((VertexSE2*)itVertex->get())->theta = estimate[2];
+          }
+          else if (itVertex->get()->type==Vertex::VERTEXSE3){
+                ((putslam::VertexSE3*)itVertex->get())->pose(0,3) = estimate[0];
+                ((putslam::VertexSE3*)itVertex->get())->pose(1,3) = estimate[1];
+                ((putslam::VertexSE3*)itVertex->get())->pose(2,3) = estimate[2];
+                Quaternion quat(estimate[6],estimate[3],estimate[4],estimate[5]);
+                for (int k=0;k<3;k++)
+                    for (int l=0;l<3;l++)
+                        ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);/// set of features modified since last optimization
+                std::pair<std::map<int,Mat34>::iterator,bool> ret;
+                mtxOptPoses.lock();
+                ret = optimizedPoses.insert(std::pair<int,Mat34>(((VertexSE3*)itVertex->get())->vertexId, ((VertexSE3*)itVertex->get())->pose));
+                if (ret.second==false) {
+                    ret.first->second = ((VertexSE3*)itVertex->get())->pose;
+                }
+                mtxOptPoses.unlock();
+          }
       }
     }
     mtxGraph.unlock();
@@ -1005,6 +1037,31 @@ bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int
             return false;
         else
             return true;
+    }
+}
+
+/// marginalize measurements (pose-feature)
+bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
+    while(!updateGraph());
+    for (auto vertexId : features2remove){
+        eraseVertex(vertexId);
+        /*PoseGraph::VertexSet::iterator itVert = findVertex(vertexId);
+        mtxGraph.lock();
+        graph.vertices.erase(itVert);
+        mtxGraph.unlock();*/
+        g2o::HyperGraph::Vertex* vert;
+        for (auto it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it) {
+            if (it->second->id()==vertexId){
+                vert = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+                if (!optimizer.removeVertex(vert,false)) {
+                    std::cerr << __PRETTY_FUNCTION__ << ": Failure removing Vertex\n";
+                }
+                else{
+                    std::cout << "remove success\n";
+                }
+                break;
+            }
+        }
     }
 }
 

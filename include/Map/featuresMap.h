@@ -1,7 +1,7 @@
 /** @file featuresMap.h
  *
  * implementation - Elevation Map
- *
+ * \author Dominik Belter
  */
 
 #ifndef FEATURES_MAP_H_INCLUDED
@@ -50,12 +50,10 @@ public:
 
 	/// Add NEW features and a NEW camera pose (initial guess) to the map
 	/// Position of features in relation to camera pose, default: the last sensor pose
-	void addFeatures(const std::vector<RGBDFeature>& features,
-			int poseId = -1);
+    void addFeatures(const std::vector<RGBDFeature>& features, int poseId = -1);
 
 	/// add measurements (features measured from the last camera pose) default: the last sensor pose
-	void addMeasurements(const std::vector<MapFeature>& features,
-            int poseId = -1);
+    void addMeasurements(const std::vector<MapFeature>& features, int poseId = -1);
 
     /// add measurement between two poses
     void addMeasurement(int poseFrom, int poseTo, Mat34 transformation);
@@ -73,8 +71,7 @@ public:
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
     /// get all visible features and reduce results
-    std::vector<MapFeature> getVisibleFeatures(
-            const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold);
+    std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold);
 
     /// removes features which are too far from current camera pose (distant in graph)
     void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0);
@@ -107,8 +104,7 @@ public:
 			std::string graphFilename);
 
     /// Export graph and trajectory
-    void exportOutput(std::string trajectoryFilename,
-            std::string graphFilename);
+    void exportOutput(std::string trajectoryFilename, std::string graphFilename);
 
     /// Wait for map management thread to finish
     void finishManagementThr(void);
@@ -219,6 +215,7 @@ public:
 
             model->FirstChildElement("mapCompression")->QueryBoolAttribute("compressMap", &compressMap);
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("covisibilityKeyframes", &covisibilityKeyframes);
+            model->FirstChildElement("mapCompression")->QueryDoubleAttribute("marginalizationThr", &marginalizationThr);
 
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
@@ -257,6 +254,9 @@ public:
 
             /// 3D edges pruning
             double edges3DPrunningThreshold;
+
+            /// if covisibility smaller than 'marginCovisibThr' then marginalize graph
+            double marginalizationThr;
 
             // fix all optimized vertices after optimization
             bool fixVertices;
@@ -358,6 +358,9 @@ private:
 
     /// last keyframe id
     int lastKeyframeId;
+
+    /// frames (range) for marginalization
+    std::pair<int,int> frames2marginalize;
 
     ///odometry -- transformations beetween camera poses
     std::vector<Mat34> odoMeasurements;
@@ -472,6 +475,9 @@ private:
 
     /// computes std and mean from float vector
     void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
+
+    /// marginalize measurements between frames
+    void marginalizeMeasurements(int frameBegin, int frameEnd);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

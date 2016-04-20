@@ -1,3 +1,9 @@
+/** @file globalGraph.h
+ *
+ * Global Graph
+ * \author Dominik Belter
+ */
+
 #include "../include/PoseGraph/global_graph.h"
 #include <memory>
 #include <stdexcept>
@@ -174,5 +180,10 @@ PoseGraph::EdgeSet GlobalGraph::getEdges(void){
 
 /// find all neighboring vertices for which distance is smaller than threshold
 bool GlobalGraph::findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds){
+
+}
+
+/// marginalize measurements (pose-feature)
+bool GlobalGraph::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
 
 }

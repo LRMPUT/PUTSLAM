@@ -511,7 +511,7 @@ public:
 	typedef std::vector<std::unique_ptr<Edge>> EdgeSet;
 
 	/// Edges of the graph
-	typedef std::vector<std::unique_ptr<Vertex>> VertexSet;
+    typedef std::vector<std::unique_ptr<Vertex>> VertexSet;
 
 	/// Edges
 	EdgeSet edges;
