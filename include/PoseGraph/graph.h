@@ -1,7 +1,7 @@
 /** @file graph.h
  *
  * Pose Graph interface
- *
+ * \author Dominik Belter
  */
 
 #ifndef _GRAPH_H_
@@ -146,6 +146,9 @@ namespace putslam {
             /// find all neighboring vertices for which distance is smaller than threshold
             virtual bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds) = 0;
 
+            /// marginalize measurements (pose-feature)
+            virtual bool marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 
@@ -168,6 +171,20 @@ namespace putslam {
                 }
                 mtxGraph.unlock();
                 return graph.vertices.end();
+            }
+
+            /// Find vertex by id
+            bool eraseVertex(unsigned int id){
+                mtxGraph.lock();
+                for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end(); it++){
+                    if (it->get()->vertexId == id){
+                        graph.vertices.erase(it);
+                        mtxGraph.unlock();
+                        return true;
+                    }
+                }
+                mtxGraph.unlock();
+                return false;
             }
 
             /// Find edge by id
