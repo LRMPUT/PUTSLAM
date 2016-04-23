@@ -220,6 +220,8 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
         /// current inverse of hessian
         Eigen::MatrixXd HessianInv;
+        ///lastMarginalizePoseId
+        int lastMarginalizePoseId;
 
         /// Removes a vertex from the graph. Returns true on success
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
@@ -311,6 +313,9 @@ class PoseGraphG2O : public Graph {
 
         /// Get Hessian
         void getHessian(Eigen::MatrixXd& hessian, const g2o::OptimizableGraph::VertexContainer& vertices);
+
+        /// erase edges related to the SE3 vertex
+        void eraseMeasurements(int poseId);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED
