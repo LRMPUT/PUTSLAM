@@ -63,7 +63,7 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     pc->setKcam(525.0, 525.0, 320.0, 240.0);
 
     optimizer.addParameter(pc);
-
+    lastMarginalizePoseId = 0;
 }
 
 PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
@@ -72,6 +72,7 @@ PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
     camPos.translation() = Eigen::Vector3d (cameraPose(0,3), cameraPose(1,3), cameraPose(2,3));
     cameraOffset->setOffset(camPos);    cameraOffset->setId(0);
     optimizer.addParameter(cameraOffset);
+    lastMarginalizePoseId=0;
 }
 
 /// Destructor
@@ -214,6 +215,7 @@ bool PoseGraphG2O::addVertex(const Vertex3D& v){
     mtxGraph.lock();
     //add vertex
     if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+        //std::cout << "add feature\n";
         graph.vertices.push_back(std::unique_ptr<Vertex>(new Vertex3D(v)));//update putslam structure
         std::stringstream currentLine;
         currentLine << v.keypoint.depthFeature.x() << ' ' << v.keypoint.depthFeature.y() << ' ' << v.keypoint.depthFeature.z();
@@ -247,6 +249,7 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
     mtxGraph.lock();
     //add vertex
     if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+        //std::cout << "add pose\n";
         graph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE3(v)));//update putslam structure
         std::stringstream currentLine;
         Quaternion quat(v.pose.rotation());
@@ -411,6 +414,7 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
 //        mtxGraph.lock();
 //    }
     if (findVertex(e.fromVertexId)!=graph.vertices.end()&&findVertex(e.toVertexId)!=graph.vertices.end()){
+        //std::cout << "add edge se3\n";
         e.id = graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
         std::stringstream currentLine;
@@ -438,10 +442,13 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
  * does nothing and returns false. Otherwise it returns true.
  */
 bool PoseGraphG2O::addEdge3D(const Edge3D& e){
-    mtxBuffGraph.lock();
-    bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
-    mtxBuffGraph.unlock();
-    updateGraph();//try to update graph
+    if (!e.fromVertexId<=lastMarginalizePoseId){
+        mtxBuffGraph.lock();
+        bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
+        mtxBuffGraph.unlock();
+        //std::cout << "add edge update graph\n";
+        updateGraph();//try to update graph
+    }
     return true;
 }
 
@@ -473,7 +480,9 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
 //        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
 //        mtxGraph.lock();
 //    }
+    //std::cout << "try add edge 3d\n";
     if (findVertex(e.toVertexId)!=graph.vertices.end()&&findVertex(e.fromVertexId)!=graph.vertices.end()){
+        //std::cout << "add edge 3d\n";
         e.id = graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
         std::stringstream currentLine;
@@ -597,7 +606,9 @@ bool PoseGraphG2O::updateGraph(void){
         bufferGraph.edges.clear(); bufferGraph.vertices.clear();
         mtxBuffGraph.unlock();
         for (putslam::PoseGraph::VertexSet::iterator it = tmpGraph.vertices.begin(); it!=tmpGraph.vertices.end();it++){
+            //std::cout << "add Vert...\n";
             if ((*it).get()->type==Vertex::VERTEX3D){
+                //std::cout << "add Vertex 3D\n";
                 if (!addVertex(*(Vertex3D*)it->get())){
                     mtxGraph.unlock();
                     std::cout << "could not add vertex 3D id" << (*it).get()->vertexId << "\n";
@@ -613,6 +624,7 @@ bool PoseGraphG2O::updateGraph(void){
                 }
             }
             else if (it->get()->type==Vertex::VERTEXSE2){
+                //std::cout << "add Vertex SE2\n";
                 if (!addVertex(*(putslam::VertexSE2*)it->get())){
                     mtxGraph.unlock();
                     std::cout << "could not add vertex SE2\n";
@@ -621,6 +633,7 @@ bool PoseGraphG2O::updateGraph(void){
             }
         }
         for (putslam::PoseGraph::EdgeSet::iterator it = tmpGraph.edges.begin(); it!=tmpGraph.edges.end();it++){
+            //std::cout << "try add edges\n";
             if (it->get()->type==Edge::EDGE_3D){
                 //std::cout << "add Edge 3D\n";
                 if (!addEdge(*(Edge3D*)it->get())){
@@ -630,7 +643,7 @@ bool PoseGraphG2O::updateGraph(void){
                 }
             }
 			if (it->get()->type == Edge::EDGE_3D_REPROJ) {
-				//std::cout << "add Edge 3D\n";
+                //std::cout << "add Edge 3D reproj\n";
 				if (!addEdge(*(Edge3DReproj*) it->get())) {
 					mtxGraph.unlock();
 					std::cout << "could not add edge 3D Reproj\n";
@@ -656,8 +669,11 @@ bool PoseGraphG2O::updateGraph(void){
         }
         //merge buffer and pose graph
         mtxGraph.unlock();
+        return true;
     }
-    return true;
+    else{
+        return false;
+    }
 }
 
 /// Save graph to file
@@ -904,6 +920,9 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
         std::cout << "finish local graph optimization (t = " << elapsed.count() << "ms)\n";
     }
+//    std::string result1 = "graphTmpOpt" + std::to_string (graph.vertices.size()) + ".g2o";
+//    while(!updateGraph()){}
+//    save2file(result1);
     return true;
 }
 
@@ -951,6 +970,7 @@ void PoseGraphG2O::updateEstimate(void){
                 ((putslam::VertexSE3*)itVertex->get())->pose(1,3) = estimate[1];
                 ((putslam::VertexSE3*)itVertex->get())->pose(2,3) = estimate[2];
                 Quaternion quat(estimate[6],estimate[3],estimate[4],estimate[5]);
+                //((putslam::VertexSE3*)itVertex->get())->pose.matrix().block<3,3>(0,0) = quat.matrix();/// set of features modified since last optimization
                 for (int k=0;k<3;k++)
                     for (int l=0;l<3;l++)
                         ((putslam::VertexSE3*)itVertex->get())->pose(k,l) = quat.matrix()(k,l);/// set of features modified since last optimization
@@ -1042,13 +1062,10 @@ bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int
 
 /// marginalize measurements (pose-feature)
 bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
-    while(!updateGraph());
-    for (auto vertexId : features2remove){
+    while(!updateGraph()){lastMarginalizePoseId=keyframes.back();}
+    lastMarginalizePoseId=keyframes.back();
+    for (const auto vertexId : features2remove){
         eraseVertex(vertexId);
-        /*PoseGraph::VertexSet::iterator itVert = findVertex(vertexId);
-        mtxGraph.lock();
-        graph.vertices.erase(itVert);
-        mtxGraph.unlock();*/
         g2o::HyperGraph::Vertex* vert;
         for (auto it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it) {
             if (it->second->id()==vertexId){
@@ -1057,12 +1074,71 @@ bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set
                     std::cerr << __PRETTY_FUNCTION__ << ": Failure removing Vertex\n";
                 }
                 else{
-                    std::cout << "remove success\n";
+                    //std::cout << "remove feature " << vertexId << "\n";
+                    //std::cout << "remove success\n";
                 }
                 break;
             }
         }
     }
+    bool first=true;
+    Mat34 prevPose;
+    for (int poseId=keyframes[0]; poseId<keyframes.back();poseId++){
+        auto vertexPose = findVertex(poseId);
+        //eraseMeasurements(poseId);// erase edges
+        if (!first){
+            g2o::HyperGraph::Vertex* vert;
+            Mat34 pose = ((putslam::VertexSE3*)vertexPose->get())->pose;
+            for (auto it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it) {
+                if (it->second->id()==poseId){
+                    vert = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+                    if (!optimizer.removeVertex(vert,false)) { // remove vertex and all edges (efficient)
+                        std::cerr << __PRETTY_FUNCTION__ << ": Failure removing Vertex\n";
+                    }
+                    else{
+                        //std::cout << "remove success\n";
+                        //vertex resurection
+                        putslam::VertexSE3 vert2add = *((putslam::VertexSE3*)vertexPose->get());
+                        mtxGraph.lock();
+                        //std::cout << "remove vertex pose id " << vertexPose->get()->vertexId << "\n";
+                        graph.vertices.erase(vertexPose);    //remove our copy
+                        mtxGraph.unlock();
+                        addVertex(vert2add);
+                        // add pose-pose constraints
+                        addEdgeSE3(EdgeSE3(prevPose.inverse()*pose,Mat66::Identity(),poseId-1,poseId));
+                        //std::cout << "add link " << poseId-1 << "->" << poseId << "\n";
+                        prevPose = vert2add.pose;
+                    }
+                    break;
+                }
+            }
+        }
+        else{
+            first = false;
+            prevPose = ((putslam::VertexSE3*)vertexPose->get())->pose;
+        }
+    }
+    // add last edge
+    auto vertexPose = findVertex(keyframes.back());
+    addEdgeSE3(EdgeSE3(prevPose.inverse()*((putslam::VertexSE3*)vertexPose->get())->pose,Mat66::Identity(),keyframes.back()-1,keyframes.back()));
+    //std::cout << "add link " << keyframes.back()-1 << "->" << keyframes.back() << "\n";
+
+    //std::string result = "graphTmp" + std::to_string (keyframes.back()) + ".g2o";
+    while(!updateGraph()){}
+    //save2file(result);
+}
+
+/// erase edges related to the SE3 vertex
+void PoseGraphG2O::eraseMeasurements(int poseId){
+    mtxGraph.lock();
+    for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end();){
+        if (it->get()->fromVertexId == poseId){
+            it = graph.edges.erase(it);
+        }
+        else
+            it++;
+    }
+    mtxGraph.unlock();
 }
 
 /// search for sub-graphs which aren't anchored and anchor them

@@ -216,6 +216,7 @@ public:
             model->FirstChildElement("mapCompression")->QueryBoolAttribute("compressMap", &compressMap);
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("covisibilityKeyframes", &covisibilityKeyframes);
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("marginalizationThr", &marginalizationThr);
+            model->FirstChildElement("mapCompression")->QueryIntAttribute("minFramesNo", &minFramesNo);
 
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
@@ -257,6 +258,9 @@ public:
 
             /// if covisibility smaller than 'marginCovisibThr' then marginalize graph
             double marginalizationThr;
+
+            /// min Frames No for marginalization
+            int minFramesNo;
 
             // fix all optimized vertices after optimization
             bool fixVertices;

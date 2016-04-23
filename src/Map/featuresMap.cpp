@@ -119,29 +119,21 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
             }
         }
 
-
-		poseGraph->addVertexFeature(
-				Vertex3D(featureIdNo,
-						Vec3(featurePos(0, 3), featurePos(1, 3),
-								featurePos(2, 3))));
-
-		if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN)
-		{
-			//std::cout<<"Edge 3D -- Euclidean error" << std::endl;
+        poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0, 3), featurePos(1, 3), featurePos(2, 3))));
+        if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN) {
+            //std::cout<<"Edge 3D -- Euclidean error" << std::endl;
 			Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3D(e);
 
 		    if (config.visualize)
 		            features2visualization.push_back(e);
 		}
-		else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION)
-		{
+        else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION) {
 			//std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
 			Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3DReproj(e);
 		}
-		else
-		{
+        else{
 			std::cout<<"Wrong error chosen" << std::endl;
 		}
 
@@ -285,12 +277,12 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
             features2visualization.push_back(e);
     }
     if (config.compressMap){
-        std::cout << "posesNo : " << camTrajectory.size() << "\n";
+        //std::cout << "posesNo : " << camTrajectory.size() << "\n";
         std::set<int> intersect;
         std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory.back().featuresIds.begin(),camTrajectory.back().featuresIds.end(),
                               std::inserter(intersect,intersect.begin()));
         double covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
-        std::cout << "covisibility: " << covisibility*100.0 << "\n";
+        //std::cout << "covisibility: " << covisibility*100.0 << "\n";
         if (covisibility<config.covisibilityKeyframes){
             int previousKeyframe = lastKeyframeId;
             lastKeyframeId = camTrajectory.size()-1;
@@ -308,8 +300,8 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
                         frames2marginalize.second = frameId;
                     }
                     if (covisibility>0){
-                        std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
-                        std::cout << "covisibility " << covisibility << "\n";
+                        //std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
+                        //std::cout << "covisibility " << covisibility << "\n";
                         covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(lastKeyframeId, frameId)));
                     }
                     else
@@ -839,9 +831,9 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 			std::cout << "end optimization\n";
         int marginalizeToPose = frames2marginalize.second;
         //std::cout << "\n\n\n\n" << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
-        if (frames2marginalize.first!=marginalizeToPose){
+        if (frames2marginalize.first!=marginalizeToPose&&frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)){
             marginalizeMeasurements(frames2marginalize.first, frames2marginalize.second);
-            //std::cout << "\n\n\n\n\n\n\n\nmarginalize " << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
+            //std::cout << "\nmarginalize " << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
             //getchar();
             frames2marginalize.first = marginalizeToPose;
         }
@@ -914,12 +906,16 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     std::set<int> featuresKeyframes;
     std::set<int> featuresAll;
     std::set<int> features2remove;
+    std::set<int> features2removeGraph;
     for (int frameNo=frameBegin;frameNo<frameEnd;frameNo++){
         featuresAll.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
         if (camTrajectory[frameNo].isKeyframe)
             featuresKeyframes.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
     }
     std::set_difference(featuresAll.begin(), featuresAll.end(), featuresKeyframes.begin(), featuresKeyframes.end(), std::inserter(features2remove, features2remove.end()));
+    std::set_difference(featuresAll.begin(), featuresAll.end(), camTrajectory[frameEnd].featuresIds.begin(), camTrajectory[frameEnd].featuresIds.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
+    //std::cout << "all " << featuresAll.size() << "\n";
+    //std::cout << "graph " << features2removeGraph.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
 
     bufferMapFrontend.mtxBuffer.lock();
     bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),features2remove.begin(), features2remove.end());
@@ -933,7 +929,7 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),features2remove.begin(), features2remove.end());
     bufferMapLoopClosure.mtxBuffer.unlock();
     updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
-    poseGraph->marginalize(keyframes, featuresAll);
+    poseGraph->marginalize(keyframes, features2removeGraph);
 }
 
 /// Update map
