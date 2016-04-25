@@ -217,6 +217,7 @@ public:
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("covisibilityKeyframes", &covisibilityKeyframes);
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("marginalizationThr", &marginalizationThr);
             model->FirstChildElement("mapCompression")->QueryIntAttribute("minFramesNo", &minFramesNo);
+            model->FirstChildElement("mapCompression")->QueryIntAttribute("maxFramesNo", &maxFramesNo);
 
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
@@ -261,6 +262,9 @@ public:
 
             /// min Frames No for marginalization
             int minFramesNo;
+
+            /// if frames no bigger than maxFramesNo then marginalize
+            int maxFramesNo;
 
             // fix all optimized vertices after optimization
             bool fixVertices;
@@ -370,10 +374,10 @@ private:
     std::vector<Mat34> odoMeasurements;
 
     /// RGB camera images -- sequence
-    std::deque<cv::Mat> imageSeq;
+    std::map<int,cv::Mat> imageSeq;
 
     /// Depth camera images -- sequence
-    std::deque<cv::Mat> depthSeq;
+    std::map<int,cv::Mat> depthSeq;
 
     /// mutex for camera trajectory
     mutable std::mutex mtxCamTraj;
