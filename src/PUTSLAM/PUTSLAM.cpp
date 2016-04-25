@@ -660,7 +660,7 @@ void PUTSLAM::startProcessing() {
 		if (!middleOfSequence)
 			break;
 
-		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+        SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
 		if (drawImages) {
 			cv::imshow("PUTSLAM RGB frame", currentSensorFrame.rgbImage);

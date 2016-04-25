@@ -1122,7 +1122,6 @@ bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set
     auto vertexPose = findVertex(keyframes.back());
     addEdgeSE3(EdgeSE3(prevPose.inverse()*((putslam::VertexSE3*)vertexPose->get())->pose,Mat66::Identity(),keyframes.back()-1,keyframes.back()));
     //std::cout << "add link " << keyframes.back()-1 << "->" << keyframes.back() << "\n";
-
     //std::string result = "graphTmp" + std::to_string (keyframes.back()) + ".g2o";
     while(!updateGraph()){}
     //save2file(result);
