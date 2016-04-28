@@ -399,27 +399,6 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
 ###############################################################################
 #
-# PUTSLAM LoopClosure library
-#
-###############################################################################
-
-if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
-        file(GLOB LOOPCLOSURE_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/LoopClosure/*.cpp"
-        )
-        file(GLOB LOOPCLOSURE_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/LoopClosure/*.h"
-        )
-
-        ADD_LIBRARY(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
-        TARGET_LINK_LIBRARIES(LoopClosure Utilities Matcher RGBD)
-        INSTALL(TARGETS LoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${LOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
-endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
-
-
-###############################################################################
-#
 # PUTSLAM visual place recognition
 #
 ###############################################################################
@@ -433,10 +412,32 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
         )
 
         ADD_LIBRARY(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
-        TARGET_LINK_LIBRARIES(VisualPlaceRecognition RGBD)
+        TARGET_LINK_LIBRARIES(VisualPlaceRecognition RGBD ${OpenCV_LIBS})
         INSTALL(TARGETS VisualPlaceRecognition RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${VISUALPLACERECOGNITION_HEADERS} DESTINATION include/putslam/VisualPlaceRecognition/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
+
+
+
+###############################################################################
+#
+# PUTSLAM LoopClosure library
+#
+###############################################################################
+
+if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
+        file(GLOB LOOPCLOSURE_SOURCES
+            "${CMAKE_SOURCE_DIR}/src/LoopClosure/*.cpp"
+        )
+        file(GLOB LOOPCLOSURE_HEADERS
+            "${CMAKE_SOURCE_DIR}/include/LoopClosure/*.h"
+        )
+
+        ADD_LIBRARY(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
+        TARGET_LINK_LIBRARIES(LoopClosure Utilities Matcher RGBD VisualPlaceRecognition)
+        INSTALL(TARGETS LoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${LOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
+endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
 
 
 ###############################################################################

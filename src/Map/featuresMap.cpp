@@ -220,8 +220,8 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
 
     // TODO!!!!
     if (continueLoopClosure && trajSize % 20 == 0){
-        //localLC->addPose(cameraPose,image, trajSize);
-    	localLC->addPose(cameraPose,image);
+        localLC->addPose(cameraPose,image, trajSize);
+    	//localLC->addPose(cameraPose,image);
     }
 	return trajSize;
 }
@@ -945,7 +945,7 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
         if (camTrajectory[frameNo].isKeyframe){
             featuresKeyframes.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
             if (continueLoopClosure){
-                localLC->addPose(this->getSensorPose(frameNo),imageSeq.at(frameNo));
+                localLC->addPose(this->getSensorPose(frameNo),imageSeq.at(frameNo), frameNo);
             }
         }
         if (config.keepCameraFrames&&!camTrajectory[frameNo].isKeyframe){

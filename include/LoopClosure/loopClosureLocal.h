@@ -10,6 +10,8 @@
 #include "loopClosure.h"
 #include <iostream>
 
+#include "../VisualPlaceRecognition/visualplacerecognition.h"
+
 namespace putslam {
 /// create a single LC
 LoopClosure* createLoopClosureLocal(void);
@@ -65,6 +67,9 @@ public:
 private:
     ///Configuration of the module
     Config config;
+
+    /// Visual Loop Closure FABMAP
+    std::unique_ptr<VisualPlaceRecognition> vpr;
 
     /// Loop closure thread
     std::unique_ptr<std::thread> loopClosureThr;
