@@ -12,7 +12,7 @@ if [ ! -d 3rdParty/g2o/build ]; then
 	make -j$(nproc)
 	sudo make install
 	cd ../../..
-	printf "${YELLOW}g2o build!${NC}\n"
+	printf "${YELLOW}g2o built!${NC}\n"
 else
 	printf "${YELLOW}g2o already built ...${NC}\n"
 fi;
