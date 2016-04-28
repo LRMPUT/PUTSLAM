@@ -56,8 +56,11 @@ VisualPlaceRecognition::~VisualPlaceRecognition()
 
 }
 
-int32_t VisualPlaceRecognition::findAddPlace(cv::Mat frame, int32_t inputID, bool addFrame)
+std::vector<std::pair<int, double>> VisualPlaceRecognition::findAddPlace(cv::Mat frame, int32_t inputID, bool addFrame)
 {
+	// return vector of found similar places
+	std::vector<std::pair<int, double>> similarPlaces;
+
     cv::Mat kptsImg, bow;
     std::vector<cv::KeyPoint> kpts;
 
@@ -71,7 +74,7 @@ int32_t VisualPlaceRecognition::findAddPlace(cv::Mat frame, int32_t inputID, boo
     if(kpts.size() < minFeatures)
     {
         //std::cout << "insufficient features found" << std::endl;
-        return -1;
+        return similarPlaces;
     }
 
     // extract BOW descriptor
@@ -91,23 +94,20 @@ int32_t VisualPlaceRecognition::findAddPlace(cv::Mat frame, int32_t inputID, boo
     // returned value
     int32_t loopID = -1;
 
+
+
     for(std::vector<of2::IMatch>::iterator it = matches.begin(); it != matches.end(); ++it)
     {
         if(std::distance(it, matches.end()) <= tailFramesToSkip )
             break;
 
-        if( ( bestMatchProb < it->match) && (it->imgIdx > 0 ) )
-        {
-            bestMatchProb = it->match;
-            bestMatchTestIdx = it->imgIdx;
+        if ( it->imgIdx > 0 && it->match > minNewPlaceProb ) {
+
+        	loopID = indexMap.find(it->imgIdx)->second;
+
+        	similarPlaces.push_back(std::make_pair(loopID, it->match));
         }
-    }
 
-
-    if (bestMatchProb > minNewPlaceProb)
-    {
-        // std::cout << "loop found with match probability: " << bestMatchProb << " internal place ID: " << bestMatchTestIdx << std::endl;
-        loopID = indexMap.find(bestMatchTestIdx)->second;
     }
 
     // if requested, add descriptor of current frame, store indexes, increment frame ID
@@ -118,5 +118,5 @@ int32_t VisualPlaceRecognition::findAddPlace(cv::Mat frame, int32_t inputID, boo
         ++nextImageID;
     }
 
-    return loopID;
+    return similarPlaces;
 }

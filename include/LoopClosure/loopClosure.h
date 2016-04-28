@@ -38,9 +38,11 @@ public:
         /// id difference
         int idDifference;
 
+        /// Fabmap probability
+        double probability;
+
         bool operator() (const LCElement& elementA, const LCElement& elementB) const {
-            if (elementA.distance>elementB.distance)
-//        	if (elementA.idDifference<elementB.idDifference)
+        	 if (elementA.probability > elementB.probability)
                 return true;
             else
                 return false;
