@@ -290,6 +290,8 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         mtxCamTraj.unlock();
         //std::cout << "covisibility: " << covisibility*100.0 << "\n";
         if (covisibility<config.covisibilityKeyframes){
+            std::vector<std::pair<int,double>> covisibilityKeyframes;
+            //double maxCovisibility = computeCovisibility(features, covisibilityKeyframes);
             int previousKeyframe = lastKeyframeId;
             lastKeyframeId = camTrajectory.size()-1;
             covisibilityGraph.addVertex(lastKeyframeId);
@@ -306,8 +308,8 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
                         frames2marginalize.second = frameId;
                     }
                     if (covisibility>0){
-                        //std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
-                        //std::cout << "covisibility " << covisibility << "\n";
+                        std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
+                        std::cout << "covisibility " << covisibility << "\n";
                         covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(lastKeyframeId, frameId)));
                     }
                     else
@@ -319,15 +321,37 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         //std::cout << "\n max no frames " << (camTrajectory.size()-frames2marginalize.first) << " -> " << config.maxFramesNo << "\n";
         if ((frames2marginalize.first==frames2marginalize.second)&&((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo)){
             frames2marginalize.second = camTrajectory.size()-int((config.minFramesNo+config.maxFramesNo)/2);
-            std::cout << "DFDF " << frames2marginalize.second << "\n";
-            std::cout << (frames2marginalize.first!=frames2marginalize.second&&(frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)||((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo))) << "\n";
-            std::cout << (frames2marginalize.first!=frames2marginalize.second) << "\n";
-            std::cout << (frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)) << "\n";
-            std::cout << ((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo) << " gggg\n";
         }
     }
     if (config.visualize)
         notify(features2visualization);
+}
+
+/// compute covisibility between current frame and previous keyframes, returns max covisibility
+double FeaturesMap::computeCovisibility(const std::vector<MapFeature>& features, std::vector<std::pair<int,double>>& covisibilityKeyframes) const{
+    std::set<int> posesIds;
+    std::set<int>featuresSet;
+    for (auto feature : features){
+        mtxMapFrontend.lock();
+        posesIds.insert(featuresMapFrontend.at(feature.id).posesIds.begin(), featuresMapFrontend.at(feature.id).posesIds.end());
+        mtxMapFrontend.unlock();
+        featuresSet.insert(feature.id);
+    }
+    covisibilityKeyframes.clear();
+    double maxCovisibility = std::numeric_limits<double>::min();
+    for (auto poseId : posesIds){
+        if (camTrajectory[poseId].isKeyframe){
+            std::set<int> intersect;
+            mtxCamTraj.lock();
+            std::set_intersection(camTrajectory[poseId].featuresIds.begin(),camTrajectory[poseId].featuresIds.end(),featuresSet.begin(),featuresSet.end(),
+                                  std::inserter(intersect,intersect.begin()));
+            mtxCamTraj.unlock();
+            double covisibility = double(intersect.size())/double(camTrajectory[poseId].featuresIds.size());
+            covisibilityKeyframes.push_back(std::make_pair(poseId,covisibility));
+            if (maxCovisibility<covisibility)
+                maxCovisibility = covisibility;
+        }
+    }
 }
 
 /// add measurement between two poses
@@ -768,8 +792,8 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             }
         }
         else{
-        	if (verbose>0)
-        		std::cout << "Loop closure: priority queue is empty\n";
+            if (verbose>0)
+                std::cout << "Loop closure: priority queue is empty\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }
@@ -960,6 +984,7 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     std::set_difference(features2remove.begin(), features2remove.end(), featuresFullOpt.begin(), featuresFullOpt.end(), std::inserter(features2remove, features2remove.end()));
     //std::set_difference(featuresAll.begin(), featuresAll.end(), camTrajectory[frameEnd].featuresIds.begin(), camTrajectory[frameEnd].featuresIds.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
     std::set_difference(featuresAll.begin(), featuresAll.end(), featuresFullOpt.begin(), featuresFullOpt.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
+    std::set_difference(features2removeGraph.begin(), features2removeGraph.end(), featuresKeyframes.begin(), featuresKeyframes.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
     //std::cout << "all " << featuresAll.size() << "\n";
     //std::cout << "graph " << features2removeGraph.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
 
