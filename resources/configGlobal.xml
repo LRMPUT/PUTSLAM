@@ -45,7 +45,11 @@
   <PUTSLAM verbose="2" keepCameraFrames="true" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
 =======
   <PUTSLAM verbose="0" keepCameraFrames="false" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
+<<<<<<< HEAD
 >>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
+=======
+
+>>>>>>> MNowicki
   
 	
 
@@ -59,7 +63,5 @@
   	
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
-	loopClosureThreadVersion :		0 - off
-									1 - on  
   -->
-  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0" loopClosureThreadVersion="0"></ThreadSettings>
+  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>
