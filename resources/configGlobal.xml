@@ -42,6 +42,7 @@
 	octomapOffline  - turns on/off processing the octomap before SLAM based on "reconstruction.res"
   -->
   <PUTSLAM verbose="0" keepCameraFrames="false" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
+
   
 	
 
@@ -55,7 +56,5 @@
   	
   	mapManagmentThreadVersion :		0 - off
 									1 - on  
-	loopClosureThreadVersion :		0 - off
-									1 - on  
   -->
-  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0" loopClosureThreadVersion="0"></ThreadSettings>
+  <ThreadSettings optimizationThreadVersion="2" mapManagmentThreadVersion="0"></ThreadSettings>

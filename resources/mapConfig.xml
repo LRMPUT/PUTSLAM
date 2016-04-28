@@ -20,7 +20,7 @@
 	featuresDistribution 			- draw each detected feature in the common coordinate system
 	optimizationErrorType			- euclidean (0) or reprojection (1)
   	-->
-    <parameters verbose="0" 
+   <parameters verbose="0" 
 		useUncertainty="false" 
 		weakFeatureThr="-1" 
 		uncertaintyModel="2" 
