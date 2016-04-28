@@ -36,6 +36,7 @@
 #include "parameter_stereo_camera.h"
 #include "edge_se3_pointxyz_disparity.h"
 #include "edge_se3_pointxyz_depth.h"
+#include "edge_se3_pointxyz_reprojectionError.h"
 #include "edge_se3_prior.h"
 
 #include "edge_pointxyz.h"
