@@ -396,7 +396,7 @@ void PUTSLAM::initialization() {
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)
 		map->startMapManagerThread(1);
 
-	// thread for geometric loop closure
+    // thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
 		map->startLoopClosureThread(0, loopClosureMatcher);
 
@@ -916,7 +916,7 @@ void PUTSLAM::saveStatistics() {
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)
 		map->finishManagementThr();  // Wait for optimization thread to finish
 
-	// thread for geometric loop closure
+    // thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
 		map->finishLoopClosureThr();
 

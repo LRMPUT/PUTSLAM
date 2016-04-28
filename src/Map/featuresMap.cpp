@@ -568,7 +568,7 @@ int FeaturesMap::getPoseCounter() {
 /// start optimization thread
 void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 		std::string RobustKernelName, float_type kernelDelta) {
-    localLC->startLCsearchingThread();
+    //localLC->startLCsearchingThread();
 	optimizationThr.reset(
 			new std::thread(&FeaturesMap::optimize, this, iterNo, verbose,
 					RobustKernelName, kernelDelta));
@@ -583,6 +583,7 @@ void FeaturesMap::startMapManagerThread(int verbose){
 void FeaturesMap::startLoopClosureThread(int verbose, Matcher* matcher){
     if (!config.keepCameraFrames)
         throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). LC is not available.\nModify config files.\n"));
+    localLC->startLCsearchingThread();
     loopClosureThr.reset(new std::thread(&FeaturesMap::loopClosure, this, verbose, matcher));
 }
 
