@@ -19,13 +19,13 @@ public:
     uint32_t tailFramesToSkip = 0;
     // minimum probability to declare successful loop closure
     // if the probability value for the query frame is below this threshold, it is added as a new, unvisited place
-    double_t minNewPlaceProb = 0.95;
+    double_t minNewPlaceProb = 0.25;
     // constructor/initializer
     VisualPlaceRecognition();
     // destructor
     ~VisualPlaceRecognition();
-    // find most similar place, return ID, add new point (forced or based on criteria)
-    int32_t findAddPlace(cv::Mat frame, int32_t inputID, bool addFrame);
+    // find most similar place, return pairs of Ids and probabilities (if prob is above threshold), add new point (forced or based on criteria)
+    std::vector<std::pair<int, double>> findAddPlace(cv::Mat frame, int32_t inputID, bool addFrame);
 
 private:
 

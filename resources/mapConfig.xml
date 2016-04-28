@@ -40,7 +40,7 @@
   <!--mapCompression:
     covisibilityKeyframes - create next keyframe when covisibility drops below 'covisibilityKeyframes'
     marginalizationThr - if covisibility smaller than 'marginCovisibThr' then marginalize graph-->
-    <mapCompression compressMap="true" covisibilityKeyframes="0.5" marginalizationThr="0.0" minFramesNo="175" maxFramesNo="800"/>
+    <mapCompression compressMap="false" covisibilityKeyframes="0.5" marginalizationThr="0.0" minFramesNo="175" maxFramesNo="800"/>
 
 <!--    Export map to m-file:
     filenameMap - map file

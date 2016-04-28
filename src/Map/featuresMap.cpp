@@ -218,10 +218,9 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
         notify(bufferMapVisualization);
     }
 
-    // TODO!!!!
-    if (continueLoopClosure && trajSize % 20 == 0){
+    // TODO!!!! It shopuld be based on keyframes!
+    if (continueLoopClosure && trajSize % 2 == 0){
         localLC->addPose(cameraPose,image, trajSize);
-    	//localLC->addPose(cameraPose,image);
     }
 	return trajSize;
 }
