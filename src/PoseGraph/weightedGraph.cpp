@@ -38,6 +38,7 @@ bool WeightedGraph::addEdgeToVertex(int vertexId, const std::shared_ptr<Weighted
 bool WeightedGraph::addEdge(const WeightedEdge& e){
     edges.insert(edges.end(),std::shared_ptr<WeightedEdge>(new WeightedEdge(e)));
     std::pair<int,int> verts = e.getVertices();
+
     //std::cout << "vertices " << verts.first << ", " << verts.second << "\n";
     if (!addEdgeToVertex(verts.first,edges.back())) return false;
     if (!addEdgeToVertex(verts.second,edges.back())) return false;

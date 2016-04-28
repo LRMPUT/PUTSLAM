@@ -1,7 +1,15 @@
 /** @file weightedGraph.h
  *
  * Weighted Graph
+<<<<<<< HEAD
+<<<<<<< HEAD
+ *
+=======
  * \author Dominik Belter
+>>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
+=======
+ * \author Dominik Belter
+>>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
  */
 
 #ifndef _WEIGHTEDGRAPH_H_

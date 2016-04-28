@@ -18,7 +18,7 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
+		featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
 	poseGraph = createPoseGraphG2O();
 }
 
@@ -33,8 +33,9 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
     //    localLC = createLoopClosureFABMAP(config.configFilenameLC);
 	// set that map is currently empty
 	emptyMap = true;
-
+	loopClosureSuccess = false;
 }
+
 
 /// Destruction
 FeaturesMap::~FeaturesMap(void) {
@@ -104,7 +105,6 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
                             poseIds, (*it).descriptors, imageCoordinates);
             bufferMapVisualization.mtxBuffer.unlock();
         }
-
 		//add measurement to the graph
         Mat33 info(Mat33::Identity());
         if (config.useUncertainty){
@@ -157,6 +157,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
 /// add new pose of the camera, returns id of the new pose
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image, cv::Mat depthImage) {
     int trajSize = camTrajectory.size();
+
     //add camera pose to the map
     if (config.keepCameraFrames){
         imageSeq.insert(std::make_pair(trajSize,image));
@@ -180,6 +181,7 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
             bufferMapVisualization.poses2add.push_back(camPose);
             bufferMapVisualization.mtxBuffer.unlock();
         }
+
 
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
@@ -215,6 +217,12 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
         }
         notify(bufferMapVisualization);
     }
+
+    // TODO!!!!
+    if (continueLoopClosure && trajSize % 20 == 0){
+        //localLC->addPose(cameraPose,image, trajSize);
+    	localLC->addPose(cameraPose,image);
+    }
 	return trajSize;
 }
 
@@ -242,6 +250,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
 
         //add measurement
 		Mat33 info(Mat33::Identity());
+
 
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
@@ -371,6 +380,7 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 	return featuresSet;
 }
 
+
 /// Get feature position
 Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 	mtxMapFrontend.lock();
@@ -451,6 +461,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
         updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 	return visibleFeatures;
 }
+
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
 void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle){
@@ -606,8 +617,9 @@ void FeaturesMap::finishManagementThr(void){
 
 /// Wait for loop closure thread to finish
 void FeaturesMap::finishLoopClosureThr(void){
-    usleep(config.waitUntilFinishedLC*1000000);
+   // usleep(config.waitUntilFinishedLC*1000000);
     continueLoopClosure = false;
+    localLC->finishLCsearchingThr();
     loopClosureThr->join();
 }
 
@@ -689,8 +701,15 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
                 getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
                 matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
-                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
-                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+
+
+
+                loopClosureMatchingRatiosLog.push_back(matchingRatio);
+                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
+
+               // std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
+              //  std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+
             }
             mtxCamTrajLC.lock();
             if (config.typeLC == 1){ // use map features
@@ -742,11 +761,17 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 mtxCamTrajLC.unlock();
             }
             if (matchingRatio>config.matchingRatioThresholdLC){
-                std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
-                std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
-                std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
-                std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
-                std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+
+            	if (verbose > 0) {
+
+					std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
+					std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
+					std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
+					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+            	}
+                loopClosureSuccess = true;
+
                 if (config.measurementTypeLC==0){//pose-pose
                     Mat34 trans(estimatedTransformation.cast<double>());
                     addMeasurement(candidatePoses.first, candidatePoses.second, trans);
@@ -1348,6 +1373,7 @@ void FeaturesMap::disableRobustKernel(void) {
 	((PoseGraphG2O*) poseGraph)->disableRobustKernel();
 }
 
+
 /// get uncertainty of the pose
 Mat66 FeaturesMap::getPoseUncertainty(unsigned int id) const{
     Mat66 incCov = ((PoseGraphG2O*) poseGraph)->getPoseIncrementCovariance(id);
@@ -1367,6 +1393,23 @@ int FeaturesMap::getNumberOfFeatures() {
 	int val = featuresMapFrontend.size();
 	mtxMapFrontend.unlock();
 	return val;
+}
+
+
+std::vector<double> FeaturesMap::getLoopClosureMatchingRatiosLog() {
+	return loopClosureMatchingRatiosLog;
+}
+
+std::vector<std::pair<int,int>> FeaturesMap::getLoopClosureAnalyzedPairsLog() {
+	return loopClosureAnalyzedPairsLog;
+}
+
+bool FeaturesMap::getAndResetLoopClosureSuccesful() {
+	if ( loopClosureSuccess ) {
+		loopClosureSuccess = false;
+		return true;
+	}
+	return false;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {

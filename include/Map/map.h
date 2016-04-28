@@ -135,6 +135,13 @@ public:
     /// return the size of the map
     virtual int getNumberOfFeatures() = 0;
 
+    virtual bool getAndResetLoopClosureSuccesful() = 0;
+
+
+    /// get loopClosureMatchingRatiosLog
+    virtual std::vector<double> getLoopClosureMatchingRatiosLog() = 0;
+    virtual std::vector<std::pair<int, int>> getLoopClosureAnalyzedPairsLog() = 0;
+
 protected:
 	/// Map type
 	Type type;

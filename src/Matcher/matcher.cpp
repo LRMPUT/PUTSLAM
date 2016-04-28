@@ -525,6 +525,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
     if (matcherParameters.verbose > 0)
 		std::cout << "MatchPose2Pose - we found : " << matches.size() << std::endl;
 
+
 	if (matches.size() <= 0)
 		return -1.0;
 
@@ -643,8 +644,15 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 	//std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
 
-	std::vector<std::pair<int, int>> pairedFeatures; // dummy
-	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+	double inlierRatio = RANSAC::pointInlierRatio(inlierMatches, matches);
+
+//	if ( inlierRatio > )
+//	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
+//								matches);
+
+//	std::vector<std::pair<int, int>> pairedFeatures; // dummy
+//	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
+	return inlierRatio;
 }
 
 
@@ -686,6 +694,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
 			estimatedTransformation, prevDescriptors, prevFeatures3D);
 }
+
 
 
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,

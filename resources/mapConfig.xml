@@ -36,10 +36,12 @@
 		addNoFeaturesWhenMapSizeGreaterThan="500" 
 		inlierThresholdEuclidean="0.03"
 		optimizationErrorType="0"/>
-    <!--mapCompression:
+
+  <!--mapCompression:
     covisibilityKeyframes - create next keyframe when covisibility drops below 'covisibilityKeyframes'
     marginalizationThr - if covisibility smaller than 'marginCovisibThr' then marginalize graph-->
     <mapCompression compressMap="true" covisibilityKeyframes="0.5" marginalizationThr="0.0" minFramesNo="175" maxFramesNo="800"/>
+
 <!--    Export map to m-file:
     filenameMap - map file
     filenameData - statistics for the map-->
@@ -63,5 +65,5 @@
       searchPairsTypeLC 0 - local geometric distance
 			1 - FABMAP
     -->  
-    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.15" measurementTypeLC="0" typeLC="0"/>
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.95" measurementTypeLC="0" typeLC="0"/>
 </MapConfig>
