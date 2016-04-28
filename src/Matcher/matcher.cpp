@@ -632,8 +632,8 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 	std::vector<cv::DMatch> matches = performMatching(wtf[0], wtf[1]), inlierMatches;
 
-	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
-							matches);
+//	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
+//							matches);
 
 	matcherParameters.RANSACParams.errorVersion =
 				matcherParameters.RANSACParams.errorVersionVO;

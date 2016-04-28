@@ -900,15 +900,6 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 // At the end
 
 void PUTSLAM::saveStatistics() {
-	// Wait for management thread to finish
-	if (mapManagmentThreadVersion == MAPTHREAD_ON)
-		map->finishManagementThr();  // Wait for optimization thread to finish
-
-	// thread for geometric loop closure
-	if (loopClosureThreadVersion == LCTHREAD_ON)
-		map->finishLoopClosureThr();
-
-
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
