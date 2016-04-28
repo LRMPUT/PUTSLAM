@@ -60,9 +60,10 @@ public:
 	}
 
     /// add new pose
-    virtual void addPose(const Mat34& cameraPose, cv::Mat& imageRGB) {
+    virtual void addPose(const Mat34& cameraPose, cv::Mat& imageRGB, int frameId) {
         imagesSeq.push_back(imageRGB);
         cameraPoses.push_back(cameraPose);
+        frameIds.push_back(frameId);
     }
 
     /// get candidate poses for LC (false -- no candidates)
@@ -94,6 +95,9 @@ protected:
 
     /// images (random access, not continous storage)
     std::deque<cv::Mat> imagesSeq;
+
+    /// images (random access, not continous storage)
+    std::deque<int> frameIds;
 
     /// loop closure priority queue
     std::priority_queue<LCElement, std::vector<LCElement>, LCElement > priorityQueueLC;
