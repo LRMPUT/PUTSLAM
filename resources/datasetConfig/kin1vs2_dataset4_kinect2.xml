@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- kin1vs2 dataset4 kinect2 -->
+<Model>
+	<focalLength fu="1078.68499" fv="1076.4742562"></focalLength>
+    	<focalAxis Cu="952.6592286" Cv="530.7386644"></focalAxis>
+    	<rgbDistortion k1="0.02712800285" k2="-0.003876435388" p1="-0.0003782667962" p2="-0.002409935964" k3="0.05862808573"></rgbDistortion>
+	<imageSize sizeU="640" sizeV="480"/>
+	
+<!-- Uncertainty models -->
+<!--   Park Model -->
+	<variance sigmaU="1.1046" sigmaV="0.64160"/>
+	<varianceDepth c3="0.567602" c2="0.888951" c1="0.418786" c0="0.964182"/>
+<!-- Normal-based model -->
+	<normalModel scaleUncertaintyNormal="0.8"/>
+<!-- Gradient-based model -->
+	<gradientModel scaleUncertaintyGradient="0.8"/>
+</Model>
+
+<datasetPath base="../../../Datasets/Kinect1vs2" datasetName="dataset4_Kinect2" depthImageScale="1000"/>

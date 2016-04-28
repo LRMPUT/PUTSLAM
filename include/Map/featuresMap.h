@@ -456,6 +456,7 @@ private:
 
     /// loop closure priority queue management
     LoopClosure* localLC;
+<<<<<<< HEAD
 
     /// The log of matchin ratios found in loop closure
     std::vector<double> loopClosureMatchingRatiosLog;
@@ -470,6 +471,8 @@ private:
 
     // Was loop closure successful
     bool getAndResetLoopClosureSuccesful();
+=======
+>>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 
     /// optimization method
     void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);

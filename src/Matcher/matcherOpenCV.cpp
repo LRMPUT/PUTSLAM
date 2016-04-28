@@ -281,4 +281,7 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	// Return result
 	return matches;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0

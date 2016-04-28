@@ -4,5 +4,9 @@
     <!--
 	rotThreshold in radians -> 90 deg -> 1.57 rad
 	-->
+<<<<<<< HEAD
     <parameters verbose="2" minFrameDist="1" distThreshold="1.5" rotThreshold="1.57" useImages="true"/>
+=======
+    <parameters verbose="0" minFrameDist="600" distThreshold="1.5" rotThreshold="1.57" useImages="true"/>
+>>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 </LoopClosure>
