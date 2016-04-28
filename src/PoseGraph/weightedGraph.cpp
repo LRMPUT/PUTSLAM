@@ -38,18 +38,11 @@ bool WeightedGraph::addEdgeToVertex(int vertexId, const std::shared_ptr<Weighted
 bool WeightedGraph::addEdge(const WeightedEdge& e){
     edges.insert(edges.end(),std::shared_ptr<WeightedEdge>(new WeightedEdge(e)));
     std::pair<int,int> verts = e.getVertices();
-<<<<<<< HEAD
 
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
     //std::cout << "vertices " << verts.first << ", " << verts.second << "\n";
     if (!addEdgeToVertex(verts.first,edges.back())) return false;
     if (!addEdgeToVertex(verts.second,edges.back())) return false;
     //std::cout << "covisibility graph size: " << vertices.size() << "\n";
     //std::cout << "edges: " << edges.size() << " \n";
-<<<<<<< HEAD
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 }
 

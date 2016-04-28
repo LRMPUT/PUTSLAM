@@ -24,7 +24,6 @@ PUTSLAM::PUTSLAM() {
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
-<<<<<<< HEAD
 
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it) {
@@ -43,25 +42,10 @@ void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 						featurePos(1, 3), featurePos(2, 3));
 
 		// Saving image position
-=======
-	// Move mapFeatures to local coordinate system
-	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
-			it != mapFeatures.end(); ++it) {
-		Mat34 featurePos((*it).position);
-		featurePos = (cameraPose.inverse()).matrix() * featurePos.matrix();
-		it->position = Vec3(featurePos(0, 3), featurePos(1, 3),
-				featurePos(2, 3));
-		//				 Compute image position
-		Eigen::Vector3d projectedMapPoint =
-				map->getDepthSensorModel().inverseModel(featurePos(0, 3),
-						featurePos(1, 3), featurePos(2, 3));
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 		it->u = projectedMapPoint[0];
 		it->v = projectedMapPoint[1];
 	}
 }
-
-<<<<<<< HEAD
 
 bool PUTSLAM::removeCloseFeatures(std::vector<RGBDFeature> &existingFeatures,
 		Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures) {
@@ -108,8 +92,6 @@ bool PUTSLAM::removeCloseFeatures(const std::vector<MapFeature> &existingFeature
 	return true;
 }
 
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		int addedCounter, int maxOnceFeatureAdd,
 		const std::vector<MapFeature>& mapFeatures,
@@ -131,7 +113,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 		// We only add features of proper depth
 		if (features.feature3D[j][2] > 0.8 && features.feature3D[j][2] < 6.0) {
 
-<<<<<<< HEAD
 			// Assume that the feature is ok
 			bool featureOk = true;
 
@@ -151,102 +132,16 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 			}
 
 			if (featureOk) {
-=======
-			// Assuma that the feature is ok
-			bool featureOk = true;
-
-			// Lets remove features too close to existing features
-			for (int i = 0; i < mapFeatures.size(); i++) {
-
-				// Euclidean norm
-				Eigen::Vector3f tmp(mapFeatures[i].position.x(),
-						mapFeatures[i].position.y(),
-						mapFeatures[i].position.z());
-				float norm = (tmp - features.feature3D[j]).norm();
-
-				// Euclidean norm test
-				if (norm < minEuclideanDistanceOfFeatures) {
-					featureOk = false;
-					break;
-				}
-
-				// Reprojection norm
-				Eigen::Vector3d projectedMapPoint =
-						map->getDepthSensorModel().inverseModel(
-								mapFeatures[i].position.x(),
-								mapFeatures[i].position.y(),
-								mapFeatures[i].position.z());
-
-				cv::Point2f point(projectedMapPoint[0], projectedMapPoint[1]);
-				float imageNorm = cv::norm(
-						point - features.undistortedFeature2D[j]);
-
-				// Reprojection norm test
-				if (imageNorm < minImageDistanceOfFeatures) {
-					featureOk = false;
-					break;
-				}
-
-			}
-
-			// Lets remove features too close to features to add :)
-			// TODO: code is repeated -> extract method
-			if (featureOk) {
-				for (int i = 0; i < mapFeaturesToAdd.size(); i++) {
-
-					Eigen::Vector3f tmp(mapFeaturesToAdd[i].position.x(),
-							mapFeaturesToAdd[i].position.y(),
-							mapFeaturesToAdd[i].position.z());
-					float norm = (tmp - features.feature3D[j]).norm();
-
-					if (norm < minEuclideanDistanceOfFeatures) {
-						featureOk = false;
-						break;
-					}
-
-					cv::Point2f point(mapFeaturesToAdd[i].u,
-							mapFeaturesToAdd[i].v);
-					float imageNorm = cv::norm(
-							point - features.undistortedFeature2D[j]);
-
-					// 5 pixels is a minimum distance
-					if (imageNorm < minImageDistanceOfFeatures) {
-						featureOk = false;
-						break;
-					}
-				}
-			}
-
-			if (featureOk) {
-//				std::cout << "Adding feature of (u,v) = ("
-//						<< features.undistortedFeature2D[j].x << ", "
-//						<< features.undistortedFeature2D[j].y << ")"
-//						<< std::endl;
-////
-//				std::cout << "VALUE: " << features.descriptors.empty() << " j="
-//						<< j << " " <<features.descriptors.rows << " " << features.descriptors.cols << 	std::endl;
-
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 				// Create an extended descriptor
 				cv::Mat descMat;
 				if (!features.descriptors.empty()) {
 					descMat = features.descriptors.row(j).clone();
 				}
 
-<<<<<<< HEAD
-=======
-//				std::cout<<"!"<<std::endl;
-
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
 						features.undistortedFeature2D[j].y, descMat); // TODO: change between descriptor based and descriptor free versions -
 
-<<<<<<< HEAD
-=======
-//				std::cout<<"!!"<<std::endl;
-
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
 
@@ -254,11 +149,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				Eigen::Translation<double, 3> featurePosition(
 						features.feature3D[j].cast<double>());
 
-<<<<<<< HEAD
-=======
-//				std::cout<<"!!!"<<std::endl;
-
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 				// Add to set added later to map
 				RGBDFeature f(featurePosition,
 						features.undistortedFeature2D[j].x,
@@ -267,10 +157,6 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 				addedCounter++;
 
-<<<<<<< HEAD
-=======
-//				std::cout<<"!!!!"<<std::endl;
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 			}
 		}
 	}
@@ -512,12 +398,7 @@ void PUTSLAM::initialization() {
 
 	// thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
-<<<<<<< HEAD
 		map->startLoopClosureThread(0, loopClosureMatcher);
-
-=======
-		map->startLoopClosureThread(1, loopClosureMatcher);
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 
 	// Creating octomap
 	if (octomap > 0)
@@ -606,10 +487,6 @@ void PUTSLAM::loadConfigs() {
 				<< std::endl;
 	}
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	if (grabberType == "Kinect") {
 		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
 	} else if (grabberType == "Xtion") {
@@ -762,11 +639,6 @@ void PUTSLAM::startProcessing() {
 	readingSomeParameters();
 	initialization();
 
-<<<<<<< HEAD
-	std::cout << "XXXX" << std::endl;
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	int frameCounter = 0;
 	auto startMainLoop = std::chrono::system_clock::now();
 	SensorFrame lastSensorFrame;
@@ -774,7 +646,6 @@ void PUTSLAM::startProcessing() {
 	// Main loop
 	while (true) {
 
-<<<<<<< HEAD
 		// if loop was closed -> wait 10 seconds
 		if (map->getAndResetLoopClosureSuccesful())
 			usleep(10000000);
@@ -782,9 +653,6 @@ void PUTSLAM::startProcessing() {
 
 		// Get the frame to processing
 		bool middleOfSequence = grabber->grab();
-=======
-		bool middleOfSequence = grabber->grab(); // grab frame
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 		if (!middleOfSequence)
 			break;
 
@@ -899,23 +767,12 @@ void PUTSLAM::startProcessing() {
 //				std::cout << "Difference between VO and Map : " << distanceDiff
 //						<< " meters" << std::endl;
 
-<<<<<<< HEAD
-
 				tmp.start();
 //				if (addPoseToPoseEdges) {
 //					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
 //					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
 //							cameraPoseIncrement);
 //				}
-=======
-				// Add pose-pose constrain - depends on config file
-				tmp.start();
-				if (addPoseToPoseEdges) {
-					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
-					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-							cameraPoseIncrement);
-				}
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back(measurementList.size());
@@ -932,7 +789,6 @@ void PUTSLAM::startProcessing() {
 					}
 					map->addMeasurements(measurementList);
 				}
-<<<<<<< HEAD
 				// Add pose-pose constrain - depends on config file
 				//if (addPoseToPoseEdges) {
 				else {
@@ -942,8 +798,6 @@ void PUTSLAM::startProcessing() {
 							cameraPoseIncrement);
 				}
 
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 				tmp.stop();
 				timeMeasurement.mapAddMeasurementTimes.push_back(tmp.elapsed());
 
@@ -1009,10 +863,6 @@ void PUTSLAM::startProcessing() {
 
 		mapSize.push_back(map->getNumberOfFeatures());
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 		frameCounter++;
 		std::cout << frameCounter << " " << std::flush;
 
@@ -1047,8 +897,6 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 	}
 }
 
-<<<<<<< HEAD
-
 // At the end
 
 void PUTSLAM::saveStatistics() {
@@ -1061,19 +909,6 @@ void PUTSLAM::saveStatistics() {
 		map->finishLoopClosureThr();
 
 
-
-=======
-// At the end
-
-void PUTSLAM::saveStatistics() {
-	// Save times
-	std::cout << "Saving times" << std::endl;
-	timeMeasurement.saveToFile();
-
-	// Save statistics
-	std::cout << "Saving logs to file" << std::endl;
-	saveLogs();
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
@@ -1102,7 +937,6 @@ void PUTSLAM::saveStatistics() {
 	if (optimizationThreadVersion != OPTTHREAD_OFF)
 		map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
-<<<<<<< HEAD
 	// Save times
 	std::cout << "Saving times" << std::endl;
 	timeMeasurement.saveToFile();
@@ -1111,8 +945,6 @@ void PUTSLAM::saveStatistics() {
 	std::cout << "Saving logs to file" << std::endl;
 	saveLogs();
 
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
 	trajectoryVOMapStream.close();
@@ -1187,11 +1019,6 @@ void PUTSLAM::saveFPS(float_type fps) {
 }
 
 void PUTSLAM::saveLogs() {
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	ofstream statisticsLogStream("statistics.py");
 
 	statisticsLogStream << "import matplotlib.pyplot as plt" << endl;
@@ -1295,7 +1122,6 @@ void PUTSLAM::saveLogs() {
 	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << endl;
 
-<<<<<<< HEAD
 
 	// LC matches
 	vector<double> lcMatchingRatiosLog = map->getLoopClosureMatchingRatiosLog();
@@ -1323,43 +1149,7 @@ void PUTSLAM::saveLogs() {
 		lcAnalyzedPairsStream << p.first << " " << p.second << std::endl;
 	}
 	lcAnalyzedPairsStream.close();
-=======
-	// diff 2D in patches
-//	statisticsLogStream << "error2DPatchesSize = np.array([";
-//	for (int a = 0; a < patchesErrorLog.size(); a++) {
-//		statisticsLogStream << patchesErrorLog[a].first << ", ";
-//	}
-//	statisticsLogStream << "]);" << std::endl;
-//
-//	statisticsLogStream << "fig = plt.figure()" << endl;
-//	statisticsLogStream << "plt.plot(error2DPatchesSize)" << endl;
-//	statisticsLogStream << "fig.suptitle('2D patches diff', fontsize=20)"
-//			<< endl;
-//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-//			<< endl;
-//	statisticsLogStream << "plt.ylabel('diff [px]', fontsize=16)" << endl;
-//	statisticsLogStream << "plt.legend() " << endl;
-//	statisticsLogStream << "plt.savefig('diff2DPatchesSize.png')" << endl;
-//
-//	// diff 3D in patches
-//	statisticsLogStream << "error3DPatchesSize = np.array([";
-//	for (int a = 0; a < patchesErrorLog.size(); a++) {
-//		statisticsLogStream << patchesErrorLog[a].second << ", ";
-//	}
-//	statisticsLogStream << "]);" << std::endl;
-//
-//	statisticsLogStream << "fig = plt.figure()" << endl;
-//	statisticsLogStream << "plt.plot(error3DPatchesSize)" << endl;
-//	statisticsLogStream << "fig.suptitle('3D patches diff', fontsize=20)"
-//			<< endl;
-//	statisticsLogStream << "plt.xlabel('Patches used counter', fontsize=18)"
-//			<< endl;
-//	statisticsLogStream << "plt.ylabel('diff [m]', fontsize=16)" << endl;
-//	statisticsLogStream << "plt.legend() " << endl;
-//	statisticsLogStream << "plt.savefig('diff3DPatchesSize.png')" << endl;
 
-	statisticsLogStream.close();
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 }
 
 void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {

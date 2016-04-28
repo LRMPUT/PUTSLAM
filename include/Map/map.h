@@ -69,7 +69,6 @@ public:
 
 	/// Get all features
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
-<<<<<<< HEAD
 
 	/// Get feature position
     virtual Vec3 getFeaturePosition(unsigned int id) const = 0;
@@ -112,50 +111,6 @@ public:
     /// set Robust Kernel
     virtual void setRobustKernel(std::string name, float_type delta) = 0;
 
-=======
-
-	/// Get feature position
-    virtual Vec3 getFeaturePosition(unsigned int id) const = 0;
-
-	/// get pose of the sensor (default: last pose)
-    virtual Mat34 getSensorPose(int poseId = -1) const = 0;
-
-	// get number of poses stored in map
-	virtual int getPoseCounter() = 0;
-
-	/// getDepthSensorModel
-	virtual DepthSensorModel getDepthSensorModel() = 0;
-
-	/// start optimization thread
-    virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0) = 0;
-
-    /// start map management thread
-    virtual void startMapManagerThread(int verbose = 0) = 0;
-
-    /// start loop closure thread
-    virtual void startLoopClosureThread(int verbose, Matcher* matcher) = 0;
-
-	/// Wait for optimization thread to finish
-	virtual void finishOptimization(std::string trajectoryFilename,
-			std::string graphFilename) = 0;
-
-    /// Export graph and trajectory
-    virtual void exportOutput(std::string trajectoryFilename,
-            std::string graphFilename) = 0;
-
-    /// Wait for map management thread to finish
-    virtual void finishManagementThr(void) = 0;
-
-    /// Wait for loop closure thread to finish
-    virtual void finishLoopClosureThr(void) = 0;
-
-    /// Save map to file
-    virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;
-
-    /// set Robust Kernel
-    virtual void setRobustKernel(std::string name, float_type delta) = 0;
-
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
     /// disable Robust Kernel
     virtual void disableRobustKernel(void) = 0;
 
@@ -180,7 +135,6 @@ public:
     /// return the size of the map
     virtual int getNumberOfFeatures() = 0;
 
-<<<<<<< HEAD
     virtual bool getAndResetLoopClosureSuccesful() = 0;
 
 
@@ -188,9 +142,6 @@ public:
     virtual std::vector<double> getLoopClosureMatchingRatiosLog() = 0;
     virtual std::vector<std::pair<int, int>> getLoopClosureAnalyzedPairsLog() = 0;
 
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 protected:
 	/// Map type
 	Type type;

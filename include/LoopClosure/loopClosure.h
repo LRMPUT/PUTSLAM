@@ -35,17 +35,12 @@ public:
         /// distance between poses, the smaller the higher priority in the queue
         double distance;
 
-<<<<<<< HEAD
         /// id difference
         int idDifference;
 
         bool operator() (const LCElement& elementA, const LCElement& elementB) const {
             if (elementA.distance>elementB.distance)
 //        	if (elementA.idDifference<elementB.idDifference)
-=======
-        bool operator() (const LCElement& elementA, const LCElement& elementB) const {
-            if (elementA.distance>elementB.distance)
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
                 return true;
             else
                 return false;

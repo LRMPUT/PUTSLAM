@@ -56,11 +56,7 @@ void LoopClosureLocal::updatePriorityQueue(void){
         }
         else{
             Mat34 currentPose = cameraPoses[currentFrame];
-<<<<<<< HEAD
             for (int i=0;i<currentFrame-config.minFrameDist && continueLCsearchingThread;i++){
-=======
-            for (int i=0;i<currentFrame-config.minFrameDist;i++){
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
                 Mat34 prevPose  = cameraPoses[i];
                 // MN: I dont understand this
                 //double dotprod = (double)(1.0-currentPose.matrix().block<3,1>(0,2).adjoint()*prevPose.matrix().block<3,1>(0,2))/2.0;
@@ -88,12 +84,6 @@ void LoopClosureLocal::updatePriorityQueue(void){
                 }
 
 
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 //				std::cout << "LC: pair distance: " << element.distance << " < "
 //						<< config.distThreshold << " && " << angle << " < "
 //						<< config.rotThreshold <<std::endl;

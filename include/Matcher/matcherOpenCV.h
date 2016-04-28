@@ -81,11 +81,6 @@ private:
 	{
 		return p1.response > p2.response;
 	};
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 };
 
 #endif // MATCHERSURF_H_INCLUDED

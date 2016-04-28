@@ -525,10 +525,7 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
     if (matcherParameters.verbose > 0)
 		std::cout << "MatchPose2Pose - we found : " << matches.size() << std::endl;
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	if (matches.size() <= 0)
 		return -1.0;
 
@@ -635,10 +632,6 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 	std::vector<cv::DMatch> matches = performMatching(wtf[0], wtf[1]), inlierMatches;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 	showMatches(sensorFrames[0].rgbImage, features[0], sensorFrames[1].rgbImage, features[1],
 							matches);
 
@@ -650,7 +643,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 	estimatedTransformation = ransac.estimateTransformation(features3D[0], features3D[1], matches, inlierMatches);
 
 	//std::cout<<"WHY MATCHING IS IRRITATING : " << matches.size() << " inliers size: " << inlierMatches.size() << std::endl;
-<<<<<<< HEAD
+
 	double inlierRatio = RANSAC::pointInlierRatio(inlierMatches, matches);
 
 //	if ( inlierRatio > )
@@ -659,11 +652,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 //	std::vector<std::pair<int, int>> pairedFeatures; // dummy
 //	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
-=======
-
-	std::vector<std::pair<int, int>> pairedFeatures; // dummy
-	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
+	return inlierRatio;
 }
 
 
@@ -707,17 +696,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 }
 
 
-<<<<<<< HEAD
-//double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-//		std::vector<MapFeature> &foundInlierMapFeatures,
-//
-//	std::vector<std::pair<int, int>> pairedFeatures; // dummy
-//	return matchPose2Pose(featureSet, pairedFeatures, estimatedTransformation);
-//}
 
-
-=======
->>>>>>> 3d7b5dc4acb7309a57e560af665d2ccc2724bfc0
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation,
