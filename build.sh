@@ -20,6 +20,7 @@ fi;
 # Visual place recognition
 if [ ! -e resources/VisualPlaceRecognition/settings.yml ]; then
 	printf "${YELLOW}Downloading VisualPlaceRecognition.tar.gz ...${NC}\n"
+	mkdir -p resources/VisualPlaceRecognition/
 	cd resources/VisualPlaceRecognition/
 	wget http://lrm.put.poznan.pl/files/OPUS/VisualPlaceRecognition.tar.gz
 	printf "${YELLOW}Unpacking VisualPlaceRecognition.tar.gz ...${NC}\n"
@@ -32,6 +33,7 @@ fi;
 
 # PUTSLAM
 printf "${YELLOW}Building PUTSLAM ...${NC}\n"
+mkdir -p build
 cd build
 cmake ..
 make -j$(nproc)
