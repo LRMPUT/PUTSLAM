@@ -73,16 +73,16 @@ void LoopClosureLocal::updatePriorityQueue(void){
                 //element.distance = dotprod*euclDist;
                 LCElement element;
                 element.distance = (p1-p2).norm();
-                element.idDifference = fabs(i - currentFrame);
 
 
                 double angle = acos(dotprod / (z1.norm() * z2.norm()) );
-//
-//                if (currentFrame > 1220) {
-//                	 element.distance = 0;
-//                	 element.posesIds = std::make_pair(20,1219);
-//                	 priorityQueueLC.push(element);
-//                }
+
+                if (currentFrame > 10) {
+                	 element.distance = 0;
+                	 element.posesIds = std::make_pair(5,10);
+                	 priorityQueueLC.push(element);
+                }
+
 
 
 

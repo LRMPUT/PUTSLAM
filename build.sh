@@ -19,9 +19,10 @@ fi;
 
 # Visual place recognition
 if [ ! -e resources/VisualPlaceRecognition/settings.xml ]; then
-	printf "${YELLOW}Unpacking VisualPlaceRecognition.tar.gz ...${NC}\n"
+	printf "${YELLOW}Downloading VisualPlaceRecognition.tar.gz ...${NC}\n"
 	cd resources/VisualPlaceRecognition/
-	wget https://dl.dropboxusercontent.com/u/2559505/OPUS/VisualPlaceRecognition.tar.gz
+	wget http://lrm.put.poznan.pl/files/OPUS/VisualPlaceRecognition.tar.gz
+	printf "${YELLOW}Unpacking VisualPlaceRecognition.tar.gz ...${NC}\n"
 	tar -xf VisualPlaceRecognition.tar.gz
 	cd ../../
 	printf "${YELLOW}VisualPlaceRecognition.tar.gz unpacked!${NC}\n"

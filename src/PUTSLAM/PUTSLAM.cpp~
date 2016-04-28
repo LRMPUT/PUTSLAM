@@ -309,6 +309,7 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 	simulator.loadTrajectory(trajectoryFilename);
 	std::vector<Mat34> traj = simulator.getTrajectory();
 	int trajIt = 0;
+<<<<<<< HEAD
 
 	// Main loop
 	while (true) {
@@ -320,6 +321,19 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 			break;
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
+=======
+
+	// Main loop
+	while (true) {
+		bool middleOfSequence = grabber->grab(); // grab frame
+		if (!middleOfSequence)
+			break;
+		///for inverse SLAM problem
+		if (trajIt > traj.size() - 1)
+			break;
+		SensorFrame currentSensorFrame = grabber->getSensorFrame();
+
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 		if (drawImages) {
 			cv::imshow("PUTSLAM RGB frame", currentSensorFrame.rgbImage);
 			cv::imshow("PUTSLAM Depth frame", currentSensorFrame.depthImage);
@@ -399,8 +413,11 @@ void PUTSLAM::initialization() {
 
 	// thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
+<<<<<<< HEAD
 		map->startLoopClosureThread(0, loopClosureMatcher);
-
+=======
+		map->startLoopClosureThread(1, loopClosureMatcher);
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 
 	// Creating octomap
 	if (octomap > 0)
@@ -488,7 +505,7 @@ void PUTSLAM::loadConfigs() {
 		std::cout << "Creating grabber with type = " << grabberType
 				<< std::endl;
 	}
-
+<<<<<<< HEAD
 
 	if (grabberType == "Kinect") {
 		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
@@ -642,8 +659,161 @@ void PUTSLAM::startProcessing() {
 	readingSomeParameters();
 	initialization();
 
-	std::cout << "XXXX" << std::endl;
+=======
 
+	if (grabberType == "Kinect") {
+		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
+	} else if (grabberType == "Xtion") {
+		grabber = createGrabberXtion(grabberConfigFile, Grabber::MODE_BUFFER);
+	}
+	/// Still do not take into account the config file
+	else if (grabberType == "File") {
+		grabber = createGrabberFile(grabberConfigFile);
+	} else if (grabberType == "MesaImaging")
+		grabber = createGrabberKinect();
+	else
+		// Default
+		grabber = createGrabberKinect();
+
+	// create objects and print configuration
+	if (verbose > 0) {
+		cout << "Current grabber: " << grabber->getName() << std::endl;
+	}
+	string matcherParameters =
+			config.FirstChildElement("Matcher")->FirstChildElement(
+					"parametersFile")->GetText();
+	string matcherParametersLC =
+			config.FirstChildElement("Matcher")->FirstChildElement(
+					"parametersFileLC")->GetText();
+
+	if (verbose > 0) {
+		std::cout << "Creating matcher" << std::endl;
+	}
+	matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
+	if (verbose > 0) {
+		cout << "Current matcher: " << matcher->getName() << std::endl;
+	}
+	loopClosureMatcher = createloopClosingMatcherOpenCV(matcherParametersLC,
+			grabberConfigFile);
+	if (verbose > 0) {
+		cout << "Loop closure current matcher: " << matcher->getName()
+				<< std::endl;
+	}
+
+	if (matcher->matcherParameters.MapMatchingVersion
+			== Matcher::MatcherParameters::MAPMATCH_PATCHES
+			|| matcher->matcherParameters.MapMatchingVersion
+					== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
+		if (!keepCameraFrames)
+			throw std::runtime_error(
+					std::string(
+							"Camera frames are not used (keepCameraFrames==false). Matching with patches is not available.\nModify config files.\n"));
+	}
+}
+
+Eigen::Matrix4f PUTSLAM::runVO(SensorFrame &currentSensorFrame, std::vector<cv::DMatch> &inlierMatches) {
+	Stopwatch<> voTime;
+	Eigen::Matrix4f transformation;
+	double inlierRatio = matcher->Matcher::runVO(currentSensorFrame,
+			transformation, inlierMatches);
+	voTime.stop();
+	timeMeasurement.voTimes.push_back(voTime.elapsed());
+
+	VORansacInlierRatioLog.push_back(inlierRatio);
+	VOFeaturesSizeLog.push_back(matcher->Matcher::getNumberOfFeatures());
+	return transformation;
+}
+
+void PUTSLAM::addPoseToMap(SensorFrame &currentSensorFrame, Eigen::Matrix4f &poseIncrement, int &cameraPoseId ) {
+	// cameraPose as Eigen::Transform
+	Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
+
+	// Add new position to the map
+	Stopwatch<> tmp;
+	tmp.start();
+	cameraPoseId = map->addNewPose(cameraPoseIncrement,
+			currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
+			currentSensorFrame.depthImage);
+	tmp.stop();
+	timeMeasurement.mapAddNewPoseTimes.push_back(tmp.elapsed());
+}
+
+Mat34 PUTSLAM::getMapPoseEstimate() {
+	Stopwatch<> tmp;
+	tmp.start();
+	Mat34 cameraPose = map->getSensorPose();
+	tmp.stop();
+	timeMeasurement.mapGetSensorPoseTimes.push_back(tmp.elapsed());
+	return cameraPose;
+}
+
+Eigen::Matrix4f PUTSLAM::getPoseIncrementFromMap(int frameCounter) {
+
+	if ( frameCounter > 1 ) {
+		Eigen::Matrix4f first( map->getSensorPose(frameCounter-2).matrix().cast<float>() );
+		Eigen::Matrix4f second( map->getSensorPose(frameCounter-1).matrix().cast<float>() );
+		return first.inverse() * second;
+	}
+	return Eigen::Matrix4f::Identity();
+}
+
+std::vector<MapFeature> PUTSLAM::getAndFilterFeaturesFromMap(SensorFrame &currentSensorFrame, Mat34 cameraPose,std::vector<int> &frameIds,
+std::vector<float_type> &angles ) {
+
+	Stopwatch<> tmp;
+	tmp.start();
+	std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+	tmp.stop();
+	timeMeasurement.mapGetVisibleFeaturesTimes.push_back(tmp.elapsed());
+
+	//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
+
+
+
+	tmp.start();
+	map->findNearestFrame(mapFeatures, frameIds, angles,
+			matcher->matcherParameters.maxAngleBetweenFrames);
+	tmp.stop();
+	timeMeasurement.mapFindNearestFrameTimes.push_back(tmp.elapsed());
+
+	//Remove features that we do not have a good observation angle
+	tmp.start();
+	removeMapFeaturesWithoutGoodObservationAngle(mapFeatures, frameIds, angles);
+	tmp.stop();
+	timeMeasurement.mapRemoveMapFeaturesTimes.push_back(tmp.elapsed());
+
+	// Move mapFeatures to local coordinate system
+	tmp.start();
+	moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
+	tmp.stop();
+	timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(
+			tmp.elapsed());
+
+
+
+	// Now lets check if those features are not behind sth
+//	const double additionalDistance = 0.65f;
+//	RGBD::removeMapFeaturesWithoutDepth(mapFeatures,
+//			currentSensorFrame.depthImage, additionalDistance,
+//			frameIds, angles, depthImageScale);
+
+	showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
+
+	// Check some asserts
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== frameIds.size()));
+//				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
+//								== angles.size()));
+
+	return mapFeatures;
+}
+
+// Processing
+void PUTSLAM::startProcessing() {
+	readingSomeParameters();
+	initialization();
+
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 	int frameCounter = 0;
 	auto startMainLoop = std::chrono::system_clock::now();
 	SensorFrame lastSensorFrame;
@@ -699,7 +869,10 @@ void PUTSLAM::startProcessing() {
 				// Prediction from map
 				//poseIncrement = getPoseIncrementFromMap(frameCounter);
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 				addPoseToMap(currentSensorFrame, poseIncrement, cameraPoseId);
 
 				// Getting the pose
@@ -774,11 +947,14 @@ void PUTSLAM::startProcessing() {
 
 
 				tmp.start();
-//				if (addPoseToPoseEdges) {
-//					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
-//					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-//							cameraPoseIncrement);
-//				}
+<<<<<<< HEAD
+=======
+				if (addPoseToPoseEdges) {
+					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
+					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+							cameraPoseIncrement);
+				}
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back(measurementList.size());
@@ -868,7 +1044,19 @@ void PUTSLAM::startProcessing() {
 				currentSensorFrame.timestamp);
 
 		mapSize.push_back(map->getNumberOfFeatures());
+<<<<<<< HEAD
 
+		frameCounter++;
+		std::cout << frameCounter << " " << std::flush;
+
+		lastSensorFrame = currentSensorFrame;
+	}
+	auto elapsed = std::chrono::duration_cast < std::chrono::milliseconds
+			> (std::chrono::system_clock::now() - startMainLoop);
+	saveFPS(double(frameCounter) / (elapsed.count() / 1000.0));
+
+	saveStatistics();
+=======
 
 		frameCounter++;
 		std::cout << frameCounter << " " << std::flush;
@@ -904,6 +1092,37 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 	}
 }
 
+// At the end
+
+void PUTSLAM::saveStatistics() {
+	// Save times
+	std::cout << "Saving times" << std::endl;
+	timeMeasurement.saveToFile();
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
+
+	std::cout << "Job finished! Good bye :)" << std::endl;
+}
+
+void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
+		std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
+		std::vector<float_type> &angles) {
+	auto mapFeaturesIter = mapFeatures.begin();
+	auto frameIdsIter = frameIds.begin();
+	auto anglesIter = angles.begin();
+
+<<<<<<< HEAD
+	for (; mapFeaturesIter != mapFeatures.end();) {
+		if (*frameIdsIter == -1) {
+			mapFeaturesIter = mapFeatures.erase(mapFeaturesIter);
+			frameIdsIter = frameIds.erase(frameIdsIter);
+			anglesIter = angles.erase(anglesIter);
+		} else {
+			++mapFeaturesIter;
+			++frameIdsIter;
+			++anglesIter;
+		}
+	}
+}
 
 // At the end
 
@@ -920,7 +1139,7 @@ void PUTSLAM::saveStatistics() {
 
 
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
-
+=======
 	// Wait for management thread to finish
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)
 		map->finishManagementThr();  // Wait for optimization thread to finish
@@ -928,6 +1147,7 @@ void PUTSLAM::saveStatistics() {
 	// thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
 		map->finishLoopClosureThr();
+>>>>>>> 0161b335de53b7fe3829755a9e9c849ae6660482
 
 	// We optimize only at the end if that version is chosen
 	if (optimizationThreadVersion == OPTTHREAD_ATEND)

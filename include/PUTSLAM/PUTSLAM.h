@@ -135,6 +135,12 @@ private:
 			SensorFrame &currentSensorFrame, Mat34 cameraPose,
 			std::vector<int> &frameIds, std::vector<float_type> &angles);
 
+
+	bool removeCloseFeatures(std::vector<RGBDFeature> &existingFeatures,
+			Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures);
+	bool removeCloseFeatures(const std::vector<MapFeature> &existingFeatures,
+			Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures);
+
 	// At finish
 	void saveLogs();
 	void saveFPS(float_type fps);

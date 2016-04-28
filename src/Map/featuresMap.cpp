@@ -12,16 +12,14 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",
-				MAP_FEATURES) {
+        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0) {
 	poseGraph = createPoseGraphG2O();
 }
 
 /// Construction
 FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
-        config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(
-				sensorConfig), lastOptimizedPose(0), Map("Features Map",
-				MAP_FEATURES) {
+        config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(sensorConfig), lastOptimizedPose(0),
+        Map("Features Map",	MAP_FEATURES), lastKeyframeId(0) {
 	poseGraph = createPoseGraphG2O();
     if (config.searchPairsTypeLC==0)
         localLC = createLoopClosureLocal(config.configFilenameLC);
@@ -161,8 +159,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 }
 
 /// add new pose of the camera, returns id of the new pose
-int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
-        float_type timestamp, cv::Mat image, cv::Mat depthImage) {
+int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image, cv::Mat depthImage) {
     //add camera pose to the map
     if (config.keepCameraFrames){
         imageSeq.push_back(image);
@@ -190,7 +187,10 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
 
         //add camera pose to the graph
 		poseGraph->addVertexPose(camPose);
-
+        if (config.compressMap){
+            covisibilityGraph.addVertex(0);
+            camTrajectory[0].isKeyframe=true;//set keyframe
+        }
     } else {
 		odoMeasurements.push_back(cameraPoseChange);
         cameraPose = getSensorPose() * cameraPoseChange;
@@ -221,9 +221,9 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange,
     }
     // TODO!!!!
     if (continueLoopClosure && trajSize % 20 == 0){
-        localLC->addPose(cameraPose,image, trajSize);
+        //localLC->addPose(cameraPose,image, trajSize);
+    	localLC->addPose(cameraPose,image);
     }
-
 	return trajSize;
 }
 
@@ -284,6 +284,37 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 		poseGraph->addEdge3D(e);
         if (config.visualize)
             features2visualization.push_back(e);
+    }
+    if (config.compressMap){
+        std::cout << "posesNo : " << camTrajectory.size() << "\n";
+        std::set<int> intersect;
+        std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory.back().featuresIds.begin(),camTrajectory.back().featuresIds.end(),
+                              std::inserter(intersect,intersect.begin()));
+        double covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
+        std::cout << "covisibility: " << covisibility*100.0 << "\n";
+        if (covisibility<config.covisibilityKeyframes){
+            int previousKeyframe = lastKeyframeId;
+            lastKeyframeId = camTrajectory.size()-1;
+            covisibilityGraph.addVertex(lastKeyframeId);
+            camTrajectory.back().isKeyframe=true;
+            covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(previousKeyframe, lastKeyframeId)));
+            //check covisibility between previous keyframes
+            for (int frameId = previousKeyframe-1;frameId>0;frameId--){
+                if (camTrajectory[frameId].isKeyframe){
+                    intersect.clear();
+                    std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory[frameId].featuresIds.begin(),camTrajectory[frameId].featuresIds.end(),
+                                          std::inserter(intersect,intersect.begin()));
+                    covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
+                    if (covisibility>0){
+                        std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
+                        std::cout << "covisibility " << covisibility << "\n";
+                        covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(lastKeyframeId, frameId)));
+                    }
+                    else
+                        break;
+                }
+            }
+        }
     }
     if (config.visualize)
         notify(features2visualization);
@@ -608,7 +639,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
     auto start = std::chrono::system_clock::now();
     while (continueLoopClosure) {
 
-        if (verbose > 0){
+        if (verbose>0){
             std::cout << "Loop closure: start new iteration\n";
         }
         std::pair<int,int> candidatePoses;
@@ -637,8 +668,13 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                 matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
 
 
+
                 loopClosureMatchingRatiosLog.push_back(matchingRatio);
                 loopClosureAnalyzedPairsLog.push_back(candidatePoses);
+
+               // std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
+              //  std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+
             }
             mtxCamTrajLC.lock();
             if (config.typeLC == 1){ // use map features
@@ -692,21 +728,13 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             if (matchingRatio>config.matchingRatioThresholdLC){
 
             	if (verbose > 0) {
-					std::cout << "Loop closure: matched: "
-							<< candidatePoses.first << ", "
-							<< candidatePoses.second << "\n";
-					std::cout << "Loop closure: matchingRatio " << matchingRatio
-							<< "\n";
-					std::cout << "Loop closure: features sets size(): "
-							<< featureSetA.size() << ", " << featureSetB.size()
-							<< "\n";
-					std::cout << "Loop closure: estimated transformation: \n"
-							<< estimatedTransformation << "\n";
-					std::cout << "Loop closure: graph transformation: \n"
-							<< (camTrajectoryLC[candidatePoses.first].pose.inverse()
-									* camTrajectoryLC[candidatePoses.second].pose).matrix()
-							<< "\n";
-				}
+
+					std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
+					std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
+					std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
+					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+            	}
                 loopClosureSuccess = true;
 
                 if (config.measurementTypeLC==0){//pose-pose
@@ -1258,6 +1286,7 @@ int FeaturesMap::getNumberOfFeatures() {
 	mtxMapFrontend.unlock();
 	return val;
 }
+
 
 std::vector<double> FeaturesMap::getLoopClosureMatchingRatiosLog() {
 	return loopClosureMatchingRatiosLog;

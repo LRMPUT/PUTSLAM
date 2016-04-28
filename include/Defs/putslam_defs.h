@@ -480,6 +480,9 @@ public:
 	/// Point cloud
 	PointCloud cloud;
 
+    /// is keyframe
+    bool isKeyframe;
+
     /// Set of keypoints
     //KeyPoint::Seq keypoints;
 
@@ -487,17 +490,17 @@ public:
 
 	/// Default constructor
 	inline VertexSE3(void) :
-			Vertex(VERTEXSE3, 0) {
+            Vertex(VERTEXSE3, 0), isKeyframe(false) {
 	}
 
 	/// Overloaded constructor
     inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose) :
-            Vertex(VERTEXSE3, _vertexId), pose(_pose) {
+            Vertex(VERTEXSE3, _vertexId), pose(_pose), isKeyframe(false) {
 	}
 
 	/// Overloaded constructor
     inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose, float_type timestamp) :
-            Vertex(VERTEXSE3, _vertexId, timestamp), pose(_pose) {
+            Vertex(VERTEXSE3, _vertexId, timestamp), pose(_pose), isKeyframe(false) {
 	}
 };
 
