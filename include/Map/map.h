@@ -1,7 +1,7 @@
 /** @file map.h
  *
  * Environment Map interface
- *
+ * \author Dominik Belter
  */
 
 #ifndef _MAP_H_

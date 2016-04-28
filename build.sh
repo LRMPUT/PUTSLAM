@@ -18,7 +18,7 @@ else
 fi;
 
 # Visual place recognition
-if [ ! -e resources/VisualPlaceRecognition/settings.xml ]; then
+if [ ! -e resources/VisualPlaceRecognition/settings.yml ]; then
 	printf "${YELLOW}Downloading VisualPlaceRecognition.tar.gz ...${NC}\n"
 	cd resources/VisualPlaceRecognition/
 	wget http://lrm.put.poznan.pl/files/OPUS/VisualPlaceRecognition.tar.gz

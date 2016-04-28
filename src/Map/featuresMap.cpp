@@ -1,3 +1,9 @@
+/** @file featuresMap.cpp
+ *
+ * implementation - Elevation Map
+ * \author Dominik Belter
+ */
+
 #include "../include/Map/featuresMap.h"
 #include "../include/PoseGraph/graph.h"
 #include "../include/Grabber/xtionGrabber.h"
@@ -12,14 +18,14 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0) {
+		featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
 	poseGraph = createPoseGraphG2O();
 }
 
 /// Construction
 FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
         config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(sensorConfig), lastOptimizedPose(0),
-        Map("Features Map",	MAP_FEATURES), lastKeyframeId(0) {
+        Map("Features Map",	MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
 	poseGraph = createPoseGraphG2O();
     if (config.searchPairsTypeLC==0)
         localLC = createLoopClosureLocal(config.configFilenameLC);
@@ -40,14 +46,12 @@ const std::string& FeaturesMap::getName() const {
 
 /// Add NEW features to the map
 /// Position of features in relation to camera pose
-void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
-        int poseId) {
+void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int poseId) {
     Mat34 cameraPose = getSensorPose(poseId);
     mtxCamTraj.lock();
     int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
     if (poseId==-1) poseId = camTrajectory.size() - 1;
-
     std::vector<Edge> features2visualization;
 	for (std::vector<RGBDFeature>::const_iterator it = features.begin();
             it != features.end(); it++) { // update the graph
@@ -115,29 +119,21 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
             }
         }
 
-
-		poseGraph->addVertexFeature(
-				Vertex3D(featureIdNo,
-						Vec3(featurePos(0, 3), featurePos(1, 3),
-								featurePos(2, 3))));
-
-		if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN)
-		{
-			//std::cout<<"Edge 3D -- Euclidean error" << std::endl;
+        poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0, 3), featurePos(1, 3), featurePos(2, 3))));
+        if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN) {
+            //std::cout<<"Edge 3D -- Euclidean error" << std::endl;
 			Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3D(e);
 
 		    if (config.visualize)
 		            features2visualization.push_back(e);
 		}
-		else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION)
-		{
+        else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION) {
 			//std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
 			Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
 			poseGraph->addEdge3DReproj(e);
 		}
-		else
-		{
+        else{
 			std::cout<<"Wrong error chosen" << std::endl;
 		}
 
@@ -160,13 +156,14 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features,
 
 /// add new pose of the camera, returns id of the new pose
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image, cv::Mat depthImage) {
+    int trajSize = camTrajectory.size();
+
     //add camera pose to the map
     if (config.keepCameraFrames){
-        imageSeq.push_back(image);
-        depthSeq.push_back(depthImage);
+        imageSeq.insert(std::make_pair(trajSize,image));
+        depthSeq.insert(std::make_pair(trajSize,depthImage));
     }
 
-	int trajSize = camTrajectory.size();
     Mat34 cameraPose(cameraPoseChange);
 	if (trajSize == 0) {
 		odoMeasurements.push_back(Mat34::Identity());
@@ -229,23 +226,19 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
 
 /// get n-th image and depth image from the sequence
 void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
-    if (poseNo<imageSeq.size()){
-        image = imageSeq[poseNo];
-        depthImage = depthSeq[poseNo];
-    }
+    image = imageSeq.at(poseNo);
+    depthImage = depthSeq.at(poseNo);
+    //check if poseNo is keyframe!!!
 }
 
 /// add measurements (features measured from the last camera pose)
-void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
-        int poseId) {
+void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int poseId) {
 	mtxCamTraj.lock();
 	int camTrajSize = camTrajectory.size();
 	mtxCamTraj.unlock();
     unsigned int _poseId = (poseId >= 0) ? poseId : (camTrajSize - 1);
     std::vector<Edge> features2visualization;
-	for (std::vector<MapFeature>::const_iterator it = features.begin();
-			it != features.end(); it++) {
-
+    for (std::vector<MapFeature>::const_iterator it = features.begin(); it != features.end(); it++) {
         mtxCamTraj.lock();
         camTrajectory[_poseId].featuresIds.insert(it->id);
         mtxCamTraj.unlock();
@@ -281,17 +274,19 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
 
         // !!!! TODO !!!!
         Edge3D e((*it).position, info, _poseId, (*it).id);
-		poseGraph->addEdge3D(e);
+        poseGraph->addEdge3D(e);
         if (config.visualize)
             features2visualization.push_back(e);
     }
     if (config.compressMap){
-        std::cout << "posesNo : " << camTrajectory.size() << "\n";
+        //std::cout << "posesNo : " << camTrajectory.size() << "\n";
         std::set<int> intersect;
+        mtxCamTraj.lock();
         std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory.back().featuresIds.begin(),camTrajectory.back().featuresIds.end(),
                               std::inserter(intersect,intersect.begin()));
         double covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
-        std::cout << "covisibility: " << covisibility*100.0 << "\n";
+        mtxCamTraj.unlock();
+        //std::cout << "covisibility: " << covisibility*100.0 << "\n";
         if (covisibility<config.covisibilityKeyframes){
             int previousKeyframe = lastKeyframeId;
             lastKeyframeId = camTrajectory.size()-1;
@@ -305,15 +300,28 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features,
                     std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory[frameId].featuresIds.begin(),camTrajectory[frameId].featuresIds.end(),
                                           std::inserter(intersect,intersect.begin()));
                     covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
+                    if ((covisibility<=config.marginalizationThr)&&(frames2marginalize.second<=frameId)){
+                        frames2marginalize.second = frameId;
+                    }
                     if (covisibility>0){
-                        std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
-                        std::cout << "covisibility " << covisibility << "\n";
+                        //std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
+                        //std::cout << "covisibility " << covisibility << "\n";
                         covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(lastKeyframeId, frameId)));
                     }
                     else
                         break;
                 }
             }
+        }
+        // check max-without-compresion criterion
+        //std::cout << "\n max no frames " << (camTrajectory.size()-frames2marginalize.first) << " -> " << config.maxFramesNo << "\n";
+        if ((frames2marginalize.first==frames2marginalize.second)&&((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo)){
+            frames2marginalize.second = camTrajectory.size()-int((config.minFramesNo+config.maxFramesNo)/2);
+            std::cout << "DFDF " << frames2marginalize.second << "\n";
+            std::cout << (frames2marginalize.first!=frames2marginalize.second&&(frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)||((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo))) << "\n";
+            std::cout << (frames2marginalize.first!=frames2marginalize.second) << "\n";
+            std::cout << (frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)) << "\n";
+            std::cout << ((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo) << " gggg\n";
         }
     }
     if (config.visualize)
@@ -539,16 +547,14 @@ void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 
 /// start map management thread
 void FeaturesMap::startMapManagerThread(int verbose){
-    managementThr.reset(
-            new std::thread(&FeaturesMap::manage, this, verbose));
+    managementThr.reset(new std::thread(&FeaturesMap::manage, this, verbose));
 }
 
 /// start loop closure thread
 void FeaturesMap::startLoopClosureThread(int verbose, Matcher* matcher){
     if (!config.keepCameraFrames)
         throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). LC is not available.\nModify config files.\n"));
-    loopClosureThr.reset(
-            new std::thread(&FeaturesMap::loopClosure, this, verbose, matcher));
+    loopClosureThr.reset(new std::thread(&FeaturesMap::loopClosure, this, verbose, matcher));
 }
 
 /// Wait for optimization thread to finish
@@ -849,6 +855,15 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
             ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
 		if (verbose)
 			std::cout << "end optimization\n";
+        int marginalizeToPose = frames2marginalize.second;
+        //std::cout << "\n\n\n\n" << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
+        if (frames2marginalize.first!=marginalizeToPose&&(frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)||((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo))){
+            marginalizeMeasurements(frames2marginalize.first, frames2marginalize.second);
+            //std::cout << "\nmarginalize " << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
+            //getchar();
+            frames2marginalize.first = marginalizeToPose;
+        }
+        //std::cout << "features in Map: " << featuresMapFrontend.size() << "\n";
 	}
 
 	// Final optimization
@@ -906,32 +921,94 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 	updateCamTrajectory(optimizedPoses);
 }
 
+/// marginalize measurements between frames
+void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
+    std::vector<int> keyframes;
+    for (int frameNo=frameBegin;frameNo<frameEnd;frameNo++){
+        if (camTrajectory[frameNo].isKeyframe)
+            keyframes.push_back(frameNo);
+    }
+    keyframes.push_back(frameEnd);
+    //find features that should be removed from the map
+    std::set<int> featuresKeyframes;
+    std::set<int> featuresAll;
+    std::set<int> features2remove;
+    std::set<int> features2removeGraph;
+    //std::set<int> features2removeGraph2;
+    for (int frameNo=frameBegin;frameNo<frameEnd;frameNo++){
+        featuresAll.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
+        if (camTrajectory[frameNo].isKeyframe){
+            featuresKeyframes.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
+            if (continueLoopClosure){
+                localLC->addPose(this->getSensorPose(frameNo),imageSeq.at(frameNo));
+            }
+        }
+        if (config.keepCameraFrames&&!camTrajectory[frameNo].isKeyframe){
+            imageSeq.erase(frameNo);
+            depthSeq.erase(frameNo);
+        }
+    }
+    std::set<int> featuresFullOpt;
+    for (int frameNo=frameEnd;frameNo<camTrajectory.size();frameNo++){
+        featuresFullOpt.insert(camTrajectory[frameNo].featuresIds.begin(), camTrajectory[frameNo].featuresIds.end());
+    }
+    std::set_difference(featuresAll.begin(), featuresAll.end(), featuresKeyframes.begin(), featuresKeyframes.end(), std::inserter(features2remove, features2remove.end()));
+    std::set_difference(features2remove.begin(), features2remove.end(), featuresFullOpt.begin(), featuresFullOpt.end(), std::inserter(features2remove, features2remove.end()));
+    //std::set_difference(featuresAll.begin(), featuresAll.end(), camTrajectory[frameEnd].featuresIds.begin(), camTrajectory[frameEnd].featuresIds.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
+    std::set_difference(featuresAll.begin(), featuresAll.end(), featuresFullOpt.begin(), featuresFullOpt.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
+    //std::cout << "all " << featuresAll.size() << "\n";
+    //std::cout << "graph " << features2removeGraph.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
+
+    bufferMapFrontend.mtxBuffer.lock();
+    bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),features2remove.begin(), features2remove.end());
+    bufferMapFrontend.mtxBuffer.unlock();
+    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    if (continueManagement){
+        bufferMapManagement.mtxBuffer.lock();
+        bufferMapManagement.removeIds.insert(bufferMapManagement.removeIds.begin(),features2remove.begin(), features2remove.end());
+        bufferMapManagement.mtxBuffer.unlock();
+        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+    }
+//    bufferMapLoopClosure.mtxBuffer.lock();
+//    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),features2remove.begin(), features2remove.end());
+//    bufferMapLoopClosure.mtxBuffer.unlock();
+//    updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    poseGraph->marginalize(keyframes, features2removeGraph);
+}
+
 /// Update map
-void FeaturesMap::updateMap(MapModifier& modifier,
-        std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
+void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
 	if (mutex.try_lock()) {    //try to lock graph
 		modifier.mtxBuffer.lock();
 		if (modifier.addFeatures()) {
-            featuresMap.insert(modifier.features2add.begin(),
-					modifier.features2add.end());
+            featuresMap.insert(modifier.features2add.begin(), modifier.features2add.end());
             modifier.features2add.clear();
 		}
 		if (modifier.updateFeatures()) {
-            for (auto it =
-					modifier.features2update.begin();
-                    it != modifier.features2update.end(); it++) {
-                updateFeature(featuresMap, it->second);
+            for (auto feature : modifier.features2update) {
+                updateFeature(featuresMap, feature.second);
 			}
             modifier.features2update.clear();
 		}
+        if (modifier.updateFeatures()) {
+            for (auto feature : modifier.features2update) {
+                updateFeature(featuresMap, feature.second);
+            }
+            modifier.features2update.clear();
+        }
+        if (modifier.removeFeatures()) {
+            for (auto feature : modifier.removeIds) {
+                featuresMap.erase(feature);
+            }
+            modifier.features2update.clear();
+        }
 		modifier.mtxBuffer.unlock();
 		mutex.unlock();
 	}
 }
 
 /// Update feature
-void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap,
-        MapFeature& newFeature) {
+void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {
     featuresMap[newFeature.id].position = newFeature.position;
 }
 

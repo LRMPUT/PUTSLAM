@@ -1,7 +1,7 @@
 /** @file graph_g20.h
  *
  * implementation - g2o graph optimization
- *
+ * \author Dominik Belter
  */
 
 #ifndef GRAPH_G2O_H_INCLUDED
@@ -186,6 +186,9 @@ class PoseGraphG2O : public Graph {
         /// find all neighboring vertices for which distance is smaller than threshold (not checked)
         bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds);
 
+        /// marginalize measurements (pose-feature)
+        bool marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -217,6 +220,8 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
         /// current inverse of hessian
         Eigen::MatrixXd HessianInv;
+        ///lastMarginalizePoseId
+        int lastMarginalizePoseId;
 
         /// Removes a vertex from the graph. Returns true on success
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
@@ -308,6 +313,9 @@ class PoseGraphG2O : public Graph {
 
         /// Get Hessian
         void getHessian(Eigen::MatrixXd& hessian, const g2o::OptimizableGraph::VertexContainer& vertices);
+
+        /// erase edges related to the SE3 vertex
+        void eraseMeasurements(int poseId);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED

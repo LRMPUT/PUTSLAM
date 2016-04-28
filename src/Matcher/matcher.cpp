@@ -205,9 +205,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Merging features - rejecting feature too close to existing ones
 		// Parameters: (existing features and vector to add new features, new features, minimal image distance between features)
-		std::cout<<"We had " << distortedFeatures2D.size() << std::endl;
+        //std::cout<<"We had " << distortedFeatures2D.size() << std::endl;
 		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted, distortedFeatures2D, featuresSandBoxDistorted);
-		std::cout<<"After merging " << distortedFeatures2D.size() << std::endl;
+        //std::cout<<"After merging " << distortedFeatures2D.size() << std::endl;
 
 		// Add depth to new features
 		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(

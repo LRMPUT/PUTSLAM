@@ -1,7 +1,7 @@
 /** @file global_graph.h
  *
  * implementation - global graph optimization
- *
+ * \author Dominik Belter
  */
 
 #ifndef GLOBAL_GRAPH_H_INCLUDED
@@ -113,6 +113,9 @@ class GlobalGraph : public Graph {
 
         /// find all neighboring vertices for which distance is smaller than threshold
         bool findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds);
+
+        /// marginalize measurements (pose-feature)
+        bool marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove);
 
 	private:
 		PoseGraph graph;	
