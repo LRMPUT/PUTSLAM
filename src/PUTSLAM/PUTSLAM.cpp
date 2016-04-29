@@ -646,6 +646,8 @@ void PUTSLAM::startProcessing() {
 	// Main loop
 	while (true) {
 
+		//getchar();
+
 		// if loop was closed -> wait 10 seconds
 		if (map->getAndResetLoopClosureSuccesful())
 			usleep(10000000);
