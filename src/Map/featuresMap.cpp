@@ -567,7 +567,6 @@ int FeaturesMap::getPoseCounter() {
 /// start optimization thread
 void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
 		std::string RobustKernelName, float_type kernelDelta) {
-
 	optimizationThr.reset(
 			new std::thread(&FeaturesMap::optimize, this, iterNo, verbose,
 					RobustKernelName, kernelDelta));
