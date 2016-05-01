@@ -594,8 +594,6 @@ std::vector<float_type> &angles ) {
 
 	//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
 
-
-
 	tmp.start();
 	map->findNearestFrame(mapFeatures, frameIds, angles,
 			matcher->matcherParameters.maxAngleBetweenFrames);
@@ -614,8 +612,6 @@ std::vector<float_type> &angles ) {
 	tmp.stop();
 	timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(
 			tmp.elapsed());
-
-
 
 	// Now lets check if those features are not behind sth
 //	const double additionalDistance = 0.65f;
@@ -645,8 +641,7 @@ void PUTSLAM::startProcessing() {
 
 	// Main loop
 	while (true) {
-
-		//getchar();
+		std::cout << frameCounter << " " << std::flush;
 
 		// if loop was closed -> wait 10 seconds
 		if (map->getAndResetLoopClosureSuccesful())
@@ -694,8 +689,9 @@ void PUTSLAM::startProcessing() {
 				mapTime.start();
 
 				// Prediction from map
-				//poseIncrement = getPoseIncrementFromMap(frameCounter);
-
+//				std::cout<<"poseIncrementVO: " << poseIncrement << std::endl;
+//				std::cout<<"poseIncrementMap: " << getPoseIncrementFromMap(frameCounter) << std::endl << std::endl;
+//				poseIncrement = getPoseIncrementFromMap(frameCounter);
 
 				addPoseToMap(currentSensorFrame, poseIncrement, cameraPoseId);
 
@@ -770,11 +766,7 @@ void PUTSLAM::startProcessing() {
 //						<< " meters" << std::endl;
 
 				tmp.start();
-//				if (addPoseToPoseEdges) {
-//					Mat34 cameraPoseIncrement = Mat34(poseIncrement.cast<double>());
-//					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-//							cameraPoseIncrement);
-//				}
+
 
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back(measurementList.size());
@@ -791,8 +783,6 @@ void PUTSLAM::startProcessing() {
 					}
 					map->addMeasurements(measurementList);
 				}
-				// Add pose-pose constrain - depends on config file
-				//if (addPoseToPoseEdges) {
 				else {
 					Mat34 cameraPoseIncrement = Mat34(
 							poseIncrement.cast<double>());
@@ -866,7 +856,7 @@ void PUTSLAM::startProcessing() {
 		mapSize.push_back(map->getNumberOfFeatures());
 
 		frameCounter++;
-		std::cout << frameCounter << " " << std::flush;
+
 
 		lastSensorFrame = currentSensorFrame;
 	}

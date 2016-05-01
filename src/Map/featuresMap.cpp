@@ -48,6 +48,7 @@ const std::string& FeaturesMap::getName() const {
 /// Add NEW features to the map
 /// Position of features in relation to camera pose
 void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int poseId) {
+
     Mat34 cameraPose = getSensorPose(poseId);
     mtxCamTraj.lock();
     int camTrajSize = camTrajectory.size();
@@ -122,16 +123,18 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
         poseGraph->addVertexFeature(Vertex3D(featureIdNo, Vec3(featurePos(0, 3), featurePos(1, 3), featurePos(2, 3))));
         if ( config.optimizationErrorType == Config::OptimizationErrorType::EUCLIDEAN) {
             //std::cout<<"Edge 3D -- Euclidean error" << std::endl;
-			Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
-			poseGraph->addEdge3D(e);
+			//Edge3D e((*it).position, info, camTrajSize - 1, featureIdNo);
+        	Edge3D e((*it).position, info, poseId, featureIdNo);
+        	poseGraph->addEdge3D(e);
 
 		    if (config.visualize)
 		            features2visualization.push_back(e);
 		}
         else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION) {
 			//std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
-			Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
-			poseGraph->addEdge3DReproj(e);
+			//Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
+        	Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), poseId, featureIdNo);
+        	poseGraph->addEdge3DReproj(e);
 		}
         else{
 			std::cout<<"Wrong error chosen" << std::endl;

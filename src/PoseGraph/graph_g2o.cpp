@@ -58,11 +58,11 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
     cameraOffset->setOffset(cameraPose);
     optimizer.addParameter(cameraOffset);
 
-
-    g2o::ParameterCamera *pc = new g2o::ParameterCamera();
-    pc->setKcam(525.0, 525.0, 320.0, 240.0);
-
-    optimizer.addParameter(pc);
+//	  TODO: Uncomment if it is working
+//    g2o::ParameterCamera *pc = new g2o::ParameterCamera();
+//    pc->setKcam(525.0, 525.0, 320.0, 240.0);
+//
+//    optimizer.addParameter(pc);
     lastMarginalizePoseId = 0;
 }
 
@@ -185,10 +185,10 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
 
 
     if (graph.vertices.size()==1){
-        //std::cout << "set fixed\n";
-        vert->setFixed(true);
+    	vert->setFixed(true);
     }
     newVertices.insert(vert);
+
 
     if (!optimizer.addVertex(vert)) {
       std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
@@ -442,7 +442,8 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
  * does nothing and returns false. Otherwise it returns true.
  */
 bool PoseGraphG2O::addEdge3D(const Edge3D& e){
-    if (!e.fromVertexId<=lastMarginalizePoseId){
+	// TODO: fast hack with e.fromVertexId == 0 - DB correct this!
+    if (!e.fromVertexId<=lastMarginalizePoseId || e.fromVertexId == 0){
         mtxBuffGraph.lock();
         bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
         mtxBuffGraph.unlock();
@@ -906,8 +907,10 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 		if ( verbose > 0)
 			std::cout<<"Final optimization iteration counter = " << iterationCounter << std::endl;
     }
+
     newOptimizedVertices.insert(newVertices.begin(), newVertices.end());
     newVertices.clear();
+
 
     // Unlock the graph
     mtxGraph.unlock();
@@ -928,13 +931,15 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
 
 /// copy g2o optimization result to to putslam graph
 void PoseGraphG2O::updateEstimate(void){
-    //copy optimized graph to putslam dataset
+
+	//copy optimized graph to putslam dataset
     std::set<g2o::OptimizableGraph::Vertex*, g2o::OptimizableGraph::VertexIDCompare> verticesToCopy;
     for (g2o::HyperGraph::EdgeSet::const_iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
       g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
       if (e->level() == 0) {
         for (std::vector<g2o::HyperGraph::Vertex*>::const_iterator it = e->vertices().begin(); it != e->vertices().end(); ++it) {
             g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(*it);
+
             if (!v->fixed())
                 verticesToCopy.insert(static_cast<g2o::OptimizableGraph::Vertex*>(*it));
         }
@@ -1178,7 +1183,7 @@ void PoseGraphG2O::anchorVertices(void){
         g2o::OptimizableGraph::Vertex* v = optimizer.vertex((*itGraph->begin()));
         g2o::SparseOptimizer::VertexContainer::const_iterator it = optimizer.findActiveVertex(v);
         if (it!=optimizer.activeVertices().end()){
-            (*it)->setFixed(true);
+        	 (*it)->setFixed(true);
         }
     }
 }
@@ -1550,7 +1555,7 @@ PoseGraph::EdgeSet PoseGraphG2O::getEdges(void){
 
 /// Fix all vertices of the current graph
 void PoseGraphG2O::fixOptimizedVertices(void){
-    optimizer.setFixed(newOptimizedVertices, true);
+	optimizer.setFixed(newOptimizedVertices, true);
     newOptimizedVertices.clear();
 }
 
@@ -1559,6 +1564,6 @@ void PoseGraphG2O::releaseFixedVertices(void){
     g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
     for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
         if ((*it)->id()!=0)//except the first one
-            (*it)->setFixed(false);
+        	(*it)->setFixed(false);
     }
 }

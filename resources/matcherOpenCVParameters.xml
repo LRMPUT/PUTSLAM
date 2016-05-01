@@ -70,10 +70,10 @@
 
 	minimalTrackedFeatures="150" 
 	maximalTrackedFeatures="500"
-	minimalReprojDistanceNewTrackingFeatures="3" 
+	minimalReprojDistanceNewTrackingFeatures="4" 
 	minimalEuclidDistanceNewTrackingFeatures="0.03"
 	DBScanEps="4"
-	matchingXYZSphereRadius = "0.05"
+	matchingXYZSphereRadius = "0.15"
 	matchingXYZacceptRatioOfBestMatch = "0.55"
 	trackingErrorType = "0"
 	trackingErrorThreshold = "25.0"
