@@ -63,7 +63,6 @@ PoseGraphG2O::PoseGraphG2O(void) : Graph("Pose Graph g2o") {
 //    pc->setKcam(525.0, 525.0, 320.0, 240.0);
 //
 //    optimizer.addParameter(pc);
-    lastMarginalizePoseId = 0;
 }
 
 PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
@@ -72,7 +71,6 @@ PoseGraphG2O::PoseGraphG2O(Mat34& cameraPose) : PoseGraphG2O() {
     camPos.translation() = Eigen::Vector3d (cameraPose(0,3), cameraPose(1,3), cameraPose(2,3));
     cameraOffset->setOffset(camPos);    cameraOffset->setId(0);
     optimizer.addParameter(cameraOffset);
-    lastMarginalizePoseId=0;
 }
 
 /// Destructor
@@ -443,13 +441,11 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
  */
 bool PoseGraphG2O::addEdge3D(const Edge3D& e){
 	// TODO: fast hack with e.fromVertexId == 0 - DB correct this!
-    if (!e.fromVertexId<=lastMarginalizePoseId || e.fromVertexId == 0){
-        mtxBuffGraph.lock();
-        bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
-        mtxBuffGraph.unlock();
+    mtxBuffGraph.lock();
+    bufferGraph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
+    mtxBuffGraph.unlock();
         //std::cout << "add edge update graph\n";
-        updateGraph();//try to update graph
-    }
+    updateGraph();//try to update graph
     return true;
 }
 
@@ -1067,9 +1063,9 @@ bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int
 
 /// marginalize measurements (pose-feature)
 bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
-    while(!updateGraph()){lastMarginalizePoseId=keyframes.back();}
-    lastMarginalizePoseId=keyframes.back();
-    for (const auto vertexId : features2remove){
+    while(!updateGraph()){}
+    //std::cout << "marginalize\n";
+    for (const auto vertexId : features2remove){//remove features connected to frames only
         eraseVertex(vertexId);
         g2o::HyperGraph::Vertex* vert;
         for (auto it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it) {
@@ -1086,14 +1082,12 @@ bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set
             }
         }
     }
-    bool first=true;
-    Mat34 prevPose;
+    auto keyframeIter = keyframes.begin();
     for (int poseId=keyframes[0]; poseId<keyframes.back();poseId++){
-        auto vertexPose = findVertex(poseId);
-        //eraseMeasurements(poseId);// erase edges
-        if (!first){
+        if (*keyframeIter==poseId)
+            keyframeIter++;
+        else {
             g2o::HyperGraph::Vertex* vert;
-            Mat34 pose = ((putslam::VertexSE3*)vertexPose->get())->pose;
             for (auto it = optimizer.vertices().begin(); it != optimizer.vertices().end(); ++it) {
                 if (it->second->id()==poseId){
                     vert = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
@@ -1101,32 +1095,17 @@ bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set
                         std::cerr << __PRETTY_FUNCTION__ << ": Failure removing Vertex\n";
                     }
                     else{
-                        //std::cout << "remove success\n";
-                        //vertex resurection
-                        putslam::VertexSE3 vert2add = *((putslam::VertexSE3*)vertexPose->get());
+                        auto vertexPose = findVertex(poseId);
                         mtxGraph.lock();
                         //std::cout << "remove vertex pose id " << vertexPose->get()->vertexId << "\n";
                         graph.vertices.erase(vertexPose);    //remove our copy
                         mtxGraph.unlock();
-                        addVertex(vert2add);
-                        // add pose-pose constraints
-                        addEdgeSE3(EdgeSE3(prevPose.inverse()*pose,Mat66::Identity(),poseId-1,poseId));
-                        //std::cout << "add link " << poseId-1 << "->" << poseId << "\n";
-                        prevPose = vert2add.pose;
                     }
                     break;
                 }
             }
         }
-        else{
-            first = false;
-            prevPose = ((putslam::VertexSE3*)vertexPose->get())->pose;
-        }
     }
-    // add last edge
-    auto vertexPose = findVertex(keyframes.back());
-    addEdgeSE3(EdgeSE3(prevPose.inverse()*((putslam::VertexSE3*)vertexPose->get())->pose,Mat66::Identity(),keyframes.back()-1,keyframes.back()));
-    //std::cout << "add link " << keyframes.back()-1 << "->" << keyframes.back() << "\n";
     //std::string result = "graphTmp" + std::to_string (keyframes.back()) + ".g2o";
     while(!updateGraph()){}
     //save2file(result);

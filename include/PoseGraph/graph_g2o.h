@@ -220,8 +220,6 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
         /// current inverse of hessian
         Eigen::MatrixXd HessianInv;
-        ///lastMarginalizePoseId
-        int lastMarginalizePoseId;
 
         /// Removes a vertex from the graph. Returns true on success
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);
