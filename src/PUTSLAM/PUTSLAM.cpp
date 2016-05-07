@@ -588,7 +588,8 @@ std::vector<float_type> &angles ) {
 
 	Stopwatch<> tmp;
 	tmp.start();
-	std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+    //std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
+    std::vector<MapFeature> mapFeatures = map->getCovisibleFeatures();
 	tmp.stop();
 	timeMeasurement.mapGetVisibleFeaturesTimes.push_back(tmp.elapsed());
 

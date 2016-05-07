@@ -35,14 +35,21 @@ namespace putslam {
         //typedef std::pair<std::shared_ptr<WeightedVertex>,std::shared_ptr<WeightedVertex>> VerticesPair;
         /// add vertex
         bool addVertex(int vertexId);
+
         /// add edge
         bool addEdge(const WeightedEdge& e);
+
         /// find neighbouring vertices
-        void findNeighbouringVertices(int id, VertexSet& vertices);
+        void findNeighbouringNodes(int id, double covisibilityThr, std::set<int>& verticesIds);
+
         /// add edge to vertex
         bool addEdgeToVertex(int vertexId, const std::shared_ptr<WeightedEdge>& e);
+
     protected:
+        /// Vertices
         VertexIDMap vertices;
+
+        /// Edges
         EdgeSet edges;
     };
 
@@ -56,6 +63,8 @@ namespace putslam {
         int getId() const {return id;}
         /// returns vertices
         inline std::pair<int,int> getVertices(void) const {return vertIds;}
+        /// returns weight
+        inline double getWeight(void) const {return weight;}
     protected :
         /// id
         int id;
@@ -76,6 +85,10 @@ namespace putslam {
         int getId() const {return id;}
         /// add edge
         inline void addEdge(const std::shared_ptr<WeightedEdge>& e) {edges.insert(edges.end(),e);}
+        /// get edges
+        inline void getEdges(WeightedGraph::EdgeSet& weightEdges) {weightEdges=edges;}
+        /// get neighbours
+        void getNeighbours(std::vector<std::pair<int,double>>& neighbours);
     protected :
         /// id
         int id;

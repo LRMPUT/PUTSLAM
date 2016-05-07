@@ -46,3 +46,32 @@ bool WeightedGraph::addEdge(const WeightedEdge& e){
     //std::cout << "edges: " << edges.size() << " \n";
 }
 
+/// find neighbouring vertices
+void WeightedGraph::findNeighbouringNodes(int id, double covisibilityThr, std::set<int>& verticesIds){
+    WeightedVertex* vert = vertices.at(id).get();
+    WeightedGraph::EdgeSet edges;
+    vert->getEdges(edges);
+    verticesIds.clear();
+    std::vector<std::pair<int,double>> neighbours;
+    vert->getNeighbours(neighbours);
+    for (auto neighbour : neighbours){
+        if (neighbour.second>covisibilityThr)
+            verticesIds.insert(neighbour.first);
+    }
+}
+
+/// get neighbours
+void WeightedVertex::getNeighbours(std::vector<std::pair<int,double>>& neighbours){
+    for (auto edge : edges){
+        int vertId;
+        std::pair<int,int> vertices = edge->getVertices();
+        if (vertices.first!=id)
+            vertId = vertices.first;
+        else if (vertices.second!=id)
+            vertId = vertices.second;
+        else
+            throw std::runtime_error(std::string("Something is wrong with edges in weighted graph\n"));
+        neighbours.push_back(std::make_pair(vertId,edge->getWeight()));
+    }
+}
+

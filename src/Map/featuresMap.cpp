@@ -187,11 +187,9 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp,
 
 
         //add camera pose to the graph
-		poseGraph->addVertexPose(camPose);
-        if (config.compressMap){
-            covisibilityGraph.addVertex(0);
-            camTrajectory[0].isKeyframe=true;//set keyframe
-        }
+        poseGraph->addVertexPose(camPose);
+        covisibilityGraph.addVertex(0);
+        camTrajectory[0].isKeyframe=true;//set keyframe
     } else {
 		odoMeasurements.push_back(cameraPoseChange);
         cameraPose = getSensorPose() * cameraPoseChange;
@@ -283,65 +281,43 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         if (config.visualize)
             features2visualization.push_back(e);
     }
-    if (config.compressMap){
-        //std::cout << "posesNo : " << camTrajectory.size() << "\n";
-        std::set<int> intersect;
-        mtxCamTraj.lock();
-        std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory.back().featuresIds.begin(),camTrajectory.back().featuresIds.end(),
-                              std::inserter(intersect,intersect.begin()));
-        double covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
-        mtxCamTraj.unlock();
-        //std::cout << "covisibility: " << covisibility*100.0 << "\n";
-        if (covisibility<config.covisibilityKeyframes){
-            std::vector<std::pair<int,double>> covisibilityKeyframes;
-            double maxCovisibility = computeCovisibility(features, covisibilityKeyframes);
-            if (maxCovisibility<config.covisibilityKeyframes){
-                //int previousKeyframe = lastKeyframeId;
-                mtxCamTraj.lock();
-                camTrajectory.back().isKeyframe=true;
-                lastKeyframeId = camTrajectory.size()-1;
-                mtxCamTraj.unlock();
-                if (continueLoopClosure){
-                    localLC->addPose(this->getSensorPose(lastKeyframeId),imageSeq.at(lastKeyframeId), lastKeyframeId);
-                }
-                //std::cout << "current frame " << lastKeyframeId << "\n";
-                //std::cout << "previous keyframe " << previousKeyframe << "\n";
-                covisibilityGraph.addVertex(lastKeyframeId);
-                for (auto covKey : covisibilityKeyframes){
-                    //std::cout << "covisibility between " << covKey.first << "->" << lastKeyframeId << " weight " << covKey.second << "\n";
-                    covisibilityGraph.addEdge(WeightedEdge(covKey.second,std::make_pair(lastKeyframeId, covKey.first)));
+
+    ///keyframes management
+    std::set<int> intersect;
+    mtxCamTraj.lock();
+    std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory.back().featuresIds.begin(),camTrajectory.back().featuresIds.end(),
+                          std::inserter(intersect,intersect.begin()));
+    double covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
+    mtxCamTraj.unlock();
+    //std::cout << "covisibility: " << covisibility*100.0 << "\n";
+    if (covisibility<config.covisibilityKeyframes){
+        std::vector<std::pair<int,double>> covisibilityKeyframes;
+        double maxCovisibility = computeCovisibility(features, covisibilityKeyframes);
+        if (maxCovisibility<config.covisibilityKeyframes){
+            mtxCamTraj.lock();
+            camTrajectory.back().isKeyframe=true;
+            lastKeyframeId = camTrajectory.size()-1;
+            //std::cout << "\n lastKeyframeId " << lastKeyframeId << "\n";
+            mtxCamTraj.unlock();
+            if (continueLoopClosure){
+                localLC->addPose(this->getSensorPose(lastKeyframeId),imageSeq.at(lastKeyframeId), lastKeyframeId);
+            }
+            covisibilityGraph.addVertex(lastKeyframeId);
+            for (auto covKey : covisibilityKeyframes){
+                //std::cout << "covisibility between " << covKey.first << "->" << lastKeyframeId << " weight " << covKey.second << "\n";
+                covisibilityGraph.addEdge(WeightedEdge(covKey.second,std::make_pair(lastKeyframeId, covKey.first)));
+                if (config.compressMap){
                     if ((covKey.second<=config.marginalizationThr)&&(frames2marginalize.second<=covKey.first)){
                         frames2marginalize.second = covKey.first;
-//                        std::cout << "\ncovisibility " << covKey.second << " marginalize " << covKey.first <<"\n";
                     }
                 }
-                /*covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(previousKeyframe, lastKeyframeId)));
-                //check covisibility between previous keyframes
-                for (int frameId = previousKeyframe-1;frameId>0;frameId--){
-                    if (camTrajectory[frameId].isKeyframe){
-                        intersect.clear();
-                        std::set_intersection(camTrajectory[lastKeyframeId].featuresIds.begin(),camTrajectory[lastKeyframeId].featuresIds.end(),camTrajectory[frameId].featuresIds.begin(),camTrajectory[frameId].featuresIds.end(),
-                                              std::inserter(intersect,intersect.begin()));
-                        covisibility = double(intersect.size())/double(camTrajectory[lastKeyframeId].featuresIds.size());
-                        if ((covisibility<=config.marginalizationThr)&&(frames2marginalize.second<=frameId)){
-                            frames2marginalize.second = frameId;
-                            std::cout << "covisibility " << covisibility << " marginalize " << frameId <<"\n";
-                        }
-                        if (covisibility>0){
-                            //std::cout << "add edge between: " << lastKeyframeId << ", " << frameId << "\n";
-                            //std::cout << "covisibility " << covisibility << "\n";
-                            covisibilityGraph.addEdge(WeightedEdge(covisibility,std::make_pair(lastKeyframeId, frameId)));
-                        }
-                        else
-                            break;
-                    }
-                }*/
             }
         }
-        // check max-without-compresion criterion
-        //std::cout << "\n max no frames " << (camTrajectory.size()-frames2marginalize.first) << " -> " << config.maxFramesNo << "\n";
-        if ((frames2marginalize.first==frames2marginalize.second)&&((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo)){
-            frames2marginalize.second = camTrajectory.size()-int((config.minFramesNo+config.maxFramesNo)/2);
+        if (config.compressMap){
+            // check max-without-compresion criterion
+            if ((frames2marginalize.first==frames2marginalize.second)&&((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo)){
+                frames2marginalize.second = camTrajectory.size()-int((config.minFramesNo+config.maxFramesNo)/2);
+            }
         }
     }
     if (config.visualize)
@@ -458,9 +434,9 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
     mtxMapFrontend.unlock();
     return visibleFeatures;
 }
+
 /// get all visible features
-std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
-		const Mat34& cameraPose) {
+std::vector<MapFeature> FeaturesMap::getVisibleFeatures(const Mat34& cameraPose) {
 	std::vector<MapFeature> visibleFeatures;
 	mtxMapFrontend.lock();
     for (std::map<int,MapFeature>::iterator it = featuresMapFrontend.begin();
@@ -485,6 +461,36 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 	return visibleFeatures;
 }
 
+/// get all covisible features using covisibility graph
+std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
+    std::vector<MapFeature> visibleFeatures;
+    std::set<int> verticesIds;
+    //std::cout << "get neighbours " << lastKeyframeId << "\n";
+    covisibilityGraph.findNeighbouringNodes(lastKeyframeId,0.0, verticesIds);
+    //add last n frames
+    for (int i = lastKeyframeId; i < camTrajectory.size()-1; i++){
+        verticesIds.insert(verticesIds.end(), i);
+    }
+    std::set<int> featuresIds;
+    //std::cout << "poses:\n";
+    for (auto poseId : verticesIds){
+        featuresIds.insert(camTrajectory[poseId].featuresIds.begin(), camTrajectory[poseId].featuresIds.end());
+        //std::cout << poseId << ", ";
+    }
+    //std::cout << "\n";
+    mtxMapFrontend.lock();
+    for (auto featureId : featuresIds){
+        visibleFeatures.push_back(featuresMapFrontend.at(featureId));
+    }
+    mtxMapFrontend.unlock();
+    //try to update the map
+    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    if (continueManagement)
+        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+    if (continueLoopClosure)
+        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    return visibleFeatures;
+}
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
 void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle){

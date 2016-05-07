@@ -70,6 +70,9 @@ public:
 	/// get all visible features
 	std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose);
 
+    /// get all covisible features using covisibility graph
+    std::vector<MapFeature> getCovisibleFeatures(void);
+
     /// get all visible features and reduce results
     std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold);
 
