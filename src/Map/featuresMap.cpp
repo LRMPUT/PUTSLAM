@@ -977,6 +977,8 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 	std::vector<VertexSE3> optimizedPoses;
 	((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
 	updateCamTrajectory(optimizedPoses);
+
+    restoreFrames();
 }
 
 /// marginalize measurements between frames
@@ -1419,6 +1421,28 @@ int FeaturesMap::getNumberOfFeatures() {
 	int val = featuresMapFrontend.size();
 	mtxMapFrontend.unlock();
 	return val;
+}
+
+/// Restore camera frames (previously marginalized)
+void FeaturesMap::restoreFrames(void){
+    mtxCamTraj.lock();
+    Mat34 prevPose(camTrajectory.front().pose);
+    bool first(true);
+    for (auto cameraNode : camTrajectory){
+        Mat34 camPose = cameraNode.pose;
+        if (!cameraNode.isKeyframe&&cameraNode.vertexId<frames2marginalize.second){
+            //add camera pose to the graph
+            poseGraph->addVertexPose(cameraNode);
+        }
+        if (!first){
+            poseGraph->addEdgeSE3(EdgeSE3(prevPose.inverse()*camPose, Mat66::Identity(), cameraNode.vertexId-1, cameraNode.vertexId));
+        }
+        else{
+            first=false;
+        }
+        prevPose = camPose;
+    }
+    mtxCamTraj.unlock();
 }
 
 

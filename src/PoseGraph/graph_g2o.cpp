@@ -608,7 +608,7 @@ bool PoseGraphG2O::updateGraph(void){
                 //std::cout << "add Vertex 3D\n";
                 if (!addVertex(*(Vertex3D*)it->get())){
                     mtxGraph.unlock();
-                    std::cout << "could not add vertex 3D id" << (*it).get()->vertexId << "\n";
+                    std::cout << "could not add vertex 3D id " << (*it).get()->vertexId << "\n";
                     return false;
                 }
             }
@@ -616,7 +616,7 @@ bool PoseGraphG2O::updateGraph(void){
                 //std::cout << "add Vertex SE3\n";
                 if (!addVertex(*(putslam::VertexSE3*)it->get())){
                     mtxGraph.unlock();
-                    std::cout << "could not add vertex SE3\n";
+                    std::cout << "could not add vertex SE3 id " << (*it).get()->vertexId << "\n";
                     return false;
                 }
             }

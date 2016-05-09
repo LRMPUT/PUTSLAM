@@ -506,6 +506,9 @@ private:
 
     /// compute covisibility between current frame and previous keyframes, returns max covisibility
     double computeCovisibility(const std::vector<MapFeature>& features, std::vector<std::pair<int,double>>& covisibilityKeyframes) const;
+
+    /// Restore camera frames (previously marginalized)
+    void restoreFrames(void);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED
