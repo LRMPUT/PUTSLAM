@@ -40,8 +40,11 @@
   <!--mapCompression:
     covisibilityKeyframes - create next keyframe when covisibility drops below 'covisibilityKeyframes'
     marginalizationThr - if covisibility smaller than 'marginCovisibThr' then marginalize graph-->
-    <mapCompression compressMap="true" covisibilityKeyframes="0.9" marginalizationThr="0.0" minFramesNo="30" maxFramesNo="800"/>
+    <mapCompression compressMap="false" covisibilityKeyframes="0.9" marginalizationThr="0.2" minFramesNo="30" maxFramesNo="800"/>
 
+    <!--Get features from map using Euclidean criterion-->
+    <EuclideanCriterion useEuclideanCrit="false" imagePlaneDistance="0.75" depthDist="1.5" maxAngle="0.5" maxRadius="5.0"/>
+    
 <!--    Export map to m-file:
     filenameMap - map file
     filenameData - statistics for the map-->

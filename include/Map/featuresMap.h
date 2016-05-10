@@ -208,10 +208,10 @@ public:
 					&minEuclideanDistanceOfFeatures);
             model->FirstChildElement("parameters")->QueryDoubleAttribute(
 								"minImageDistanceOfFeatures",
-								&minImageDistanceOfFeatures);
-			model->FirstChildElement("parameters")->QueryIntAttribute(
-								"addNoFeaturesWhenMapSizeGreaterThan",
-								&addNoFeaturesWhenMapSizeGreaterThan);
+                                &minImageDistanceOfFeatures);
+            model->FirstChildElement("parameters")->QueryIntAttribute(
+                                "addNoFeaturesWhenMapSizeGreaterThan",
+                                &addNoFeaturesWhenMapSizeGreaterThan);
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 											"optimizationErrorType",
 											&optimizationErrorType);
@@ -221,6 +221,12 @@ public:
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("marginalizationThr", &marginalizationThr);
             model->FirstChildElement("mapCompression")->QueryIntAttribute("minFramesNo", &minFramesNo);
             model->FirstChildElement("mapCompression")->QueryIntAttribute("maxFramesNo", &maxFramesNo);
+
+            model->FirstChildElement("EuclideanCriterion")->QueryBoolAttribute("useEuclideanCrit", &useEuclideanCrit);
+            model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("imagePlaneDistance", &imagePlaneDistance);
+            model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("depthDist", &depthDist);
+            model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("maxAngle", &maxAngle);
+            model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("maxRadius", &maxRadius);
 
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
@@ -259,6 +265,21 @@ public:
 
             /// 3D edges pruning
             double edges3DPrunningThreshold;
+
+            /// Get features from map using Euclidean criterion
+            bool useEuclideanCrit;
+
+            /// Euclidean distance on the image plane
+            double imagePlaneDistance;
+
+            /// Distance along the camera axis
+            double depthDist;
+
+            /// max angle
+            double maxAngle;
+
+            /// max radius (do not search for neighbour if radius bigger than thr)
+            double maxRadius;
 
             /// if covisibility smaller than 'marginCovisibThr' then marginalize graph
             double marginalizationThr;
@@ -509,6 +530,9 @@ private:
 
     /// Restore camera frames (previously marginalized)
     void restoreFrames(void);
+
+    /// get nerby camera poses using Euclidean criteria
+    std::set<int> getNearbyPoses(int frameId, int startFrameId);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

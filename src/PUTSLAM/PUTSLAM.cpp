@@ -372,9 +372,9 @@ void PUTSLAM::readingSomeParameters() {
 	minEuclideanDistanceOfFeatures =
 			((FeaturesMap*) map)->getMinEuclideanDistanceOfFeatures();
 	minImageDistanceOfFeatures =
-			((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
-	addNoFeaturesWhenMapSizeGreaterThan =
-			((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
+            ((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
+    addNoFeaturesWhenMapSizeGreaterThan =
+            ((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
 	minMeasurementsToAddPoseToFeatureEdge =
 			((FeaturesMap*) map)->getMinMeasurementsToAddPoseToFeatureEdge();
 	addPoseToPoseEdges = ((FeaturesMap*) map)->getAddPoseToPoseEdges();
@@ -387,7 +387,7 @@ void PUTSLAM::readingSomeParameters() {
 
 void PUTSLAM::initialization() {
 	// Optimize during trajectory acquisition
-	if (optimizationThreadVersion == OPTTHREAD_ON)
+    if (optimizationThreadVersion == OPTTHREAD_ON)
         map->startOptimizationThread(1, 0);
 	else if (optimizationThreadVersion == OPTTHREAD_ON_ROBUSTKERNEL)
 		map->startOptimizationThread(1, 0, "Cauchy", 1);
@@ -893,7 +893,7 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 // At the end
 
 void PUTSLAM::saveStatistics() {
-
+std::cout << "save2file\n";
 	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// Wait for management thread to finish
@@ -902,7 +902,7 @@ void PUTSLAM::saveStatistics() {
 
     // thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
-		map->finishLoopClosureThr();
+        map->finishLoopClosureThr();
 
 	// We optimize only at the end if that version is chosen
 	if (optimizationThreadVersion == OPTTHREAD_ATEND)

@@ -472,6 +472,10 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
         verticesIds.insert(verticesIds.end(), i);
     }
     std::set<int> featuresIds;
+    if (config.useEuclideanCrit&&verticesIds.size()>0){
+        std::set<int> euclVerts = getNearbyPoses(camTrajectory.size()-1, *verticesIds.begin());
+        verticesIds.insert(euclVerts.begin(), euclVerts.end());
+    }
     //std::cout << "poses:\n";
     for (auto poseId : verticesIds){
         featuresIds.insert(camTrajectory[poseId].featuresIds.begin(), camTrajectory[poseId].featuresIds.end());
@@ -618,9 +622,12 @@ void FeaturesMap::startLoopClosureThread(int verbose, Matcher* matcher){
 /// Wait for optimization thread to finish
 void FeaturesMap::finishOptimization(std::string trajectoryFilename,
 		std::string graphFilename) {
+    std::cout << "finish optimization\n";
 	continueOpt = false;
     optimizationThr->join();
+    std::cout << "finished optimization\n";
     exportOutput(trajectoryFilename, graphFilename);
+    std::cout << "export output\n";
 }
 
 /// Export graph and trajectory
@@ -922,14 +929,15 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
             frames2marginalize.first = marginalizeToPose;
         }
         //std::cout << "features in Map: " << featuresMapFrontend.size() << "\n";
-	}
+    }
 
 	// Final optimization
 	if (!RobustKernelName.empty())
 		setRobustKernel(RobustKernelName, kernelDelta);
 	else
-		disableRobustKernel();
-    std::cout << "Starting final after trajectory optimization" << std::endl;
+        disableRobustKernel();
+
+    std::cout << "Starting final trajectory optimization" << std::endl;
     if (config.weakFeatureThr>0)
         ((PoseGraphG2O*)poseGraph)->removeWeakFeatures(config.weakFeatureThr);
     if (config.fixVertices)
@@ -1460,6 +1468,34 @@ bool FeaturesMap::getAndResetLoopClosureSuccesful() {
 		return true;
 	}
 	return false;
+}
+
+/// get nerby camera poses using Euclidean criteria
+std::set<int> FeaturesMap::getNearbyPoses(int currentFrameId, int startFrameId){
+    std::set<int> posesIds;
+    Mat34 currentPose(camTrajectory[currentFrameId].pose);
+    //std::cout << "currentFrameId" << currentFrameId << "\n";
+    //std::cout << "startFrameId" << startFrameId << "\n";
+    for (int frameNo = startFrameId-1; frameNo>=0; frameNo--){
+        if (camTrajectory[frameNo].isKeyframe){
+            //std::cout << "check frame " << frameNo << "\n";
+            /// compute frameNo in current frame
+            Mat34 relTransform = camTrajectory[frameNo].pose.inverse()*currentPose;
+            double dist = sqrt(pow(relTransform(0,3),2.0)+pow(relTransform(1,3),2.0)+pow(relTransform(2,3),2.0));
+            if (dist>config.maxRadius)
+                break;
+            double planarDist = sqrt(pow(relTransform(0,3),2.0)+pow(relTransform(1,3),2.0));
+            if (planarDist<config.imagePlaneDistance){
+                double dotProd = currentPose.matrix().block<3,1>(0,2).dot(camTrajectory[frameNo].pose.matrix().block<3,1>(0,2));
+                double angle = acos(dotProd);
+                if (angle<config.maxAngle&&fabs(relTransform(2,3))<config.depthDist){
+                    posesIds.insert(frameNo);
+                    //std::cout << "found eucl " << currentFrameId << "-> " << frameNo << "\n";
+                }
+            }
+        }
+    }
+    return posesIds;
 }
 
 putslam::Map* putslam::createFeaturesMap(void) {
