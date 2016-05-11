@@ -11,6 +11,7 @@
 #include "../PoseGraph/graph_g2o.h"
 #include "../PoseGraph/weightedGraph.h"
 #include "../include/Utilities/observer.h"
+#include "../include/Utilities/stopwatch.h"
 #include <memory>
 #include <atomic>
 #include "../include/Grabber/depthSensorModel.h"
@@ -391,6 +392,12 @@ private:
     /// last keyframe id
     int lastKeyframeId;
 
+    /// active keyframesNo
+    int activeKeyframesNo;
+
+    ///lastFullyMarginalizedFrame
+    int lastFullyMarginalizedFrame;
+
     /// frames (range) for marginalization
     std::pair<int,int> frames2marginalize;
 
@@ -417,6 +424,9 @@ private:
 
 	/// Optimization thread
 	std::unique_ptr<std::thread> optimizationThr;
+
+    /// <timestamp, opt time>
+    std::list<std::pair<double, double>> optimizationTime;
 
     /// Optimization thread
     std::unique_ptr<std::thread> managementThr;
@@ -533,6 +543,12 @@ private:
 
     /// get nerby camera poses using Euclidean criteria
     std::set<int> getNearbyPoses(int frameId, int startFrameId);
+
+    /// fixMeasurementsFromPose
+    void fixMeasurementsFromPose(int frameId);
+
+    /// save optimization time
+    void saveOptimizationTime(std::list<std::pair<double,double>>& optimizationTime, std::string filename);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

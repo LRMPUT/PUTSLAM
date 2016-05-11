@@ -117,6 +117,12 @@ class GlobalGraph : public Graph {
         /// marginalize measurements (pose-feature)
         bool marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove);
 
+        /// Fix vertex
+        void fixVertex(int vertexId);
+
+        /// unFix vertex
+        void unfixVertex(int vertexId);
+
 	private:
 		PoseGraph graph;	
 

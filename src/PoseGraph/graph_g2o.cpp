@@ -1538,6 +1538,24 @@ void PoseGraphG2O::fixOptimizedVertices(void){
     newOptimizedVertices.clear();
 }
 
+/// Fix vertex
+void PoseGraphG2O::fixVertex(int vertexId){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()==vertexId)//except the first one
+            (*it)->setFixed(true);
+    }
+}
+
+/// unFix vertex
+void PoseGraphG2O::unfixVertex(int vertexId){
+    g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();
+    for (g2o::SparseOptimizer::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
+        if ((*it)->id()==vertexId)//except the first one
+            (*it)->setFixed(false);
+    }
+}
+
 /// Release fixed vertices (except the firts one)
 void PoseGraphG2O::releaseFixedVertices(void){
     g2o::SparseOptimizer::VertexContainer vertices =  optimizer.activeVertices();

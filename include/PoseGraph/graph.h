@@ -149,6 +149,12 @@ namespace putslam {
             /// marginalize measurements (pose-feature)
             virtual bool marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove) = 0;
 
+            /// Fix vertex
+            virtual void fixVertex(int vertexId) = 0;
+
+            /// unFix vertex
+            virtual void unfixVertex(int vertexId) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

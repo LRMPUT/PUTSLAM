@@ -187,3 +187,13 @@ bool GlobalGraph::findNearestNeighbors(int vertexId, int depth, std::vector<int>
 bool GlobalGraph::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
 
 }
+
+/// Fix vertex
+void GlobalGraph::fixVertex(int vertexId){
+
+}
+
+/// unFix vertex
+void GlobalGraph::unfixVertex(int vertexId){
+
+}

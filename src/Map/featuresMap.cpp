@@ -18,14 +18,16 @@ using namespace putslam;
 FeaturesMap::Ptr map;
 
 FeaturesMap::FeaturesMap(void) :
-		featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
+        featureIdNo(FEATURES_START_ID), lastOptimizedPose(0), Map("Features Map",MAP_FEATURES), lastKeyframeId(0),
+        frames2marginalize(std::make_pair(0,0)), activeKeyframesNo(0), lastFullyMarginalizedFrame(-1) {
 	poseGraph = createPoseGraphG2O();
 }
 
 /// Construction
 FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
         config(configMap), featureIdNo(FEATURES_START_ID), sensorModel(sensorConfig), lastOptimizedPose(0),
-        Map("Features Map",	MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)) {
+        Map("Features Map",	MAP_FEATURES), lastKeyframeId(0), frames2marginalize(std::make_pair(0,0)),
+        activeKeyframesNo(0), lastFullyMarginalizedFrame(-1){
 	poseGraph = createPoseGraphG2O();
     if (config.searchPairsTypeLC==0)
         localLC = createLoopClosureLocal(config.configFilenameLC);
@@ -296,6 +298,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         if (maxCovisibility<config.covisibilityKeyframes){
             mtxCamTraj.lock();
             camTrajectory.back().isKeyframe=true;
+            activeKeyframesNo++;
             lastKeyframeId = camTrajectory.size()-1;
             //std::cout << "\n lastKeyframeId " << lastKeyframeId << "\n";
             mtxCamTraj.unlock();
@@ -856,7 +859,10 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
+    /// optimization clock
+    Stopwatch<std::chrono::microseconds> clockTimestamp;
 	while (continueOpt) {
+        Stopwatch<std::chrono::microseconds> clockOpt;
 		if (verbose)
 			std::cout << "start optimization\n";
 		if (!RobustKernelName.empty()) {
@@ -919,17 +925,33 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         if (config.fixVertices)
             ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
 		if (verbose)
-			std::cout << "end optimization\n";
-        int marginalizeToPose = frames2marginalize.second;
-        //std::cout << "\n\n\n\n" << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
-        if (frames2marginalize.first!=marginalizeToPose&&(frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)||((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo))){
-            marginalizeMeasurements(frames2marginalize.first, frames2marginalize.second);
-            //std::cout << "\nmarginalize " << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
-            //getchar();
-            frames2marginalize.first = marginalizeToPose;
+            std::cout << "end optimization\n";
+        if (config.compressMap){
+            int marginalizeToPose = frames2marginalize.second;
+            //std::cout << "\n\n\n\n" << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
+            if (frames2marginalize.first!=marginalizeToPose&&(frames2marginalize.second<(camTrajectory.size()-config.minFramesNo)||((camTrajectory.size()-frames2marginalize.first)>config.maxFramesNo))){
+                marginalizeMeasurements(frames2marginalize.first, frames2marginalize.second);
+                //std::cout << "\nmarginalize " << frames2marginalize.first << "->" << frames2marginalize.second << "\n";
+                //getchar();
+                frames2marginalize.first = marginalizeToPose;
+            }
+            if (activeKeyframesNo>config.maxFramesNo&&config.compressMap){
+                while (activeKeyframesNo>config.maxFramesNo){
+                    lastFullyMarginalizedFrame++;
+                    if (camTrajectory[lastFullyMarginalizedFrame].isKeyframe){
+                        fixMeasurementsFromPose(lastFullyMarginalizedFrame);
+                        activeKeyframesNo--;
+                    }
+                }
+            }
         }
+        double timestamp = clockTimestamp.stop()/1000000;
+        double optTime = clockOpt.stop()/1000000;
+        optimizationTime.push_back(std::make_pair(timestamp,optTime));
         //std::cout << "features in Map: " << featuresMapFrontend.size() << "\n";
     }
+
+    saveOptimizationTime(optimizationTime,"optimizationTime.m");
 
 	// Final optimization
 	if (!RobustKernelName.empty())
@@ -989,6 +1011,33 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
     restoreFrames();
 }
 
+/// save optimization time
+void FeaturesMap::saveOptimizationTime(std::list<std::pair<double,double>>& optimizationTime, std::string filename){
+    std::ofstream file(filename);
+    file << "close all;\nclear all;\nhold on;\n";
+    file << "x=[];\ny=[];\n";
+    for (const auto time : optimizationTime){
+        file << "x=[x, " << time.first << "];\ny=[y, " << time.second << "];\n";
+    }
+    file << "plot(x,y,'-or', 'LineWidth',3);\n";
+    file << "xlabel('Time [s]');\n";
+    file << "ylabel('Optimization time [s]');\n";
+    file.close();
+}
+
+/// fixMeasurementsFromPose
+void FeaturesMap::fixMeasurementsFromPose(int frameId){
+    mtxCamTraj.lock();
+    std::set<int> featuresIds = camTrajectory[frameId].featuresIds;
+    mtxCamTraj.unlock();
+    for (auto featureId : featuresIds){
+        poseGraph->fixVertex(featureId);
+        //std::cout << "fix feature " << featureId << "\n";
+    }
+    poseGraph->fixVertex(frameId);
+    //std::cout << "fix pose " << frameId << "\n";
+}
+
 /// marginalize measurements between frames
 void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     std::vector<int> keyframes;
@@ -1023,7 +1072,7 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     //std::set_difference(featuresAll.begin(), featuresAll.end(), featuresFullOpt.begin(), featuresFullOpt.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
     //std::set_difference(features2removeGraph.begin(), features2removeGraph.end(), featuresKeyframes.begin(), featuresKeyframes.end(), std::inserter(features2removeGraph, features2removeGraph.end()));
     //std::cout << "all " << featuresAll.size() << "\n";
-    //std::cout << "graph " << features2removeGraph.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
+    //std::cout << "graph " << features2remove.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
 
     bufferMapFrontend.mtxBuffer.lock();
     bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),features2remove.begin(), features2remove.end());
