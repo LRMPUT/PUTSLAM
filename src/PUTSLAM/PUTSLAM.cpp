@@ -140,7 +140,9 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
-						features.undistortedFeature2D[j].y, descMat); // TODO: change between descriptor based and descriptor free versions -
+						features.undistortedFeature2D[j].y,
+						descMat,
+						features.feature2D[j].octave); // TODO: change between descriptor based and descriptor free versions -
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
