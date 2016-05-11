@@ -1068,7 +1068,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, mapFeature.u,
-				mapFeature.v, cv::Mat(), -1);
+				mapFeature.v, cv::Mat(), -1, -1.0);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement

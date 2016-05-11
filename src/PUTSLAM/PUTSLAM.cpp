@@ -138,11 +138,16 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 					descMat = features.descriptors.row(j).clone();
 				}
 
+				float_type dist = std::sqrt(features.feature3D[j][0]*features.feature3D[j][0] +
+										features.feature3D[j][1]*features.feature3D[j][1] +
+										features.feature3D[j][2]*features.feature3D[j][2]);
+
 				ExtendedDescriptor desc(cameraPoseId,
 						features.undistortedFeature2D[j].x,
 						features.undistortedFeature2D[j].y,
 						descMat,
-						features.feature2D[j].octave); // TODO: change between descriptor based and descriptor free versions -
+						features.feature2D[j].octave,
+						dist); // TODO: change between descriptor based and descriptor free versions -
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
