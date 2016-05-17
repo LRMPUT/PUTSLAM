@@ -134,7 +134,7 @@ public:
     float_type u, v;
 
     /// distance to the feature at the time it was described
-    float_type dist;
+    float_type detDist;
 
     /// octave (pyramid layer) at which it was detected
     int octave;
@@ -148,9 +148,9 @@ public:
 
 	/// Constructor
 	ExtendedDescriptor(unsigned int _poseId, float_type _u, float_type _v,
-			cv::Mat _descriptor, int _octave, float_type _dist) :
+			cv::Mat _descriptor, int _octave, float_type _detDist) :
 			poseId(_poseId), u(_u), v(_v), descriptor(_descriptor),
-			 octave(_octave), dist(_dist) {};
+			 octave(_octave), detDist(_detDist) {};
 };
 
 class RGBDFeature {

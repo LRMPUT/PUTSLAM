@@ -15,34 +15,34 @@ using namespace putslam;
 
 void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	// Detect salient features
-	prevFeatures = detectFeatures(sensorData.rgbImage);
+	prevKeyPoints = detectFeatures(sensorData.rgbImage);
 
 	if (matcherParameters.verbose > 2)
-		std::cout << "Before dbScan: " << prevFeatures.size() << std::endl;
+		std::cout << "Before dbScan: " << prevKeyPoints.size() << std::endl;
 
 	// DBScan
 	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
-	dbscan.run(prevFeatures);
+	dbscan.run(prevKeyPoints);
 
 	if (matcherParameters.verbose > 2)
-			std::cout << "After dbScan: " << prevFeatures.size() << std::endl;
+			std::cout << "After dbScan: " << prevKeyPoints.size() << std::endl;
 
 	// Show detected features
 	if (matcherParameters.verbose > 2)
-		showFeatures(sensorData.rgbImage, prevFeatures);
+		showFeatures(sensorData.rgbImage, prevKeyPoints);
 
 	// Describe salient features if needed
 	if (matcherParameters.VOVersion == MatcherParameters::VO_MATCHING
 			|| matcherParameters.MapMatchingVersion
 					!= MatcherParameters::MAPMATCH_PATCHES) {
-		prevDescriptors = describeFeatures(sensorData.rgbImage, prevFeatures);
+		prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeyPoints);
 	}
 
 	// Extract 2D points from keypoints
-	cv::KeyPoint::convert(prevFeatures,prevFeaturesDistorted);
+	cv::KeyPoint::convert(prevKeyPoints,prevFeaturesDistorted);
 
 	// Remove distortion
-	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
+	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevKeyPoints,
 			matcherParameters.cameraMatrixMat,
 			matcherParameters.distortionCoeffsMat);
 
@@ -50,6 +50,15 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
 			sensorData.depthImage, matcherParameters.cameraMatrixMat,
 			sensorData.depthImageScale);
+
+	prevDetDists.clear();
+	for(int i = 0; i < prevFeatures3D.size(); ++i){
+		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
+									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
+									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
+
+		prevDetDists.push_back(dist);
+	}
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -60,7 +69,8 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 Matcher::featureSet Matcher::getFeatures() {
 	featureSet returnSet;
 	returnSet.descriptors = prevDescriptors;
-	returnSet.feature2D = prevFeatures;
+	returnSet.feature2D = prevKeyPoints;
+	returnSet.detDist = prevDetDists;
 	returnSet.undistortedFeature2D = prevFeaturesUndistorted;
 	returnSet.feature3D = prevFeatures3D;
 	return returnSet;
@@ -70,7 +80,14 @@ void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
 		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
 		std::vector<cv::Point2f>& distortedFeatures2D,
-		const std::vector<cv::Point2f>& featuresSandBoxDistorted) {
+		const std::vector<cv::Point2f>& featuresSandBoxDistorted,
+		std::vector<Eigen::Vector3f>& features3D,
+		const std::vector<Eigen::Vector3f>& features3DSandBox,
+		std::vector<cv::KeyPoint>& keyPoints,
+		const std::vector<cv::KeyPoint>& keyPointsSandBox,
+		std::vector<float_type>& detDists,
+		const std::vector<float_type>& detDistsSandBox)
+{
 
 	// Merging features - rejecting feature too close to existing ones
 	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
@@ -86,6 +103,9 @@ void Matcher::mergeTrackedFeatures(
 		if (addFeature) {
 			undistortedFeatures2D.push_back(featuresSandBoxUndistorted[i]);
 			distortedFeatures2D.push_back(featuresSandBoxDistorted[i]);
+			features3D.push_back(features3DSandBox[i]);
+			keyPoints.push_back(keyPointsSandBox[i]);
+			detDists.push_back(detDistsSandBox[i]);
 		}
 	}
 
@@ -120,6 +140,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	// Current 2D positions, 3D positions and found matches
 	//std::vector<cv::Point2f> undistortedFeatures2D(prevFeaturesUndistorted), distortedFeatures2D;
 	std::vector<cv::Point2f> undistortedFeatures2D, distortedFeatures2D;
+	cv::Mat descriptors;
+	std::vector<cv::KeyPoint> keyPoints;
+	std::vector<float_type> detDists;
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
@@ -129,7 +152,11 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	} else {
 		// Tracking features and creating potential matches
 		matches = performTracking(prevRgbImage, sensorData.rgbImage,
-						prevFeaturesDistorted, distortedFeatures2D);
+						prevFeaturesDistorted, distortedFeatures2D,
+						prevKeyPoints,
+						keyPoints,
+						prevDetDists,
+						detDists);
 
 		// Remove distortion
 		undistortedFeatures2D = RGBD::removeImageDistortion(distortedFeatures2D,
@@ -152,8 +179,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		}
 		// Show detected features
 		if (matcherParameters.verbose > 2) {
-			cv::KeyPoint::convert(distortedFeatures2D, prevFeatures);
-			showFeatures(sensorData.rgbImage, prevFeatures);
+//			cv::KeyPoint::convert(distortedFeatures2D, prevKeyPoints);
+			showFeatures(sensorData.rgbImage, prevKeyPoints);
 		}
 
 		// Associate depth -> creating 3D features
@@ -163,7 +190,12 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Remove features based on 2D and 3D distance
 		if ( matcherParameters.OpenCVParams.removeTooCloseFeatures > 0)
-			removeTooCloseFeatures(distortedFeatures2D, undistortedFeatures2D, features3D, matches);
+			removeTooCloseFeatures(distortedFeatures2D,
+									undistortedFeatures2D,
+									features3D,
+									keyPoints,
+									detDists,
+									matches);
 
 		// Checking that sizes are correct
 		assert(
@@ -186,44 +218,70 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			< matcherParameters.OpenCVParams.minimalTrackedFeatures) {
 
 		// Detect new salient features
-		std::vector<cv::KeyPoint> featuresSandbox = detectFeatures(
+		std::vector<cv::KeyPoint> keyPointsSandbox = detectFeatures(
 				sensorData.rgbImage);
 
 		// DBScan on detected features to remove groups of points
 		DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
-		dbscan.run(featuresSandbox);
+		dbscan.run(keyPointsSandbox);
 
 		// Extract 2D points from keypoints
 		std::vector<cv::Point2f> featuresSandBoxDistorted;
-		cv::KeyPoint::convert(featuresSandbox, featuresSandBoxDistorted);
+		cv::KeyPoint::convert(keyPointsSandbox, featuresSandBoxDistorted);
 
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> featuresSandBoxUndistorted =
-				RGBD::removeImageDistortion(featuresSandbox,
+				RGBD::removeImageDistortion(keyPointsSandbox,
 						matcherParameters.cameraMatrixMat,
 						matcherParameters.distortionCoeffsMat);
+
+		std::vector<Eigen::Vector3f> features3DSandbox = RGBD::keypoints2Dto3D(
+						featuresSandBoxUndistorted, sensorData.depthImage,
+						matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
+
+		std::vector<float_type> detDistsSandbox;
+		for(int i = 0; i < features3DSandbox.size(); ++i){
+			float_type dist = std::sqrt(features3DSandbox[i][0]*features3DSandbox[i][0] +
+										features3DSandbox[i][1]*features3DSandbox[i][1] +
+										features3DSandbox[i][2]*features3DSandbox[i][2]);
+
+			detDistsSandbox.push_back(dist);
+		}
 
 		// Merging features - rejecting feature too close to existing ones
 		// Parameters: (existing features and vector to add new features, new features, minimal image distance between features)
         //std::cout<<"We had " << distortedFeatures2D.size() << std::endl;
-		mergeTrackedFeatures(undistortedFeatures2D, featuresSandBoxUndistorted, distortedFeatures2D, featuresSandBoxDistorted);
+		mergeTrackedFeatures(undistortedFeatures2D,
+							featuresSandBoxUndistorted,
+							distortedFeatures2D,
+							featuresSandBoxDistorted,
+							features3D,
+							features3DSandbox,
+							keyPoints,
+							keyPointsSandbox,
+							detDists,
+							detDistsSandbox);
         //std::cout<<"After merging " << distortedFeatures2D.size() << std::endl;
 
-		// Add depth to new features
-		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
-				undistortedFeatures2D, sensorData.depthImage,
-				matcherParameters.cameraMatrixMat, sensorData.depthImageScale,
-				features3D.size());
-
-		// Merge 3D positions of old and new features
-		features3D.reserve(features3D.size() + newFeatures3D.size());
-		features3D.insert(features3D.end(), newFeatures3D.begin(),
-				newFeatures3D.end());
+//		// Add depth to new features
+//		std::vector<Eigen::Vector3f> newFeatures3D = RGBD::keypoints2Dto3D(
+//				undistortedFeatures2D, sensorData.depthImage,
+//				matcherParameters.cameraMatrixMat, sensorData.depthImageScale,
+//				features3D.size());
+//
+//		// Merge 3D positions of old and new features
+//		features3D.reserve(features3D.size() + newFeatures3D.size());
+//		features3D.insert(features3D.end(), newFeatures3D.begin(),
+//				newFeatures3D.end());
 
 		// Remove features based on 2D and 3D distance
 		if (matcherParameters.OpenCVParams.removeTooCloseFeatures > 0)
-			removeTooCloseFeatures(distortedFeatures2D, undistortedFeatures2D,
-					features3D, matches);
+			removeTooCloseFeatures(distortedFeatures2D,
+									undistortedFeatures2D,
+									features3D,
+									keyPoints,
+									detDists,
+									matches);
 
 	}
 
@@ -231,47 +289,118 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	if (matcherParameters.MapMatchingVersion
 			!= MatcherParameters::MAPMATCH_PATCHES) {
 
-		// Converting features to keypoints
-		std::vector<cv::KeyPoint> prevKeypoints;
-		cv::KeyPoint::convert(undistortedFeatures2D, prevKeypoints);
+
+
+		std::vector<cv::KeyPoint> descKeyPoints = keyPoints;
+		//Compute predicted scale
+		for(int i = 0; i < descKeyPoints.size(); ++i){
+			int detLevel = descKeyPoints[i].octave;
+			float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
+			float_type curDist = std::sqrt(features3D[i][0]*features3D[i][0] +
+									features3D[i][1]*features3D[i][1] +
+									features3D[i][2]*features3D[i][2]);
+			float_type curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
+
+			//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
+			int curLevel = std::ceil(std::log(curLevelScaleFactor) / std::log(scaleFactor));
+			curLevel = std::max(0, curLevel);
+			curLevel = std::min(nLevels - 1, curLevel);
+			descKeyPoints[i].octave = curLevel;
+		}
+		{
+			//TODO opencv's ORB::compute sorts keyPoints according to octave,
+			// to prevent this we sort it earlier and maintain correct order in all structures
+			std::vector<std::vector<std::pair<int, int>>> keyPointsLevel(nLevels);
+			for(int i = 0; i < keyPoints.size(); ++i){
+				//use current level
+				int level = descKeyPoints[i].octave;
+				keyPointsLevel[level].emplace_back(level, i);
+			}
+			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
+			std::vector<Eigen::Vector3f> tmp3D;
+			std::vector<cv::KeyPoint> tmpKeyPoints;
+			std::vector<float_type> tmpDetDists;
+			int pos = 0;
+			for(int l = 0; l < keyPointsLevel.size(); ++l){
+				for(int i = 0; i < keyPointsLevel[l].size(); ++i){
+					tmpDistorted.push_back(distortedFeatures2D[keyPointsLevel[l][i].second]);
+					tmpUndistorted.push_back(undistortedFeatures2D[keyPointsLevel[l][i].second]);
+					tmp3D.push_back(features3D[keyPointsLevel[l][i].second]);
+					tmpKeyPoints.push_back(keyPoints[keyPointsLevel[l][i].second]);
+					tmpDetDists.push_back(detDists[keyPointsLevel[l][i].second]);
+				}
+			}
+
+			tmpDistorted.swap(distortedFeatures2D);
+			tmpUndistorted.swap(undistortedFeatures2D);
+			tmp3D.swap(features3D);
+			tmpKeyPoints.swap(keyPoints);
+			tmpDetDists.swap(detDists);
+		}
 
 		// Computing descriptors
-		prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeypoints);
+		descriptors = describeFeatures(sensorData.rgbImage, descKeyPoints);
 
 
 		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
-		if (prevKeypoints.size() != undistortedFeatures2D.size()) {
+		if (descKeyPoints.size() != keyPoints.size()) {
 
-			std::vector<cv::KeyPoint> allKeypoints;
-			cv::KeyPoint::convert(undistortedFeatures2D, allKeypoints);
+//			std::cout << "descKeyPoints.size() = " << descKeyPoints.size() << std::endl;
+//			std::cout << "undistortedFeatures2D.size() = " << undistortedFeatures2D.size() << std::endl;
+//			std::cout << "descriptors.rows = " << descriptors.rows << std::endl;
+//
+//			for(int i = 0; i < descKeyPoints.size(); ++i){
+//				std::cout << descKeyPoints[i].pt << "(" << descKeyPoints[i].octave << ")" <<
+//					"\t" << keyPoints[i].pt << "(" << keyPoints[i].octave << ")" << std::endl;
+//			}
 
 			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
 			std::vector<Eigen::Vector3f> tmp3D;
+			std::vector<cv::KeyPoint> tmpKeyPoints;
+			std::vector<float_type> tmpDetDists;
 
-			for(int i=0, j=0;i<allKeypoints.size();i++) {
-				if ( j == prevKeypoints.size())
+			for(int i=0, j=0;i<keyPoints.size();i++) {
+//				std::cout << "i = " << i << ", j = " << j << std::endl;
+				if ( j == descKeyPoints.size())
 					break;
-				if (cv::norm(allKeypoints[i].pt - prevKeypoints[j].pt) < 0.0001)
+//				std::cout << "keyPoints[i].pt = " << keyPoints[i].pt << std::endl;
+//				std::cout << "descKeyPoints[j].pt = " << descKeyPoints[j].pt << std::endl;
+				if (cv::norm(keyPoints[i].pt - descKeyPoints[j].pt) < 0.0001)
 				{
+//					std::cout << "match" << std::endl;
 					tmpDistorted.push_back(distortedFeatures2D[i]);
 					tmpUndistorted.push_back(undistortedFeatures2D[i]);
 					tmp3D.push_back(features3D[i]);
+					tmpKeyPoints.push_back(keyPoints[i]);
+					tmpDetDists.push_back(detDists[i]);
 					j++;
 				}
 			}
 			tmpDistorted.swap(distortedFeatures2D);
 			tmpUndistorted.swap(undistortedFeatures2D);
 			tmp3D.swap(features3D);
+			tmpKeyPoints.swap(keyPoints);
+			tmpDetDists.swap(detDists);
 		}
 	}
 
 	// Check that the sizes are ok
 	assert(
-			("TrackKLT: 2D and 3D sizes at the end", undistortedFeatures2D.size()
+			("TrackKLT: 2D and 3D sizes at the end: featuresUndistorted", distortedFeatures2D.size()
+					== undistortedFeatures2D.size()));
+	assert(
+			("TrackKLT: 2D and 3D sizes at the end: features3d", distortedFeatures2D.size()
 					== features3D.size()));
 	assert(
-			("TrackKLT: 2D and 3D sizes at the end 2", undistortedFeatures2D.size()
-					== prevDescriptors.rows));
+			("TrackKLT: 2D and 3D sizes at the end: descriptors", distortedFeatures2D.size()
+					== descriptors.rows));
+	assert(
+			("TrackKLT: 2D and 3D sizes at the end: keyPoints", distortedFeatures2D.size()
+					== keyPoints.size()));
+
+	assert(
+			("TrackKLT: 2D and 3D sizes at the end: detDists", distortedFeatures2D.size()
+					== detDists.size()));
 
 	double inlierRatio = 0.0;
 	if ( matches.size() > 0)
@@ -289,10 +418,28 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 //		showFeatures(sensorData.rgbImage, tmp[1]);
 //	}
 
+//	if(distortedFeatures2D.size() != undistortedFeatures2D.size() ||
+//			distortedFeatures2D.size() != features3D.size() ||
+//			distortedFeatures2D.size() != descriptors.rows ||
+//			distortedFeatures2D.size() != keyPoints.size() ||
+//			distortedFeatures2D.size() != detDists.size())
+//	{
+//		std::cout << "Bad number of entries" << std::endl;
+//		std::cout << "distortedFeatures2D.size() = " << distortedFeatures2D.size() << std::endl;
+//		std::cout << "undistortedFeatures2D.size() = " << undistortedFeatures2D.size() << std::endl;
+//		std::cout << "features3D.size() = " << features3D.size() << std::endl;
+//		std::cout << "descriptors.rows = " << descriptors.rows << std::endl;
+//		std::cout << "keyPoints.size() = " << keyPoints.size() << std::endl;
+//		std::cout << "detDists.size() = " << detDists.size() << std::endl;
+//	}
+
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
 	distortedFeatures2D.swap(prevFeaturesDistorted);
 	features3D.swap(prevFeatures3D);
+	prevDescriptors = descriptors;
+	keyPoints.swap(prevKeyPoints);
+	detDists.swap(prevDetDists);
 
 	// Save rgb/depth images
 	prevRgbImage = sensorData.rgbImage;
@@ -308,7 +455,7 @@ double Matcher::match(const SensorFrame& sensorData,
 
 	// Detect salient features
 //	auto start = std::chrono::high_resolution_clock::now();
-	std::vector<cv::KeyPoint> features = detectFeatures(sensorData.rgbImage);
+	std::vector<cv::KeyPoint> keyPoints = detectFeatures(sensorData.rgbImage);
 //	auto duration = std::chrono::duration_cast < std::chrono::microseconds
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t Detection time: " << duration.count() / 1000.0
@@ -317,18 +464,18 @@ double Matcher::match(const SensorFrame& sensorData,
 	// DBScan
 	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
 //	start = std::chrono::high_resolution_clock::now();
-	dbscan.run(features);
+	dbscan.run(keyPoints);
 //	duration = std::chrono::duration_cast < std::chrono::microseconds
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t DBSCAN: " << duration.count() / 1000.0 << " ms"
 //			<< std::endl;
 
 	if (matcherParameters.verbose > 1)
-		showFeatures(sensorData.rgbImage, features);
+		showFeatures(sensorData.rgbImage, keyPoints);
 
 	// Describe salient features
 //	start = std::chrono::high_resolution_clock::now();
-	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, features);
+	cv::Mat descriptors = describeFeatures(sensorData.rgbImage, keyPoints);
 //	duration = std::chrono::duration_cast < std::chrono::microseconds
 //			> (std::chrono::high_resolution_clock::now() - start);
 //	std::cout << "---->Time:\t Description: " << duration.count() / 1000.0
@@ -346,7 +493,7 @@ double Matcher::match(const SensorFrame& sensorData,
 	// Find 2D positions without distortion
 //	start = std::chrono::high_resolution_clock::now();
 	std::vector<cv::Point2f> undistortedFeatures2D =
-			RGBD::removeImageDistortion(features,
+			RGBD::removeImageDistortion(keyPoints,
 					matcherParameters.cameraMatrixMat,
 					matcherParameters.distortionCoeffsMat);
 //	duration = std::chrono::duration_cast < std::chrono::microseconds
@@ -361,7 +508,7 @@ double Matcher::match(const SensorFrame& sensorData,
 
 	// Visualize matches
 	if (matcherParameters.verbose > 1)
-		showMatches(prevRgbImage, prevFeatures, sensorData.rgbImage, features,
+		showMatches(prevRgbImage, prevKeyPoints, sensorData.rgbImage, keyPoints,
 				matches);
 
 	// RANSAC
@@ -379,13 +526,13 @@ double Matcher::match(const SensorFrame& sensorData,
 //				<< " ms" << std::endl;
 
 	// Check
-	assert(("Match sizes", features.size() == undistortedFeatures2D.size()));
+	assert(("Match sizes", keyPoints.size() == undistortedFeatures2D.size()));
 	assert(
 			("Match sizes 2", undistortedFeatures2D.size() == features3D.size()));
 	assert(("Match sizes 3", features3D.size() == descriptors.rows));
 
 	// Save computed values for next iteration
-	features.swap(prevFeatures);
+	keyPoints.swap(prevKeyPoints);
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
 	features3D.swap(prevFeatures3D);
 	cv::swap(descriptors, prevDescriptors);
@@ -666,23 +813,23 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 				estimatedTransformation, prevDescriptors, prevFeatures3D);
 
 	// Detect salient features
-	prevFeatures = detectFeatures(prevRgbImage);
+	prevKeyPoints = detectFeatures(prevRgbImage);
 
 	// DBScan
 	DBScan dbscan(matcherParameters.OpenCVParams.DBScanEps);
-	dbscan.run(prevFeatures);
+	dbscan.run(prevKeyPoints);
 
 	// Show detected features
 	if (matcherParameters.verbose > 2)
-		showFeatures(prevRgbImage, prevFeatures);
+		showFeatures(prevRgbImage, prevKeyPoints);
 
-	prevDescriptors = describeFeatures(prevRgbImage, prevFeatures);
+	prevDescriptors = describeFeatures(prevRgbImage, prevKeyPoints);
 
 	// Extract 2D points from keypoints
-	cv::KeyPoint::convert(prevFeatures, prevFeaturesDistorted);
+	cv::KeyPoint::convert(prevKeyPoints, prevFeaturesDistorted);
 
 	// Remove distortion
-	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevFeatures,
+	prevFeaturesUndistorted = RGBD::removeImageDistortion(prevKeyPoints,
 			matcherParameters.cameraMatrixMat,
 			matcherParameters.distortionCoeffsMat);
 
@@ -690,6 +837,16 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
 			prevDepthImage, matcherParameters.cameraMatrixMat,
 			prevDepthImageScale);
+
+	prevDetDists.clear();
+	for(int i = 0; i < prevFeatures3D.size(); ++i){
+		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
+									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
+									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
+
+		prevDetDists.push_back(dist);
+	}
+
 
 	return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
 			estimatedTransformation, prevDescriptors, prevFeatures3D);
@@ -1102,7 +1259,11 @@ void Matcher::showMatches(cv::Mat prevRgbImage,
 
 std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
 		std::vector<cv::Point2f>& undistortedFeatures2D,
-		std::vector<Eigen::Vector3f> &features3D, std::vector<cv::DMatch> &matches){
+		std::vector<Eigen::Vector3f> &features3D,
+		std::vector<cv::KeyPoint>& keyPoints,
+		std::vector<float_type>& detDists,
+		std::vector<cv::DMatch> &matches)
+{
 
 	// Check that we have the same sizes
 	assert(("removeTooCloseFeatures: distorted vs undistorted sizes", undistortedFeatures2D.size()
@@ -1153,6 +1314,21 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 			std::remove_if(features3D.begin(), features3D.end(),
 					[&](const Eigen::Vector3f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			features3D.end());
+
+	// Removing from key points
+	count = 0;
+	keyPoints.erase(
+			std::remove_if(keyPoints.begin(), keyPoints.end(),
+					[&](const cv::KeyPoint & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+			keyPoints.end());
+
+	// Removing from detection distance
+	count = 0;
+	detDists.erase(
+			std::remove_if(detDists.begin(), detDists.end(),
+					[&](const float_type & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+			detDists.end());
+
 
 	// Removing from matches
 	matches.erase(

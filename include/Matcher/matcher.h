@@ -22,9 +22,14 @@
 namespace putslam {
 /// Grabber interface
 class Matcher {
+
+	static constexpr float_type scaleFactor = 1.2;
+	static constexpr int nLevels = 8;
+
 public:
 	struct featureSet {
 		std::vector<cv::KeyPoint> feature2D;
+		std::vector<float_type> detDist;
 		std::vector<cv::Point2f> undistortedFeature2D, distortedFeature2D;
 		cv::Mat descriptors;
 		std::vector<Eigen::Vector3f> feature3D;
@@ -395,7 +400,8 @@ protected:
 	uint_fast32_t frame_id;
 
 	/// Information about previous keypoints + descriptors
-	std::vector<cv::KeyPoint> prevFeatures;
+	std::vector<cv::KeyPoint> prevKeyPoints;
+	std::vector<float_type> prevDetDists;
 	std::vector<cv::Point2f> prevFeaturesUndistorted, prevFeaturesDistorted;
 	cv::Mat prevDescriptors;
 	std::vector<Eigen::Vector3f> prevFeatures3D;
@@ -432,7 +438,11 @@ protected:
 	// Perform tracking
 	virtual std::vector<cv::DMatch> performTracking(cv::Mat prevImg,
 			cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
-			std::vector<cv::Point2f> &features) = 0;
+			std::vector<cv::Point2f> &features,
+			std::vector<cv::KeyPoint>& prevKeyPoints,
+			std::vector<cv::KeyPoint>& keyPoints,
+			std::vector<float_type>& prevDetDists,
+			std::vector<float_type>& detDists) = 0;
 
 private:
 	// We need to extract values in OpenCV types from classes/structures
@@ -450,13 +460,23 @@ private:
 
 	std::set<int> removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
 			std::vector<cv::Point2f>& undistortedFeatures2D,
-			std::vector<Eigen::Vector3f> &features3D, std::vector<cv::DMatch> &matches);
+			std::vector<Eigen::Vector3f> &features3D,
+			std::vector<cv::KeyPoint>& keyPoints,
+			std::vector<float_type>& detDists,
+			std::vector<cv::DMatch> &matches);
 
 	// Method used to combine old tracking features with new features
 	void mergeTrackedFeatures(std::vector<cv::Point2f>& undistortedFeatures2D,
 			const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
 			std::vector<cv::Point2f>& distortedFeatures2D,
-			const std::vector<cv::Point2f>& featuresSandBoxDistorted);
+			const std::vector<cv::Point2f>& featuresSandBoxDistorted,
+			std::vector<Eigen::Vector3f>& features3D,
+			const std::vector<Eigen::Vector3f>& features3DSandBox,
+			std::vector<cv::KeyPoint>& keyPoints,
+			const std::vector<cv::KeyPoint>& keyPointsSandBox,
+			std::vector<float_type>& detDists,
+			const std::vector<float_type>& detDistsSandBox);
+
 	void framesIds2framesIndex(std::vector<MapFeature> featureSet,
 			std::vector<int> frameIds,
 			std::vector<int> &closestFrameIndex);

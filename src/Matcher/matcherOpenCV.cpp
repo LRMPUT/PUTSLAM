@@ -208,7 +208,11 @@ std::vector<cv::DMatch> MatcherOpenCV::performMatching(cv::Mat prevDescriptors,
 /// Perform tracking
 std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 		cv::Mat img, std::vector<cv::Point2f> &prevFeatures,
-		std::vector<cv::Point2f> &features) {
+		std::vector<cv::Point2f> &features,
+		std::vector<cv::KeyPoint>& prevKeyPoints,
+		std::vector<cv::KeyPoint>& keyPoints,
+		std::vector<float_type>& prevDetDists,
+		std::vector<float_type>& detDists) {
 
 	// Some needed variables
 	std::vector<uchar> status;
@@ -232,6 +236,13 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 					matcherParameters.OpenCVParams.maxLevels, termcrit,
 					trackingFlags,
 					matcherParameters.OpenCVParams.trackingMinEigThreshold);
+
+	keyPoints = prevKeyPoints;
+	//copy new positions to keyPoints
+	for(int i = 0; i < features.size(); ++i){
+		keyPoints[i].pt = features[i];
+	}
+	detDists = prevDetDists;
 
 	// This parts removes additional features for which we observed an error above preset threshold
 	int errSize = err.size();
@@ -257,6 +268,8 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	int i = 0, j = 0;
 	std::vector<cv::DMatch> matches;
 	std::vector<cv::Point2f>::iterator itFeatures = features.begin();
+	std::vector<cv::KeyPoint>::iterator itKeyPoints = keyPoints.begin();
+	std::vector<float_type>::iterator itDetDists = detDists.begin();
 	std::vector<uchar>::iterator it = status.begin();
 	for (; it != status.end(); ++it, i++) {
 
@@ -265,10 +278,14 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 			matches.push_back(cv::DMatch(i, j, 0));
 			j++;
 			++itFeatures;
+			++itKeyPoints;
+			++itDetDists;
 		}
 		// Tracking failed -- we remove those features
 		else {
 			itFeatures = features.erase(itFeatures);
+			itKeyPoints = keyPoints.erase(itKeyPoints);
+			itDetDists = detDists.erase(itDetDists);
 		}
 	}
 
