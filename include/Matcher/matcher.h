@@ -25,6 +25,7 @@ class Matcher {
 
 	static constexpr float_type scaleFactor = 1.2;
 	static constexpr int nLevels = 8;
+	static constexpr float_type logScaleFactor = std::log(scaleFactor);
 
 public:
 	struct featureSet {
@@ -455,6 +456,8 @@ private:
 					Eigen::Matrix4f &estimatedTransformation,
 					cv::Mat currentPoseDescriptors,
 					std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
+					std::vector<cv::KeyPoint>& currentPoseKeyPoints,
+					std::vector<float_type>& currentPoseDetDists,
 					std::vector<int> frameIds = std::vector<int>());
 
 

@@ -302,10 +302,11 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			float_type curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
 
 			//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
-			int curLevel = std::ceil(std::log(curLevelScaleFactor) / std::log(scaleFactor));
+			int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
 			curLevel = std::max(0, curLevel);
 			curLevel = std::min(nLevels - 1, curLevel);
 			descKeyPoints[i].octave = curLevel;
+//			descKeyPoints[i].octave = 0;
 		}
 		{
 			//TODO opencv's ORB::compute sorts keyPoints according to octave,
@@ -391,9 +392,13 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	assert(
 			("TrackKLT: 2D and 3D sizes at the end: features3d", distortedFeatures2D.size()
 					== features3D.size()));
-	assert(
-			("TrackKLT: 2D and 3D sizes at the end: descriptors", distortedFeatures2D.size()
-					== descriptors.rows));
+	if (matcherParameters.MapMatchingVersion
+				!= MatcherParameters::MAPMATCH_PATCHES)
+	{
+		assert(
+				("TrackKLT: 2D and 3D sizes at the end: descriptors", distortedFeatures2D.size()
+						== descriptors.rows));
+	}
 	assert(
 			("TrackKLT: 2D and 3D sizes at the end: keyPoints", distortedFeatures2D.size()
 					== keyPoints.size()));
@@ -418,20 +423,20 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 //		showFeatures(sensorData.rgbImage, tmp[1]);
 //	}
 
-//	if(distortedFeatures2D.size() != undistortedFeatures2D.size() ||
-//			distortedFeatures2D.size() != features3D.size() ||
-//			distortedFeatures2D.size() != descriptors.rows ||
-//			distortedFeatures2D.size() != keyPoints.size() ||
-//			distortedFeatures2D.size() != detDists.size())
-//	{
-//		std::cout << "Bad number of entries" << std::endl;
-//		std::cout << "distortedFeatures2D.size() = " << distortedFeatures2D.size() << std::endl;
-//		std::cout << "undistortedFeatures2D.size() = " << undistortedFeatures2D.size() << std::endl;
-//		std::cout << "features3D.size() = " << features3D.size() << std::endl;
-//		std::cout << "descriptors.rows = " << descriptors.rows << std::endl;
-//		std::cout << "keyPoints.size() = " << keyPoints.size() << std::endl;
-//		std::cout << "detDists.size() = " << detDists.size() << std::endl;
-//	}
+	if(distortedFeatures2D.size() != undistortedFeatures2D.size() ||
+			distortedFeatures2D.size() != features3D.size() ||
+			distortedFeatures2D.size() != descriptors.rows ||
+			distortedFeatures2D.size() != keyPoints.size() ||
+			distortedFeatures2D.size() != detDists.size())
+	{
+		std::cout << "Bad number of entries" << std::endl;
+		std::cout << "distortedFeatures2D.size() = " << distortedFeatures2D.size() << std::endl;
+		std::cout << "undistortedFeatures2D.size() = " << undistortedFeatures2D.size() << std::endl;
+		std::cout << "features3D.size() = " << features3D.size() << std::endl;
+		std::cout << "descriptors.rows = " << descriptors.rows << std::endl;
+		std::cout << "keyPoints.size() = " << keyPoints.size() << std::endl;
+		std::cout << "detDists.size() = " << detDists.size() << std::endl;
+	}
 
 	// Save computed values for next iteration
 	undistortedFeatures2D.swap(prevFeaturesUndistorted);
@@ -809,8 +814,14 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<int> frameIds) {
 
 	if (!newDetection)
-		return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
-				estimatedTransformation, prevDescriptors, prevFeatures3D);
+		return matchXYZ(mapFeatures,
+						sensorPoseId,
+						foundInlierMapFeatures,
+						estimatedTransformation,
+						prevDescriptors,
+						prevFeatures3D,
+						prevKeyPoints,
+						prevDetDists);
 
 	// Detect salient features
 	prevKeyPoints = detectFeatures(prevRgbImage);
@@ -848,8 +859,14 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	}
 
 
-	return matchXYZ(mapFeatures, sensorPoseId, foundInlierMapFeatures,
-			estimatedTransformation, prevDescriptors, prevFeatures3D);
+	return matchXYZ(mapFeatures,
+			sensorPoseId,
+			foundInlierMapFeatures,
+			estimatedTransformation,
+			prevDescriptors,
+			prevFeatures3D,
+			prevKeyPoints,
+			prevDetDists);
 }
 
 
@@ -858,7 +875,11 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation,
 		cv::Mat currentPoseDescriptors,
-		std::vector<Eigen::Vector3f> &currentPoseFeatures3D,std::vector<int> frameIds) {
+		std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
+		std::vector<cv::KeyPoint>& currentPoseKeyPoints,
+		std::vector<float_type>& currentPoseDetDists,
+		std::vector<int> frameIds)
+{
 
 	double matchingXYZSphereRadius = 0.15;
 	double matchingXYZacceptRatioOfBestMatch = 0.85;
@@ -876,6 +897,29 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			("matchXYZ: 2D and 3D sizes 2", prevDescriptors.rows
 					== prevFeatures3D.size()));
 
+
+	std::vector<int> currentPosePredLevels(currentPoseKeyPoints.size());
+	//Compute predicted scale
+	for(int i = 0; i < currentPoseKeyPoints.size(); ++i){
+		int detLevel = currentPoseKeyPoints[i].octave;
+		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
+		float_type curDist = std::sqrt(currentPoseFeatures3D[i][0]*currentPoseFeatures3D[i][0] +
+										currentPoseFeatures3D[i][1]*currentPoseFeatures3D[i][1] +
+										currentPoseFeatures3D[i][2]*currentPoseFeatures3D[i][2]);
+		float_type curLevelScaleFactor = detLevelScaleFactor * currentPoseDetDists[i] / curDist;
+
+		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
+		int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
+		curLevel = std::max(0, curLevel);
+		curLevel = std::min(nLevels - 1, curLevel);
+		currentPosePredLevels[i] = curLevel;
+
+//		std::cout << "currentPoseKeyPoint[" << i << "]" << std::endl;
+//		std::cout << "detDist = " << currentPoseDetDists[i] << std::endl;
+//		std::cout << "detLevel = " << detLevel << std::endl;
+//		std::cout << "curDist = " << curDist << std::endl;
+//		std::cout << "curLevel = " << curLevel << std::endl;
+	}
 
 
 	// Perform matching
@@ -902,6 +946,26 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			}
 		}
 
+		//Compute predicted scale
+		int& detLevel = it->descriptors[mapFeatureClosestFrameId].octave;
+		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
+		float_type& detDist = it->descriptors[mapFeatureClosestFrameId].detDist;
+		float_type curDist = std::sqrt(it->position.vector()[0]*it->position.vector()[0] +
+										it->position.vector()[1]*it->position.vector()[1] +
+										it->position.vector()[2]*it->position.vector()[2]);
+		float_type curLevelScaleFactor = detLevelScaleFactor * detDist / curDist;
+		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
+		int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
+		curLevel = std::max(0, curLevel);
+		curLevel = std::min(nLevels - 1, curLevel);
+
+//		std::cout << "mFeatures[" << j << "]" << std::endl;
+//		std::cout << "detDist = " << detDist << std::endl;
+//		std::cout << "detLevel = " << detLevel << std::endl;
+//		std::cout << "curDist = " << curDist << std::endl;
+//		std::cout << "curLevel = " << curLevel << std::endl;
+
+
 		// Possible matches for considered feature
 		std::vector<int> possibleMatchId;
 
@@ -911,7 +975,11 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 					(float) it->position.y(), (float) it->position.z());
 			float norm = (tmp - (currentPoseFeatures3D[i])).norm();
 
-			if (norm < matchingXYZSphereRadius) {
+			bool scaleCheck = currentPosePredLevels[i] - 1 <= curLevel &&
+								curLevel <= currentPosePredLevels[i] + 1;
+//			bool scaleCheck = true;
+			bool posCheck = norm < matchingXYZSphereRadius;
+			if (posCheck && scaleCheck) {
 				possibleMatchId.push_back(i);
 			}
 		}
