@@ -617,7 +617,11 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-				prevDescriptors.row(currentPoseId));
+													mapFeature.u,
+													mapFeature.v,
+													prevDescriptors.row(currentPoseId),
+													prevKeyPoints[currentPoseId].octave,
+													prevDetDists[currentPoseId]);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement
@@ -759,6 +763,15 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 				sensorFrames[i].depthImage, matcherParameters.cameraMatrixMat,
 				sensorFrames[i].depthImageScale);
 
+		//Compute distance at which feature was detected
+		std::vector<float_type> detDists(features3D[i].size());
+		for(int j = 0; j < features3D[i].size(); ++j){
+			float_type dist = std::sqrt(features3D[i][j][0]*features3D[i][j][0] +
+										features3D[i][j][1]*features3D[i][j][1] +
+										features3D[i][j][2]*features3D[i][j][2]);
+			detDists[j] = dist;
+		}
+
 		// Convert to map format
 		for (int j=0;j<features3D[i].size();j++) {
 			MapFeature mapFeature;
@@ -772,7 +785,11 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 			mapFeature.posesIds.push_back(i);
 
 			ExtendedDescriptor featureExtendedDescriptor(i,
-					descriptors.row(j));
+												mapFeature.u,
+												mapFeature.v,
+												descriptors.row(j),
+												features[i][j].octave,
+												detDists[j]);
 			mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 			// Add the measurement
@@ -1057,7 +1074,11 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-				currentPoseDescriptors.row(currentPoseId));
+													mapFeature.u,
+													mapFeature.v,
+													currentPoseDescriptors.row(currentPoseId),
+													currentPoseKeyPoints[currentPoseId].octave,
+													currentPoseDetDists[currentPoseId]);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement

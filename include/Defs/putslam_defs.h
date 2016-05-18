@@ -139,13 +139,6 @@ public:
     /// octave (pyramid layer) at which it was detected
     int octave;
 
-	/// Constructor TODO: is it needed?
-    ExtendedDescriptor() {};
-
-	/// Constructor TODO: is it needed?
-	ExtendedDescriptor(unsigned int _poseId, cv::Mat _descriptor) :
-            poseId(_poseId), descriptor(_descriptor) {};
-
 	/// Constructor
 	ExtendedDescriptor(unsigned int _poseId, float_type _u, float_type _v,
 			cv::Mat _descriptor, int _octave, float_type _detDist) :
