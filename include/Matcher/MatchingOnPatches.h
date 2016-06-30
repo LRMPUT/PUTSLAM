@@ -5,7 +5,7 @@
 #include <opencv/highgui.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
-#include <Eigen/Eigen>
+#include "Defs/eigen3.h"
 
 #include "../Defs/putslam_defs.h"
 

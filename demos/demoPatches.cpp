@@ -1,8 +1,7 @@
 #include <iostream>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include "Defs/opencv.h"
 #include <vector>
-#include <Eigen/Eigen>
+#include "Defs/eigen3.h"
 #include <chrono>
 
 #include "../include/Matcher/MatchingOnPatches.h"

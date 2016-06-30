@@ -13,7 +13,8 @@
 #include <vector>
 #include "opencv/cv.h"
 #include <opencv2/opencv.hpp>
-#include <Eigen/Eigen>
+//#include <Eigen/Eigen>
+#include "Defs/eigen3.h"
 #include <set>
 
 class RANSAC {

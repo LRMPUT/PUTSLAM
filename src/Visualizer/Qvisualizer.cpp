@@ -1,5 +1,5 @@
 #include "../include/Visualizer/Qvisualizer.h"
-#include <Eigen/Eigenvalues>
+#include "Defs/eigen3.h"
 #include <memory>
 #include <cmath>
 #include <stdexcept>

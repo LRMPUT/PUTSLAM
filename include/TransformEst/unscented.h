@@ -1,8 +1,9 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <Eigen/Cholesky>
-#include <Eigen/StdVector>
+#include "Defs/eigen3.h"
+//#include <Eigen/Core>
+//#include <Eigen/Cholesky>
+//#include <Eigen/StdVector>
 
 
 namespace PSolver {

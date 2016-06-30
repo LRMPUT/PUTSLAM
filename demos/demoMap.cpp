@@ -4,7 +4,7 @@
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include "Map/featuresMap.h"
 #include <cmath>
-#include <Eigen/Dense>
+#include "Defs/eigen3.h"
 
 using namespace std;
 

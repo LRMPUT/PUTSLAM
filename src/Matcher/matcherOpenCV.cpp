@@ -9,10 +9,10 @@
 #include <memory>
 #include <stdexcept>
 #include <set>
-
-#include <opencv2/features2d.hpp>
-#include <opencv2/xfeatures2d.hpp>
-#include <opencv2/imgproc.hpp>
+#include "Defs/opencv.h"
+//#include <opencv2/features2d.hpp>
+//#include <opencv2/xfeatures2d.hpp>
+//#include <opencv2/imgproc.hpp>
 
 using namespace putslam;
 
