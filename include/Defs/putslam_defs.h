@@ -12,7 +12,7 @@
 #include <memory>
 #include <cmath>
 #include "opencv2/core/core.hpp"
-#include "../../3rdParty/Eigen/Geometry"
+#include <Eigen/Geometry>
 //#include <pcl/point_types.h>
 //#include <pcl/io/pcd_io.h>
 #include <mutex>

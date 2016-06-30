@@ -58,7 +58,7 @@ namespace putslam {
               for (int i=0; i< m.rows(); i++) {
                 for (int j=0; j< m.cols(); j++) {
               float v = m(i,j);
-              if ( isnan( v ) )
+              if ( std::isnan( v ) )
                 return true;
                 }
               }

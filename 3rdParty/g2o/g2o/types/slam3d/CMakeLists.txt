@@ -23,7 +23,7 @@ ADD_LIBRARY(types_slam3d ${G2O_LIB_TYPE}
   edge_se3_pointxyz_disparity.cpp
   edge_se3_pointxyz_disparity.h
   edge_se3_pointxyz_reprojectionError.cpp
-  edge_se3_pointxyz_reprojectionError.h	
+  edge_se3_pointxyz_reprojectionError.h
   edge_se3_pointxyz_depth.cpp
   edge_se3_pointxyz_depth.h
   edge_se3_prior.cpp
@@ -40,7 +40,7 @@ ADD_LIBRARY(types_slam3d ${G2O_LIB_TYPE}
 
 SET_TARGET_PROPERTIES(types_slam3d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_slam3d)
 TARGET_LINK_LIBRARIES(types_slam3d core)
-IF(OPENGL_FOUND)
+IF(G2O_HAVE_OPENGL)
   TARGET_LINK_LIBRARIES(types_slam3d opengl_helper ${OPENGL_gl_LIBRARY} )
 ENDIF()
 
