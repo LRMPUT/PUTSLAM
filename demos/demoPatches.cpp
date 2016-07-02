@@ -1,5 +1,7 @@
 #include <iostream>
-#include "Defs/opencv.h"
+//#include "Defs/opencv.h"
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <vector>
 #include "Defs/eigen3.h"
 #include <chrono>

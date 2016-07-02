@@ -8,7 +8,10 @@
 
 #include <stddef.h>
 #include <OpenNI.h>
-#include "Defs/opencv.h"
+//#include "Defs/opencv.h"
+#include <opencv/cv.h>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 #include "grabber.h"
 #include "depthSensorModel.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
