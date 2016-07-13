@@ -1,6 +1,6 @@
 #include "../include/Utilities/simulator.h"
 #include <fstream>
-#include <Eigen/Dense>
+#include "Defs/eigen3.h"
 #include <vector>
 
 Simulator::Simulator(void){

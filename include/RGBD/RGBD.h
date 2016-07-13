@@ -21,6 +21,7 @@
 #include "opencv/cv.h"
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Core>
+#include "Defs/eigen3.h"
 
 // Out types
 #include "../include/Defs/putslam_defs.h"

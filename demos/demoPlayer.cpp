@@ -5,8 +5,7 @@
 #include <GL/glut.h>
 #include <qapplication.h>
 #include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "Defs/opencv.h"
 #include "Utilities/CLParser.h"
 
 using namespace std;

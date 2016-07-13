@@ -7,7 +7,7 @@ SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
 
 # PUTSLAM Project configuration
 PROJECT(PUTSLAM)
-SET(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
+SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -std=c++11 -pthread -fopenmp")
 
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -164,7 +164,7 @@ add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         file(GLOB DEFS_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Defs/putslam_defs.h"
+            "${CMAKE_SOURCE_DIR}/include/Defs/*.h"
         )
         ADD_LIBRARY(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
         set_target_properties(PUTSLAM_DEFS PROPERTIES LINKER_LANGUAGE CXX)

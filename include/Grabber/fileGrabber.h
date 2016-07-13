@@ -10,7 +10,7 @@
 #include "grabber.h"
 #include "depthSensorModel.h"
 #include "../include/Grabber/grabber.h"
-#include <opencv2/highgui/highgui.hpp>
+#include "Defs/opencv.h"
 #include <iostream>
 #include <chrono>
 #include <memory>

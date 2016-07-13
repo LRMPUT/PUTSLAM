@@ -1,4 +1,5 @@
-#include <opencv2/opencv.hpp>
+#include "Defs/opencv.h"
+//#include <opencv2/opencv.hpp>
 #include <../include/VisualPlaceRecognition/openfabmap.hpp>
 
 

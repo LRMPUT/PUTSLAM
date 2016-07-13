@@ -6,10 +6,10 @@
 #include "TransformEst/kabschEst.h"
 #include "TransformEst/g2oEst.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
-#include <g2o/types/slam3d/isometry3d_mappings.h>
+#include "Defs/g2o.h"
 #include "PoseGraph/graph_g2o.h"
 #include <cmath>
-#include <Eigen/Dense>
+#include "Defs/eigen3.h"
 #include "../include/Grabber/kinectGrabber.h"
 
 using namespace std;
