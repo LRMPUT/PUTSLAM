@@ -52,7 +52,7 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 			sensorData.depthImageScale);
 
 	prevDetDists.clear();
-	for(int i = 0; i < prevFeatures3D.size(); ++i){
+	for(std::vector<Eigen::Vector3f>::size_type i = 0; i < prevFeatures3D.size(); ++i){
 		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
 									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
 									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
@@ -90,9 +90,9 @@ void Matcher::mergeTrackedFeatures(
 {
 
 	// Merging features - rejecting feature too close to existing ones
-	for (int i = 0; i < featuresSandBoxUndistorted.size(); i++) {
+	for (std::vector<cv::Point2f>::size_type i = 0; i < featuresSandBoxUndistorted.size(); i++) {
 		bool addFeature = true;
-		for (int j = 0; j < undistortedFeatures2D.size(); j++) {
+		for (std::vector<cv::Point2f>::size_type j = 0; j < undistortedFeatures2D.size(); j++) {
 			if (cv::norm(
 					featuresSandBoxUndistorted[i] - undistortedFeatures2D[j])
 					< matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
@@ -214,7 +214,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	}
 
 	// If the number of tracked features falls below certain number, we detect new features are merge them together
-	if (undistortedFeatures2D.size()
+	if ((int)undistortedFeatures2D.size()
 			< matcherParameters.OpenCVParams.minimalTrackedFeatures) {
 
 		// Detect new salient features
@@ -240,7 +240,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 						matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
 
 		std::vector<float_type> detDistsSandbox;
-		for(int i = 0; i < features3DSandbox.size(); ++i){
+		for(std::vector<Eigen::Vector3f>::size_type i = 0; i < features3DSandbox.size(); ++i){
 			float_type dist = std::sqrt(features3DSandbox[i][0]*features3DSandbox[i][0] +
 										features3DSandbox[i][1]*features3DSandbox[i][1] +
 										features3DSandbox[i][2]*features3DSandbox[i][2]);
@@ -293,7 +293,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		std::vector<cv::KeyPoint> descKeyPoints = keyPoints;
 		//Compute predicted scale
-		for(int i = 0; i < descKeyPoints.size(); ++i){
+		for(std::vector<cv::KeyPoint>::size_type i = 0; i < descKeyPoints.size(); ++i){
 			int detLevel = descKeyPoints[i].octave;
 			float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
 			float_type curDist = std::sqrt(features3D[i][0]*features3D[i][0] +
@@ -302,7 +302,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			float_type curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
 
 			//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
-			int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
+			int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
 			curLevel = std::max(0, curLevel);
 			curLevel = std::min(nLevels - 1, curLevel);
 			descKeyPoints[i].octave = curLevel;
@@ -312,7 +312,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			//TODO opencv's ORB::compute sorts keyPoints according to octave,
 			// to prevent this we sort it earlier and maintain correct order in all structures
 			std::vector<std::vector<std::pair<int, int>>> keyPointsLevel(nLevels);
-			for(int i = 0; i < keyPoints.size(); ++i){
+			for(std::vector<cv::KeyPoint>::size_type i = 0; i < keyPoints.size(); ++i){
 				//use current level
 				int level = descKeyPoints[i].octave;
 				keyPointsLevel[level].emplace_back(level, i);
@@ -321,9 +321,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			std::vector<Eigen::Vector3f> tmp3D;
 			std::vector<cv::KeyPoint> tmpKeyPoints;
 			std::vector<float_type> tmpDetDists;
-			int pos = 0;
-			for(int l = 0; l < keyPointsLevel.size(); ++l){
-				for(int i = 0; i < keyPointsLevel[l].size(); ++i){
+
+			for(std::vector<int>::size_type l = 0; l < keyPointsLevel.size(); ++l){
+				for(std::vector<int>::size_type i = 0; i < keyPointsLevel[l].size(); ++i){
 					tmpDistorted.push_back(distortedFeatures2D[keyPointsLevel[l][i].second]);
 					tmpUndistorted.push_back(undistortedFeatures2D[keyPointsLevel[l][i].second]);
 					tmp3D.push_back(features3D[keyPointsLevel[l][i].second]);
@@ -360,7 +360,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			std::vector<cv::KeyPoint> tmpKeyPoints;
 			std::vector<float_type> tmpDetDists;
 
-			for(int i=0, j=0;i<keyPoints.size();i++) {
+			for(std::vector<cv::KeyPoint>::size_type i=0, j=0;i<keyPoints.size();i++) {
 //				std::cout << "i = " << i << ", j = " << j << std::endl;
 				if ( j == descKeyPoints.size())
 					break;
@@ -425,7 +425,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 	if(distortedFeatures2D.size() != undistortedFeatures2D.size() ||
 			distortedFeatures2D.size() != features3D.size() ||
-			distortedFeatures2D.size() != descriptors.rows ||
+			(int)distortedFeatures2D.size() != descriptors.rows ||
 			distortedFeatures2D.size() != keyPoints.size() ||
 			distortedFeatures2D.size() != detDists.size())
 	{
@@ -638,9 +638,9 @@ void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
 			it != featureSet.end(); ++it, ++j) {
 		// Find the closest view in a map for a feature
 		if (frameIds.size() > 0) {
-			for (int k = 0; k < it->descriptors.size(); k++) {
-				if (frameIds[j] == it->descriptors[k].poseId) {
-					closestFrameIndex[j] = k;
+			for (std::vector<ExtendedDescriptor>::size_type k = 0; k < it->descriptors.size(); k++) {
+				if (frameIds[j] == (int)it->descriptors[k].poseId) {
+					closestFrameIndex[j] = (int)k;
 					break;
 				}
 			}
@@ -661,11 +661,6 @@ double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
 		std::vector<std::pair<int, int>> &pairedFeatures,
 		Eigen::Matrix4f &estimatedTransformation) {
 
-
-	int normType = cv::NORM_HAMMING;
-	if (matcherParameters.OpenCVParams.descriptor == "SURF"
-				|| matcherParameters.OpenCVParams.descriptor == "SIFT")
-		normType = cv::NORM_L2;
 
 	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
     cv::Mat descriptors[2] = { extractMapDescriptors(featureSet[0]),
@@ -765,7 +760,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 
 		//Compute distance at which feature was detected
 		std::vector<float_type> detDists(features3D[i].size());
-		for(int j = 0; j < features3D[i].size(); ++j){
+		for(std::vector<Eigen::Vector3f>::size_type j = 0; j < features3D[i].size(); ++j){
 			float_type dist = std::sqrt(features3D[i][j][0]*features3D[i][j][0] +
 										features3D[i][j][1]*features3D[i][j][1] +
 										features3D[i][j][2]*features3D[i][j][2]);
@@ -773,9 +768,9 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 		}
 
 		// Convert to map format
-		for (int j=0;j<features3D[i].size();j++) {
+		for (std::vector<Eigen::Vector3f>::size_type j=0;j<features3D[i].size();j++) {
 			MapFeature mapFeature;
-			mapFeature.id = j;
+			mapFeature.id = (unsigned int)j;
 
 			mapFeature.u = undistortedFeatures2D[j].x;
 			mapFeature.v = undistortedFeatures2D[j].y;
@@ -787,7 +782,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 			ExtendedDescriptor featureExtendedDescriptor(i,
 												mapFeature.u,
 												mapFeature.v,
-												descriptors.row(j),
+												descriptors.row((int)j),
 												features[i][j].octave,
 												detDists[j]);
 			mapFeature.descriptors.push_back(featureExtendedDescriptor);
@@ -867,7 +862,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			prevDepthImageScale);
 
 	prevDetDists.clear();
-	for(int i = 0; i < prevFeatures3D.size(); ++i){
+	for(std::vector<Eigen::Vector3f>::size_type i = 0; i < prevFeatures3D.size(); ++i){
 		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
 									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
 									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
@@ -917,7 +912,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	std::vector<int> currentPosePredLevels(currentPoseKeyPoints.size());
 	//Compute predicted scale
-	for(int i = 0; i < currentPoseKeyPoints.size(); ++i){
+	for(std::vector<cv::KeyPoint>::size_type i = 0; i < currentPoseKeyPoints.size(); ++i){
 		int detLevel = currentPoseKeyPoints[i].octave;
 		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
 		float_type curDist = std::sqrt(currentPoseFeatures3D[i][0]*currentPoseFeatures3D[i][0] +
@@ -926,7 +921,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		float_type curLevelScaleFactor = detLevelScaleFactor * currentPoseDetDists[i] / curDist;
 
 		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
-		int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
+		int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
 		curLevel = std::max(0, curLevel);
 		curLevel = std::min(nLevels - 1, curLevel);
 		currentPosePredLevels[i] = curLevel;
@@ -955,8 +950,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		// Find the closest view in a map for a feature
 		int mapFeatureClosestFrameId = 0;
 		if (frameIds.size() > 0) {
-			for (int k = 0; k < it->descriptors.size(); k++) {
-				if (frameIds[j] == it->descriptors[k].poseId) {
+			for (unsigned int k = 0; k < it->descriptors.size(); k++) {
+				if (frameIds[j] == (int)it->descriptors[k].poseId) {
 					mapFeatureClosestFrameId = k;
 					break;
 				}
@@ -972,7 +967,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 										it->position.vector()[2]*it->position.vector()[2]);
 		float_type curLevelScaleFactor = detLevelScaleFactor * detDist / curDist;
 		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
-		int curLevel = std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
+		int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
 		curLevel = std::max(0, curLevel);
 		curLevel = std::min(nLevels - 1, curLevel);
 
@@ -987,7 +982,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<int> possibleMatchId;
 
 		// Reject all matches that are further away than threshold
-		for (int i = 0; i < currentPoseFeatures3D.size(); i++) {
+		for (std::vector<ExtendedDescriptor>::size_type i = 0; i < currentPoseFeatures3D.size(); i++) {
 			Eigen::Vector3f tmp((float) it->position.x(),
 					(float) it->position.y(), (float) it->position.z());
 			float norm = (tmp - (currentPoseFeatures3D[i])).norm();
@@ -997,19 +992,19 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 //			bool scaleCheck = true;
 			bool posCheck = norm < matchingXYZSphereRadius;
 			if (posCheck && scaleCheck) {
-				possibleMatchId.push_back(i);
+				possibleMatchId.push_back((int)i);
 			}
 		}
 
 		// Find best match based on descriptors
 		int bestId = -1;
-		float bestVal;
-		for (int i = 0; i < possibleMatchId.size(); i++) {
+		float bestVal = 99999;
+		for (std::vector<int>::size_type i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
 			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
 					- currentPoseDescriptors.row(id));
-			float value = norm(x, normType);
+			float value = (float)norm(x, normType);
 			if (value < bestVal || bestId == -1) {
 				bestVal = value;
 				bestId = id;
@@ -1022,12 +1017,12 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		}
 
 		// Check the rest compared to the best
-		for (int i = 0; i < possibleMatchId.size(); i++) {
+		for (std::vector<int>::size_type i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
 			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
 					- currentPoseDescriptors.row(id));
-			float value = norm(x, normType);
+			float value = (float)norm(x, normType);
 			if (matchingXYZacceptRatioOfBestMatch * value <= bestVal) {
 				cv::DMatch tmpMatch;
 				tmpMatch.distance = value;
@@ -1106,7 +1101,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 	std::vector<cv::DMatch> matches;
 
 	// For all features
-	for (int i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
+	for (std::vector<MapFeature>::size_type i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
 
 		// Compute the 4 points/borders of the new patch (Clockwise)
 		std::vector<cv::Point2f> warpingPoints;
@@ -1117,17 +1112,17 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 
 		// Saving those points in OpenCV types
 		warpingPoints.push_back(
-				cv::Point2f(mapFeatures[i].u - halfPatchBorderSize,
-						mapFeatures[i].v - halfPatchBorderSize));
+				cv::Point2f(float(mapFeatures[i].u - halfPatchBorderSize),
+						float(mapFeatures[i].v - halfPatchBorderSize)));
 		warpingPoints.push_back(
-				cv::Point2f(mapFeatures[i].u + halfPatchBorderSize,
-						mapFeatures[i].v - halfPatchBorderSize));
+				cv::Point2f(float(mapFeatures[i].u + halfPatchBorderSize),
+						float(mapFeatures[i].v - halfPatchBorderSize)));
 		warpingPoints.push_back(
-				cv::Point2f(mapFeatures[i].u + halfPatchBorderSize,
-						mapFeatures[i].v + halfPatchBorderSize));
+				cv::Point2f(float(mapFeatures[i].u + halfPatchBorderSize),
+						float(mapFeatures[i].v + halfPatchBorderSize)));
 		warpingPoints.push_back(
-				cv::Point2f(mapFeatures[i].u - halfPatchBorderSize,
-						mapFeatures[i].v + halfPatchBorderSize));
+				cv::Point2f(float(mapFeatures[i].u - halfPatchBorderSize),
+						float(mapFeatures[i].v + halfPatchBorderSize)));
 
 		// Project those 4 points into space
 		std::vector<Eigen::Vector3f> warpingPoints3D = RGBD::keypoints2Dto3D(
@@ -1136,7 +1131,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 
 		// Check if all points are correct - reject those without depth as those invalidate the patch planarity assumption
 		bool correctPoints3D = true;
-		for (int i = 0; i < warpingPoints3D.size(); i++) {
+		for (std::vector<Eigen::Vector3f>::size_type i = 0; i < warpingPoints3D.size(); i++) {
 			if (warpingPoints3D[i].z() < 0.0001) {
 				correctPoints3D = false;
 				break;
@@ -1158,13 +1153,13 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 					warp = (cameraPoses[i].inverse()).matrix()
 							* cameraPose.matrix() * warp.matrix();
 
-					float u = warp(0, 3)
+					float u = (float)warp(0, 3)
 							* matcherParameters.cameraMatrixMat.at<float>(0, 0)
-							/ warp(2, 3)
+							/ (float)warp(2, 3)
 							+ matcherParameters.cameraMatrixMat.at<float>(0, 2);
-					float v = warp(1, 3)
+					float v = (float)warp(1, 3)
 							* matcherParameters.cameraMatrixMat.at<float>(1, 1)
-							/ warp(2, 3)
+							/ (float)warp(2, 3)
 							+ matcherParameters.cameraMatrixMat.at<float>(1, 2);
 					src[i] = cv::Point2f(u, v);
 				}
@@ -1172,9 +1167,9 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				// We will transform it into the rectangle
 				std::vector<cv::Point2f> dst(4);
 				dst[0] = cv::Point2f(0, 0);
-				dst[1] = cv::Point2f(patchSize + 1, 0);
-				dst[2] = cv::Point2f(patchSize + 1, patchSize + 1);
-				dst[3] = cv::Point2f(0, patchSize + 1);
+				dst[1] = cv::Point2f((float)patchSize + 1, 0);
+				dst[2] = cv::Point2f((float)patchSize + 1, (float)patchSize + 1);
+				dst[3] = cv::Point2f(0, (float)patchSize + 1);
 
 				// Compute getPerspective
 				cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,
@@ -1190,11 +1185,11 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				vMap = halfPatchSize + 1;
 			} else {
 				// Find positions on original image
-				float uMap = -1, vMap = -1;
-				for (int j = 0; j < mapFeatures[i].descriptors.size(); j++) {
-					if (mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
-						uMap = mapFeatures[i].descriptors[j].u;
-						vMap = mapFeatures[i].descriptors[j].v;
+				uMap = -1, vMap = -1;
+				for (std::vector<ExtendedDescriptor>::size_type j = 0; j < mapFeatures[i].descriptors.size(); j++) {
+					if ((int)mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
+						uMap = (float)mapFeatures[i].descriptors[j].u;
+						vMap = (float)mapFeatures[i].descriptors[j].v;
 						break;
 					}
 				}
@@ -1202,6 +1197,7 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				// Set image as:
 				warpedImage = mapRgbImages[i];
 			}
+
 
 			// Compute old patch
 			std::vector<double> patchMap;
@@ -1233,10 +1229,10 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 										* (mapFeatures[i].v - vOld));
 				std::cout << "Patches 2D diff: " << error2D << std::endl;
 				Eigen::Vector3f p3D = RGBD::point2Dto3D(
-						cv::Point2f(mapFeatures[i].u, mapFeatures[i].v),
+						cv::Point2f((float)mapFeatures[i].u, (float)mapFeatures[i].v),
 						prevDepthImage, matcherParameters.cameraMatrixMat,
 						depthImageScale);
-				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f(uOld, vOld),
+				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f((float)uOld,(float)vOld),
 						prevDepthImage, matcherParameters.cameraMatrixMat,
 						depthImageScale);
 				double error3D = (r3D - p3D).norm();
@@ -1258,9 +1254,9 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		}
 		// Save a good match
 		if (featureOK || !correctPoints3D) {
-			matches.push_back(cv::DMatch(i, goodFeaturesIndex, 0));
+			matches.push_back(cv::DMatch((int)i, (int)goodFeaturesIndex, 0));
 			optimizedLocations.push_back(
-					cv::Point2f(mapFeatures[i].u, mapFeatures[i].v));
+					cv::Point2f((float)mapFeatures[i].u, (float)mapFeatures[i].v));
 			goodFeaturesIndex++;
 		}
 
@@ -1362,8 +1358,8 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 
 	std::set<int> featuresToRemove;
 
-	for (int i = 0; i < features3D.size(); i++) {
-		for (int j = i + 1; j < features3D.size(); j++) {
+	for (std::vector<Eigen::Vector3f>::size_type i = 0; i < features3D.size(); i++) {
+		for (std::vector<Eigen::Vector3f>::size_type j = i + 1; j < features3D.size(); j++) {
 
 			double x = features3D[i][0] - features3D[j][0];
 			double y = features3D[i][1] - features3D[j][1];
@@ -1376,7 +1372,7 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 
 			if ( dist3D < matcherParameters.OpenCVParams.minimalEuclidDistanceNewTrackingFeatures ||
 					dist2D < matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
-				featuresToRemove.insert(j); // TODO: Arbitrary decision right now
+				featuresToRemove.insert((int)j); // TODO: Arbitrary decision right now
 			}
 		}
 	}
@@ -1437,5 +1433,5 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 }
 
 int Matcher::getNumberOfFeatures() {
-	return prevFeaturesDistorted.size();
+	return (int)prevFeaturesDistorted.size();
 }

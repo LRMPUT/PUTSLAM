@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
                 RGBDFeature f(Vec3(0.2+i*0.1, 0.3+i*0.2, 2.2), 0, 0, std::vector<ExtendedDescriptor>());
                 features.push_back(f);
             }
-            unsigned int id  = map->addNewPose(cameraPose, (std::chrono::high_resolution_clock::now() - startTime).count());
+            unsigned int id  = map->addNewPose(cameraPose, (double)(std::chrono::high_resolution_clock::now() - startTime).count());
             map->addFeatures(features, id);
             std::vector<MapFeature> mapFeatures = map->getAllFeatures();
             std::vector<MapFeature> measurements;
@@ -45,7 +45,7 @@ int main(int argc, char * argv[])
                 Mat34 poseGlob (it->position);
                 Mat34 meas = cameraPose.inverse()*poseGlob;
                 feat.position.x() = meas(0,3)+i*0.01; feat.position.y() = meas(1,3)-i*0.01; feat.position.z() = meas(2,3);
-                if (feat.id<10000+i*10)
+                if ((int)feat.id<10000+i*10)
                     measurements.push_back(feat);
             }
             map->addMeasurements(measurements);

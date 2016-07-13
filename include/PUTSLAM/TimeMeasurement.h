@@ -28,7 +28,7 @@ public:
 
 		checkAndResizeVectors();
 
-		for (int i = 0; i < voTimes.size(); i++) {
+		for (unsigned int i = 0; i < voTimes.size(); i++) {
 			file << i << "\t"
 				<< voTimes[i] << "\t"
 				<< mapTimes[i] << "\t"
@@ -69,16 +69,16 @@ private:
 		if (vec.size() == 0)
 			return 0.0;
 
-		double s = 0;
+		long s = 0;
 		for (auto &v : vec) {
 			s += v;
 		}
-		return s / vec.size();
+		return (double) s / (double) vec.size();
 	}
 
 
 	void checkAndResizeVectors() {
-		int size = voTimes.size();
+		long unsigned int size = voTimes.size();
 		mapTimes.resize(size, -1.0);
 		mapAddNewPoseTimes.resize(size, -1.0);
 		mapGetSensorPoseTimes.resize(size, -1.0);

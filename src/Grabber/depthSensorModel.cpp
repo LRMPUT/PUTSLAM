@@ -11,7 +11,7 @@ DepthSensorModel::DepthSensorModel(std::string configFile) : config(configFile){
 }
 
 void DepthSensorModel::getPoint(uint_fast16_t u, uint_fast16_t v, float_type depth, Eigen::Vector3d& point3D) const{
-    Eigen::Vector3d point(u, v, 1);
+    Eigen::Vector3d point((double)u,(double)v, 1.0);
     point3D = depth*PHCPModel*point;
 }
 
@@ -28,9 +28,9 @@ Eigen::Vector3d DepthSensorModel::inverseModel(float_type x, float_type y,
 void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov) {
     //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
     Mat33 J;
-    J << depth/config.focalLength[0], 0, ((u/config.focalLength[0])-(config.focalAxis[0]/config.focalLength[0])),
-         0, depth/config.focalLength[1], ((v/config.focalLength[1])-(config.focalAxis[1]/config.focalLength[1])),
-         0, 0, 1;
+    J << depth/config.focalLength[0], 0.0, (((double)u/config.focalLength[0])-(config.focalAxis[0]/config.focalLength[0])),
+         0.0, depth/config.focalLength[1], (((double)v/config.focalLength[1])-(config.focalAxis[1]/config.focalLength[1])),
+         0.0, 0.0, 1.0;
     Ruvd(2,2) = config.distVarCoefs[0]*pow(depth,3.0) + config.distVarCoefs[1]*pow(depth,2.0) + config.distVarCoefs[2]*depth + config.distVarCoefs[3];
     cov=J*Ruvd*J.transpose();
 }
@@ -41,20 +41,20 @@ void DepthSensorModel::computeCov(Eigen::Vector3f point, Mat33& cov){
     if (imageCoordinates.x()==-1)
         cov.setZero();
     else
-        computeCov(imageCoordinates.x(), imageCoordinates.y(), imageCoordinates.z(),cov);
+        computeCov((unsigned long int)imageCoordinates.x(), (unsigned long int)imageCoordinates.y(), imageCoordinates.z(),cov);
 }
 
 /// compute information matrix
 Mat33 DepthSensorModel::informationMatrix(float_type x, float_type y, float_type z){
     Mat33 info;
 	Eigen::Vector3d cam3D = inverseModel(x, y, z);
-	computeCov(cam3D(0), cam3D(1), cam3D(2), info);
+	computeCov((unsigned long int)cam3D(0), (unsigned long int)cam3D(1), cam3D(2), info);
     return info.inverse();
 }
 
 Mat33 DepthSensorModel::informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z) {
     Mat33 cov;
-    computeCov(u, v, z, cov);
+    computeCov((unsigned long int)u, (unsigned long int)v, z, cov);
     return cov.inverse();
 }
 

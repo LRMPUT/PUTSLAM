@@ -126,7 +126,7 @@ std::vector<int> Simulator::getCloud(const Mat34& sensorPose, DepthSensorModel& 
         Eigen::Vector3d point2d = sensorModel.inverseModel(pointCamera(0), pointCamera(1), pointCamera(2));
         if (point2d(0)!=-1){
             Mat33 uncertainty;
-            sensorModel.computeCov(point2d(0), point2d(1), point2d(2), uncertainty);
+            sensorModel.computeCov((uint_fast16_t)point2d(0), (uint_fast16_t)point2d(1), point2d(2), uncertainty);
             Point3D point3D = sampleFromMultivariateGaussian(Eigen::Vector3d(pointCamera(0), pointCamera(1), pointCamera(2)),uncertainty);
             //point3D.x = pointCamera[0]; point3D.y = pointCamera[1]; point3D.z = pointCamera[2]; // no noise
             //point3D.x = room[i].x; point3D.y = room[i].y; point3D.z = room[i].z; // no noise global frame
@@ -134,9 +134,9 @@ std::vector<int> Simulator::getCloud(const Mat34& sensorPose, DepthSensorModel& 
             if (point2dTmp(0)!=-1){
                 setPoints.push_back(point3D);
                 Eigen::Vector3d inv2d = sensorModel.inverseModel(point3D.x, point3D.y, point3D.z);
-                sensorModel.computeCov(inv2d(0), inv2d(1), inv2d(2), uncertainty);
+                sensorModel.computeCov((uint_fast16_t)inv2d(0), (uint_fast16_t)inv2d(1), inv2d(2), uncertainty);
                 setUncertainty.push_back(uncertainty);
-                pointIdentifiers.push_back(i);
+                pointIdentifiers.push_back((int)i);
             }
         }
     }
@@ -146,7 +146,7 @@ std::vector<int> Simulator::getCloud(const Mat34& sensorPose, DepthSensorModel& 
 /// match point clouds
 bool Simulator::matchClouds(const PointCloud& setAin, Eigen::MatrixXd& setAout, const std::vector<Mat33>& uncertaintyAin, std::vector<Mat33>& uncertaintyAout, const std::vector<int>& setAids, const PointCloud& setBin, Eigen::MatrixXd& setBout, const std::vector<Mat33>& uncertaintyBin, std::vector<Mat33>& uncertaintyBout, const std::vector<int>& setBids){
     int matchesNo=0;
-    for (int i=0;i<setAin.size();i++){
+    for (size_t i=0;i<setAin.size();i++){
         if (std::find(setBids.begin(),setBids.end(),setAids[i])!=setBids.end())
             matchesNo++;
     }
@@ -156,7 +156,7 @@ bool Simulator::matchClouds(const PointCloud& setAin, Eigen::MatrixXd& setAout, 
         return false;
     }
     matchesNo=0;
-    for (int i=0;i<setAin.size();i++){
+    for (size_t i=0;i<setAin.size();i++){
         std::vector<int>::const_iterator itB = std::find(setBids.begin(),setBids.end(),setAids[i]);
         if (itB!=setBids.end()){
             setAout(matchesNo,0) = setAin[i].x; setAout(matchesNo,1) = setAin[i].y; setAout(matchesNo,2) = setAin[i].z;
@@ -177,7 +177,7 @@ void Simulator::moveCamera(const std::vector<Mat34>& robotTrajectory, const Mat3
     //std::vector<int> setId = getCloud(sensorPoseGlobal, sensorModel, environment, cloud, uncertaintyCloud);
     //savePointCloud("../../resources/KabschUncertainty/cloud0.m", cloudA);
     //cloudA = cloud2local(cloudA, sensorPose);
-    for (int i=0;i<robotTrajectory.size();i++){
+    for (size_t i=0;i<robotTrajectory.size();i++){
         //get point clouds
         sensorPoseGlobal.matrix() = robotTrajectory[i].matrix()*sensorPose.matrix();
         std::vector<int> setId = getCloud(sensorPoseGlobal, sensorModel, cloud, uncertaintyCloud);
@@ -203,7 +203,7 @@ void Simulator::saveImageFeatures(std::string filename, const Mat34& sensorPose,
     Quaternion qKabsch(estimation.rotation());
     file << sensorPose(0,3) << ", " << sensorPose(1,3) << ", " << sensorPose(2,3) << ", " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << "\n";
     file << estimation(0,3) << ", " << estimation(1,3) << ", " << estimation(2,3) << ", " << qKabsch.w() << ", " << qKabsch.x() << ", " << qKabsch.y() << ", " << qKabsch.z() << "\n";
-    for (int i=0;i<cloud.size();i++){
+    for (size_t i=0;i<cloud.size();i++){
         Eigen::Vector3d cameraPoint = sensorModel.inverseModel(cloud[i].x, cloud[i].y, cloud[i].z);
         file << setIds[i] << ", " << cameraPoint.x() << ", " << cameraPoint.y() << ", " << cameraPoint.z() << "\n";
     }

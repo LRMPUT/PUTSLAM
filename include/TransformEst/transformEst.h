@@ -41,8 +41,8 @@ namespace putslam {
             Eigen::MatrixXd Cx(2*3*setA.rows(),2*3*setA.rows());
             Cx = Eigen::ArrayXXd::Zero(2*3*setA.rows(), 2*3*setA.rows());
             Eigen::MatrixXd dgdX(2*3*setA.rows(),6);
-            float_type k = 1.0/setA.rows();
-            for (size_t i=0;i<setA.rows();i++){
+            float_type k = 1.0/(float_type)setA.rows();
+            for (Eigen::Index i=0;i<setA.rows();i++){
                 float_type xa = setA(i,0); float_type ya = setA(i,1); float_type za = setA(i,2);
                 float_type xb = setB(i,0); float_type yb = setB(i,1); float_type zb = setB(i,2);
 
@@ -152,9 +152,9 @@ namespace putslam {
             Eigen::MatrixXd Cx(2*3*setA.rows(),2*3*setA.rows());
             Cx = Eigen::ArrayXXd::Zero(2*3*setA.rows(), 2*3*setA.rows());
             Eigen::MatrixXd dgdX(2*3*setA.rows(),6);
-            float_type k = 1.0/setA.rows();
+            float_type k = 1.0/(float_type)setA.rows();
             float_type qx = quat.x(); float_type qy = quat.y(); float_type qz = quat.z(); float_type qw = quat.w();
-            for (size_t i=0;i<setA.rows();i++){
+            for (Eigen::Index i=0;i<setA.rows();i++){
                 float_type xa = setA(i,0); float_type ya = setA(i,1); float_type za = setA(i,2);
                 float_type xb = setB(i,0); float_type yb = setB(i,1); float_type zb = setB(i,2);
 
@@ -280,18 +280,18 @@ namespace putslam {
             const double& q1 = q.x();
             const double& q2 = q.y();
             const double& q3 = q.z();
-            double roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)); // r32/r33
-            double pitch = asin(2*(q0*q2-q3*q1));
+//            double roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)); // r32/r33
+//            double pitch = asin(2*(q0*q2-q3*q1));
             double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
             double theta = yaw;
 
-            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); //float_type z = transformation.matrix()(2,3);
 std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
             Eigen::MatrixXd Cx(2*2*setA.rows(),2*2*setA.rows());
             Cx = Eigen::ArrayXXd::Zero(2*2*setA.rows(), 2*2*setA.rows());
             Eigen::MatrixXd dgdX(2*2*setA.rows(),3);
-            float_type k = 1.0/setA.rows();
-            for (size_t i=0;i<setA.rows();i++){
+            float_type k = 1.0/(float_type)setA.rows();
+            for (Eigen::Index i=0;i<setA.rows();i++){
                 float_type xa = setA(i,0); float_type ya = setA(i,1);
                 float_type xb = setB(i,0); float_type yb = setB(i,1);
 
@@ -348,7 +348,7 @@ std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
                 depthAv += sqrt(pow(setA(i,0),2.0)+pow(setA(i,1),2.0)+pow(setA(i,2),2.0));
                 depthAv += sqrt(pow(setB(i,0),2.0)+pow(setB(i,1),2.0)+pow(setB(i,2),2.0));
             }
-            depthAv/=2*setA.rows();
+            depthAv/=2*(float_type)setA.rows();
             uncertainty(0,0) = pow(transformation(0,3)/depthAv,2.0);
             uncertainty(1,1) = pow(transformation(1,3)/depthAv,2.0);
             uncertainty(2,2) = pow(transformation(2,3)/depthAv,2.0);
@@ -360,7 +360,7 @@ std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
             double fi = atan2(transformation.matrix()(1,0), transformation.matrix()(0,0));
             double psi = -asin(transformation.matrix()(2,0));
             double theta = atan2(transformation.matrix()(2,1), transformation.matrix()(2,2));
-            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
+//            float_type x = transformation.matrix()(0,3); float_type y = transformation.matrix()(1,3); float_type z = transformation.matrix()(2,3);
             Mat66 J;
             J(0,0) = 1; J(0,1) = 0; J(0,2) = 0; J(0,3) = 0; J(0,4) = 0; J(0,5) = 0;
             J(1,0) = 0; J(1,1) = 1; J(1,2) = 0; J(1,3) = 0; J(1,4) = 0; J(1,5) = 0;

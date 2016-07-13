@@ -44,6 +44,7 @@ bool WeightedGraph::addEdge(const WeightedEdge& e){
     if (!addEdgeToVertex(verts.second,edges.back())) return false;
     //std::cout << "covisibility graph size: " << vertices.size() << "\n";
     //std::cout << "edges: " << edges.size() << " \n";
+    return true; // DB: Check that!
 }
 
 /// find neighbouring vertices

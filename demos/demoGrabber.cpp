@@ -55,7 +55,7 @@ int main()
         // create objects and print configuration
         cout << "Current grabber: " << grabber->getName() << std::endl;
 
-        auto start = chrono::system_clock::now();
+      //  auto start = chrono::system_clock::now();
         while (cv::waitKey(30) != 27){ //tracking
             SensorFrame sf;
             try{

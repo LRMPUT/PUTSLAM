@@ -22,9 +22,9 @@ protected:
 public:
     SolidSphere(float radius, unsigned int rings, unsigned int sectors)
     {
-        float const R = 1./(float)(rings-1);
-        float const S = 1./(float)(sectors-1);
-        int r, s;
+        float const R = 1.0f/(float)(rings-1);
+        float const S = 1.0f/(float)(sectors-1);
+        unsigned int r, s;
 
         vertices.resize(rings * sectors * 3);
         normals.resize(rings * sectors * 3);
@@ -32,30 +32,32 @@ public:
         std::vector<GLfloat>::iterator v = vertices.begin();
         std::vector<GLfloat>::iterator n = normals.begin();
         std::vector<GLfloat>::iterator t = texcoords.begin();
-        for(r = 0; r < rings; r++) for(s = 0; s < sectors; s++) {
-                float const y = sin( -M_PI_2 + M_PI * r * R );
-                float const x = cos(2*M_PI * s * S) * sin( M_PI * r * R );
-                float const z = sin(2*M_PI * s * S) * sin( M_PI * r * R );
+        for(r = 0; r < rings; r++)
+        	for(s = 0; s < sectors; s++) {
+                float const y = (float) sin( -M_PI_2 + M_PI * r * R );
+                float const x = (float) cos(2*M_PI * s * S) * (float) sin( M_PI * r * R );
+                float const z = (float) sin(2*M_PI * s * S) * (float) sin( M_PI * r * R );
 
-                *t++ = s*S;
-                *t++ = r*R;
+                *t++ = (float) s*S;
+                *t++ = (float) r*R;
 
-                *v++ = x * radius;
-                *v++ = y * radius;
-                *v++ = z * radius;
+                *v++ = (float) x * radius;
+                *v++ = (float) y * radius;
+                *v++ = (float) z * radius;
 
-                *n++ = x;
-                *n++ = y;
-                *n++ = z;
+                *n++ = (float) x;
+                *n++ = (float) y;
+                *n++ = (float) z;
         }
 
         indices.resize(rings * sectors * 4);
         std::vector<GLushort>::iterator i = indices.begin();
-        for(r = 0; r < rings-1; r++) for(s = 0; s < sectors-1; s++) {
-                *i++ = r * sectors + s;
-                *i++ = r * sectors + (s+1);
-                *i++ = (r+1) * sectors + (s+1);
-                *i++ = (r+1) * sectors + s;
+        for(r = 0; r < rings-1; r++)
+        	for(s = 0; s < sectors-1; s++) {
+                *i++ = (float) r * sectors + (float) s;
+                *i++ = (float) r * sectors + (float) (s+1);
+                *i++ = (float) (r+1) * sectors + (float) (s+1);
+                *i++ = (float) (r+1) * sectors + (float) s;
         }
     }
 
@@ -71,7 +73,7 @@ public:
 
         glVertexPointer(3, GL_FLOAT, 0, &vertices[0]);
         glNormalPointer(GL_FLOAT, 0, &normals[0]);
-        glDrawElements(GL_QUADS, indices.size(), GL_UNSIGNED_SHORT, &indices[0]);
+        glDrawElements(GL_QUADS, (int) indices.size(), GL_UNSIGNED_SHORT, &indices[0]);
         glPopMatrix();
     }
 };
@@ -100,18 +102,18 @@ QGLVisualizer::~QGLVisualizer(void) {
 
 /// Draw ellipsoid
 void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const {
-    float tStep = (M_PI) / (float)uiSlices;
-    float sStep = (M_PI) / (float)uiStacks;
+    float tStep = (float)(M_PI) / (float)uiSlices;
+    float sStep = (float)(M_PI) / (float)uiStacks;
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_COLOR);
-    for(float t = -M_PI/2.0; t <= (M_PI/2.0)+.0001; t += tStep) {
+    for(float t = (float)-M_PI/2.0f; t <= (float)(M_PI/2.0f)+.0001f; t += tStep) {
         glBegin(GL_TRIANGLE_STRIP);
-        for(float s = -M_PI; s <= M_PI+.0001; s += sStep) {
-            glVertex3f(fA * cos(t) * cos(s), fB * cos(t) * sin(s), fC * sin(t));
-            float norm = sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
+        for(float s = -M_PI; s <= M_PI+.0001f; s += sStep) {
+            glVertex3f((float)(fA * cos(t) * cos(s)), (float)(fB * cos(t) * sin(s)), (float)(fC * sin(t)));
+            float norm = (float) sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
             glNormal3f((fA * cos(t) * cos(s))/norm, (fB * cos(t) * sin(s))/norm, (fC * sin(t))/norm);
             glVertex3f(fA * cos(t+tStep) * cos(s), fB * cos(t+tStep) * sin(s), fC * sin(t+tStep));
-            norm = sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
+            norm = (float) sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
             glNormal3f((fA * cos(t+tStep) * cos(s))/norm, (fB * cos(t+tStep) * sin(s))/norm, (fC * sin(t+tStep))/norm);
         }
         glEnd();

@@ -251,8 +251,8 @@ void ChowLiuTree::createBaseEdges(std::list<info>& edges, double infoThreshold) 
         std::list<info> threadEdges;
         info mutInfo;
         for(int word2 = word1 + 1; word2 < nWords; word2++) {
-            mutInfo.word1 = word1;
-            mutInfo.word2 = word2;
+            mutInfo.word1 = (short)word1;
+            mutInfo.word2 = (short)word2;
             mutInfo.score = (float)calcMutInfo(word1, word2);
             if(mutInfo.score >= infoThreshold)
             threadEdges.push_back(mutInfo);

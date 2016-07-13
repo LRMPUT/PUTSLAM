@@ -53,7 +53,7 @@ bool FileGrabber::grab(void) {
 	tmpSensorFrame.depthImageScale = parameters.depthImageScale;
 
 
-	double timestamp;
+	double timestamp = 0;
 	int previousLinePlace;
 
 	// If the option to skip frames was activated (playEveryNth > 1), we skip some frames
@@ -64,7 +64,7 @@ bool FileGrabber::grab(void) {
 		fileNo++;
 
 		// We save the position of last line in case we need to go back by one line
-		previousLinePlace = timestampFile.tellg();
+		previousLinePlace = (int) timestampFile.tellg();
 
 		// Consider timestamps from provided file
 		std::string timestampString;
@@ -88,7 +88,7 @@ bool FileGrabber::grab(void) {
 			double msSeq = timestamp - startSeqTimestamp;
 
 			// Compute milliseconds between current time and start of processing
-			double msPlay = std::chrono::duration_cast < std::chrono::milliseconds
+			double msPlay = (double) std::chrono::duration_cast < std::chrono::milliseconds
 					> (std::chrono::high_resolution_clock::now()
 							- startPlayTimestamp).count()/1000.0;
 
@@ -169,13 +169,13 @@ void FileGrabber::setSequence(const uint_fast32_t startFrameNo, const std::strin
     imageSeqPrefix = imagePrefix;
     depthSeqPrefix = depthPrefix;
     cloudSeqPrefix = cloudPrefix;
-    fileNo = startFrameNo;
+    fileNo = (int) startFrameNo;
 }
 
 /// Grab sequence of image and save sequence to files (duration in number of frames)
 void FileGrabber::getSequence(const uint_fast32_t duration){
     //sensorFrames.clear();
-    for (int i=0;i<duration;i++){ //recording
+    for (size_t i=0;i<duration;i++){ //recording
         grab(); // grab frame
         //sensorFrames.push(sensorFrame);
     }
@@ -221,7 +221,7 @@ int FileGrabber::grabberClose() {
 Eigen::Matrix4f FileGrabber::getStartingSensorPose()
 {
 	std::ifstream initialSensorPoseStream(parameters.fullPath + "initialPosition");
-	double x, y, z, qw, qx, qy, qz;
+	float x, y, z, qw, qx, qy, qz;
 	initialSensorPoseStream >> x >> y >> z >> qx >> qy >> qz >> qw;
 	initialSensorPoseStream.close();
 

@@ -44,7 +44,7 @@ namespace putslam {
             };
 
             /// overloaded constructor
-            Grabber(const std::string _name, Type _type, Mode _mode) : name(_name), type(_type), mode(_mode) {};
+            Grabber(const std::string _name, Type _type, Mode _mode) :  type(_type), mode(_mode), name(_name) {};
 
             /// Name of the grabber
             virtual const std::string& getName() const = 0;

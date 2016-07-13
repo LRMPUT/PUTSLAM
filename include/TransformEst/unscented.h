@@ -25,7 +25,7 @@ namespace PSolver {
   template <class SampleType, class CovarianceType>
     bool sampleUnscented(std::vector<SigmaPoint <SampleType>, Eigen::aligned_allocator<SigmaPoint <SampleType> > >& sigmaPoints, const SampleType& mean, const CovarianceType& covariance){
 
-    const int dim = mean.size();
+    const int dim = (int)mean.size();
     const int numPoints = 2 * dim + 1;
     assert (covariance.rows() == covariance.cols() && covariance.cols() == mean.size() && "Dimension Mismatch");
     const double alpha = 1e-3;

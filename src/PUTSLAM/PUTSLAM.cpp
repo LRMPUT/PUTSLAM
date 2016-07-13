@@ -53,16 +53,16 @@ bool PUTSLAM::removeCloseFeatures(std::vector<RGBDFeature> &existingFeatures,
 
 	for (auto &existingFeature : existingFeatures) {
 
-		Eigen::Vector3f tmp(existingFeature.position.x(),
-				existingFeature.position.y(),
-				existingFeature.position.z());
+		Eigen::Vector3f tmp((float) existingFeature.position.x(),
+				(float) existingFeature.position.y(),
+				(float) existingFeature.position.z());
 		float norm = (tmp - feature3D).norm();
 		if (norm < minEuclideanDistanceOfFeatures) {
 			return false;
 		}
 
-		cv::Point2f point(existingFeature.u, existingFeature.v);
-		float imageNorm = cv::norm(point - feature2D);
+		cv::Point2f point((float)existingFeature.u, (float)existingFeature.v);
+		float imageNorm = (float) cv::norm(point - feature2D);
 		if (imageNorm < minImageDistanceOfFeatures) {
 			return false;
 		}
@@ -76,16 +76,16 @@ bool PUTSLAM::removeCloseFeatures(const std::vector<MapFeature> &existingFeature
 
 	for (auto &existingFeature : existingFeatures) {
 
-		Eigen::Vector3f tmp(existingFeature.position.x(),
-				existingFeature.position.y(),
-				existingFeature.position.z());
+		Eigen::Vector3f tmp((float) existingFeature.position.x(),
+				(float) existingFeature.position.y(),
+				(float) existingFeature.position.z());
 		float norm = (tmp - feature3D).norm();
 		if (norm < minEuclideanDistanceOfFeatures) {
 			return false;
 		}
 
-		cv::Point2f point(existingFeature.u, existingFeature.v);
-		float imageNorm = cv::norm(point - feature2D);
+		cv::Point2f point((float)existingFeature.u,(float) existingFeature.v);
+		float imageNorm = (float) cv::norm(point - feature2D);
 		if (imageNorm < minImageDistanceOfFeatures) {
 			return false;
 		}
@@ -107,7 +107,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 					== features.descriptors.rows));
 
 	// Lets process possible features to add
-	for (int j = 0;
+	for (unsigned int j = 0;
 			j < features.feature3D.size() && addedCounter < maxOnceFeatureAdd;
 			j++) {
 
@@ -194,7 +194,7 @@ void PUTSLAM::createAndSaveOctomap(double depthImageScale) {
 						depthImageScale);
 
 		// We add every point
-		for (int k = 0; k < colorPointCloud.size(); k++) {
+		for (unsigned int k = 0; k < colorPointCloud.size(); k++) {
 			octomap::point3d endpoint((float) colorPointCloud[k].first.x(),
 					(float) colorPointCloud[k].first.y(),
 					(float) colorPointCloud[k].first.z());
@@ -207,9 +207,9 @@ void PUTSLAM::createAndSaveOctomap(double depthImageScale) {
 					(float) colorPointCloud[k].first.x(),
 					(float) colorPointCloud[k].first.y(),
 					(float) colorPointCloud[k].first.z(),
-					colorPointCloud[k].second.x(),
-					colorPointCloud[k].second.y(),
-					colorPointCloud[k].second.z());
+					(uint8_t) colorPointCloud[k].second.x(),
+					(uint8_t) colorPointCloud[k].second.y(),
+					(uint8_t) colorPointCloud[k].second.z());
 		}
 
 	}
@@ -233,7 +233,7 @@ void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
 			break;
 
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
-		double timeS, tx, ty, tz, qw, qx, qy, qz;
+		float timeS, tx, ty, tz, qw, qx, qy, qz;
 		reconstructStr >> timeS >> tx >> ty >> tz >> qx >> qy >> qz >> qw;
 
 		if (i % octomapCloudStepSize == 0) {
@@ -254,7 +254,7 @@ void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
 							matcher->matcherParameters.cameraMatrixMat, tmpPose,
 							depthImageScale);
 
-			for (int k = 0; k < colorPointCloud.size(); k++) {
+			for (unsigned int k = 0; k < colorPointCloud.size(); k++) {
 				octomap::point3d endpoint((float) colorPointCloud[k].first.x(),
 						(float) colorPointCloud[k].first.y(),
 						(float) colorPointCloud[k].first.z());
@@ -265,9 +265,9 @@ void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
 						(float) colorPointCloud[k].first.x(),
 						(float) colorPointCloud[k].first.y(),
 						(float) colorPointCloud[k].first.z(),
-						colorPointCloud[k].second.x(),
-						colorPointCloud[k].second.y(),
-						colorPointCloud[k].second.z());
+						(uint8_t) colorPointCloud[k].second.x(),
+						(uint8_t) colorPointCloud[k].second.y(),
+						(uint8_t) colorPointCloud[k].second.z());
 			}
 
 		}
@@ -319,7 +319,7 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 		if (!middleOfSequence)
 			break;
 		///for inverse SLAM problem
-		if (trajIt > traj.size() - 1)
+		if (trajIt > (int)traj.size() - 1)
 			break;
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
@@ -547,7 +547,7 @@ Eigen::Matrix4f PUTSLAM::runVO(SensorFrame &currentSensorFrame, std::vector<cv::
 	double inlierRatio = matcher->Matcher::runVO(currentSensorFrame,
 			transformation, inlierMatches);
 	voTime.stop();
-	timeMeasurement.voTimes.push_back(voTime.elapsed());
+	timeMeasurement.voTimes.push_back((long int)voTime.elapsed());
 
 	VORansacInlierRatioLog.push_back(inlierRatio);
 	VOFeaturesSizeLog.push_back(matcher->Matcher::getNumberOfFeatures());
@@ -565,7 +565,7 @@ void PUTSLAM::addPoseToMap(SensorFrame &currentSensorFrame, Eigen::Matrix4f &pos
 			currentSensorFrame.timestamp, currentSensorFrame.rgbImage,
 			currentSensorFrame.depthImage);
 	tmp.stop();
-	timeMeasurement.mapAddNewPoseTimes.push_back(tmp.elapsed());
+	timeMeasurement.mapAddNewPoseTimes.push_back((long int)tmp.elapsed());
 }
 
 Mat34 PUTSLAM::getMapPoseEstimate() {
@@ -573,7 +573,7 @@ Mat34 PUTSLAM::getMapPoseEstimate() {
 	tmp.start();
 	Mat34 cameraPose = map->getSensorPose();
 	tmp.stop();
-	timeMeasurement.mapGetSensorPoseTimes.push_back(tmp.elapsed());
+	timeMeasurement.mapGetSensorPoseTimes.push_back((long int)tmp.elapsed());
 	return cameraPose;
 }
 
@@ -595,7 +595,7 @@ std::vector<float_type> &angles ) {
     //std::vector<MapFeature> mapFeatures = map->getVisibleFeatures(cameraPose);
     std::vector<MapFeature> mapFeatures = map->getCovisibleFeatures();
 	tmp.stop();
-	timeMeasurement.mapGetVisibleFeaturesTimes.push_back(tmp.elapsed());
+	timeMeasurement.mapGetVisibleFeaturesTimes.push_back((long int)tmp.elapsed());
 
 	//mapFeatures = map->getVisibleFeatures(cameraPose, getVisibleFeaturesGraphMaxDepth, getVisibleFeatureDistanceThreshold);
 
@@ -603,19 +603,19 @@ std::vector<float_type> &angles ) {
 	map->findNearestFrame(mapFeatures, frameIds, angles,
 			matcher->matcherParameters.maxAngleBetweenFrames);
 	tmp.stop();
-	timeMeasurement.mapFindNearestFrameTimes.push_back(tmp.elapsed());
+	timeMeasurement.mapFindNearestFrameTimes.push_back((long int)tmp.elapsed());
 
 	//Remove features that we do not have a good observation angle
 	tmp.start();
 	removeMapFeaturesWithoutGoodObservationAngle(mapFeatures, frameIds, angles);
 	tmp.stop();
-	timeMeasurement.mapRemoveMapFeaturesTimes.push_back(tmp.elapsed());
+	timeMeasurement.mapRemoveMapFeaturesTimes.push_back((long int)tmp.elapsed());
 
 	// Move mapFeatures to local coordinate system
 	tmp.start();
 	moveMapFeaturesToLocalCordinateSystem(cameraPose, mapFeatures);
 	tmp.stop();
-	timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back(
+	timeMeasurement.mapMoveMapFeaturesToLCSTimes.push_back((long int)
 			tmp.elapsed());
 
 	// Now lets check if those features are not behind sth
@@ -751,7 +751,7 @@ void PUTSLAM::startProcessing() {
 							<< std::endl;
 				}
 				tmp.stop();
-				timeMeasurement.mapMatchingTimes.push_back(tmp.elapsed());
+				timeMeasurement.mapMatchingTimes.push_back((long int)tmp.elapsed());
 
 				MapMatchingRansacInlierRatioLog.push_back(
 						mapMatchingInlierRatio);
@@ -774,8 +774,8 @@ void PUTSLAM::startProcessing() {
 
 
 				// Add pose-feature constrain
-				measurementToMapSizeLog.push_back(measurementList.size());
-				if (measurementList.size()
+				measurementToMapSizeLog.push_back((int)measurementList.size());
+				if ((int)measurementList.size()
 						> minMeasurementsToAddPoseToFeatureEdge) {
 					if (map->useUncertainty()) {
 						matcher->computeNormals(currentSensorFrame.depthImage,
@@ -796,19 +796,19 @@ void PUTSLAM::startProcessing() {
 				}
 
 				tmp.stop();
-				timeMeasurement.mapAddMeasurementTimes.push_back(tmp.elapsed());
+				timeMeasurement.mapAddMeasurementTimes.push_back((long int)tmp.elapsed());
 
 				// Insufficient number of features -> time to add some features
-				if (mapFeatures.size() < addFeaturesWhenMapSizeLessThan
-						|| (measurementList.size()
+				if ((int)mapFeatures.size() < addFeaturesWhenMapSizeLessThan
+						|| ((int) measurementList.size()
 								< addFeaturesWhenMeasurementSizeLessThan
-								&& mapFeatures.size()
+								&& (int)mapFeatures.size()
 										< addNoFeaturesWhenMapSizeGreaterThan)) {
 					addFeatureToMap = true;
 				}
 
 				mapTime.stop();
-				timeMeasurement.mapTimes.push_back(mapTime.elapsed());
+				timeMeasurement.mapTimes.push_back((long int) mapTime.elapsed());
 			}
 		}
 
@@ -827,7 +827,7 @@ void PUTSLAM::startProcessing() {
 			// Lets process possible features to add
 			addedCounter = chooseFeaturesToAddToMap(features, addedCounter,
 					maxOnceFeatureAdd, mapFeatures,
-					minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures,
+					(float)minEuclideanDistanceOfFeatures, (float)minImageDistanceOfFeatures,
 					cameraPoseId, mapFeaturesToAdd);
 			if (map->useUncertainty()) {
 				matcher->computeNormals(currentSensorFrame.depthImage,
@@ -867,7 +867,7 @@ void PUTSLAM::startProcessing() {
 	}
 	auto elapsed = std::chrono::duration_cast < std::chrono::milliseconds
 			> (std::chrono::system_clock::now() - startMainLoop);
-	saveFPS(double(frameCounter) / (elapsed.count() / 1000.0));
+	saveFPS(double(frameCounter) / ((double)elapsed.count() / 1000.0));
 
 	saveStatistics();
 
@@ -970,7 +970,7 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 	fileName << std::setfill('0') << std::setprecision(17) << timestamp;
 	std::ofstream file("featuresDir/" + fileName.str() + ".features");
 
-	for (int i = 0; i < features.feature3D.size(); i++) {
+	for (unsigned long int i = 0; i < features.feature3D.size(); i++) {
 		file << features.undistortedFeature2D[i].x << " "
 				<< features.undistortedFeature2D[i].y << " "
 				<< features.feature3D[i](0) << " " << features.feature3D[i](1)
@@ -989,7 +989,7 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 	std::ofstream file("featuresDir/" + fileName.str() + ".features",
 			std::ofstream::out | std::ofstream::app);
 
-	for (int i = 0; i < inlierMatches.size(); i++) {
+	for (unsigned long int i = 0; i < inlierMatches.size(); i++) {
 		int id = inlierMatches[i].trainIdx;
 		file << features.undistortedFeature2D[id].x << " "
 				<< features.undistortedFeature2D[id].y << " "
@@ -1016,7 +1016,7 @@ void PUTSLAM::saveLogs() {
 
 	// VORansacInlierRatioLog
 	statisticsLogStream << "VORansacInlierRatioLog = np.array([";
-	for (int a = 0; a < VORansacInlierRatioLog.size(); a++) {
+	for (unsigned long int a = 0; a < VORansacInlierRatioLog.size(); a++) {
 		statisticsLogStream << VORansacInlierRatioLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
@@ -1034,7 +1034,7 @@ void PUTSLAM::saveLogs() {
 
 	// VOFeaturesSizeLog
 	statisticsLogStream << "VOFeaturesSizeLog = np.array([";
-	for (int a = 0; a < VOFeaturesSizeLog.size(); a++) {
+	for (unsigned long int a = 0; a < VOFeaturesSizeLog.size(); a++) {
 		statisticsLogStream << VOFeaturesSizeLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
@@ -1053,7 +1053,7 @@ void PUTSLAM::saveLogs() {
 
 	// mapSize
 	statisticsLogStream << "mapSize = np.array([";
-		for (int a = 0; a < mapSize.size(); a++) {
+		for (unsigned long int a = 0; a < mapSize.size(); a++) {
 			statisticsLogStream << mapSize[a] << ", ";
 		}
 		statisticsLogStream << "]);" << std::endl;
@@ -1072,7 +1072,7 @@ void PUTSLAM::saveLogs() {
 
 	// MapMatchingRansacInlierRatioLog
 	statisticsLogStream << "MapMatchingRansacInlierRatioLog = np.array([";
-	for (int a = 0; a < MapMatchingRansacInlierRatioLog.size(); a++) {
+	for (unsigned long int a = 0; a < MapMatchingRansacInlierRatioLog.size(); a++) {
 		statisticsLogStream << MapMatchingRansacInlierRatioLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
@@ -1092,7 +1092,7 @@ void PUTSLAM::saveLogs() {
 
 	// Measurement to map size
 	statisticsLogStream << "mapMeasurementSize = np.array([";
-	for (int a = 0; a < measurementToMapSizeLog.size(); a++) {
+	for (unsigned long int a = 0; a < measurementToMapSizeLog.size(); a++) {
 		statisticsLogStream << measurementToMapSizeLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
@@ -1114,7 +1114,7 @@ void PUTSLAM::saveLogs() {
 	// LC matches
 	vector<double> lcMatchingRatiosLog = map->getLoopClosureMatchingRatiosLog();
 	statisticsLogStream << "lcMatchingRatiosLog = np.array([";
-	for (int a = 0; a < lcMatchingRatiosLog.size(); a++) {
+	for (unsigned long int a = 0; a < lcMatchingRatiosLog.size(); a++) {
 		statisticsLogStream << lcMatchingRatiosLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
@@ -1176,7 +1176,7 @@ void PUTSLAM::showMapFeatures(cv::Mat rgbImage,
 	std::vector<cv::KeyPoint> mapFeatures2D(mapFeatures.size());
 	std::transform(mapFeatures.begin(), mapFeatures.end(),
 			mapFeatures2D.begin(),
-			[](const MapFeature& m) {return cv::KeyPoint(m.u, m.v, 3);});
+			[](const MapFeature& m) {return cv::KeyPoint((float)m.u,(float)m.v, 3);});
 
 	cv::Mat img2draw;
 	cv::drawKeypoints(rgbImage, mapFeatures2D, img2draw, cv::Scalar(0, 255, 0));

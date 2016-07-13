@@ -29,7 +29,7 @@ VisualPlaceRecognition::VisualPlaceRecognition()
     }
 
     std::string placeAddOption = fs["FabMapPlaceAddition"];
-    bool addNewOnly = (placeAddOption == "NewMaximumOnly");
+//    bool addNewOnly = (placeAddOption == "NewMaximumOnly");
 
     fabMap = generateFABMAPInstance(fs);
 
@@ -88,8 +88,8 @@ std::vector<std::pair<int, double>> VisualPlaceRecognition::findAddPlace(cv::Mat
         fabMap->compare(bow, matches, false);
     }
 
-    double_t bestMatchProb = 0.0;
-    int32_t bestMatchTestIdx = -1;
+//    double_t bestMatchProb = 0.0;
+//    int32_t bestMatchTestIdx = -1;
 
     // returned value
     int32_t loopID = -1;

@@ -129,10 +129,10 @@ public:
 	int getMaxOnceFeatureAdd() {
 		return config.maxOnceFeatureAdd;
 	}
-	float getMinEuclideanDistanceOfFeatures() {
+	double getMinEuclideanDistanceOfFeatures() {
 		return config.minEuclideanDistanceOfFeatures;
 	}
-	float getMinImageDistanceOfFeatures() {
+	double getMinImageDistanceOfFeatures() {
 		return config.minImageDistanceOfFeatures;
 	}
 	int getAddNoFeaturesWhenMapSizeGreaterThan() {
@@ -186,6 +186,9 @@ public:
             config.LoadFile(filename.c_str());
             if (config.ErrorID())
                 std::cout << "unable to load Map config file.\n";
+
+            std::cout<<"OK0!" << std::endl;
+
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("useUncertainty", &useUncertainty);
@@ -216,6 +219,7 @@ public:
 			model->FirstChildElement("parameters")->QueryIntAttribute(
 											"optimizationErrorType",
 											&optimizationErrorType);
+			 std::cout<<"OK1!" << std::endl;
 
             model->FirstChildElement("mapCompression")->QueryBoolAttribute("compressMap", &compressMap);
             model->FirstChildElement("mapCompression")->QueryDoubleAttribute("covisibilityKeyframes", &covisibilityKeyframes);
@@ -223,11 +227,15 @@ public:
             model->FirstChildElement("mapCompression")->QueryIntAttribute("minFramesNo", &minFramesNo);
             model->FirstChildElement("mapCompression")->QueryIntAttribute("maxFramesNo", &maxFramesNo);
 
+            std::cout<<"OK2!" << std::endl;
+
             model->FirstChildElement("EuclideanCriterion")->QueryBoolAttribute("useEuclideanCrit", &useEuclideanCrit);
             model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("imagePlaneDistance", &imagePlaneDistance);
             model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("depthDist", &depthDist);
             model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("maxAngle", &maxAngle);
             model->FirstChildElement("EuclideanCriterion")->QueryDoubleAttribute("maxRadius", &maxRadius);
+
+            std::cout<<"OK3!" << std::endl;
 
             model->FirstChildElement( "mapOutput" )->QueryBoolAttribute("exportMap", &exportMap);
             filenameMap = model->FirstChildElement( "mapOutput" )->Attribute("filenameMap");
@@ -238,6 +246,8 @@ public:
             filenameFeatDistr = model->FirstChildElement( "featuresDistribution" )->Attribute("filenameFeatDistr");
             model->FirstChildElement( "visualization" )->QueryIntAttribute("frameNo2updatePointCloud", &frameNo2updatePointCloud);
 
+            std::cout<<"OK4!" << std::endl;
+
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("searchPairsTypeLC", &searchPairsTypeLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
@@ -246,7 +256,7 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("typeLC", &typeLC);
             configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
 
-
+            std::cout<<"OK!" << std::endl;
 
             visualize = false;
 

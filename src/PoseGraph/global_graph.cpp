@@ -114,7 +114,7 @@ bool GlobalGraph::addEdgeSE2(const EdgeSE2& e){
  * returns true, on success, or false on failure.
  */
 bool GlobalGraph::updateVertex(const putslam::VertexSE3& v){
-
+	return true;
 }
 
 /**
@@ -128,7 +128,7 @@ bool GlobalGraph::updateGraph(const VertexSE3& v){
 
 /// Return trajectory (set of SE3 poses)
 std::vector<Mat34> GlobalGraph::getTrajectory(void) const{
-
+	return std::vector<Mat34>();
 }
 
 /// Save graph to file
@@ -156,36 +156,37 @@ bool GlobalGraph::optimize(int_fast32_t maxIterations, int verbose, double minim
     std::cout << "start global graph optimization (t = 0s)\n";
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::cout << "finish global graph optimization (t = 0.2s)\n";
+    return true;
 }
 
 /// Removes weak edes (with error bigger than threshold
 bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
-
+	return true;
 }
 
 /// Removes weak edes (with error bigger than threshold
 bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
-
+	return true;
 }
 
 /// Returns set of graph vertices
 PoseGraph::VertexSet GlobalGraph::getVertices(void){
-
+	return PoseGraph::VertexSet();
 }
 
 /// Returns set of graph edges
 PoseGraph::EdgeSet GlobalGraph::getEdges(void){
-
+	return PoseGraph::EdgeSet();
 }
 
 /// find all neighboring vertices for which distance is smaller than threshold
 bool GlobalGraph::findNearestNeighbors(int vertexId, int depth, std::vector<int>& neighborsIds){
-
+	return true;
 }
 
 /// marginalize measurements (pose-feature)
 bool GlobalGraph::marginalize(const std::vector<int>& keyframes, const std::set<int>& features2remove){
-
+	return true;
 }
 
 /// Fix vertex

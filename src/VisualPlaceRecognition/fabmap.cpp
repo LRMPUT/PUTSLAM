@@ -261,7 +261,7 @@ double FabMap::getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor) {
         // multiple times. Is this desired?
 
         for (int i = 0; i < numSamples; i++) {
-            int index = rand() % trainingImgDescriptors.size();
+            int index = rand() % (int)trainingImgDescriptors.size();
             sampledImgDescriptors.push_back(trainingImgDescriptors[index]);
         }
 
@@ -330,7 +330,7 @@ void FabMap::normaliseDistribution(std::vector<IMatch>& matches) {
         //smooth final probabilities
         for (size_t i = 0; i < matches.size(); i++) {
             matches[i].match = sFactor*matches[i].match +
-                    (1 - sFactor)/matches.size();
+                    (1 - sFactor)/(double)matches.size();
         }
 
         //update our location priors
@@ -348,7 +348,7 @@ void FabMap::normaliseDistribution(std::vector<IMatch>& matches) {
         }
         for (size_t i = 0; i < matches.size(); i++) {
             matches[i].match = sFactor*matches[i].match +
-                    (1 - sFactor)/matches.size();
+                    (1 - sFactor)/(double)matches.size();
         }
     }
 }

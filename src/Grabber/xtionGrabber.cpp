@@ -132,6 +132,7 @@ int XtionGrabber::initOpenNI(){
         printf("Couldn't set proper Color Video Mode\n%s\n",openni::OpenNI::getExtendedError());
         return 2;
     }
+    return 0;
 }
 
 int XtionGrabber::acquireDepthFrame(cv::Mat &m){
@@ -233,7 +234,7 @@ void XtionGrabber::calibrate(void) {
 
 Eigen::Matrix4f XtionGrabber::getStartingSensorPose()
 {
-	Eigen::Matrix4f::Identity();
+	return Eigen::Matrix4f::Identity();
 }
 
 putslam::Grabber* putslam::createGrabberXtion(void) {

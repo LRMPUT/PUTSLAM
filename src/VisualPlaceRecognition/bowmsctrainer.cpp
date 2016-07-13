@@ -185,7 +185,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     // Status
     std::cout << "\nFinished finding the mean. "
               << vocabulary.rows << " words. "
-              << (end_time-start_time)/cv::getTickFrequency() << " s. "
+              << double(end_time-start_time)/cv::getTickFrequency() << " s. "
               << std::endl;
 
     return vocabulary;

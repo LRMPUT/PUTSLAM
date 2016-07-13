@@ -27,9 +27,9 @@ public:
 
 	/// overloaded constructor
 	Map(const std::string _name, Type _type) :
-			name(_name), type(_type) {
+			type(_type), name(_name) {
 	}
-	;
+
 
 	/// Name of the map
 	virtual const std::string& getName() const = 0;

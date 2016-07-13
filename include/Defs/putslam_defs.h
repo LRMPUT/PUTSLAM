@@ -124,20 +124,20 @@ public:
 	/// set of descriptors
 	typedef std::vector<ExtendedDescriptor> Seq;
 
-	/// OpenCV descriptor
-	cv::Mat descriptor;
-
 	/// id of the the camera pose (vertex in the graph)
 	unsigned int poseId;
 
     /// feature location on the rgb image
     float_type u, v;
 
-    /// distance to the feature at the time it was described
-    float_type detDist;
+	/// OpenCV descriptor
+	cv::Mat descriptor;
 
     /// octave (pyramid layer) at which it was detected
     int octave;
+
+    /// distance to the feature at the time it was described
+    float_type detDist;
 
 	/// Constructor
 	ExtendedDescriptor(unsigned int _poseId, float_type _u, float_type _v,
@@ -151,20 +151,20 @@ public:
 	/// Position of the feature
 	Vec3 position;
 
+	/// set of descriptors
+	std::vector<ExtendedDescriptor> descriptors;
+
 	/// feature location on the rgb image
 	float_type u;
 
 	/// feature location on the rgb image
 	float_type v;
 
-    /// normal vector
-    Vec3 normal;
+	/// normal vector
+	Vec3 normal;
 
-    /// RGB gradient vector
-    Vec3 RGBgradient;
-
-	/// set of descriptors
-	std::vector<ExtendedDescriptor> descriptors;
+	/// RGB gradient vector
+	Vec3 RGBgradient;
 
 	RGBDFeature(void) {
     }
@@ -279,7 +279,7 @@ public:
 	/// Overloaded constructor
 	inline Edge(Type _type, uint_fast32_t _fromVertexId,
 			uint_fast32_t _toVertexId) :
-			type(_type), fromVertexId(_fromVertexId), toVertexId(_toVertexId) {
+			type(_type), toVertexId(_toVertexId), fromVertexId(_fromVertexId) {
 	}
 
 	virtual ~Edge() {}
@@ -330,8 +330,8 @@ public:
 	/// Overloaded constructor
 	inline Edge3DReproj(double _u, double _v, const Eigen::Matrix<float_type, 2, 2> _info,
 			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
-			Edge(EDGE_3D_REPROJ, _fromVertexId, _toVertexId), info(
-					_info), u(_u), v(_v) {
+			Edge(EDGE_3D_REPROJ, _fromVertexId, _toVertexId), u(_u), v(_v), info(
+					_info) {
 	}
 };
 
@@ -358,8 +358,8 @@ public:
 	/// Overloaded constructor
 	inline EdgeSE2(Eigen::Vector2d _trans, float_type _theta, Mat33 _info,
 			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
-			Edge(EDGE_SE2, _fromVertexId, _toVertexId), theta(_theta), trans(
-					_trans), info(_info) {
+			Edge(EDGE_SE2, _fromVertexId, _toVertexId), trans(_trans), theta(
+					_theta), info(_info) {
 	}
 };
 
@@ -383,7 +383,7 @@ public:
 	/// Overloaded constructor
     inline EdgeSE3(Mat34 _trans, Mat66 _info, uint_fast32_t _fromVertexId,
 			uint_fast32_t _toVertexId) :
-			trans(_trans), Edge(EDGE_SE3, _fromVertexId, _toVertexId), info(
+			Edge(EDGE_SE3, _fromVertexId, _toVertexId), trans(_trans), info(
 					_info) {
 	}
 };

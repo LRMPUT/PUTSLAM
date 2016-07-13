@@ -86,7 +86,7 @@ const std::string& PoseGraphG2O::getName() const {
 bool PoseGraphG2O::removeVertexG2O(unsigned int id){
     g2o::OptimizableGraph::VertexContainer vertices = optimizer.activeVertices();
     for (g2o::OptimizableGraph::VertexContainer::iterator it = vertices.begin(); it!=vertices.end(); it++){
-        if ((*it)->id()==id){
+        if ((unsigned int)(*it)->id()==id){
             optimizer.removeVertex(*it);
             return true;
         }
@@ -110,7 +110,7 @@ bool PoseGraphG2O::removeEdgeG2O(unsigned int id){
     mtxGraph.lock();
     g2o::OptimizableGraph::EdgeContainer edges = optimizer.activeEdges();
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = edges.begin(); it!=edges.end(); it++){
-        if ((*it)->id()==id){
+        if ((unsigned int)(*it)->id()==id){
             optimizer.removeEdge(*it);
             mtxGraph.unlock();
             return true;
@@ -179,7 +179,7 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
     }
     g2o::OptimizableGraph::Vertex* vert = static_cast<g2o::OptimizableGraph::Vertex*>(element);
     vert->read(vertex);
-    vert->setId(id);
+    vert->setId((int)id);
 
 
     if (graph.vertices.size()==1){
@@ -191,6 +191,8 @@ bool PoseGraphG2O::addVertexG2O(uint_fast32_t id, std::stringstream& vertex, Ver
     if (!optimizer.addVertex(vert)) {
       std::cerr << __PRETTY_FUNCTION__ << ": Failure adding Vertex\n";
     }
+
+    return true; //TODO: DB check that
 }
 
 /**
@@ -212,7 +214,7 @@ bool PoseGraphG2O::addVertexFeature(const Vertex3D& v){
 bool PoseGraphG2O::addVertex(const Vertex3D& v){
     mtxGraph.lock();
     //add vertex
-    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+    if (findVertex((unsigned int)v.vertexId)==graph.vertices.end()){// to vertex does not exist
         //std::cout << "add feature\n";
         graph.vertices.push_back(std::unique_ptr<Vertex>(new Vertex3D(v)));//update putslam structure
         std::stringstream currentLine;
@@ -246,7 +248,7 @@ bool PoseGraphG2O::addVertexPose(const putslam::VertexSE3& v){
 bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
     mtxGraph.lock();
     //add vertex
-    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+    if (findVertex((unsigned int)v.vertexId)==graph.vertices.end()){// to vertex does not exist
         //std::cout << "add pose\n";
         graph.vertices.push_back(std::unique_ptr<Vertex>(new putslam::VertexSE3(v)));//update putslam structure
         std::stringstream currentLine;
@@ -269,7 +271,7 @@ bool PoseGraphG2O::addVertex(const putslam::VertexSE3& v){
 bool PoseGraphG2O::updateVertex(const putslam::VertexSE3& v){
     mtxGraph.lock();
     //update vertex
-    PoseGraph::VertexSet::iterator vertIt = findVertex(v.vertexId);
+    PoseGraph::VertexSet::iterator vertIt = findVertex((unsigned int)v.vertexId);
     if (vertIt!=graph.vertices.end()){
         ((VertexSE3*)(*vertIt).get())->pose = v.pose;
         ///TODO update g2o graph
@@ -289,7 +291,7 @@ bool PoseGraphG2O::updateVertex(const putslam::VertexSE3& v){
 bool PoseGraphG2O::addVertex(const putslam::VertexSE2& v){
     mtxGraph.lock();
     //add vertex
-    if (findVertex(v.vertexId)==graph.vertices.end()){// to vertex does not exist
+    if (findVertex((unsigned int)v.vertexId)==graph.vertices.end()){// to vertex does not exist
         graph.vertices.push_back(std::unique_ptr<Vertex>(new VertexSE2(v)));//update putslam structure
         std::stringstream currentLine;
         currentLine << v.pos.x() << ' ' << v.pos.y() << ' ' << v.theta;
@@ -339,12 +341,12 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
         return false;
     }
     g2o::OptimizableGraph::Edge* edge = static_cast<g2o::OptimizableGraph::Edge*>(element);
-    g2o::OptimizableGraph::Vertex* from = optimizer.vertex(fromId);
-    g2o::OptimizableGraph::Vertex* to = optimizer.vertex(toId);
+    g2o::OptimizableGraph::Vertex* from = optimizer.vertex((int)fromId);
+    g2o::OptimizableGraph::Vertex* to = optimizer.vertex((int)toId);
     edge->setVertex(0, from);
     edge->setVertex(1, to);
     edge->read(edgeStream);
-    edge->setId(id);
+    edge->setId((int)id);
 
 
     //g2o::RobustKernelCauchy* rk = new g2o::RobustKernelCauchy;
@@ -358,6 +360,8 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
         delete edge;
       //  delete rk;
     }
+
+    return true; //TODO: DB check that
 }
 
 /// set Robust Kernel
@@ -411,9 +415,9 @@ bool PoseGraphG2O::addEdge(EdgeSE3& e){
 //        addVertexPose(putslam::VertexSE3(e.toVertexId, pose));
 //        mtxGraph.lock();
 //    }
-    if (findVertex(e.fromVertexId)!=graph.vertices.end()&&findVertex(e.toVertexId)!=graph.vertices.end()){
+    if (findVertex((unsigned int)e.fromVertexId)!=graph.vertices.end()&&findVertex((unsigned int)e.toVertexId)!=graph.vertices.end()){
         //std::cout << "add edge se3\n";
-        e.id = graph.edges.size();
+        e.id = (unsigned int)graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE3(e)));
         std::stringstream currentLine;
         Quaternion quat(e.trans.rotation());
@@ -478,9 +482,9 @@ bool PoseGraphG2O::addEdge(Edge3D& e){
 //        mtxGraph.lock();
 //    }
     //std::cout << "try add edge 3d\n";
-    if (findVertex(e.toVertexId)!=graph.vertices.end()&&findVertex(e.fromVertexId)!=graph.vertices.end()){
+    if (findVertex((unsigned int)e.toVertexId)!=graph.vertices.end()&&findVertex((unsigned int)e.fromVertexId)!=graph.vertices.end()){
         //std::cout << "add edge 3d\n";
-        e.id = graph.edges.size();
+        e.id = (unsigned int)graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new Edge3D(e)));
         std::stringstream currentLine;
         currentLine <<  0  << ' ' << e.trans.x() << ' ' << e.trans.y() << ' ' << e.trans.z()
@@ -517,8 +521,8 @@ bool PoseGraphG2O::addEdge(Edge3DReproj& e){
 //        addVertexPose(putslam::VertexSE3(e.fromVertexId, pose));
 //        mtxGraph.lock();
 //    }
-    if (findVertex(e.toVertexId)!=graph.vertices.end()&&findVertex(e.fromVertexId)!=graph.vertices.end()){
-        e.id = graph.edges.size();
+    if (findVertex((unsigned int)e.toVertexId)!=graph.vertices.end()&&findVertex((unsigned int)e.fromVertexId)!=graph.vertices.end()){
+        e.id = (unsigned int)graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new Edge3DReproj(e)));
         std::stringstream currentLine;
         currentLine << e.u << ' ' << e.v << ' ' << e.info(0, 0) << ' '
@@ -555,8 +559,8 @@ bool PoseGraphG2O::addEdge(EdgeSE2& e){
 //        addVertexSE2(putslam::VertexSE2(e.toVertexId, pos, rot));
 //        mtxGraph.lock();
 //    }
-    if (findVertex(e.fromVertexId)!=graph.vertices.end()&&findVertex(e.toVertexId)==graph.vertices.end()){
-        e.id = graph.edges.size();
+    if (findVertex((unsigned int)e.fromVertexId)!=graph.vertices.end()&&findVertex((unsigned int)e.toVertexId)==graph.vertices.end()){
+        e.id = (unsigned int)graph.edges.size();
         graph.edges.push_back(std::unique_ptr<Edge>(new EdgeSE2(e)));
         std::stringstream currentLine;
         currentLine << e.trans.x() << ' ' << e.trans.y() << ' ' << e.theta
@@ -881,7 +885,7 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
     //optimizer.computeInitialGuess();
 
     if (maxIterations >= 0)
-        optimizer.optimize(maxIterations);
+        optimizer.optimize((int)maxIterations);
     else {
 		double prevChi2 = -1.0, chi2 = -1.0;
 		int iterationCounter = 0;
@@ -1026,7 +1030,7 @@ void PoseGraphG2O::getMeasurements(int featureId, std::vector<Edge3D>& features,
         // compute position and uncertainty of each 'guess'
         for (std::vector<unsigned int>::iterator it = closeSet.begin(); it!=closeSet.end();it++){
             PoseGraph::EdgeSet::iterator edgeIt = findEdge(*it);
-            PoseGraph::VertexSet::iterator camIt = findVertex(edgeIt->get()->fromVertexId);
+            PoseGraph::VertexSet::iterator camIt = findVertex((unsigned int)edgeIt->get()->fromVertexId);
             if ((edgeIt!=graph.edges.end()) && (camIt!=graph.vertices.end())){
                 Mat34 camPose = ((VertexSE3*)camIt->get())->pose;
                 Mat34 featureInCam(Mat34::Identity());
@@ -1050,7 +1054,7 @@ bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int
     std::vector<unsigned int> incomingEdges = findIncominEdges(vertexId);
     std::vector<int> incomingVertices;
     for (std::vector<unsigned int>::iterator it = incomingEdges.begin(); it!=incomingEdges.end(); it++){
-        incomingVertices.push_back(graph.edges[(*it)]->fromVertexId);
+        incomingVertices.push_back((int)graph.edges[(*it)]->fromVertexId);
     }
     neighborsIds.insert(neighborsIds.end(),incomingVertices.begin(), incomingVertices.end());
     for (std::vector<int>::iterator it = incomingVertices.begin(); it!=incomingVertices.end(); it++){
@@ -1059,6 +1063,7 @@ bool PoseGraphG2O::findNearestNeighbors(int vertexId, int depth, std::vector<int
         else
             return true;
     }
+    return true; //TODO: DB check that
 }
 
 /// marginalize measurements (pose-feature)
@@ -1109,13 +1114,15 @@ bool PoseGraphG2O::marginalize(const std::vector<int>& keyframes, const std::set
     //std::string result = "graphTmp" + std::to_string (keyframes.back()) + ".g2o";
     while(!updateGraph()){}
     //save2file(result);
+
+    return true; //TODO: DB check that
 }
 
 /// erase edges related to the SE3 vertex
 void PoseGraphG2O::eraseMeasurements(int poseId){
     mtxGraph.lock();
     for (PoseGraph::EdgeSet::iterator it = graph.edges.begin(); it!=graph.edges.end();){
-        if (it->get()->fromVertexId == poseId){
+        if (it->get()->fromVertexId == (unsigned int)poseId){
             it = graph.edges.erase(it);
         }
         else
@@ -1128,7 +1135,7 @@ void PoseGraphG2O::eraseMeasurements(int poseId){
 void PoseGraphG2O::anchorVertices(void){
     std::vector<int> vertices;
     for (PoseGraph::VertexSet::iterator it = graph.vertices.begin(); it!=graph.vertices.end(); it++)
-        vertices.push_back((*it)->vertexId);
+        vertices.push_back((int)(*it)->vertexId);
     typedef std::vector< std::vector<int> > GraphOfVertices;
     GraphOfVertices graphs;
     for (std::vector<int>::iterator it = vertices.begin(); it!=vertices.end(); it++)
@@ -1234,8 +1241,8 @@ Mat34 PoseGraphG2O::getTransform(int vertexId){
             (*it)->getEstimateData(res);
             std::cout << "g2o est: \n";
             tmp(0,3)=res[0]; tmp(1,3)=res[1]; tmp(2,3)=res[2];
-            Eigen::Vector3f rot(res[3],res[4],res[5]);
-            float w=rot.squaredNorm();
+            Eigen::Vector3d rot(res[3],res[4],res[5]);
+            double w=rot.squaredNorm();
             if (w<1) {
               w=sqrt(1-w);
               Eigen::Quaterniond quat(w, res[3], res[4], res[5]);
@@ -1342,7 +1349,7 @@ bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIte
             //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
             if ((*it)->chi2()>threshold){
                 PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
-                std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
+                std::vector<unsigned int> closeSet = findIncominEdges((unsigned int)edg->get()->toVertexId);
                 if (closeSet.size()>0){
                     //g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
                     g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);//chi2 > threshold
@@ -1379,7 +1386,7 @@ void PoseGraphG2O::removeWeakFeatures(int threshold){
         PoseGraph::VertexSet::iterator vert = findVertex((*it)->id());//Todo waek solution
         if (vert->get()->type == Vertex::VERTEX3D) {
             std::vector<unsigned int> incomingEdges = findIncominEdges((*it)->id());
-            if (incomingEdges.size()<threshold){
+            if ((int)incomingEdges.size()<threshold){
                 for (std::vector<unsigned int>::iterator iter = incomingEdges.begin(); iter!=incomingEdges.end(); iter++){
                     removeEdge(*iter);
                     removeEdgeG2O(*iter);
@@ -1401,10 +1408,10 @@ bool PoseGraphG2O::prune3Dedges(float_type threshold){
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
         //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
         PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
-        PoseGraph::VertexSet::iterator vert = findVertex(edg->get()->toVertexId);
+        PoseGraph::VertexSet::iterator vert = findVertex((unsigned int)edg->get()->toVertexId);
         if (vert->get()->type==Vertex::VERTEX3D){
             //std::cout << "id1: " << vert->get()->vertexId << "\n";
-            std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
+            std::vector<unsigned int> closeSet = findIncominEdges((unsigned int)edg->get()->toVertexId);
             if (closeSet.size()>0){
                 g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
                 //std::cout << "\n\n\n\n\n\n\n\n\nremoved pruning\n" << (*it)->chi2() << "\n\n\n";
@@ -1449,7 +1456,7 @@ bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIt
             //std::cout << "chi2: id: " << (*it)->id() << " chi2: " << (*it)->chi2() << std::endl;
             //if ((*it)->chi2()>threshold){
                 PoseGraph::EdgeSet::iterator edg = findEdge((*it)->id());
-                std::vector<unsigned int> closeSet = findIncominEdges(edg->get()->toVertexId);
+                std::vector<unsigned int> closeSet = findIncominEdges((unsigned int)edg->get()->toVertexId);
                 if (closeSet.size()>0){
                     g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges, threshold); //chi2/median(chi2)
                     //g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = findOutlier(closeSet, activeEdges);//chi2 > threshold

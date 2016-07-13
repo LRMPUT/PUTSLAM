@@ -156,11 +156,11 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 					MatcherOpenCV::compare_response);
 
 			// Adding to final keypoints
-			for (int j = 0; j < keypointsInROI.size() && j < maximalFeaturesInROI; j++) {
-				keypointsInROI[j].pt.x += k * grayImageWidth
-						/ matcherParameters.OpenCVParams.gridCols;
-				keypointsInROI[j].pt.y += i * grayImageHeight
-						/ matcherParameters.OpenCVParams.gridRows;
+			for (std::vector<cv::KeyPoint>::size_type j = 0; j < keypointsInROI.size() && (int)j < maximalFeaturesInROI; j++) {
+				keypointsInROI[j].pt.x += float(k * grayImageWidth
+						/ matcherParameters.OpenCVParams.gridCols);
+				keypointsInROI[j].pt.y += float(i * grayImageHeight
+						/ matcherParameters.OpenCVParams.gridRows);
 				raw_keypoints.push_back(keypointsInROI[j]);
 			}
 		}
@@ -173,7 +173,7 @@ std::vector<cv::KeyPoint> MatcherOpenCV::detectFeatures(cv::Mat rgbImage) {
 	if (matcherParameters.verbose > 1)
 		std::cout << "MatcherOpenCV: After joining we have "<< raw_keypoints.size() << " keypoints" << std::endl;
 
-	if (raw_keypoints.size() > matcherParameters.OpenCVParams.maximalTrackedFeatures)
+	if ((int)raw_keypoints.size() > matcherParameters.OpenCVParams.maximalTrackedFeatures)
 		raw_keypoints.resize(matcherParameters.OpenCVParams.maximalTrackedFeatures);
 
 	return raw_keypoints;
@@ -239,13 +239,13 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 
 	keyPoints = prevKeyPoints;
 	//copy new positions to keyPoints
-	for(int i = 0; i < features.size(); ++i){
+	for(std::vector<cv::Point2f>::size_type i = 0; i < features.size(); ++i){
 		keyPoints[i].pt = features[i];
 	}
 	detDists = prevDetDists;
 
 	// This parts removes additional features for which we observed an error above preset threshold
-	int errSize = err.size();
+	int errSize = (int)err.size();
 	for (int i = 0; i < errSize; i++) {
 		if (err[i] > matcherParameters.OpenCVParams.trackingErrorThreshold)
 			status[i] = 0;
@@ -253,13 +253,13 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 
 	// Removing features if they are too close to each other - the feature to remove is based on an error from tracking
 	std::set<int> featuresToRemove;
-	for (int i = 0; i < features.size(); i++) {
-		for (int j = i + 1; j < features.size(); j++) {
+	for (std::vector<cv::Point2f>::size_type i = 0; i < features.size(); i++) {
+		for (std::vector<cv::Point2f>::size_type j = i + 1; j < features.size(); j++) {
 			if (cv::norm(features[i] - features[j]) < matcherParameters.OpenCVParams.minimalReprojDistanceNewTrackingFeatures) {
 				if ( err[i] > err[j])
-					featuresToRemove.insert(i);
+					featuresToRemove.insert((int)i);
 				else
-					featuresToRemove.insert(j);
+					featuresToRemove.insert((int)j);
 			}
 		}
 	}
@@ -292,7 +292,7 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	if (matcherParameters.verbose > 0)
 		std::cout << "MatcherOpenCV::performTracking -- features tracked "
 				<< matches.size() << " ("
-				<< matches.size() * 100.0 / prevFeatures.size() << "%)"
+				<< (float)matches.size() * 100.0 / (float)prevFeatures.size() << "%)"
 				<< std::endl;
 
 	// Return result

@@ -52,7 +52,7 @@ class PUTSLAM {
 	// TODO: Some parameters - it is NASTY!
 	int addFeaturesWhenMapSizeLessThan, addFeaturesWhenMeasurementSizeLessThan,
 			maxOnceFeatureAdd;
-	float minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures;
+	double minEuclideanDistanceOfFeatures, minImageDistanceOfFeatures;
     int addNoFeaturesWhenMapSizeGreaterThan,
             minMeasurementsToAddPoseToFeatureEdge;bool addPoseToPoseEdges;
 	double depthImageScale, getVisibleFeaturesGraphMaxDepth,

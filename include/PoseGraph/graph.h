@@ -116,8 +116,8 @@ namespace putslam {
                         file << "plot(" << std::setprecision (5) << ((putslam::VertexSE2*)it->get())->pos.x() << ", " << ((putslam::VertexSE2*)it->get())->pos.y() << ", " << pointProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.edges.begin(); it!=graph.edges.end();it++){
-                    putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
-                    putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
+                    putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex((unsigned int)it->get()->toVertexId);
+                    putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex((unsigned int)it->get()->fromVertexId);
                     if (it->get()->type==Edge::EDGE_SE3)
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->pose(0,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(0,3) << "], [" << ((putslam::VertexSE3*)fromIt->get())->pose(1,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(1,3) << "], [" << ((putslam::VertexSE3*)fromIt->get())->pose(2,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(2,3) << "], "<< linePropertySE3 << ");\n";
                     else if (it->get()->type==Edge::EDGE_3D)
@@ -126,8 +126,8 @@ namespace putslam {
                         file << "plot([" << std::setprecision (5) << ((putslam::VertexSE2*)fromIt->get())->pos.x() << ", " << ((putslam::VertexSE2*)toIt->get())->pos.x() << "], [" << ((putslam::VertexSE2*)fromIt->get())->pos.y() << ", " << ((putslam::VertexSE2*)toIt->get())->pos.y() << "], "<< lineProperty3D << ");\n";
                 }
                 for (putslam::PoseGraph::EdgeSet::const_iterator it = graph.prunedEdges.begin(); it!=graph.prunedEdges.end();it++){
-                    putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex(it->get()->toVertexId);
-                    putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex(it->get()->fromVertexId);
+                    putslam::PoseGraph::VertexSet::const_iterator toIt = findVertex((unsigned int)it->get()->toVertexId);
+                    putslam::PoseGraph::VertexSet::const_iterator fromIt = findVertex((unsigned int)it->get()->fromVertexId);
                     if (it->get()->type==Edge::EDGE_SE3)
                         file << "plot3([" << std::setprecision (5) << ((putslam::VertexSE3*)fromIt->get())->pose(0,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(0,3) << "], [" << ((putslam::VertexSE3*)fromIt->get())->pose(1,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(1,3) << "], [" << ((putslam::VertexSE3*)fromIt->get())->pose(2,3) << ", " << ((putslam::VertexSE3*)toIt->get())->pose(2,3) << "], "<< prunedEdgesPropertySE3 << ");\n";
                     else if (it->get()->type==Edge::EDGE_3D)

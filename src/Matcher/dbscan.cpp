@@ -19,7 +19,7 @@ void DBScan::expandCluster(std::vector<int> neighbourList,
 		int &C) {
 
 	// testing the neighbours
-	for (int j = 0; j < neighbourList.size(); j++) {
+	for (std::vector<int>::size_type j = 0; j < neighbourList.size(); j++) {
 		int x = neighbourList[j];
 
 		// If not visited
@@ -36,7 +36,7 @@ void DBScan::expandCluster(std::vector<int> neighbourList,
 
 			// If it has enough neighbours it's neighbours can be checked
 			// Merging ...
-			if (neighbourNeighbourList.size() >= minPts) {
+			if ((int)neighbourNeighbourList.size() >= minPts) {
 				neighbourList.insert(neighbourList.end(), neighbourNeighbourList.begin(), neighbourNeighbourList.end());
 			}
 		}
@@ -63,7 +63,7 @@ int DBScan::findingClusters(int clusteringSetSize) {
 				}
 			}
 			// If there are not enough neighbours to form a cluster
-			if (neighbourList.size() < minPts)
+			if ((int)neighbourList.size() < minPts)
 				cluster[i] = -1;
 			else {
 				// There is a need cluster!
@@ -77,7 +77,7 @@ int DBScan::findingClusters(int clusteringSetSize) {
 }
 
 void DBScan::run(std::vector<cv::KeyPoint> & clusteringSet) {
-	int clusteringSetSize = clusteringSet.size();
+	int clusteringSetSize = (int)clusteringSet.size();
 
 	// Calculating similarity matrix
 	dist = std::vector<std::vector<float> >(clusteringSetSize,
@@ -85,7 +85,7 @@ void DBScan::run(std::vector<cv::KeyPoint> & clusteringSet) {
 
 	for (int i = 0; i < clusteringSetSize; i++)
 		for (int j = i; j < clusteringSetSize; j++)
-			dist[i][j] = cv::norm(clusteringSet[i].pt - clusteringSet[j].pt);
+			dist[i][j] = (float)cv::norm(clusteringSet[i].pt - clusteringSet[j].pt);
 
 	// Preparation - visited nodes information
 	visited = std::vector<bool>(clusteringSetSize, false);

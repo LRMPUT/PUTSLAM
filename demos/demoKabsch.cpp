@@ -129,7 +129,7 @@ void savePointCloud(std::string filename, PointCloud& cloud){
     std::ofstream file(filename);
     file << "close all; clear all;\n";
     file << "hold on;\n";
-    for (int i=0;i<cloud.size();i++){
+    for (unsigned int i=0;i<cloud.size();i++){
         file << "plot3(" << cloud[i].x << ", " << cloud[i].y << ", " << cloud[i].z << ",'r.' );\n";
     }
     file.close();
@@ -149,11 +149,13 @@ PointCloud loadPointCloudTxt(std::string filename){
         myfile.close();
     }
     else std::cout << "Unable to open file";
+
+    return pointcl;
 }
 
 void savePointCloudTxt(std::string filename, const PointCloud& cloud){
     std::ofstream file(filename);
-    for (int i=0;i<cloud.size();i++){
+    for (unsigned int i=0;i<cloud.size();i++){
         file << cloud[i].x << " " << cloud[i].y << " " << cloud[i].z << "\n";
     }
     file.close();
@@ -163,7 +165,7 @@ void savePointCloud(std::string filename, PointCloud& cloud, std::vector<Mat33>&
     std::ofstream file(filename);
     file << "close all; clear all;\n";
     file << "hold on;\n";
-    for (int i=0;i<cloud.size();i++){
+    for (unsigned int i=0;i<cloud.size();i++){
         file << "plot3(" << cloud[i].x << ", " << cloud[i].y << ", " << cloud[i].z << ",'r.' );\n";
         //file << "plot3([" << cloud[i].x - 3*uncertainty[i](0,0)<< "," << cloud[i].x + 3*uncertainty[i](0,0)<< "],[" << cloud[i].y << ", " << cloud[i].y << "],[" << cloud[i].z << ", " << cloud[i].z << "],'-k');\n";
         //file << "plot3([" << cloud[i].x << "," << cloud[i].x << "],[" << cloud[i].y - 3*uncertainty[i](1,1)<< ", " << cloud[i].y + 3*uncertainty[i](1,1) << "],[" << cloud[i].z - 3*uncertainty[i](2,2) << ", " << cloud[i].z + 3*uncertainty[i](2,2) << "],'-k');\n";
@@ -181,14 +183,14 @@ void saveGroundTruth(std::string filename, std::vector<Mat34>& trajectory) {
     file << "# ground truth trajectory:\n";
     file << "# file: 'simulator_room.bag'\n";
     file << "# timestamp tx ty tz qx qy qz qw\n";
-    for (int i=0;i<trajectory.size();i++){
+    for (unsigned int i=0;i<trajectory.size();i++){
         Quaternion q(trajectory[i].rotation());
         file << i << " " << trajectory[i](0,3) << " " << trajectory[i](1,3) << " " << trajectory[i](2,3) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << "\n";
     }
     file.close();
 
     std::ofstream fileInds("../../resources/KabschUncertainty/g2oIndices");
-    for (int i=0;i<trajectory.size();i++){
+    for (unsigned int i=0;i<trajectory.size();i++){
         fileInds << i << "\n";
     }
     fileInds.close();
@@ -197,7 +199,7 @@ void saveGroundTruth(std::string filename, std::vector<Mat34>& trajectory) {
 //converts local position to global
 Eigen::MatrixXd cloud2local(const Eigen::MatrixXd& cloud, const Mat34& sensorPose){
     Eigen::MatrixXd tmp; tmp.resize(cloud.rows(),cloud.cols());
-    for (int i=0;i<cloud.rows();i++){
+    for (unsigned int i=0;i<cloud.rows();i++){
         Mat34 pose; pose.setIdentity();
         pose(0,3) = cloud(i,0); pose(1,3) = cloud(i,1); pose(2,3) = cloud(i,2);
         //std::cout << cloud(i,1) << ", " << cloud(i,1) << ", " << cloud(i,2) << "\n";
@@ -212,7 +214,7 @@ Eigen::MatrixXd cloud2local(const Eigen::MatrixXd& cloud, const Mat34& sensorPos
 //converts local position to global
 PointCloud cloud2global(const PointCloud& cloud, Mat34& sensorPose){
     PointCloud tmp;
-    for (int i=0;i<cloud.size();i++){
+    for (unsigned int i=0;i<cloud.size();i++){
         Point3D point;
         Mat34 pose; pose.setIdentity();
         pose(0,3) = cloud[i].x; pose(1,3) = cloud[i].y; pose(2,3) = cloud[i].z;
@@ -226,7 +228,7 @@ PointCloud cloud2global(const PointCloud& cloud, Mat34& sensorPose){
 //converts local position to global
 PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
     PointCloud tmp;
-    for (int i=0;i<cloud.size();i++){
+    for (unsigned int i=0;i<cloud.size();i++){
         Point3D point;
         Mat34 pose; pose.setIdentity();
         pose(0,3) = cloud[i].x; pose(1,3) = cloud[i].y; pose(2,3) = cloud[i].z;
@@ -240,7 +242,7 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
 /// compute mean squared error for the map
 float_type computeMapAccuracy(Graph* currentGraph, PointCloud& groundTruth){
     float_type accuracy = 0;
-    for (int i=0;i<groundTruth.size();i++){
+    for (unsigned int i=0;i<groundTruth.size();i++){
         Point3D point = ((PoseGraphG2O*) currentGraph)->getVertex(i+INIT_VERTEX_ID);
         if ((point.x!=-1)&&(point.y!=-1)) //if point exists in the map
             accuracy+=pow(point.x - groundTruth[i].x,2.0) + pow(point.y - groundTruth[i].y,2.0) + pow(point.z - groundTruth[i].z,2.0);
@@ -261,7 +263,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
     Eigen::MatrixXd setA(1, 3);
     Eigen::MatrixXd setB(1, 3);
     Mat66 uncertainty;
-    for (int i=1;i<trajectory.size();i++){
+    for (unsigned int i=1;i<trajectory.size();i++){
         //get point clouds
         //sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
@@ -362,10 +364,10 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
     if (expType>0){
         std::cout << "more edges\n";
         //additional edges
-        for (int i=2;i<trajectory.size();i++){
+        for (unsigned int i=2;i<trajectory.size();i++){
             //match and estimate transformation
-            for (int j=2;j<trajectory.size();j++){
-                if (i-j<0)
+            for (unsigned int j=2;j<trajectory.size();j++){
+                if ((int)i-(int)j<0)
                     break;
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
@@ -467,7 +469,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
     Eigen::MatrixXd setA(1, 3);
     Eigen::MatrixXd setB(1, 3);
     Mat66 uncertainty;
-    for (int i=1;i<trajectory.size();i++){
+    for (unsigned int i=1;i<trajectory.size();i++){
         //get point clouds
         //sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
@@ -531,7 +533,7 @@ void runExperiment2cameras(int expType, const std::vector<Mat34>& trajectory, co
     }
     vertexId2 = 1;
     if (expType==3||expType==4){
-        for (int i=1;i<trajectory.size();i++){
+        for (unsigned int i=1;i<trajectory.size();i++){
             //get point clouds
             //sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
@@ -603,7 +605,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
     Eigen::MatrixXd setA(1, 3);
     Eigen::MatrixXd setB(1, 3);
     Mat33 uncertainty;
-    for (int i=1;i<trajectory.size();i++){
+    for (unsigned int i=1;i<trajectory.size();i++){
         //get point clouds
         //sensorPose.matrix() = trajectory[i].matrix()*sensorModel.config.pose.matrix();
 
@@ -628,7 +630,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
             Eigen::Vector2d pos;
             trajectorySensor2.push_back(sensorPose);
             pos.x() = sensorPose(0,3); pos.y() = sensorPose(1,3);
-            Eigen::Vector3d euler = g2o::internal::toEuler(trans.rotation());
+           // Eigen::Vector3d euler = g2o::internal::toEuler(trans.rotation());
 
             Quaternion q(trans.rotation());
             const double& q0 = q.w();
@@ -636,8 +638,8 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
             const double& q2 = q.y();
             const double& q3 = q.z();
             double roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)); // r32/r33
-            double pitch = asin(2*(q0*q2-q3*q1));
-            double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+           // double pitch = asin(2*(q0*q2-q3*q1));
+           // double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 
             theta += roll;
             VertexSE2 vertexSensor(vertexId2, pos, theta);
@@ -703,7 +705,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
     if (expType>0){
         std::cout << "more edges\n";
         //additional edges
-        for (int i=2;i<trajectory.size();i++){
+        for (unsigned int i=2;i<trajectory.size();i++){
             //match and estimate transformation
             for (int j=2;j<18;j++){
                 if (i-j<0)
@@ -717,7 +719,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
                     // add edge to the g2o graph
                     Eigen::Vector2d pos;
                     pos.x() = trans(2,3); pos.y() = -trans(1,3);
-                    Eigen::Matrix<double,3,1> euler = trans.rotation().eulerAngles(2, 1, 0);
+                    //Eigen::Matrix<double,3,1> euler = trans.rotation().eulerAngles(2, 1, 0);
 
                     Mat33 infoMat;
                     if (expType==1)
@@ -740,8 +742,8 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
                     const double& q2 = q.y();
                     const double& q3 = q.z();
                     double roll = atan2(2*(q0*q1+q2*q3), 1-2*(q1*q1+q2*q2)); // r32/r33
-                    double pitch = asin(2*(q0*q2-q3*q1));
-                    double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
+                   // double pitch = asin(2*(q0*q2-q3*q1));
+                   // double yaw = atan2(2*(q0*q3+q1*q2), 1-2*(q2*q2+q3*q3));
 
                     /*std::cout << "trans: \n" << trans.matrix() << "\n";
                     std::cout << "euler: \n" << euler << "\n";
@@ -762,8 +764,8 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
 }
 
 void createMap(Graph* graph, const std::vector<Mat34>& trajectory, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<int> >& setIds){
-    for (int i=0;i<trajectory.size();i++){
-        for (int j=0; j<cloudSeq[i].size(); j++){
+    for (unsigned int i=0;i<trajectory.size();i++){
+        for (unsigned int j=0; j<cloudSeq[i].size(); j++){
             Mat34 featurePose;
             Mat34 sensor2feature; sensor2feature.setIdentity();
             sensor2feature(0,3) = cloudSeq[i][j].x; sensor2feature(1,3) = cloudSeq[i][j].y; sensor2feature(2,3) = cloudSeq[i][j].z;
@@ -785,7 +787,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
 
     Mat34 sensorPose;
     Mat33 uncertainty;
-    for (int i=0;i<trajectory.size();i++){
+    for (unsigned int i=0;i<trajectory.size();i++){
         //get point clouds
         if (i!=0){
             Eigen::MatrixXd setA(1, 3);
@@ -840,7 +842,7 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
 
         //add features
         //std::cout << "View points1: " << cloudSeq[i].size() << "\n";
-        for (int j=0; j<cloudSeq[i].size(); j++){
+        for (unsigned int j=0; j<cloudSeq[i].size(); j++){
             Mat34 featurePose;
             Mat34 sensor2feature; sensor2feature.setIdentity();
             sensor2feature(0,3) = cloudSeq[i][j].x; sensor2feature(1,3) = cloudSeq[i][j].y; sensor2feature(2,3) = cloudSeq[i][j].z;
@@ -880,10 +882,10 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
     if (expType==2||expType==4){
         std::cout << "more edges\n";
         //additional edges
-        for (int i=2;i<trajectory.size();i++){
+        for (unsigned int i=2;i<trajectory.size();i++){
             //match and estimate transformation
             for (int j=2;j<18;j++){
-                if (i-j<0)
+                if ((int)i-j<0)
                     break;
                 Eigen::MatrixXd setA(1, 3);
                 Eigen::MatrixXd setB(1, 3);
@@ -934,7 +936,7 @@ std::vector<float_type> computeRPE(std::vector<Mat34>& trajectoryRef, std::vecto
         std::cout << "RPE computation error: trajectories sizes does no match\n";
         return rpe;
     }
-    for (int i=1;i<trajectoryRef.size();i++){
+    for (unsigned int i=1;i<trajectoryRef.size();i++){
         Mat34 error = (trajectoryRef[i-1].inverse()*trajectoryRef[i]).inverse()*(trajectory[i-1].inverse()*trajectory[i]);
         float_type errorVal = pow(error(0,3),2.0)+pow(error(1,3),2.0)+pow(error(2,3),2.0);
         rpe.push_back(errorVal);
@@ -944,23 +946,23 @@ std::vector<float_type> computeRPE(std::vector<Mat34>& trajectoryRef, std::vecto
 
 float_type computeRMSE(std::vector<float_type>& error){
     float_type rmse=0;
-    for (int i=0;i<error.size();i++){
+    for (unsigned int i=0;i<error.size();i++){
         rmse+=error[i];
     }
-    return sqrt(rmse/error.size());
+    return (float_type)sqrt(rmse/(float_type)error.size());
 }
 
 float_type computeMean(std::vector<float_type>& error){
     float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
-    return sum / error.size();
+    return sum / (float_type)error.size();
 }
 
 float_type computeStd(std::vector<float_type>& error){
     float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
-    float_type mean = sum / error.size();
+    float_type mean = sum / (float_type) error.size();
 
     float_type sq_sum = std::inner_product(error.begin(), error.end(), error.begin(), 0.0);
-    return std::sqrt(sq_sum / error.size() - mean * mean);
+    return std::sqrt(sq_sum / (float_type) error.size() - mean * mean);
 }
 
 int main(int argc, char * argv[])
@@ -1085,7 +1087,7 @@ int main(int argc, char * argv[])
         printUncertainty(uncertainty, trans, moveTab[0], moveTab[1], moveTab[2], moveTab[3], moveTab[4], moveTab[5]);
 
         ///sampling from ellipsoid
-        int samplesNo=250;     // How many samples (columns) to draw
+        //int samplesNo=250;     // How many samples (columns) to draw
         // Define mean and covariance of the distribution
         Eigen::Vector3d mean(3);
         Eigen::MatrixXd covar(3,3);
@@ -1117,8 +1119,8 @@ int main(int argc, char * argv[])
         for (int i=0;i<trialsNo;i++){
 
             Simulator simulator;
-            size_t pointsNo = 5000;
-            float_type roomDim[3] = {5.5, 5.5, 5.5};
+            //size_t pointsNo = 5000;
+            //float_type roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
             simulator.createEnvironment(450, 15, 15, 15);
             //simulator.loadEnvironment("../../resources/cloudOffice.pcl");
@@ -1270,7 +1272,7 @@ int main(int argc, char * argv[])
             }*/
             saveTrajectory("../../resources/KabschUncertainty/trajectory.m",trajectory, "k");
             std::vector<Mat34> trajectorySens;
-            for (int iter = 0; iter<trajectory.size();iter++){
+            for (unsigned int iter = 0; iter<trajectory.size();iter++){
                 Mat34 tmppos;
                 tmppos.matrix() = trajectory[iter].matrix()*sensorModel.config.pose.matrix();
                 trajectorySens.push_back(tmppos);
@@ -1421,7 +1423,7 @@ int main(int argc, char * argv[])
             std::cout << "Kabsch accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
 
             Mat34 prevPos = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
+            for (unsigned int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos.inverse() * trajectorySensor[tt];
                 std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
@@ -1449,7 +1451,7 @@ int main(int argc, char * argv[])
             std::cout << "g2o+LC accuracy: " << computeMapAccuracy(graph, simulator.getEnvironment()) << "\n";
 
             Mat34 prevPos1 = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
+            for (unsigned int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos1.inverse() * trajectoryOpt[tt];
                 std::string fileFrame= "../../resources/simulator/frameG2O" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
@@ -1523,7 +1525,7 @@ int main(int argc, char * argv[])
             MSEBAnouncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
 
             Mat34 prevPos2 = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
+            for (unsigned int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos2.inverse() * trajectoryBAident[tt];
                 std::string fileFrame= "../../resources/simulator/frameBAG2O" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);
@@ -1559,7 +1561,7 @@ int main(int argc, char * argv[])
             MSEBAuncert.push_back(computeMapAccuracy(graph, simulator.getEnvironment()));
 
             Mat34 prevPos3 = trajectorySensor[0];
-            for (int tt=0;tt<trajectorySensor.size();tt++){
+            for (unsigned int tt=0;tt<trajectorySensor.size();tt++){
                 Mat34 estimKabsch = prevPos3.inverse() * trajectoryBAuncert[tt];
                 std::string fileFrame= "../../resources/simulator/frame" + std::to_string(tt) + ".dat";
                 simulator.saveImageFeatures(fileFrame, trajectorySens[tt], cloudSeq[tt], setIds[tt], sensorModel, estimKabsch);

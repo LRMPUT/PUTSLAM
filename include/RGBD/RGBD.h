@@ -84,7 +84,7 @@ putslam::Vec3 computeNormal(const cv::Mat& depthImage, int u, int v, const cv::M
 template<class T>
 void computeNormals(const cv::Mat& depthImage, T& features, const cv::Mat& cameraMatrix, double depthImageScale){
     for(auto it = features.begin();it!=features.end();it++){
-        it->normal = computeNormal(depthImage,it->u, it->v, cameraMatrix, depthImageScale);
+        it->normal = computeNormal(depthImage,(int)it->u, (int)it->v, cameraMatrix, depthImageScale);
     }
 }
 
@@ -95,7 +95,7 @@ putslam::Vec3 computeRGBGradient(const cv::Mat& rgbImage, const cv::Mat& depthIm
 template<class T>
 void computeRGBGradients(const cv::Mat& rgbImage, const cv::Mat& depthImage, T& features, const cv::Mat& cameraMatrix, double depthImageScale){
     for(auto it = features.begin();it!=features.end();it++){
-        it->RGBgradient = computeRGBGradient(rgbImage, depthImage, it->u, it->v, cameraMatrix, depthImageScale);
+        it->RGBgradient = computeRGBGradient(rgbImage, depthImage, (int)it->u, (int)it->v, cameraMatrix, depthImageScale);
     }
 }
 

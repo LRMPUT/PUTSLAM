@@ -51,7 +51,7 @@ public:
 
 	/// overloaded constructor
     LoopClosure(const std::string _name, Type _type) :
-			name(_name), type(_type) {
+    	type(_type), name(_name) {
     }
 
     /// Name of the LoopClosure

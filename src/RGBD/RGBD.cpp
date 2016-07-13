@@ -12,15 +12,15 @@ int RGBD::roundSize(double x, int size) {
 		x = 0;
 	else if (x > size - 1)
 		x = size;
-	return round(x);
+	return (int)round(x);
 }
 
 std::vector<Eigen::Vector3f> RGBD::keypoints2Dto3D(
 		std::vector<cv::Point2f> undistortedFeatures2D, cv::Mat depthImage, double depthImageScale) {
 
 	// Assume standard distortion
-	float cameraMatrix[3][3] = { { 517.3, 0, 318.6 }, { 0, 516.5, 255.3 }, { 0,
-			0, 1 } };
+	float cameraMatrix[3][3] = { { 517.3f, 0.0f, 318.6f }, { 0.0f, 516.5f, 255.3f }, { 0.0f,
+			0.0f, 1.0f } };
 
 	// Call method with additional parameters
 	return keypoints2Dto3D(undistortedFeatures2D, depthImage,
@@ -52,7 +52,7 @@ Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
 	int vRounded = roundSize(feature2D.y, depthImage.rows);
 
 	// Convert it using the scaling of depth image
-	float Z = depthImage.at<uint16_t>(vRounded, uRounded) / depthImageScale;
+	float Z = (float) (((double)depthImage.at<uint16_t>(vRounded, uRounded)) / depthImageScale);
 
 	// Compute the feature position in normalized image coordinates
 	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
@@ -66,10 +66,6 @@ Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
 
 Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
 		float depth, cv::Mat cameraMatrix) {
-
-	// Feature are extracted with subpixel precision, so find closest pixel
-	int uRounded = round(feature2D.x);
-	int vRounded = round(feature2D.y);
 
 	// Compute the feature position in normalized image coordinates
 	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
@@ -103,14 +99,14 @@ cv::Point2f RGBD::point3Dto2D(Eigen::Vector3f feature3D, cv::Mat cameraMatrix) {
 
 ///compute normal
 putslam::Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const cv::Mat& cameraMatrix, double depthImageScale){
-    cv::Point2f center2D(u,v);
+    cv::Point2f center2D((float)u,(float)v);
     Eigen::Vector3f center = point2Dto3D(center2D,depthImage, cameraMatrix, depthImageScale);
     std::vector<putslam::Vec3> vecs;
     std::vector<int> uidx = {-1, -1, -1, 0, 1, 1, 1, 0};
     std::vector<int> vidx = {-1, 0, 1, 1, 1, 0, -1, -1};
     //std::cout << "center <<" << center(0) << ", " << center(1) << ", "<< center(2) << "\n";
-    for(int i=0;i<uidx.size();i++){
-            Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+uidx[i], v+vidx[i]),depthImage, cameraMatrix, depthImageScale);
+    for(std::vector<int>::size_type i=0;i<uidx.size();i++){
+            Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(float(u+uidx[i]), float(v+vidx[i])),depthImage, cameraMatrix, depthImageScale);
             if (pointEnd(2)>0){
                 vecs.push_back(putslam::Vec3(pointEnd(0)-center(0),pointEnd(1)-center(1),pointEnd(2)-center(2)));
             }
@@ -120,7 +116,7 @@ putslam::Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const
     }
     //compute normals
     std::vector<putslam::Vec3> normals;
-    for (int i = 0; i<vecs.size();i++){
+    for (std::vector<putslam::Vec3>::size_type i = 0; i<vecs.size();i++){
         if (i==vecs.size()-1){
             putslam::Vec3 norm(vecs[i].vector().cross(vecs[0].vector()));
             //std::cout << "plot3([" << center(0) << ", " << center(0)+30*norm.x() <<"], ["<< center(1) << ", " << center(1)+30*norm.y() <<"], ["<< center(2) << ", " << center(2)+30*norm.z() <<"],"<< "'-g');\n";
@@ -139,9 +135,9 @@ putslam::Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const
     for (auto it=normals.begin();it!=normals.end();it++){
         sumX+=(*it).x(); sumY+=(*it).y(); sumZ+=(*it).z();
     }
-    normal.x()=sumX/normals.size();
-    normal.y()=sumY/normals.size();
-    normal.z()=sumZ/normals.size();
+    normal.x()=sumX/(putslam::float_type)normals.size();
+    normal.y()=sumY/(putslam::float_type)normals.size();
+    normal.z()=sumZ/(putslam::float_type)normals.size();
     putslam::float_type norm = normal.vector().norm();
     normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
     return normal;
@@ -168,9 +164,9 @@ putslam::Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage,
     putslam::float_type angle = atan2(grady, gradx) + (M_PI/2.0);
     int coord1[2]={int(sqrt(2)*sin(angle)), int(sqrt(2)*cos(angle))};
     int coord2[2]={int(sqrt(2)*sin(angle+M_PI)), int(sqrt(2)*cos(angle+M_PI))};
-    Eigen::Vector3f pointCenter = point2Dto3D(cv::Point2f(u, v),depthImage, cameraMatrix, depthImageScale);
-    Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f(u+coord1[0], v+coord1[1]),depthImage, cameraMatrix, depthImageScale);
-    Eigen::Vector3f pointBeg = point2Dto3D(cv::Point2f(u+coord2[0], v+coord2[1]),depthImage, cameraMatrix, depthImageScale);
+    Eigen::Vector3f pointCenter = point2Dto3D(cv::Point2f((float)u, (float)v),depthImage, cameraMatrix, depthImageScale);
+    Eigen::Vector3f pointEnd = point2Dto3D(cv::Point2f((float)(u+coord1[0]), (float)(v+coord1[1])),depthImage, cameraMatrix, depthImageScale);
+    Eigen::Vector3f pointBeg = point2Dto3D(cv::Point2f((float)(u+coord2[0]), (float)(v+coord2[1])),depthImage, cameraMatrix, depthImageScale);
     if (pointEnd(2)>0&&pointBeg(2)){
         grad = putslam::Vec3(pointEnd(0)- pointBeg(0), pointEnd(1)- pointBeg(1), pointEnd(2)- pointBeg(2));
     }
@@ -218,7 +214,7 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<putslam::MapFeature> &featu
 		int uRounded = roundSize(featuresIter->u, depthImage.cols);
 		int vRounded = roundSize(featuresIter->v, depthImage.rows);
 
-		if (depthImage.at<uint16_t>(cv::Point2f(uRounded, vRounded))
+		if (depthImage.at<uint16_t>(cv::Point2f((float)uRounded, (float)vRounded))
 				/ depthImageScale
 				<= featuresIter->position.z() - additionalDistance) {
 			featuresIter = features.erase(featuresIter);
@@ -302,9 +298,9 @@ std::vector<Eigen::Vector3f> RGBD::imageToPointCloud(cv::Mat rgbImage,
 	for(int j = 0;j < rgbImage.rows;j++){
 	    for(int i = 0;i < rgbImage.cols;i++){
 
-	    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / depthImageScale;
+	    	float depth = float( (double)depthImage.at<uint16_t>(cv::Point2f((float)i,(float)j)) / depthImageScale );
 
-	    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
+	    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f((float)i,(float)j),
 	    			depth, cameraMatrix);
 
 	    	if ( point3D.z() > 0.0001) {
@@ -325,12 +321,12 @@ std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> RGBD::imageToColorPoint
 		for(int j = 0;j < rgbImage.rows;j++){
 		    for(int i = 0;i < rgbImage.cols;i++){
 
-		    	float depth = depthImage.at<uint16_t>(cv::Point2f(i,j)) / depthImageScale;
+		    	float depth = float( (double)depthImage.at<uint16_t>(cv::Point2f((float)i,(float)j)) / depthImageScale);
 
-		    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f(i,j),
+		    	Eigen::Vector3f point3D = point2Dto3D(cv::Point2f((float)i,(float)j),
 		    			depth, cameraMatrix);
 
-		    	cv::Vec3i colorBGR = rgbImage.at<cv::Vec3b>(cv::Point2f(i,j));
+		    	cv::Vec3i colorBGR = rgbImage.at<cv::Vec3b>(cv::Point2f((float)i,(float)j));
 		    	Eigen::Vector3i color3 = Eigen::Vector3i(colorBGR.val[2],colorBGR.val[1],colorBGR.val[0]);
 
 		    	if ( point3D.z() > 0.0001) {
@@ -360,13 +356,13 @@ void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileN
 	// he keyword NODE is followed by the 6D pose of the laser origin of the 3D scan
 	//(coordinates are regarded as SI units: meter for translation & rad for angles. x points forward, y left, z up.
 	//roll, pitch, and yaw angles are around the axes x, y, z respectively).
-	Eigen::Vector3f eulerAnglesRPY = tmpPose.block<3,3>(0,0).eulerAngles(0, 1, 2);
+//	Eigen::Vector3f eulerAnglesRPY = tmpPose.block<3,3>(0,0).eulerAngles(0, 1, 2);
 
 //	fileToSave << "NODE " << tmpPose(0, 3) << " " << tmpPose(1, 3) << " "
 //			<< tmpPose(2, 3) << " " << eulerAnglesRPY(0) << " "
 //			<< eulerAnglesRPY(1) << " " << eulerAnglesRPY(2) << std::endl;
 
-	for (int i=0;i<pointCloud.size();i++) {
+	for (std::vector<Eigen::Vector3f>::size_type i=0;i<pointCloud.size();i++) {
 		fileToSave << pointCloud[i].x() << " " << pointCloud[i].y() << " " << pointCloud[i].z() << std::endl;
 	}
 	fileToSave.close();

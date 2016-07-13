@@ -68,11 +68,11 @@ public:
 
 	public:
 		double getDetectionAverage() {
-			double avgTime = 0;
+			long sumTime = 0;
 			for (auto &x : times) {
-				avgTime += x;
+				sumTime += x;
 			}
-			return avgTime/times.size();
+			return double(sumTime)/double(times.size());
 		}
 
 		void addTime(long time) {

@@ -10,7 +10,7 @@
 
 RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 //RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
-	srand(time(0));
+	srand((unsigned int)time((time_t)0));
 
 	cameraMatrix = _cameraMatrix;
 
@@ -56,7 +56,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 			std::cout << "RANSAC: original matches.size() = " << matches.size() << std::endl;
 
 	// The set of matches is too small to make any sense
-	if (matches.size() < RANSACParams.minimalNumberOfMatches) {
+	if ((int)matches.size() < RANSACParams.minimalNumberOfMatches) {
 		bestInlierMatches.clear();
 		return Eigen::Matrix4f::Identity();
 	}
@@ -178,13 +178,13 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 //
 std::vector<cv::DMatch> RANSAC::getRandomMatches(
 		const std::vector<cv::DMatch> matches) {
-	const int matchesSize = matches.size();
+	const int matchesSize = (int)matches.size();
 
 	std::vector<cv::DMatch> chosenMatches;
 	std::vector<bool> validIndex(matchesSize, true);
 
 	// Loop until we found enough matches
-	while (chosenMatches.size() < RANSACParams.usedPairs) {
+	while ((int)chosenMatches.size() < RANSACParams.usedPairs) {
 
 		// Randomly sample one match
 		int sampledMatchIndex = rand() % matchesSize;
@@ -213,7 +213,7 @@ bool RANSAC::computeTransformationModel(
 			matches.size(), 3);
 
 	// Create matrices
-	for (int j = 0; j < matches.size(); j++) {
+	for (std::vector<cv::DMatch>::size_type j = 0; j < matches.size(); j++) {
 		cv::DMatch p = matches[j];
 		prevFeaturesMatrix.block<1, 3>(j, 0) = prevFeatures[p.queryIdx];
 		featuresMatrix.block<1, 3>(j, 0) = features[p.trainIdx];
@@ -276,7 +276,7 @@ float RANSAC::computeMatchInlierRatioEuclidean(
 	}
 
 	// Percent of correct matches
-	return float(inlierCount) / matches.size();
+	return float(inlierCount) / float(matches.size());
 }
 
 float RANSAC::computeInlierRatioMahalanobis(
@@ -318,7 +318,7 @@ float RANSAC::computeInlierRatioMahalanobis(
 	}
 
 	// Percent of correct matches
-	return float(inlierCount) / matches.size();
+	return float(inlierCount) / float(matches.size());
 }
 
 float RANSAC::computeInlierRatioReprojection(
@@ -370,7 +370,7 @@ float RANSAC::computeInlierRatioReprojection(
 	}
 
 	// Percent of correct matches
-	return float(inlierCount) / matches.size();
+	return float(inlierCount) / float(matches.size());
 }
 
 float RANSAC::computeInlierRatioEuclideanAndReprojection(
@@ -431,7 +431,7 @@ float RANSAC::computeInlierRatioEuclideanAndReprojection(
 	}
 
 	// Percent of correct matches
-	return float(inlierCount) / matches.size();
+	return float(inlierCount) / float(matches.size());
 }
 
 inline void RANSAC::saveBetterModel(const double inlierRatio,
@@ -455,7 +455,7 @@ inline void RANSAC::saveBetterModel(const double inlierRatio,
 
 inline int RANSAC::computeRANSACIteration(double inlierRatio,
 		double successProbability, int numberOfPairs) {
-	return (log(1 - successProbability)
-			/ log(1 - pow(inlierRatio, numberOfPairs)));
+	return int ( (log(1 - successProbability)
+			/ log(1 - pow(inlierRatio, numberOfPairs))));
 }
 

@@ -163,7 +163,7 @@ Eigen::Isometry3f G2OEst::v2t(const Vector6f& t){
   T.translation()=t.head<3>();
   float w=t.block<3,1>(3,0).squaredNorm();
   if (w<1) {
-    w=sqrt(1-w);
+    w=(float)sqrt(1-w);
     T.linear()=Eigen::Quaternionf(w, t(3), t(4), t(5)).toRotationMatrix();
   } else {
     Eigen::Vector3f q=t.block<3,1>(3,0);

@@ -24,7 +24,7 @@ public:
     }
     DurationT elapsed() {
         auto delta = std::chrono::duration_cast < TimeT > (_end - _start);
-        return delta.count();
+        return (double) delta.count();
     }
 };
 

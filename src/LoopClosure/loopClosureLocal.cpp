@@ -10,7 +10,7 @@ LoopClosureLocal::LoopClosureLocal(void) : LoopClosure("Local Loop Closure", LC_
 }
 
 /// Construction
-LoopClosureLocal::LoopClosureLocal(std::string configFilename) : config(configFilename), LoopClosure("Local Loop Closure", LC_LOCAL) {
+LoopClosureLocal::LoopClosureLocal(std::string configFilename) : LoopClosure("Local Loop Closure", LC_LOCAL), config(configFilename) {
     currentFrame = config.minFrameDist;
     vpr.reset(new VisualPlaceRecognition());
 }
@@ -52,11 +52,11 @@ void LoopClosureLocal::updatePriorityQueue(void){
         if (config.verbose>0){
             std::cout << "Update priority queue: start new iteration\n";
         }
-        if (config.minFrameDist>=cameraPoses.size()||currentFrame>=cameraPoses.size()){
+        if (config.minFrameDist>=(int)cameraPoses.size()||currentFrame>=(int)cameraPoses.size()){
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
         else{
-            Mat34 currentPose = cameraPoses[currentFrame];
+           // Mat34 currentPose = cameraPoses[currentFrame];
 
 
             std::vector<std::pair<int, double>> similarPlaces = vpr.get()->findAddPlace(imagesSeq[currentFrame], currentFrame, true);

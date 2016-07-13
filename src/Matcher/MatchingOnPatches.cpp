@@ -32,11 +32,11 @@ std::vector<double> MatchingOnPatches::computePatch(cv::Mat img,
 	unsigned char *input = (unsigned char*) (img.data);
 
 	// Speed-up considerations
-	const int yEnd = y + params.halfPatchSize;
-	const int xEnd = x + params.halfPatchSize;
+	const int yEnd = (int)y + params.halfPatchSize;
+	const int xEnd = (int)x + params.halfPatchSize;
 
-	for (int i = y - params.halfPatchSize; i <= yEnd; i++) {
-		for (int j = x - params.halfPatchSize; j <= xEnd; j++) {
+	for (int i = (int)y - params.halfPatchSize; i <= yEnd; i++) {
+		for (int j = (int)x - params.halfPatchSize; j <= xEnd; j++) {
 
 			double value = topLeft * input[img.step * i + j]
 					+ topRight * input[img.step * (i) + j + 1]
@@ -61,24 +61,23 @@ void MatchingOnPatches::computeGradient(cv::Mat img, putslam::float_type x,
 	unsigned char *input = (unsigned char*) (img.data);
 
 	// Speed-up considerations
-	const int yEnd = y + params.halfPatchSize;
-	const int xEnd = x + params.halfPatchSize;
+	const int yEnd = (int)y + params.halfPatchSize;
+	const int xEnd = (int)x + params.halfPatchSize;
 
 
 	Eigen::Matrix3f Hessian = Eigen::Matrix3f::Zero();
 
-	for (int i = y - params.halfPatchSize; i <= yEnd; i++) {
-		for (int j = x - params.halfPatchSize; j <= xEnd; j++) {
+	for (int i = (int)y - params.halfPatchSize; i <= yEnd; i++) {
+		for (int j = (int)x - params.halfPatchSize; j <= xEnd; j++) {
 
 			Eigen::Vector3f J;
-			J[0] =
-					0.5
-							* (input[img.step * i + j + 1]
-									- input[img.step * i + j - 1]);
-			J[1] = 0.5
-					* (input[img.step * (i + 1) + j]
+			J[0] = 0.5f
+					* (float) (input[img.step * i + j + 1]
+							- input[img.step * i + j - 1]);
+			J[1] = 0.5f
+					* (float)(input[img.step * (i + 1) + j]
 							- input[img.step * (i - 1) + j]);
-			J[2] = 1.0;
+			J[2] = 1.0f;
 			Hessian += J * J.transpose();
 
 			gradientX.push_back(J[0]);
@@ -129,7 +128,7 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 		if (params.verbose > 2)
 		{
 			// Visualize point
-			cv::circle(drawImg, cv::Point2f(newX, newY), 5,
+			cv::circle(drawImg, cv::Point2f((float)newX,(float)newY), 5,
 					cv::Scalar(0, 0, 255));
 			cv::imshow("Showing features", drawImg);
 			cv::waitKey(10);
@@ -237,7 +236,7 @@ inline void MatchingOnPatches::evaluatePatches(
 					<<  oldPatch[i] << " " << mean << " diff="
 					<< newPatch[i] - oldPatch[i] + mean << std::endl;
 		}
-		double diff = newPatch[i] - oldPatch[i] + mean;
+		float diff = (float)(newPatch[i] - oldPatch[i] + mean);
 		tmpJ[0] = tmpJ[0] - diff * gradientX[i];
 		tmpJ[1] = tmpJ[1] - diff * gradientY[i];
 		tmpJ[2] = tmpJ[2] - diff;

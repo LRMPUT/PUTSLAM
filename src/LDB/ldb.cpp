@@ -150,8 +150,8 @@ static void generateRotatedPatterns(const int& patch_size,
 		for(int m = win_offset; m >= -win_offset; m--, a++){
 			b = 0;
 			for(int n = -win_offset; n <= win_offset; n++, b++){
-				float pixel_x = n*cos_dir + m*sin_dir;
-				float pixel_y = -n*sin_dir + m*cos_dir;
+				float pixel_x = float(n)*cos_dir + float(m)*sin_dir;
+				float pixel_y = -float(n)*sin_dir + float(m)*cos_dir;
 
 				int x = cvRound(pixel_x);
 				int y = cvRound(pixel_y);
@@ -205,7 +205,7 @@ void computeCoordinates(vector<vector<int> >& coordinates, int step, int patch_s
 /** generate random sequence size of 256 for computing LDP*/
 void generateRandSequence(vector<int>& randomSequence)
 {
-	srand(time(NULL));
+	srand((unsigned int)time(time_t(NULL)));
 	set<int> visited;
 	int count = 0;
 	do{
@@ -234,9 +234,9 @@ inline void rotatedIntegralImage(double descriptor_dir,
 
 	//* Nearest neighbour version (faster) */
 	descriptor_dir *= (float)(CV_PI/180);
-	float sin_dir = sin(descriptor_dir);
-	float cos_dir = cos(descriptor_dir);
-	float win_offset = (int)(patch_size/2);
+	float sin_dir = (float)sin(descriptor_dir);
+	float cos_dir = (float)cos(descriptor_dir);
+	float win_offset = (float)(patch_size/2);
 	Mat win(patch_size, patch_size, CV_8U);
 	//******************************************************//
 	// faster version: xin yang @ 2012-07-05 11:22am
@@ -570,8 +570,8 @@ static void computeOrientation(const Mat& image,
 							   int halfPatchSize)
 {
         vector<int> umax(halfPatchSize + 2);
-        int v, v0, vmax = cvFloor(halfPatchSize * sqrt(2.f) / 2 + 1);  
-        int vmin = cvCeil(halfPatchSize * sqrt(2.f) / 2);  
+        int v, v0, vmax = cvFloor((float)halfPatchSize * sqrt(2.f) / 2.0 + 1.0);
+        int vmin = cvCeil((float)halfPatchSize * sqrt(2.f) / 2.0);
         for (v = 0; v <= vmax; ++v)  
             umax[v] = cvRound(sqrt((double)halfPatchSize * halfPatchSize - v * v));  
                   
@@ -678,7 +678,7 @@ void LDB::compute( const Mat& _image,
 
 	//ROI handling
 	int halfPatchSize = patchSize / 2;
-	int border = halfPatchSize*1.415 + 1;
+	int border = int(halfPatchSize*1.415 + 1);
 	if( _image.type() != CV_8UC1 )
         cvtColor(_image, _image, cv::COLOR_BGR2GRAY);
 	int levelsNum = 0;
@@ -696,7 +696,7 @@ void LDB::compute( const Mat& _image,
 	for (int level = 0; level < levelsNum; ++level)
 	{
 		float scale = 1/getScale(level, firstLevel, scaleFactor);
-		Size sz(cvRound(_image.cols*scale), cvRound(_image.rows*scale));
+		Size sz(cvRound(float(_image.cols)*scale), cvRound(float(_image.rows)*scale));
 		Size wholeSize(sz.width + border*2, sz.height + border*2);
 		Mat temp(wholeSize, _image.type()), masktemp;
 		imagePyramid[level] = temp(Rect(border, border, sz.width, sz.height));
@@ -749,7 +749,7 @@ void LDB::compute( const Mat& _image,
 		if(keypoints.size() > 1)
 			KeyPointsFilter::runByImageBorder(keypoints, workingMat.size(), border); 
 
-		nkeypoints += keypoints.size();
+		nkeypoints += (int)keypoints.size();
 	}
 	if( nkeypoints == 0 )
 		_descriptors.release();
