@@ -121,10 +121,10 @@ public:
     virtual void getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage) = 0;
 
     /// get uncertainty of the pose
-    virtual Mat66 getPoseUncertainty(unsigned int id) const = 0;
+    //virtual Mat66 getPoseUncertainty(unsigned int id) const = 0;
 
     /// get uncertainty of the feature
-    virtual Mat33 getFeatureUncertainty(unsigned int id) const = 0;
+    //virtual Mat33 getFeatureUncertainty(unsigned int id) const = 0;
 
     /// set drawing options
     virtual void setDrawOptions(bool _draw) = 0;

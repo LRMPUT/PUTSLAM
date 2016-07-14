@@ -158,10 +158,10 @@ public:
     void updatePose(VertexSE3& newPose, bool updateGraph = false);
 
     /// get uncertainty of the pose
-    Mat66 getPoseUncertainty(unsigned int id) const;
+    //Mat66 getPoseUncertainty(unsigned int id) const;
 
     /// get uncertainty of the feature
-    Mat33 getFeatureUncertainty(unsigned int id) const;
+    //Mat33 getFeatureUncertainty(unsigned int id) const;
 
     /// set drawing options
     void setDrawOptions(bool _draw);

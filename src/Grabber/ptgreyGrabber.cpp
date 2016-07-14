@@ -18,6 +18,13 @@ PtgreyGrabber::PtgreyGrabber(std::string modelFilename, Mode mode) : Grabber("Pt
 #ifdef WITH_PTGREY
     initPtGrey ();
 #endif
+    tinyxml2::XMLDocument config;
+    std::string filename = "../../resources/" + modelFilename;
+    config.LoadFile(filename.c_str());
+    if (config.ErrorID())
+        std::cout << "unable to load Xtion config file.\n";
+    else{
+    }
 }
 
 const std::string& PtgreyGrabber::getName() const {

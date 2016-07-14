@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
         std::vector<MapFeature> visibleFeatures = map->getVisibleFeatures(cameraPose);
         std::cout << visibleFeatures.size() << "\n";
         std::cout << "cameraPose:\n" << map->getSensorPose().matrix() << "\n";
-        std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
+        //std::cout << "pose 1 uncertainty\n " << map->getPoseUncertainty(1) << "\n";
         map->save2file("../../resources/map.map", "../../resources/mapGraph.g2o");
     }
     catch (const std::exception& ex) {
