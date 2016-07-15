@@ -340,7 +340,7 @@ std::cout << "x, y, theta :\n" << x << " , " << y << "," << theta << "\n";
         }
 
         /// Compute uncertainty matrix [6x6] (x, y, z, qx, qy, qz)
-        virtual const Mat66& computeUncertaintyStrasdat(const Eigen::MatrixXd& setA, std::vector<Mat33>& setAUncertainty, const Eigen::MatrixXd& setB, std::vector<Mat33>& setBUncertainty, Mat34& transformation) {
+        virtual const Mat66& computeUncertaintyStrasdat(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB, Mat34& transformation) {
             uncertainty.setIdentity();
             //compute average depth.
             float_type depthAv = 0;

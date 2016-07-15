@@ -348,7 +348,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                 getchar();*/
             }
             else if (expType==3){
-                uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
+                uncertainty = transEst->computeUncertaintyStrasdat(setA, setB, trans);
                 infoMat = uncertainty;//.inverse();
             }
             EdgeSE3 edge(trans,infoMat,vertexId2-1,vertexId2);
@@ -435,7 +435,7 @@ void runExperiment(int expType, const std::vector<Mat34>& trajectory, const Dept
                         getchar();*/
                     }
                     else if (expType==3){
-                        uncertainty = transEst->computeUncertaintyStrasdat(setA, setAUncertainty, setB, setBUncertainty, trans);
+                        uncertainty = transEst->computeUncertaintyStrasdat(setA, setB, trans);
                         infoMat = uncertainty;//.inverse();
                     }
                     EdgeSE3 edge(trans,infoMat,i-j,i);
@@ -708,7 +708,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
         for (unsigned int i=2;i<trajectory.size();i++){
             //match and estimate transformation
             for (int j=2;j<18;j++){
-                if (i-j<0)
+                if ((int(i)-int(j))<0)
                     break;
                 std::vector<Mat33> setAUncertainty; std::vector<Mat33> setBUncertainty;
                 simulator.matchClouds(cloudSeq[i-j], setA, uncertaintySet[i-j], setAUncertainty, setIds[i-j], cloudSeq[i], setB, uncertaintySet[i], setBUncertainty, setIds[i]);
@@ -965,7 +965,7 @@ float_type computeStd(std::vector<float_type>& error){
     return std::sqrt(sq_sum / (float_type) error.size() - mean * mean);
 }
 
-int main(int argc, char * argv[])
+int main(void)
 {
     try {
         using namespace putslam;
