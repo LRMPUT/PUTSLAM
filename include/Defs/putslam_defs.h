@@ -11,7 +11,8 @@
 #include <vector>
 #include <memory>
 #include <cmath>
-#include "opencv2/core/core.hpp"
+#include "opencvCore.h"
+//#include "opencv2/core/core.hpp"
 #include "Defs/eigen3.h"
 //#include <pcl/point_types.h>
 //#include <pcl/io/pcd_io.h>

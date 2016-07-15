@@ -54,10 +54,10 @@ public:
         std::vector<GLushort>::iterator i = indices.begin();
         for(r = 0; r < rings-1; r++)
         	for(s = 0; s < sectors-1; s++) {
-                *i++ = (float) r * sectors + (float) s;
-                *i++ = (float) r * sectors + (float) (s+1);
-                *i++ = (float) (r+1) * sectors + (float) (s+1);
-                *i++ = (float) (r+1) * sectors + (float) s;
+                *i++ = (GLushort) ((float) r * (float)sectors + (float) s);
+                *i++ = (GLushort) ((float) r * (float)sectors + (float) (s+1));
+                *i++ = (GLushort) ((float) (r+1) * (float)sectors + (float) (s+1));
+                *i++ = (GLushort) ((float) (r+1) * (float)sectors + (float) s);
         }
     }
 
@@ -106,15 +106,15 @@ void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, 
     float sStep = (float)(M_PI) / (float)uiStacks;
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_COLOR);
-    for(float t = (float)-M_PI/2.0f; t <= (float)(M_PI/2.0f)+.0001f; t += tStep) {
+    for(double t = -M_PI/2.0; t <= (M_PI/2.0f)+.0001f; t += tStep) {
         glBegin(GL_TRIANGLE_STRIP);
-        for(float s = -M_PI; s <= M_PI+.0001f; s += sStep) {
-            glVertex3f((float)(fA * cos(t) * cos(s)), (float)(fB * cos(t) * sin(s)), (float)(fC * sin(t)));
-            float norm = (float) sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
-            glNormal3f((fA * cos(t) * cos(s))/norm, (fB * cos(t) * sin(s))/norm, (fC * sin(t))/norm);
-            glVertex3f(fA * cos(t+tStep) * cos(s), fB * cos(t+tStep) * sin(s), fC * sin(t+tStep));
-            norm = (float) sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
-            glNormal3f((fA * cos(t+tStep) * cos(s))/norm, (fB * cos(t+tStep) * sin(s))/norm, (fC * sin(t+tStep))/norm);
+        for(double s = -M_PI; s <= M_PI+.0001f; s += sStep) {
+            glVertex3d((fA * cos(t) * cos(s)), (fB * cos(t) * sin(s)), (fC * sin(t)));
+            double norm = sqrt(pow(fA * cos(t) * cos(s),2.0)+pow(fB * cos(t) * sin(s),2.0) + pow(fC * sin(t),2.0));
+            glNormal3d((fA * cos(t) * cos(s))/norm, (fB * cos(t) * sin(s))/norm, (fC * sin(t))/norm);
+            glVertex3d(fA * cos(t+tStep) * cos(s), fB * cos(t+tStep) * sin(s), fC * sin(t+tStep));
+            norm = sqrt(pow(fA * cos(t+tStep) * cos(s),2.0)+pow(fB * cos(t+tStep) * sin(s),2.0) + pow(fC * sin(t+tStep),2.0));
+            glNormal3d((fA * cos(t+tStep) * cos(s))/norm, (fB * cos(t+tStep) * sin(s))/norm, (fC * sin(t+tStep))/norm);
         }
         glEnd();
     }
@@ -148,7 +148,7 @@ void QGLVisualizer::update(MapModifier& mapModifier) {
     }
     if (mapModifier.addPoses()) {
         if (camTrajectory.size()==0){//set initial camera pose -- looks at the initial point of the trajectory
-            qglviewer::Vec camPos(mapModifier.poses2add[0].pose(0,3), mapModifier.poses2add[0].pose(1,3), mapModifier.poses2add[0].pose(2,3));
+            qglviewer::Vec camPos((float)mapModifier.poses2add[0].pose(0,3), (float)mapModifier.poses2add[0].pose(1,3), (float)mapModifier.poses2add[0].pose(2,3));
             camera()->setPosition(camPos+qglviewer::Vec(1,1,1));
             camera()->lookAt(camPos);
         }
@@ -207,15 +207,15 @@ void QGLVisualizer::update(std::vector<Edge>& features){
 /// Draw point clouds
 void QGLVisualizer::drawPointClouds(void){
     mtxPointClouds.lock();
-    for (int i = 0;i<pointClouds.size();i++){
+    for (size_t i = 0;i<pointClouds.size();i++){
         mtxCamTrajectory.lock();
-        if (camTrajectory.size()>imagesIds[i]){
+        if (camTrajectory.size()>(size_t)imagesIds[i]){
             Mat34 camPose = camTrajectory[imagesIds[i]].pose;
             mtxCamTrajectory.unlock();
             float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
             glPushMatrix();
                 glMultMatrixd(GLmat);
-                glPointSize(config.cloudPointSize);
+                glPointSize((float)config.cloudPointSize);
                 glCallList(cloudsList[i]);
             glPopMatrix();
         }
@@ -232,7 +232,7 @@ GLuint QGLVisualizer::createCloudList(const std::pair<int,PointCloud>& pointClou
     glNewList(index, GL_COMPILE);
         glBegin(GL_POINTS);
         for (size_t n = 0; n < pointCloud.second.size(); n++){
-            glColor3ub(pointCloud.second[n].r, pointCloud.second[n].g, pointCloud.second[n].b);
+            glColor3ub((unsigned char)pointCloud.second[n].r, (unsigned char)pointCloud.second[n].g, (unsigned char)pointCloud.second[n].b);
             glVertex3d(pointCloud.second[n].x, pointCloud.second[n].y, pointCloud.second[n].z);
         }
         glEnd();
@@ -248,23 +248,23 @@ void QGLVisualizer::draw(){
         drawPointClouds();
     }
     if (config.drawTrajectory){
-        glLineWidth(config.trajectoryWidth);
-        glColor4f(config.trajectoryColor.red(), config.trajectoryColor.green(), config.trajectoryColor.blue(), config.trajectoryColor.alpha());
+        glLineWidth((float)config.trajectoryWidth);
+        glColor4f((float)config.trajectoryColor.red(), (float)config.trajectoryColor.green(), (float)config.trajectoryColor.blue(), (float)config.trajectoryColor.alpha());
         glBegin(GL_LINE_STRIP);
         mtxCamTrajectory.lock();
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
-            glVertex3f(it->pose(0,3), it->pose(1,3), it->pose(2,3));
+            glVertex3d(it->pose(0,3), it->pose(1,3), it->pose(2,3));
         }
         mtxCamTrajectory.unlock();
         glEnd();
     }
-    SolidSphere sphereTraj(config.trajectoryPointsSize, config.featuresSmoothness, config.featuresSmoothness);
+    SolidSphere sphereTraj((float)config.trajectoryPointsSize, config.featuresSmoothness, config.featuresSmoothness);
     if (config.drawTrajectoryPoints){
-        glColor4f(config.trajectoryPointsColor.red(), config.trajectoryPointsColor.green(), config.trajectoryPointsColor.blue(), config.trajectoryPointsColor.alpha());
+        glColor4f((float)config.trajectoryPointsColor.red(), (float)config.trajectoryPointsColor.green(), (float)config.trajectoryPointsColor.blue(), (float)config.trajectoryPointsColor.alpha());
         mtxCamTrajectory.lock();
         for (auto it=camTrajectory.begin();it!=camTrajectory.end();it++){
             //glPushMatrix();
-                sphereTraj.draw(it->pose(0,3), it->pose(1,3), it->pose(2,3));
+                sphereTraj.draw((float)it->pose(0,3), (float)it->pose(1,3), (float)it->pose(2,3));
               //  glTranslated(it->pose(0,3), it->pose(1,3), it->pose(2,3));
                 //solidSphere(config.trajectoryPointsSize, 10, 10);
                 //glutSolidSphere(config.trajectoryPointsSize,6,6);
@@ -273,13 +273,13 @@ void QGLVisualizer::draw(){
         mtxCamTrajectory.unlock();
         glEnd();
     }
-    SolidSphere sphereFeature(config.featuresSize, config.featuresSmoothness, config.featuresSmoothness);
+    SolidSphere sphereFeature((float)config.featuresSize, config.featuresSmoothness, config.featuresSmoothness);
     if (config.drawFeatures){
-        glColor4f(config.featuresColor.red(), config.featuresColor.green(), config.featuresColor.blue(), config.featuresColor.alpha());
+        glColor4f((float)config.featuresColor.red(), (float)config.featuresColor.green(), (float)config.featuresColor.blue(), (float)config.featuresColor.alpha());
         mtxFeaturesMap.lock();
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             //glPushMatrix();
-                sphereFeature.draw(it->second.position.x(), it->second.position.y(), it->second.position.z());
+                sphereFeature.draw((float)it->second.position.x(), (float)it->second.position.y(), (float)it->second.position.z());
                 //glTranslated(it->second.position.x(), it->second.position.y(), it->second.position.z());
                 //solidSphere(config.featuresSize, 10, 10);
                 //glutSolidSphere(config.featuresSize,6,6);
@@ -289,15 +289,15 @@ void QGLVisualizer::draw(){
         glEnd();
     }
     if (config.drawPose2Feature){
-        glLineWidth(config.pose2FeatureWidth);
-        glColor4f(config.pose2FeatureColor.red(), config.pose2FeatureColor.green(), config.pose2FeatureColor.blue(), config.pose2FeatureColor.alpha());
+        glLineWidth((float)config.pose2FeatureWidth);
+        glColor4f((float)config.pose2FeatureColor.red(), (float)config.pose2FeatureColor.green(), (float)config.pose2FeatureColor.blue(), (float)config.pose2FeatureColor.alpha());
         glBegin(GL_LINES);
         mtxCamTrajectory.lock();
         mtxFeaturesMap.lock();
         for (auto it=featuresMap.begin();it!=featuresMap.end();it++){
             for (auto itPose=it->second.posesIds.begin();itPose!=it->second.posesIds.end();itPose++){
-                glVertex3f(camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
-                glVertex3f(it->second.position.x(), it->second.position.y(), it->second.position.z());
+                glVertex3d(camTrajectory[*itPose].pose(0,3), camTrajectory[*itPose].pose(1,3), camTrajectory[*itPose].pose(2,3));
+                glVertex3d(it->second.position.x(), it->second.position.y(), it->second.position.z());
             }
         }
         mtxCamTrajectory.unlock();
@@ -306,20 +306,20 @@ void QGLVisualizer::draw(){
     }
     if (config.drawMeasurements){
         mtxMeasurements.lock();
-        for (int i = 0;i<measurements.size();i++){
+        for (size_t i = 0;i<measurements.size();i++){
             mtxCamTrajectory.lock();
             Mat34 camPose = camTrajectory[measurements[i].fromVertexId].pose;
             mtxCamTrajectory.unlock();
             float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
             glPushMatrix();
                 glMultMatrixd(GLmat);
-                glPointSize(config.measurementSize);
+                glPointSize((float)config.measurementSize);
                 glBegin(GL_POINTS);
-                glColor4f(config.measurementsColor.red(), config.measurementsColor.green(), config.measurementsColor.blue(), config.measurementsColor.alpha());
+                glColor4f((float)config.measurementsColor.red(), (float)config.measurementsColor.green(), (float)config.measurementsColor.blue(), (float)config.measurementsColor.alpha());
                 glVertex3d(measurements[i].trans.x(),measurements[i].trans.y(),measurements[i].trans.z());
                 glEnd();
                 if (config.drawEllipsoids){
-                    glColor4f(config.ellipsoidColor.red(), config.ellipsoidColor.green(), config.ellipsoidColor.blue(), config.ellipsoidColor.alpha());
+                    glColor4f((float)config.ellipsoidColor.red(), (float)config.ellipsoidColor.green(), (float)config.ellipsoidColor.blue(), (float)config.ellipsoidColor.alpha());
                     drawEllipsoid(measurements[i].trans, measurements[i].info.inverse());
                 }
             glPopMatrix();
@@ -374,7 +374,7 @@ void QGLVisualizer::updateMap(){
     if (config.drawPointClouds){
         if (colorImagesBuff.size()>0){
             mtxImages.lock();
-            int imagesSize = colorImagesBuff.size();
+            size_t imagesSize = colorImagesBuff.size();
             mtxImages.unlock();
             while (imagesSize){
                 mtxImages.lock();
@@ -398,8 +398,8 @@ void QGLVisualizer::updateMap(){
     if (measurementsBuff.size()>0){
         mtxMeasurements.lock();
         for (auto it = measurementsBuff.begin(); it!=measurementsBuff.end();it++){
-            if (((*it).toVertexId>config.measurementFeaturesIds.first)&&
-                ((*it).toVertexId<config.measurementFeaturesIds.second)){
+            if (((int)(*it).toVertexId>config.measurementFeaturesIds.first)&&
+                ((int)(*it).toVertexId<config.measurementFeaturesIds.second)){
                     measurements.push_back(*it);
             }
         }
@@ -418,7 +418,7 @@ void QGLVisualizer::init(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_color);
 
     //Set global ambient light
-    GLfloat black[] = {0.99, 0.99, 0.99, 1};
+    GLfloat black[] = {0.99f, 0.99f, 0.99f, 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, black);
 
     glEnable(GL_AUTO_NORMAL);
@@ -426,7 +426,7 @@ void QGLVisualizer::init(){
     // Restore previous viewer state.
     //restoreStateFromFile();
 
-    camera()->setZNearCoefficient(0.00001);
+    camera()->setZNearCoefficient(0.00001f);
     camera()->setZClippingCoefficient(100.0);
 
     setBackgroundColor(config.backgroundColor);

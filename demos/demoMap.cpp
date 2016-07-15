@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int main(int argc, char * argv[])
+int main(void)
 {
     try {
         using namespace putslam;

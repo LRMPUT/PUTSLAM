@@ -17,6 +17,7 @@ const std::string& ICPEst::getName() const {
 
 /// compute transformation using two set of keypoints
 Mat34& ICPEst::computeTransformation(const Eigen::MatrixXd& setA, const Eigen::MatrixXd& setB){
+    std::cout << setA.rows() << setB.rows() << "\n";
     return transformation;
 }
 

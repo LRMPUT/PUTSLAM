@@ -18,9 +18,11 @@
 //#include "pcl/io/pcd_io.h"
 
 // OpenCV
-#include "opencv/cv.h"
-#include <opencv2/opencv.hpp>
-#include <eigen3/Eigen/Core>
+#include "Defs/opencvCore.h"
+
+//#include "opencv/cv.h"
+//#include <opencv2/opencv.hpp>
+//#include <eigen3/Eigen/Core>
 #include "Defs/eigen3.h"
 
 // Out types
