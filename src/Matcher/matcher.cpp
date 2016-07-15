@@ -660,8 +660,8 @@ void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
 /// 	pairedFeatures 	-> return pairs of ids of features that are matched
 ///		estimatedTransformation		-> the estimated transformation
 double Matcher::matchPose2Pose(std::vector<MapFeature> featureSet[2],
-		std::vector<int> frameIds[2],
-		std::vector<std::pair<int, int>> &pairedFeatures,
+		std::vector<int> /*frameIds*/[2],
+		std::vector<std::pair<int, int>> &/*pairedFeatures*/,
 		Eigen::Matrix4f &estimatedTransformation) {
 
 
@@ -831,7 +831,7 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, bool newDetection,
-		std::vector<int> frameIds) {
+		std::vector<int> /*frameIds*/) {
 
 	if (!newDetection)
 		return matchXYZ(mapFeatures,
@@ -1095,7 +1095,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 		int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
 		std::vector<putslam::Mat34> cameraPoses,
-		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> mapDepthImages,
+		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> /*mapDepthImages*/,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, double depthImageScale,
 		std::vector<std::pair<double, double>> &errorLog,
@@ -1350,9 +1350,12 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 			// We look for the descriptor and u,v from a position we currently analyze
 			// TODO: it is assumed that extended descriptor is saved from every pose that feature was observed from
 			for (auto & extDescriptor : feature.descriptors) {
-				if (extDescriptor.poseId == currentFrameId) {
+				if ((int)extDescriptor.poseId == currentFrameId) {
 					points2D[i].push_back(extDescriptor.point2DUndist);
-					points3D[i].push_back(Eigen::Vector3f(extDescriptor.point3D.x(), extDescriptor.point3D.y(), extDescriptor.point3D.z()));
+					points3D[i].push_back(
+							Eigen::Vector3f((float) extDescriptor.point3D.x(),
+									(float) extDescriptor.point3D.y(),
+									(float) extDescriptor.point3D.z()));
 					feature.u = extDescriptor.point2DUndist.x;
 					feature.v = extDescriptor.point2DUndist.y;
 					extractedDescriptors[i].push_back(extDescriptor.descriptor);
@@ -1465,7 +1468,7 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 	distortedFeatures2D.erase(
 			std::remove_if(distortedFeatures2D.begin(),
 					distortedFeatures2D.end(),
-					[&](const cv::Point2f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+					[&](const cv::Point2f & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			distortedFeatures2D.end());
 
 	// Removing from undistorted Features
@@ -1473,28 +1476,28 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 	undistortedFeatures2D.erase(
 			std::remove_if(undistortedFeatures2D.begin(),
 					undistortedFeatures2D.end(),
-					[&](const cv::Point2f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+					[&](const cv::Point2f & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			undistortedFeatures2D.end());
 
 	// Removing from features 3D
 	count = 0;
 	features3D.erase(
 			std::remove_if(features3D.begin(), features3D.end(),
-					[&](const Eigen::Vector3f & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+					[&](const Eigen::Vector3f & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			features3D.end());
 
 	// Removing from key points
 	count = 0;
 	keyPoints.erase(
 			std::remove_if(keyPoints.begin(), keyPoints.end(),
-					[&](const cv::KeyPoint & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+					[&](const cv::KeyPoint & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			keyPoints.end());
 
 	// Removing from detection distance
 	count = 0;
 	detDists.erase(
 			std::remove_if(detDists.begin(), detDists.end(),
-					[&](const float_type & o) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+					[&](const float_type & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			detDists.end());
 
 

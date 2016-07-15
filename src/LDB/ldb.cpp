@@ -267,7 +267,7 @@ static void computeLdbDescriptor(const cv::KeyPoint& kpt,
 								 const vector<vector<int> >& coordinates3by3_,
 								 const vector<vector<int> >& coordinates4by4_, 
 								 const vector<vector<int> >& coordinates5by5_,
-								 const vector<int>& randSequence, 
+								 const vector<int>& /*randSequence*/,
 								 bool flag)
 {
 #ifdef TRAINING

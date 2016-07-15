@@ -339,7 +339,7 @@ std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> RGBD::imageToColorPoint
 		return colorPointCloud;
 }
 
-void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first, Eigen::Matrix4f tmpPose)
+void RGBD::saveToFile(std::vector<Eigen::Vector3f> pointCloud, std::string fileName, bool first, Eigen::Matrix4f /*tmpPose*/)
 {
 	std::ofstream fileToSave;
 

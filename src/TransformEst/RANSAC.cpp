@@ -243,7 +243,7 @@ bool RANSAC::computeTransformationModel(
 }
 
 // TODO: - model feasibility
-bool RANSAC::checkModelFeasibility(Eigen::Matrix4f transformationModel) {
+bool RANSAC::checkModelFeasibility(Eigen::Matrix4f /*transformationModel*/) {
 	return true;
 }
 

@@ -1233,8 +1233,10 @@ void FeaturesMap::plotFeaturesOnImage(std::string filename, unsigned int frameId
             for (auto it = tmpFeature.posesIds.begin(); it!=tmpFeature.posesIds.end(); it++){
                 Mat34 currCamPose = getSensorPose(*it);
                 //std::cout << "CurrCamPose\n" << currCamPose.matrix() << "\n";
-                Eigen::Vector3d point;
-                sensorModel.getPoint((unsigned long int)tmpFeature.imageCoordinates[*it].u, (unsigned long int)tmpFeature.imageCoordinates[*it].v, (double)tmpFeature.imageCoordinates[*it].depth, point);
+				Eigen::Vector3d point;
+				sensorModel.getPoint(tmpFeature.imageCoordinates[*it].u,
+						tmpFeature.imageCoordinates[*it].v,
+						tmpFeature.imageCoordinates[*it].depth, point);
                 //compute point coordinates in camera frame
                 Mat34 point3d(Quaternion(1,0,0,0)*Vec3(point.x(), point.y(), point.z()));
                 Mat34 cam2cam = (camPose.inverse()*currCamPose)*point3d;
