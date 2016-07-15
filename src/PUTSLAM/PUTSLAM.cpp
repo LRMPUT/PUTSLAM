@@ -135,9 +135,17 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 			if (featureOk) {
 				// Create an extended descriptor
 				cv::Mat descMat;
+
+
 				if (!features.descriptors.empty()) {
 					descMat = features.descriptors.row(j).clone();
 				}
+				else {
+					// TODO: should we compute the descriptor every time?
+					std::cout<<"Missing descriptor - BUG!" << std::endl;
+					exit(0);
+				}
+
 
 				ExtendedDescriptor desc(cameraPoseId,
 						features.distortedFeature2D[j],
@@ -145,7 +153,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 						Vec3(features.feature3D[j].x(), features.feature3D[j].y(), features.feature3D[j].z()),
 						descMat,
 						features.feature2D[j].octave,
-						features.detDist[j]); // TODO: change between descriptor based and descriptor free versions -
+						features.detDist[j]);
 
 				// In further processing we expect more descriptors
 				std::vector<ExtendedDescriptor> extDescriptors { desc };
@@ -681,6 +689,7 @@ void PUTSLAM::startProcessing() {
 		// The next pose in the sequence
 		else {
 
+
 			// Running VO - matching or tracking depending on parameters
 			// TODO:
 			// - if no motion than skip frame
@@ -820,6 +829,7 @@ void PUTSLAM::startProcessing() {
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
+			std::cout<<"TEST: " << features.descriptors.rows << " " << features.undistortedFeature2D.size() << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeaturesToAdd;

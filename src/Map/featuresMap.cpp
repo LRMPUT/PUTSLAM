@@ -254,6 +254,14 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         //add measurement
 		Mat33 info(Mat33::Identity());
 
+		// We add new descriptor and new measurement for a feature in loop closure
+		if (continueLoopClosure) {
+			bufferMapLoopClosure.mtxBuffer.lock();
+			int mapFeatureId = it->id;
+			bufferMapLoopClosure.features2update[mapFeatureId] = *it;
+			bufferMapLoopClosure.mtxBuffer.unlock();
+		}
+
 
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
@@ -283,6 +291,9 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         if (config.visualize)
             features2visualization.push_back(e);
     }
+
+    if (continueLoopClosure)
+        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 
     ///keyframes management
     std::set<int> intersect;
@@ -784,7 +795,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             }
 
 
-
+            std::cout << "LC: ratio " << matchingRatio << " < " << config.matchingRatioThresholdLC << "\n";
             if (matchingRatio>config.matchingRatioThresholdLC){
 
             	if (verbose > 0) {
@@ -802,20 +813,20 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
                     addMeasurement(candidatePoses.first, candidatePoses.second, trans);
                 }
                 else if (config.measurementTypeLC==1){//pose-features
-                    std::vector<MapFeature> measuredFeatures;
-                    for (auto& pairFeat : pairedFeatures){
-                        for (auto featureB : featureSetB){
-                            if ((int)featureB.id == pairFeat.second){
-                                MapFeature featTmp = featureB;
-                                featTmp.id = pairFeat.first;
-
-                                //TODO: I thnik we need to add new extDescriptor
-                                measuredFeatures.push_back(featTmp);
-                            }
-                        }
-                    }
-//                        std::cout << "measurements no " << measuredFeatures.size() << " from pose " << element.posesIds.second << "\n";
-                    addMeasurements(measuredFeatures,candidatePoses.second);
+//                    std::vector<MapFeature> measuredFeatures;
+//                    for (auto& pairFeat : pairedFeatures){
+//                        for (auto featureB : featureSetB){
+//                            if ((int)featureB.id == pairFeat.second){
+//                                MapFeature featTmp = featureB;
+//                                featTmp.id = pairFeat.first;
+//
+//                                //TODO: I thnik we need to add new extDescriptor
+//                                measuredFeatures.push_back(featTmp);
+//                            }
+//                        }
+//                    }
+                   std::cout << "LC: measurements no " << pairedFeatures.size() << "\n";
+                   // addMeasurements(measuredFeatures,candidatePoses.second);
                 }
             }
         }
@@ -1093,17 +1104,19 @@ void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 			}
             modifier.features2update.clear();
 		}
-        if (modifier.updateFeatures()) {
-            for (auto feature : modifier.features2update) {
-                updateFeature(featuresMap, feature.second);
-            }
-            modifier.features2update.clear();
-        }
+		// TODO: MN: It duplicates the code above?
+//        if (modifier.updateFeatures()) {
+//            for (auto feature : modifier.features2update) {
+//                updateFeature(featuresMap, feature.second);
+//            }
+//            modifier.features2update.clear();
+//        }
         if (modifier.removeFeatures()) {
             for (auto feature : modifier.removeIds) {
                 featuresMap.erase(feature);
             }
-            modifier.features2update.clear();
+            // TODO: MN: not needed?
+//             modifier.features2update.clear();
         }
 		modifier.mtxBuffer.unlock();
 		mutex.unlock();
@@ -1113,6 +1126,29 @@ void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 /// Update feature
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {
     featuresMap[newFeature.id].position = newFeature.position;
+
+    // The measurement contains only the last extended descriptor and we add to the feature information
+	if (featuresMap.count(newFeature.id) > 0
+			&& newFeature.descriptors.size() > 0)
+	{
+    	bool shouldWeAdd = true;
+    	for (auto &d :  featuresMap[newFeature.id].descriptors) {
+    		if (d.poseId == newFeature.descriptors[0].poseId)
+    		{
+    			shouldWeAdd = false;
+    			break;
+    		}
+    	}
+
+		if (shouldWeAdd) {
+//			std::cout << "MN: ADDING NEW DESCRIPTOR FOR: " << newFeature.id
+//					<< " FROM POSE " << newFeature.descriptors[0].poseId
+//					<< std::endl;
+			featuresMap[newFeature.id].descriptors.push_back(
+					newFeature.descriptors[0]);
+		}
+
+	}
 }
 
 /// Update camera trajectory
