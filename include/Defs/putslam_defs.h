@@ -127,10 +127,13 @@ public:
 	/// id of the the camera pose (vertex in the graph)
 	unsigned int poseId;
 
-    /// feature location on the rgb image
-    float_type u, v;
+    /// feature location on the poseId-th rgb image
+    cv::Point2f point2D, point2DUndist;
 
-	/// OpenCV descriptor
+    /// 3D Position of the feature in the coordinate system of poseId-th image
+    Vec3 point3D;
+
+	/// OpenCV descriptor for poseId-th image
 	cv::Mat descriptor;
 
     /// octave (pyramid layer) at which it was detected
@@ -140,15 +143,19 @@ public:
     float_type detDist;
 
 	/// Constructor
-	ExtendedDescriptor(unsigned int _poseId, float_type _u, float_type _v,
-			cv::Mat _descriptor, int _octave, float_type _detDist) :
-			poseId(_poseId), u(_u), v(_v), descriptor(_descriptor),
-			 octave(_octave), detDist(_detDist) {};
+	ExtendedDescriptor(unsigned int _poseId, cv::Point2f _point2D,
+			cv::Point2f _point2DUndist, Vec3 _point3D, cv::Mat _descriptor,
+			int _octave, float_type _detDist) :
+			poseId(_poseId), point2D(_point2D), point2DUndist(_point2DUndist), point3D(
+					_point3D), descriptor(_descriptor), octave(_octave), detDist(
+					_detDist) {
+	}
+	;
 };
 
 class RGBDFeature {
 public:
-	/// Position of the feature
+	/// Position of the feature (temporal or in global CS)
 	Vec3 position;
 
 	/// set of descriptors

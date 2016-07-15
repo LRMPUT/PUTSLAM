@@ -71,6 +71,7 @@ Matcher::featureSet Matcher::getFeatures() {
 	returnSet.descriptors = prevDescriptors;
 	returnSet.feature2D = prevKeyPoints;
 	returnSet.detDist = prevDetDists;
+	returnSet.distortedFeature2D = prevFeaturesDistorted;
 	returnSet.undistortedFeature2D = prevFeaturesUndistorted;
 	returnSet.feature3D = prevFeatures3D;
 	return returnSet;
@@ -616,12 +617,14 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 				prevFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
 
+
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-													mapFeature.u,
-													mapFeature.v,
-													prevDescriptors.row(currentPoseId),
-													prevKeyPoints[currentPoseId].octave,
-													prevDetDists[currentPoseId]);
+				prevFeaturesDistorted[currentPoseId],
+				prevFeaturesUndistorted[currentPoseId],
+				Vec3(prevFeatures3D[currentPoseId].cast<double>()),
+				prevDescriptors.row(currentPoseId),
+				prevKeyPoints[currentPoseId].octave,
+				prevDetDists[currentPoseId]);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement
@@ -747,6 +750,10 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 		// Describe salient features
 		cv::Mat descriptors = describeFeatures(sensorFrames[i].rgbImage, features[i]);
 
+		// Find 2D positions with distortion
+		std::vector<cv::Point2f> distortedFeatures2D;
+		cv::KeyPoint::convert(features[i],distortedFeatures2D);
+
 		// Find 2D positions without distortion
 		std::vector<cv::Point2f> undistortedFeatures2D =
 				RGBD::removeImageDistortion(features[i],
@@ -780,11 +787,12 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 			mapFeature.posesIds.push_back(i);
 
 			ExtendedDescriptor featureExtendedDescriptor(i,
-												mapFeature.u,
-												mapFeature.v,
-												descriptors.row((int)j),
-												features[i][j].octave,
-												detDists[j]);
+					distortedFeatures2D[j],
+					undistortedFeatures2D[j],
+					Vec3(features3D[i][j].x(), features3D[i][j].y(), features3D[i][j].z()),
+					descriptors.row((int) j),
+					features[i][j].octave,
+					detDists[j]);
 			mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 			// Add the measurement
@@ -1069,11 +1077,11 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-													mapFeature.u,
-													mapFeature.v,
-													currentPoseDescriptors.row(currentPoseId),
-													currentPoseKeyPoints[currentPoseId].octave,
-													currentPoseDetDists[currentPoseId]);
+				prevFeaturesUndistorted[currentPoseId],
+				prevFeaturesDistorted[currentPoseId], mapFeature.position,
+				currentPoseDescriptors.row(currentPoseId),
+				currentPoseKeyPoints[currentPoseId].octave,
+				currentPoseDetDists[currentPoseId]);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement
@@ -1188,8 +1196,8 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				uMap = -1, vMap = -1;
 				for (std::vector<ExtendedDescriptor>::size_type j = 0; j < mapFeatures[i].descriptors.size(); j++) {
 					if ((int)mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
-						uMap = (float)mapFeatures[i].descriptors[j].u;
-						vMap = (float)mapFeatures[i].descriptors[j].v;
+						uMap = (float)mapFeatures[i].descriptors[j].point2DUndist.x;
+						vMap = (float)mapFeatures[i].descriptors[j].point2DUndist.y;
 						break;
 					}
 				}
@@ -1309,8 +1317,9 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 				optimizedMapLocations3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
 
-		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, mapFeature.u,
-				mapFeature.v, cv::Mat(), -1, -1.0);
+		// TODO: it mixes distorted and undistorted features
+		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, optimizedLocations[currentPoseId], optimizedLocations[currentPoseId],
+				mapFeature.position, cv::Mat(), -1, -1.0);
 		mapFeature.descriptors.push_back(featureExtendedDescriptor);
 
 		// Add the measurement
@@ -1318,6 +1327,80 @@ double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
 	}
 
 	return RANSAC::pointInlierRatio(inlierMatches2, matches);
+}
+
+double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,
+		Eigen::Matrix4f &estimatedTransformation){
+
+	std::cout << "Called matchFeatureLoopClosure! Sizes: "
+			<< featureSets[0].size() << " " << featureSets[1].size()
+			<< " from frames: " << framesIds[0] << " " << framesIds[1]
+			<< std::endl;
+
+	cv::Mat extractedDescriptors[2];
+	std::vector<cv::Point2f> points2D[2];
+	std::vector<Eigen::Vector3f> points3D[2];
+
+	for (int i = 0; i < 2; i++) {
+		std::vector<MapFeature> &analyzedSet = featureSets[i];
+		int &currentFrameId = framesIds[i];
+
+		for (auto& feature : analyzedSet) {
+
+			// We look for the descriptor and u,v from a position we currently analyze
+			// TODO: it is assumed that extended descriptor is saved from every pose that feature was observed from
+			for (auto & extDescriptor : feature.descriptors) {
+				if (extDescriptor.poseId == currentFrameId) {
+					points2D[i].push_back(extDescriptor.point2DUndist);
+					points3D[i].push_back(Eigen::Vector3f(extDescriptor.point3D.x(), extDescriptor.point3D.y(), extDescriptor.point3D.z()));
+					feature.u = extDescriptor.point2DUndist.x;
+					feature.v = extDescriptor.point2DUndist.y;
+					extractedDescriptors[i].push_back(extDescriptor.descriptor);
+				}
+			}
+
+		}
+	 }
+
+	std::cout << "descriptors: " << extractedDescriptors[0].rows << " " << extractedDescriptors[1].rows << std::endl;
+	std::cout << "points2D: " << points2D[0].size() << " " << points2D[1].size() << std::endl;
+	std::cout << "points3D: " << points3D[0].size() << " " << points3D[1].size() << std::endl;
+
+	if ( points2D[0].size() < 10 || points2D[1].size() < 10)
+	{
+		std::cout<<"Too few features :(" << std::endl;
+		return 0;
+	}
+	std::vector<cv::DMatch> matches = performMatching(extractedDescriptors[0],
+			extractedDescriptors[1]);
+
+
+	std::cout << "matchFeatureLoopClosure - we found : " << matches.size()
+			<< std::endl;
+
+	if (matches.size() <= 0)
+		return -1.0;
+
+	// Choosing RANSAC version
+	std::vector<cv::DMatch> inlierMatches;
+	matcherParameters.RANSACParams.errorVersion =
+			matcherParameters.RANSACParams.errorVersionMap;
+
+	// Creating and estimating transformation
+	RANSAC ransac(matcherParameters.RANSACParams,
+			matcherParameters.cameraMatrixMat);
+	estimatedTransformation = ransac.estimateTransformation(
+			points3D[0], points3D[1], matches,
+			inlierMatches);
+
+	// Repack DMatch to pair<int,int> of matched features
+	pairedFeatures.clear();
+	for (auto &match : inlierMatches) {
+		pairedFeatures.push_back(std::make_pair(match.queryIdx, match.trainIdx));
+	}
+
+	return RANSAC::pointInlierRatio(inlierMatches, matches);
+
 }
 
 void Matcher::showFeatures(cv::Mat rgbImage,

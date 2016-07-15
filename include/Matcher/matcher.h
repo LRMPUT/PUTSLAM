@@ -184,6 +184,10 @@ public:
 			std::vector<std::pair<double, double>> &errorLog,
 			bool withRANSAC = true);
 
+	// Matching performed when loop closure is performed on features
+	double matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,
+			Eigen::Matrix4f &estimatedTransformation);
+
 	int getNumberOfFeatures();
 
 	/// Class used to hold all parameters

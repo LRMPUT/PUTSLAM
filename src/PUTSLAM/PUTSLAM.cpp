@@ -140,8 +140,9 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				}
 
 				ExtendedDescriptor desc(cameraPoseId,
-						features.undistortedFeature2D[j].x,
-						features.undistortedFeature2D[j].y,
+						features.distortedFeature2D[j],
+						features.undistortedFeature2D[j],
+						Vec3(features.feature3D[j].x(), features.feature3D[j].y(), features.feature3D[j].z()),
 						descMat,
 						features.feature2D[j].octave,
 						features.detDist[j]); // TODO: change between descriptor based and descriptor free versions -

@@ -10,7 +10,7 @@ DepthSensorModel::DepthSensorModel(std::string configFile) : config(configFile){
             0, 0, 0;
 }
 
-void DepthSensorModel::getPoint(uint_fast16_t u, uint_fast16_t v, float_type depth, Eigen::Vector3d& point3D) const{
+void DepthSensorModel::getPoint(float_type u, float_type v, float_type depth, Eigen::Vector3d& point3D) const{
     Eigen::Vector3d point((double)u,(double)v, 1.0);
     point3D = depth*PHCPModel*point;
 }
