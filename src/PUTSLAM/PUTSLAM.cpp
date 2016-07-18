@@ -296,7 +296,7 @@ void PUTSLAM::createAndSaveOctomapOffline(double depthImageScale) {
 
 void PUTSLAM::processFirstFrame(SensorFrame &currentSensorFrame,
 		int &cameraPoseId) {
-	matcher->Matcher::loadInitFeatures(currentSensorFrame);
+	matcher->Matcher::detectInitFeatures(currentSensorFrame);
 	VOFeaturesSizeLog.push_back(matcher->getNumberOfFeatures());
 
 	// cameraPose as Eigen::Transform

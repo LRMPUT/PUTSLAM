@@ -13,7 +13,8 @@
 
 using namespace putslam;
 
-void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
+// Initial feature detection
+void Matcher::detectInitFeatures(const SensorFrame &sensorData) {
 	// Detect salient features
 	prevKeyPoints = detectFeatures(sensorData.rgbImage);
 
@@ -66,17 +67,30 @@ void Matcher::loadInitFeatures(const SensorFrame &sensorData) {
 	prevDepthImageScale = sensorData.depthImageScale;
 }
 
-Matcher::featureSet Matcher::getFeatures() {
-	featureSet returnSet;
-	returnSet.descriptors = prevDescriptors;
-	returnSet.feature2D = prevKeyPoints;
-	returnSet.detDist = prevDetDists;
-	returnSet.distortedFeature2D = prevFeaturesDistorted;
-	returnSet.undistortedFeature2D = prevFeaturesUndistorted;
-	returnSet.feature3D = prevFeatures3D;
-	return returnSet;
+// Running VO
+double Matcher::runVO(const SensorFrame& currentSensorFrame,
+		Eigen::Matrix4f &estimatedTransformation,
+		std::vector<cv::DMatch> &inlierMatches) {
+
+	// Matching
+	if (matcherParameters.VOVersion
+			== Matcher::MatcherParameters::VO_MATCHING) {
+		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
+		// Tracking
+	} else if (matcherParameters.VOVersion
+			== Matcher::MatcherParameters::VO_TRACKING) {
+		return trackKLT(currentSensorFrame, estimatedTransformation,
+				inlierMatches);
+		// Something unrecognized
+	} else {
+		std::cout
+				<< "Unrecognized VO choice -> double check matcherOpenCVParameters.xml"
+				<< std::endl;
+		return 0.0;
+	}
 }
 
+// Helper method for trackKLT
 void Matcher::mergeTrackedFeatures(
 		std::vector<cv::Point2f>& undistortedFeatures2D,
 		const std::vector<cv::Point2f>& featuresSandBoxUndistorted,
@@ -112,28 +126,7 @@ void Matcher::mergeTrackedFeatures(
 
 }
 
-double Matcher::runVO(const SensorFrame& currentSensorFrame,
-		Eigen::Matrix4f &estimatedTransformation,
-		std::vector<cv::DMatch> &inlierMatches) {
-
-	// Matching
-	if (matcherParameters.VOVersion
-			== Matcher::MatcherParameters::VO_MATCHING) {
-		return match(currentSensorFrame, estimatedTransformation, inlierMatches);
-		// Tracking
-	} else if (matcherParameters.VOVersion
-			== Matcher::MatcherParameters::VO_TRACKING) {
-		return trackKLT(currentSensorFrame, estimatedTransformation,
-				inlierMatches);
-		// Something unrecognized
-	} else {
-		std::cout
-				<< "Unrecognized VO choice -> double check matcherOpenCVParameters.xml"
-				<< std::endl;
-		return 0.0;
-	}
-}
-
+// Tracking features
 double Matcher::trackKLT(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
@@ -455,6 +448,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	return inlierRatio;
 }
 
+// Vanilla feature matching from OpenCV; TODO: Not used?
 double Matcher::match(const SensorFrame& sensorData,
 		Eigen::Matrix4f &estimatedTransformation,
 		std::vector<cv::DMatch> &inlierMatches) {
@@ -550,7 +544,7 @@ double Matcher::match(const SensorFrame& sensorData,
 	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
-// We have chosen to use the first descriptor. TODO: Change it to be based on orientation
+// We have chosen to use the first descriptor. TODO: It always chooses first descriptor!
 cv::Mat Matcher::extractMapDescriptors(std::vector<MapFeature> mapFeatures) {
 	cv::Mat mapDescriptors;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
@@ -561,6 +555,7 @@ cv::Mat Matcher::extractMapDescriptors(std::vector<MapFeature> mapFeatures) {
 }
 
 // Again, need to extract the Vec3 position of feature to reasonable format -> using nice std::algorithm
+// TODO: Not needed after change to Vec3
 std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(
 		std::vector<MapFeature> mapFeatures) {
 
@@ -828,6 +823,9 @@ double Matcher::matchPose2Pose(SensorFrame sensorFrames[2],
 }
 
 
+
+
+// Guided matching for detected keypoints to mapFeatures
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, bool newDetection,
@@ -889,8 +887,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			prevDetDists);
 }
 
-
-
+// Guided matching
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation,
@@ -923,9 +920,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	for(std::vector<cv::KeyPoint>::size_type i = 0; i < currentPoseKeyPoints.size(); ++i){
 		int detLevel = currentPoseKeyPoints[i].octave;
 		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
-		float_type curDist = std::sqrt(currentPoseFeatures3D[i][0]*currentPoseFeatures3D[i][0] +
-										currentPoseFeatures3D[i][1]*currentPoseFeatures3D[i][1] +
-										currentPoseFeatures3D[i][2]*currentPoseFeatures3D[i][2]);
+		float_type curDist = currentPoseFeatures3D[i].norm();
 		float_type curLevelScaleFactor = detLevelScaleFactor * currentPoseDetDists[i] / curDist;
 
 		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
@@ -1092,243 +1087,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
-double Matcher::matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
-		int sensorPoseId, putslam::Mat34 cameraPose, std::vector<int> frameIds,
-		std::vector<putslam::Mat34> cameraPoses,
-		std::vector<cv::Mat> mapRgbImages, std::vector<cv::Mat> /*mapDepthImages*/,
-		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation, double depthImageScale,
-		std::vector<std::pair<double, double>> &errorLog,
-		bool withRANSAC) {
 
-	// Create matching on patches with wanted params
-	MatchingOnPatches matchingOnPatches(matcherParameters.PatchesParams);
-
-	// Optimize patch locations
-	std::vector<cv::Point2f> optimizedLocations;
-	std::vector<cv::DMatch> matches;
-
-	// For all features
-	for (std::vector<MapFeature>::size_type i = 0, goodFeaturesIndex = 0; i < mapFeatures.size(); i++) {
-
-		// Compute the 4 points/borders of the new patch (Clockwise)
-		std::vector<cv::Point2f> warpingPoints;
-		const int halfPatchSize = matchingOnPatches.getHalfPatchSize();
-		const int halfPatchBorderSize = halfPatchSize + 1;
-		const int patchSize = matchingOnPatches.getPatchSize();
-		const int patchBorderSize = patchSize + 2;
-
-		// Saving those points in OpenCV types
-		warpingPoints.push_back(
-				cv::Point2f(float(mapFeatures[i].u - halfPatchBorderSize),
-						float(mapFeatures[i].v - halfPatchBorderSize)));
-		warpingPoints.push_back(
-				cv::Point2f(float(mapFeatures[i].u + halfPatchBorderSize),
-						float(mapFeatures[i].v - halfPatchBorderSize)));
-		warpingPoints.push_back(
-				cv::Point2f(float(mapFeatures[i].u + halfPatchBorderSize),
-						float(mapFeatures[i].v + halfPatchBorderSize)));
-		warpingPoints.push_back(
-				cv::Point2f(float(mapFeatures[i].u - halfPatchBorderSize),
-						float(mapFeatures[i].v + halfPatchBorderSize)));
-
-		// Project those 4 points into space
-		std::vector<Eigen::Vector3f> warpingPoints3D = RGBD::keypoints2Dto3D(
-				warpingPoints, prevDepthImage,
-				matcherParameters.cameraMatrixMat, depthImageScale);
-
-		// Check if all points are correct - reject those without depth as those invalidate the patch planarity assumption
-		bool correctPoints3D = true;
-		for (std::vector<Eigen::Vector3f>::size_type i = 0; i < warpingPoints3D.size(); i++) {
-			if (warpingPoints3D[i].z() < 0.0001) {
-				correctPoints3D = false;
-				break;
-			}
-		}
-
-		// If those points are correct - we perform matching on patches
-		bool featureOK = true;
-		if (correctPoints3D) {
-
-			cv::Mat warpedImage;
-			double uMap = 0.0, vMap = 0.0;
-			if (matcherParameters.PatchesParams.warping) {
-				// Move to global coordinate and then to local of original feature detection
-				std::vector<cv::Point2f> src(4);
-				for (int i = 0; i < 4; i++) {
-					putslam::Mat34 warp(
-							putslam::Vec3(warpingPoints3D[i].cast<double>()));
-					warp = (cameraPoses[i].inverse()).matrix()
-							* cameraPose.matrix() * warp.matrix();
-
-					float u = (float)warp(0, 3)
-							* matcherParameters.cameraMatrixMat.at<float>(0, 0)
-							/ (float)warp(2, 3)
-							+ matcherParameters.cameraMatrixMat.at<float>(0, 2);
-					float v = (float)warp(1, 3)
-							* matcherParameters.cameraMatrixMat.at<float>(1, 1)
-							/ (float)warp(2, 3)
-							+ matcherParameters.cameraMatrixMat.at<float>(1, 2);
-					src[i] = cv::Point2f(u, v);
-				}
-
-				// We will transform it into the rectangle
-				std::vector<cv::Point2f> dst(4);
-				dst[0] = cv::Point2f(0, 0);
-				dst[1] = cv::Point2f((float)patchSize + 1, 0);
-				dst[2] = cv::Point2f((float)patchSize + 1, (float)patchSize + 1);
-				dst[3] = cv::Point2f(0, (float)patchSize + 1);
-
-				// Compute getPerspective
-				cv::Mat perspectiveTransform = cv::getPerspectiveTransform(src,
-						dst);
-
-				// Compute warpPerspective
-				cv::warpPerspective(mapRgbImages[i], warpedImage,
-						perspectiveTransform,
-						cv::Size(patchBorderSize, patchBorderSize));
-
-				// Position to compute the map patch
-				uMap = halfPatchSize + 1;
-				vMap = halfPatchSize + 1;
-			} else {
-				// Find positions on original image
-				uMap = -1, vMap = -1;
-				for (std::vector<ExtendedDescriptor>::size_type j = 0; j < mapFeatures[i].descriptors.size(); j++) {
-					if ((int)mapFeatures[i].descriptors[j].poseId == frameIds[i]) {
-						uMap = (float)mapFeatures[i].descriptors[j].point2DUndist.x;
-						vMap = (float)mapFeatures[i].descriptors[j].point2DUndist.y;
-						break;
-					}
-				}
-
-				// Set image as:
-				warpedImage = mapRgbImages[i];
-			}
-
-
-			// Compute old patch
-			std::vector<double> patchMap;
-			patchMap = matchingOnPatches.computePatch(warpedImage, uMap, vMap);
-
-			// Compute gradient
-			std::vector<float> gradientX, gradientY;
-			Eigen::Matrix3f InvHessian = Eigen::Matrix3f::Zero();
-			matchingOnPatches.computeGradient(warpedImage, uMap, vMap,
-					InvHessian, gradientX, gradientY);
-
-			// Print information
-			if (matcherParameters.verbose > 0)
-				std::cout << "Patches preoptimization: " << mapFeatures[i].u
-						<< " " << mapFeatures[i].v << std::endl;
-
-			// Optimize position of the feature
-			float_type uOld = mapFeatures[i].u;
-			float_type vOld = mapFeatures[i].v;
-			featureOK = matchingOnPatches.optimizeLocation(warpedImage,
-					patchMap, prevRgbImage, mapFeatures[i].u, mapFeatures[i].v,
-					gradientX, gradientY, InvHessian);
-
-			// Save ok
-			if (featureOK) {
-				double error2D = std::sqrt(
-						(mapFeatures[i].u - uOld) * (mapFeatures[i].u - uOld)
-								+ (mapFeatures[i].v - vOld)
-										* (mapFeatures[i].v - vOld));
-				std::cout << "Patches 2D diff: " << error2D << std::endl;
-				Eigen::Vector3f p3D = RGBD::point2Dto3D(
-						cv::Point2f((float)mapFeatures[i].u, (float)mapFeatures[i].v),
-						prevDepthImage, matcherParameters.cameraMatrixMat,
-						depthImageScale);
-				Eigen::Vector3f r3D = RGBD::point2Dto3D(cv::Point2f((float)uOld,(float)vOld),
-						prevDepthImage, matcherParameters.cameraMatrixMat,
-						depthImageScale);
-				double error3D = (r3D - p3D).norm();
-				std::cout << "Patches 3D diff: " << error3D << std::endl;
-
-				errorLog.push_back(std::make_pair(error2D, error3D));
-			}
-
-			if (!featureOK) {
-				mapFeatures[i].u = uOld;
-				mapFeatures[i].v = vOld;
-				featureOK = true;
-			}
-
-			// Print information
-			if (matcherParameters.verbose > 0)
-				std::cout << "Patches: " << featureOK << " " << mapFeatures[i].u
-						<< " " << mapFeatures[i].v << std::endl;
-		}
-		// Save a good match
-		if (featureOK || !correctPoints3D) {
-			matches.push_back(cv::DMatch((int)i, (int)goodFeaturesIndex, 0));
-			optimizedLocations.push_back(
-					cv::Point2f((float)mapFeatures[i].u, (float)mapFeatures[i].v));
-			goodFeaturesIndex++;
-		}
-
-	}
-
-	// Project optimized features into 3D features
-	std::vector<Eigen::Vector3f> optimizedMapLocations3D =
-			RGBD::keypoints2Dto3D(optimizedLocations, prevDepthImage,
-					matcherParameters.cameraMatrixMat, depthImageScale);
-
-	// Extract 3D from map
-	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
-			extractMapFeaturesPositions(mapFeatures);
-
-	// RANSAC part
-	if (matcherParameters.verbose > 0)
-		std::cout << "Matches on patches counter: " << matches.size()
-				<< std::endl;
-
-	if (matches.size() <= 0)
-		return -1.0;
-
-	std::vector<cv::DMatch> inlierMatches2;
-
-	// should we use RANSAC?
-	if (withRANSAC) {
-		matcherParameters.RANSACParams.errorVersion =
-				matcherParameters.RANSACParams.errorVersionMap;
-		RANSAC ransac(matcherParameters.RANSACParams,
-				matcherParameters.cameraMatrixMat);
-		estimatedTransformation = ransac.estimateTransformation(
-				mapFeaturePositions3D, optimizedMapLocations3D, matches,
-				inlierMatches2);
-	} else
-		inlierMatches2 = matches;
-
-	// for all inliers, convert them to map-compatible format
-	foundInlierMapFeatures.clear();
-	for (std::vector<cv::DMatch>::iterator it = inlierMatches2.begin();
-			it != inlierMatches2.end(); ++it) {
-		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
-
-		MapFeature mapFeature;
-		mapFeature.id = mapFeatures[mapId].id;
-
-		mapFeature.u = optimizedLocations[currentPoseId].x;
-		mapFeature.v = optimizedLocations[currentPoseId].y;
-
-		mapFeature.position = Vec3(
-				optimizedMapLocations3D[currentPoseId].cast<double>());
-		mapFeature.posesIds.push_back(sensorPoseId);
-
-		// TODO: it mixes distorted and undistorted features
-		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId, optimizedLocations[currentPoseId], optimizedLocations[currentPoseId],
-				mapFeature.position, cv::Mat(), -1, -1.0);
-		mapFeature.descriptors.push_back(featureExtendedDescriptor);
-
-		// Add the measurement
-		foundInlierMapFeatures.push_back(mapFeature);
-	}
-
-	return RANSAC::pointInlierRatio(inlierMatches2, matches);
-}
-
+// Matching in case of loop closure
 double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,
 		Eigen::Matrix4f &estimatedTransformation){
 
@@ -1406,6 +1166,9 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 
 }
 
+
+/// Helper methods:
+
 void Matcher::showFeatures(cv::Mat rgbImage,
 		std::vector<cv::KeyPoint> featuresToShow) {
 	cv::Mat imageToShow;
@@ -1426,7 +1189,6 @@ void Matcher::showMatches(cv::Mat prevRgbImage,
 	cv::imshow("Showing matches", imageToShow);
 	cv::waitKey(10000);
 }
-
 
 std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,
 		std::vector<cv::Point2f>& undistortedFeatures2D,
@@ -1520,4 +1282,15 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 
 int Matcher::getNumberOfFeatures() {
 	return (int)prevFeaturesDistorted.size();
+}
+
+Matcher::featureSet Matcher::getFeatures() {
+	featureSet returnSet;
+	returnSet.descriptors = prevDescriptors;
+	returnSet.feature2D = prevKeyPoints;
+	returnSet.detDist = prevDetDists;
+	returnSet.distortedFeature2D = prevFeaturesDistorted;
+	returnSet.undistortedFeature2D = prevFeaturesUndistorted;
+	returnSet.feature3D = prevFeatures3D;
+	return returnSet;
 }

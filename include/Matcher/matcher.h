@@ -9,9 +9,9 @@
 #define _MATCHER_H_
 
 #include "../Defs/putslam_defs.h"
+#include "../Defs/opencvCore.h"
 #include <string>
 #include <vector>
-#include "opencv/cv.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../TransformEst/RANSAC.h"
 #include "../include/RGBD/RGBD.h"
@@ -100,7 +100,7 @@ public:
 	virtual const std::string& getName() const = 0;
 
 	/// Load features at the start of the sequence
-	void loadInitFeatures(const SensorFrame& sensorData);
+	void detectInitFeatures(const SensorFrame& sensorData);
 
 	/// Get current set of features
 	Matcher::featureSet getFeatures();
@@ -169,20 +169,6 @@ public:
 			Eigen::Matrix4f &estimatedTransformation,
 			bool newDetection,
 			std::vector<int> frameIds = std::vector<int>());
-
-
-
-
-	// Matching to map with patch computation
-	double matchToMapUsingPatches(std::vector<MapFeature> mapFeatures,
-			int sensorPoseId, putslam::Mat34 cameraPose,
-			std::vector<int> frameIds, std::vector<putslam::Mat34> cameraPoses,
-			std::vector<cv::Mat> mapRgbImages,
-			std::vector<cv::Mat> mapDepthImages,
-			std::vector<MapFeature> &foundInlierMapFeatures,
-			Eigen::Matrix4f &estimatedTransformation, double depthImageScale,
-			std::vector<std::pair<double, double>> &errorLog,
-			bool withRANSAC = true);
 
 	// Matching performed when loop closure is performed on features
 	double matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,

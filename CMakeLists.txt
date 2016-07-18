@@ -641,14 +641,14 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_GRAPHCONVERTER)
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
-        SET(DEMO_SOURCES ./demos/demoMap.cpp)
-        ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map TransformEst LDB ${OpenCV_LIBS} boost_system)
-        INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
-
-endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
+#if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
+#        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
+#        SET(DEMO_SOURCES ./demos/demoMap.cpp)
+#        ADD_EXECUTABLE(demoMap ${DEMO_SOURCES})
+#        TARGET_LINK_LIBRARIES(demoMap tinyxml2 Utilities PoseGraph Map TransformEst LDB ${OpenCV_LIBS} boost_system)
+#        INSTALL(TARGETS demoMap RUNTIME DESTINATION bin)
+#
+#endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_MAP)
 
 ###############################################################################
 #
