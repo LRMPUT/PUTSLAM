@@ -411,7 +411,7 @@ void PUTSLAM::initialization() {
 
     // thread for geometric loop closure
 	if (loopClosureThreadVersion == LCTHREAD_ON)
-		map->startLoopClosureThread(0, loopClosureMatcher);
+		map->startLoopClosureThread(1, loopClosureMatcher);
 
 	// Creating octomap
 	if (octomap > 0)

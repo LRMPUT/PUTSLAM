@@ -783,50 +783,67 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 
 						for (auto & featureId : camTrajectoryLC[currentFrameId].featuresIds) {
 							mtxMapLoopClosure.lock();
-							featureSets[i].push_back(featuresMapLoopClosure[featureId]);
+							featureSets[i].push_back(
+									featuresMapLoopClosure[featureId]);
 							mtxMapLoopClosure.unlock();
 						}
 					}
 
 					// Call loop closure matching
-                    matchingRatio = matcher->matchFeatureLoopClosure(featureSets, frameIds, pairedFeatures, estimatedTransformation);
-                 }
+					matchingRatio = matcher->matchFeatureLoopClosure(
+							featureSets, frameIds, pairedFeatures,
+							estimatedTransformation);
+
+					// TODO: correct this
+					featureSetA = featureSets[0];
+					featureSetB = featureSets[1];
+
+				}
 				mtxCamTrajLC.unlock();
-            }
+			}
 
 
-            std::cout << "LC: ratio " << matchingRatio << " < " << config.matchingRatioThresholdLC << "\n";
+
+            std::cout << "LC: ratio " << matchingRatio << " > " << config.matchingRatioThresholdLC << "\n";
             if (matchingRatio>config.matchingRatioThresholdLC){
 
             	if (verbose > 0) {
-
+            		std::cout << "Loop closure: config.measurementTypeLC: " << config.measurementTypeLC << "\n";
 					std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
 					std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
 					std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
 					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
 					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
             	}
-                loopClosureSuccess = true;
+                //loopClosureSuccess = true;
 
                 if (config.measurementTypeLC==0){//pose-pose
                     Mat34 trans(estimatedTransformation.cast<double>());
                     addMeasurement(candidatePoses.first, candidatePoses.second, trans);
                 }
-                else if (config.measurementTypeLC==1){//pose-features
-//                    std::vector<MapFeature> measuredFeatures;
-//                    for (auto& pairFeat : pairedFeatures){
-//                        for (auto featureB : featureSetB){
-//                            if ((int)featureB.id == pairFeat.second){
-//                                MapFeature featTmp = featureB;
-//                                featTmp.id = pairFeat.first;
-//
-//                                //TODO: I thnik we need to add new extDescriptor
-//                                measuredFeatures.push_back(featTmp);
-//                            }
-//                        }
-//                    }
+                // Pose - feature measurements
+                else if (config.measurementTypeLC==1){
+
+                    std::vector<MapFeature> measuredFeatures;
+
+                    // For each matched feature
+                    for (auto& pairFeat : pairedFeatures){
+
+                    	// Look for a feature in set 2
+                        for (auto featureB : featureSetB){
+
+                        	// If found add new Id
+                            if ((int)featureB.id == pairFeat.second){
+                                MapFeature featTmp = featureB;
+                                featTmp.id = pairFeat.first;
+
+                                //I think it should add all of those new descriptors
+                                measuredFeatures.push_back(featTmp);
+                            }
+                        }
+                    }
                    std::cout << "LC: measurements no " << pairedFeatures.size() << "\n";
-                   // addMeasurements(measuredFeatures,candidatePoses.second);
+                   addMeasurements(measuredFeatures,candidatePoses.second);
                 }
             }
         }
@@ -1127,25 +1144,28 @@ void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {
     featuresMap[newFeature.id].position = newFeature.position;
 
-    // The measurement contains only the last extended descriptor and we add to the feature information
+    // The measurement contains new extended descriptor and we add to the feature information
 	if (featuresMap.count(newFeature.id) > 0
 			&& newFeature.descriptors.size() > 0)
 	{
-    	bool shouldWeAdd = true;
-    	for (auto &d :  featuresMap[newFeature.id].descriptors) {
-    		if (d.poseId == newFeature.descriptors[0].poseId)
-    		{
-    			shouldWeAdd = false;
-    			break;
-    		}
-    	}
+		// Analyze the one of the new descriptors
+		for (auto & descToAdd : newFeature.descriptors)
+		{
 
-		if (shouldWeAdd) {
-//			std::cout << "MN: ADDING NEW DESCRIPTOR FOR: " << newFeature.id
-//					<< " FROM POSE " << newFeature.descriptors[0].poseId
-//					<< std::endl;
-			featuresMap[newFeature.id].descriptors.push_back(
-					newFeature.descriptors[0]);
+			// Check if potentially new descriptor is not already in the descriptor set
+			bool shouldWeAdd = true;
+			for (auto &existingDesc :  featuresMap[newFeature.id].descriptors) {
+
+				if (existingDesc.poseId == descToAdd.poseId)
+				{
+					shouldWeAdd = false;
+					break;
+				}
+			}
+
+			if (shouldWeAdd) {
+				featuresMap[newFeature.id].descriptors.push_back(descToAdd);
+			}
 		}
 
 	}
