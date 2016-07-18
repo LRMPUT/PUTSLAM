@@ -28,12 +28,12 @@
 		fixVertices="false" 
 		addPoseToPoseEdges="false" 
 		minMeasurementsToAddPoseToFeatureEdge="15" 
-		addFeaturesWhenMapSizeLessThan="150" 
-		addFeaturesWhenMeasurementSizeLessThan="80" 
+		addFeaturesWhenMapSizeLessThan="250" 
+		addFeaturesWhenMeasurementSizeLessThan="150" 
 		maxOnceFeatureAdd="200" 
 		minEuclideanDistanceOfFeatures="0.01" 
-		minImageDistanceOfFeatures="3" 
-		addNoFeaturesWhenMapSizeGreaterThan="500" 
+		minImageDistanceOfFeatures="2" 
+		addNoFeaturesWhenMapSizeGreaterThan="2500" 
 		inlierThresholdEuclidean="0.03"
 		optimizationErrorType="0"/>
 
@@ -68,5 +68,5 @@
       searchPairsTypeLC 0 - local geometric distance
 			1 - FABMAP
     -->  
-    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.95" measurementTypeLC="0" typeLC="0"/>
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.2" measurementTypeLC="1" typeLC="1"/>
 </MapConfig>

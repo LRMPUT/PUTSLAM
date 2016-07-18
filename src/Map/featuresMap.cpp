@@ -729,6 +729,9 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
         }
         std::pair<int,int> candidatePoses;
         if (localLC->getLCPair(candidatePoses)){
+        	//
+        	                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
+
             std::vector<MapFeature> featureSetA, featureSetB;
 
 			if (verbose > 0) {
@@ -743,23 +746,23 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
             Eigen::Matrix4f estimatedTransformation;
             std::vector<std::pair<int, int>> pairedFeatures;
 
-            double matchingRatio;
+            double matchingRatio = 0.0;
             if (config.typeLC == 0){ // use rgb frame
-                SensorFrame sensorFrames[2];
-                // be careful: todo: lock image and depth
-                sensorFrames[0].depthImageScale=sensorModel.config.depthImageScale;
-                sensorFrames[1].depthImageScale=sensorModel.config.depthImageScale;
-                getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
-                getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
-                matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
-
-
-
-                loopClosureMatchingRatiosLog.push_back(matchingRatio);
-                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
-
-                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
-                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
+//                SensorFrame sensorFrames[2];
+//                // be careful: todo: lock image and depth
+//                sensorFrames[0].depthImageScale=sensorModel.config.depthImageScale;
+//                sensorFrames[1].depthImageScale=sensorModel.config.depthImageScale;
+//                getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
+//                getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
+//                matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
+//
+//
+//
+//                loopClosureMatchingRatiosLog.push_back(matchingRatio);
+//                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
+//
+//                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
+//                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
 
             }
 
@@ -805,6 +808,7 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 
 
             std::cout << "LC: ratio " << matchingRatio << " > " << config.matchingRatioThresholdLC << "\n";
+            loopClosureMatchingRatiosLog.push_back(matchingRatio);
             if (matchingRatio>config.matchingRatioThresholdLC){
 
             	if (verbose > 0) {
@@ -812,17 +816,17 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 					std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
 					std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
 					std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
-					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
-					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
+//					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
+//					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
             	}
                 //loopClosureSuccess = true;
 
-                if (config.measurementTypeLC==0){//pose-pose
-                    Mat34 trans(estimatedTransformation.cast<double>());
-                    addMeasurement(candidatePoses.first, candidatePoses.second, trans);
-                }
+//                if (config.measurementTypeLC==0){//pose-pose
+//                    Mat34 trans(estimatedTransformation.cast<double>());
+//                    addMeasurement(candidatePoses.first, candidatePoses.second, trans);
+//                }
                 // Pose - feature measurements
-                else if (config.measurementTypeLC==1){
+                if (config.measurementTypeLC==1){
 
                     std::vector<MapFeature> measuredFeatures;
 

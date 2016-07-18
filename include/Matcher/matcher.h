@@ -140,27 +140,7 @@ public:
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation);
 
-	/// Run the match with two poses from the map. Parameters:
-	/// 	featureSet[2] 	-> set of features from the first and the second pose.
-	///			Remark: It only makes sense when features are moved to the local
-	///					coordinate system of features before calling the function
-	///		frameIds[2] 	-> set of ids of poses for features with the closest angle of observations -
-	///					in other words for each descriptor, we get the id of the pose so we can take the apprioprate descriptor
-	/// 	pairedFeatures 	-> return pairs of ids of features that are matched
-	///		estimatedTransformation		-> the estimated transformation
-	double matchPose2Pose(std::vector<MapFeature> featureSet[2],
-			std::vector<int> frameIds[2],
-			std::vector<std::pair<int, int>> &pairedFeatures,
-			Eigen::Matrix4f &estimatedTransformation);
 
-	/// Version as above, but for each feature it uses only the original descriptor
-    double matchPose2Pose(std::vector<MapFeature> featureSet[2],
-				std::vector<std::pair<int, int>> &pairedFeatures,
-				Eigen::Matrix4f &estimatedTransformation);
-
-    // Versions as above, but works on two sensor frames (it performs detection on its own)
-    double matchPose2Pose(SensorFrame sensorFrames[2],
-    		Eigen::Matrix4f &estimatedTransformation);
 
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
@@ -176,6 +156,29 @@ public:
 
 	int getNumberOfFeatures();
 
+
+//	/// Run the match with two poses from the map. Parameters:
+//	/// 	featureSet[2] 	-> set of features from the first and the second pose.
+//	///			Remark: It only makes sense when features are moved to the local
+//	///					coordinate system of features before calling the function
+//	///		frameIds[2] 	-> set of ids of poses for features with the closest angle of observations -
+//	///					in other words for each descriptor, we get the id of the pose so we can take the apprioprate descriptor
+//	/// 	pairedFeatures 	-> return pairs of ids of features that are matched
+//	///		estimatedTransformation		-> the estimated transformation
+//	double matchPose2Pose(std::vector<MapFeature> featureSet[2],
+//			std::vector<int> frameIds[2],
+//			std::vector<std::pair<int, int>> &pairedFeatures,
+//			Eigen::Matrix4f &estimatedTransformation);
+//
+//	/// Version as above, but for each feature it uses only the original descriptor
+//    double matchPose2Pose(std::vector<MapFeature> featureSet[2],
+//				std::vector<std::pair<int, int>> &pairedFeatures,
+//				Eigen::Matrix4f &estimatedTransformation);
+//
+//    // Versions as above, but works on two sensor frames (it performs detection on its own)
+//    double matchPose2Pose(SensorFrame sensorFrames[2],
+//    		Eigen::Matrix4f &estimatedTransformation);
+//
 	/// Class used to hold all parameters
 	class MatcherParameters {
 	public:

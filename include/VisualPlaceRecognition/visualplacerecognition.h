@@ -15,10 +15,10 @@ public:
     // minimum number of features that have to be found in an image to proceed
     uint32_t minFeatures = 100;
     // how many tail frames to skip
-    uint32_t tailFramesToSkip = 0;
+    uint32_t tailFramesToSkip = 10;
     // minimum probability to declare successful loop closure
     // if the probability value for the query frame is below this threshold, it is added as a new, unvisited place
-    double_t minNewPlaceProb = 0.25;
+    double_t minNewPlaceProb = 0.2;
     // constructor/initializer
     VisualPlaceRecognition();
     // destructor

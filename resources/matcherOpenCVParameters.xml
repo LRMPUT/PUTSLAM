@@ -70,9 +70,9 @@
 
 	minimalTrackedFeatures="150" 
 	maximalTrackedFeatures="500"
-	minimalReprojDistanceNewTrackingFeatures="4" 
-	minimalEuclidDistanceNewTrackingFeatures="0.03"
-	DBScanEps="4"
+	minimalReprojDistanceNewTrackingFeatures="3" 
+	minimalEuclidDistanceNewTrackingFeatures="0.01"
+	DBScanEps="1"
 	matchingXYZSphereRadius = "0.15"
 	matchingXYZacceptRatioOfBestMatch = "0.55"
 	trackingErrorType = "0"

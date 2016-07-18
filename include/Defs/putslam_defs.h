@@ -209,7 +209,7 @@ public:
             std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
                     _posesIds), imageCoordinates(_imageCoordinates) {
-		lifeValue = 8;
+		lifeValue = 100000;
     };
 
 	/// Constructor

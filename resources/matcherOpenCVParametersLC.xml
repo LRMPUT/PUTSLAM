@@ -31,7 +31,7 @@
 		minimalNumberOfMatches : minimal number of matches to even start RANSAC procedure (sensible values from 15 and up)
 	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
 	 -->
-    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.1" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.15" minimalNumberOfMatches="10" usedPairs="3"/>
+    <RANSAC verbose="0" errorVersionVO="0" errorVersionMap="0" inlierThresholdEuclidean="0.04" inlierThresholdReprojection="2.0" inlierThresholdMahalanobis="0.0002" minimalInlierRatioThreshold="0.15" minimalNumberOfMatches="10" usedPairs="3"/>
     <!-- Matching settings
     	detector : 	 FAST, ORB, SURF, SIFT
     	descriptor :	 ORB, SURF, SIFT
