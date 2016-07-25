@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="openni_camera" type="openni_node" name="openni_node" />
+	<node pkg="rviz" type="rviz" name="rviz" />
+	<node pkg="PUTSLAM" type="demoROS" name="demoROS" cwd="node" />
+</launch>

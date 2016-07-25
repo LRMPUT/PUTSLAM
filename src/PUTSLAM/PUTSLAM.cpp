@@ -20,7 +20,10 @@ PUTSLAM::PUTSLAM() {
 	drawImages = false;
 	visualize = false;
 	map->setDrawOptions(false);
-
+#ifdef BUILD_WITH_ROS
+		//////////////////////////////////////////////////////////////////////ROS
+		workWithROS = false;
+#endif
 }
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
@@ -505,6 +508,13 @@ void PUTSLAM::loadConfigs() {
 	} else if (grabberType == "Xtion") {
 		grabber = createGrabberXtion(grabberConfigFile, Grabber::MODE_BUFFER);
 	}
+#ifdef BUILD_WITH_ROS
+	////////////////////////////////////////////////////////////ROS
+	else if (grabberType == "ROS") {
+		std::cout<<"\n create ROS Grabber \n";
+		grabber = createGrabberROS(nh);
+	}
+#endif
 	/// Still do not take into account the config file
 	else if (grabberType == "File") {
 		grabber = createGrabberFile(grabberConfigFile);
@@ -858,6 +868,16 @@ void PUTSLAM::startProcessing() {
 			addFeatureToMap = false;
 		}
 
+#ifdef BUILD_WITH_ROS
+		//////////////////////////////////////////////////////////////////////////////////////ROS
+		if(cameraPoseId%60 == 1 && workWithROS){
+			current_time = ros::Time::now();
+			publishPoseROS(cameraPoseId);
+			publishPointCloudROS(cameraPoseId, currentSensorFrame);
+			std::cout<<"\n";
+		}
+#endif
+		
 		// Saving features for Dominik
 		//		Matcher::featureSet features = matcher->getFeatures();
 		//		saveFeaturesToFile(features, currentSensorFrame.timestamp);
@@ -1199,3 +1219,81 @@ void PUTSLAM::showMapFeatures(cv::Mat rgbImage,
 		cv::waitKey(1);
 }
 
+#ifdef BUILD_WITH_ROS
+//////////////////////////////////////////////////////////////////////////////////////////////ROS
+void PUTSLAM::setWorkWithROS(){
+	workWithROS = true;
+}
+
+void PUTSLAM::initROSpublishers(){
+	cameraOdometryPublisher = nh.advertise<nav_msgs::Path>("camera_path", 50);
+	cameraPointCloudPublisher = nh.advertise<sensor_msgs::PointCloud>("camera_PointCloud", 50);
+}
+
+void PUTSLAM::publishPoseROS(int cameraPoseId){
+	geometry_msgs::PoseStamped pyk;
+	nav_msgs::Path CameraPath;
+	
+	for (int i = 1; i < cameraPoseId + 1; i++){
+		Mat34 lastPose = map->getSensorPose(i);
+		//tf::poseEigenToMsg(lastPose, pyk); to nie działa dla tego to na dole jest kopią kodu który wykonuje ta funkcja
+		//Eigen to geometry_msgs
+		pyk.pose.position.x = lastPose.translation()[0];
+		pyk.pose.position.y = lastPose.translation()[1];
+		pyk.pose.position.z = lastPose.translation()[2];
+		Eigen::Quaterniond q = (Eigen::Quaterniond)lastPose.linear();
+		pyk.pose.orientation.x = q.x();
+		pyk.pose.orientation.y = q.y();
+		pyk.pose.orientation.z = q.z();
+		pyk.pose.orientation.w = q.w();
+		if (pyk.pose.orientation.w < 0) {
+		  pyk.pose.orientation.x *= -1;
+		  pyk.pose.orientation.y *= -1;
+		  pyk.pose.orientation.z *= -1;
+		  pyk.pose.orientation.w *= -1;
+		}
+		pyk.header.stamp = current_time;
+		pyk.header.frame_id = "camera_base";
+		CameraPath.poses.push_back(pyk);
+	}
+	CameraPath.header.stamp = current_time;
+	CameraPath.header.frame_id = "camera_base";
+	cameraOdometryPublisher.publish(CameraPath);
+}
+
+void PUTSLAM::publishPointCloudROS(int cameraPoseId, const SensorFrame &currentSensorFrame){
+	
+	Mat34 lastPose = map->getSensorPose(cameraPoseId);
+	Eigen::Matrix4f tmpPose = Eigen::Matrix4f(lastPose.matrix().cast<float>());
+	// Creating color cloud
+	std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3i>> colorPointCloud =
+			RGBD::imageToColorPointCloud(currentSensorFrame.rgbImage, currentSensorFrame.depthImage, matcher->matcherParameters.cameraMatrixMat, tmpPose, currentSensorFrame.depthImageScale);
+	
+	sensor_msgs::PointCloud pubPointCloud;
+	pubPointCloud.header.frame_id = "camera_base";
+	pubPointCloud.header.stamp = current_time;
+	int size = colorPointCloud.size();
+	//pubPointCloud.points.clear();
+	//pubPointCloud.channels.clear();
+	geometry_msgs::Point32 point;
+	sensor_msgs::ChannelFloat32 colors[3];
+	colors[0].name = "r";
+	colors[1].name = "g";
+	colors[2].name = "b";
+	
+	// We add every point
+	for (int k = 0; k < size; k++) {
+		point.x = (float) colorPointCloud[k].first.x();
+		point.y = (float) colorPointCloud[k].first.y();
+		point.z = (float) colorPointCloud[k].first.z();
+		colors[0].values.push_back(((float)colorPointCloud[k].second.x())/256);
+		colors[1].values.push_back(((float)colorPointCloud[k].second.y())/256);
+		colors[2].values.push_back(((float)colorPointCloud[k].second.z())/256);
+		pubPointCloud.points.push_back(point);
+	}
+	pubPointCloud.channels.push_back(colors[0]);
+	pubPointCloud.channels.push_back(colors[1]);
+	pubPointCloud.channels.push_back(colors[2]);
+	cameraPointCloudPublisher.publish(pubPointCloud);	
+}
+#endif

@@ -27,6 +27,14 @@
 
 #include "TimeMeasurement.h"
 
+#ifdef BUILD_WITH_ROS
+#include <nav_msgs/Path.h>  //////////////////////////////////////////////////ROS
+#include <tf/tf.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud.h>
+#include "../include/Grabber/ROSGrabber.h"
+#endif
+
 using namespace std;
 using namespace putslam;
 
@@ -102,6 +110,12 @@ public:
 
 	/// set drawing options
 	void setDrawOptions(bool _draw, bool _drawImages);
+	
+#ifdef BUILD_WITH_ROS	
+	/////////////////////////////////////////////////////////////////////////////ROS
+	void setWorkWithROS();
+	void initROSpublishers();
+#endif
 
 private:
 	// At beggining
@@ -154,6 +168,18 @@ private:
 	void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures, int wait, string windowName="Map features");
 	void createAndSaveOctomap(double depthImageScale);
 	void createAndSaveOctomapOffline(double depthImageScale);
+	
+#ifdef BUILD_WITH_ROS
+	//////////////////////////////////////////////////////////////////////////ROS
+	ros::NodeHandle nh;
+	ros::Publisher cameraOdometryPublisher;
+	ros::Publisher cameraPointCloudPublisher;
+	ros::Time current_time, last_time; 
+	bool workWithROS;
+	
+	void publishPoseROS(int cameraPoseId);
+	void publishPointCloudROS(int cameraPoseId, const SensorFrame &currentSensorFrame);
+#endif
 };
 
 #endif // _PUTSLAM_

@@ -1,6 +1,16 @@
 # cmake requirements
 cmake_minimum_required(VERSION 2.8)
 
+option(BUILD_ROS "Build with ROS" OFF)
+mark_as_advanced(BUILD_ROS)
+
+if(BUILD_ROS)
+	include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+	rosbuild_init()
+	add_definitions(-DBUILD_WITH_ROS)
+	SET(ROS_BUILD_TYPE Release)
+endif(BUILD_ROS)
+
 # Build options have to be before PROJECT(...)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE PATH "Configuration types")
 SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
@@ -8,6 +18,20 @@ SET(CMAKE_BUILD_TYPE "Release" CACHE PATH "Current build configuration")
 # PUTSLAM Project configuration
 PROJECT(PUTSLAM)
 SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -std=c++11 -pthread -fopenmp")
+
+if(BUILD_ROS)
+	## Find catkin macros and libraries
+	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+	## is used, also find other catkin packages
+	find_package(catkin REQUIRED COMPONENTS
+		cv_bridge
+		geometry_msgs
+		message_filters
+		roscpp
+		rospy
+		sensor_msgs
+	)
+endif(BUILD_ROS)
 
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -71,7 +95,8 @@ option(BUILD_PUTSLAM_GRAPHCONVERTER "Build g2o 2D graph to 3D graph converter" O
 mark_as_advanced(BUILD_PUTSLAM_GRAPHCONVERTER)
 option(BUILD_PUTSLAM_DEMO_VISUALIZER "Build g2o visualizer demo" ON)
 mark_as_advanced(BUILD_PUTSLAM_DEMO_VISUALIZER)
-
+option(BUILD_PUTSLAM_DEMO_ROS "Build ROS demo" ON)
+mark_as_advanced(BUILD_PUTSLAM_DEMO_ROS)
 #additional dependencies
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
@@ -148,13 +173,23 @@ if (MSVC)
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif()
 
+if(BUILD_ROS)
+	include_directories(
+	  ${catkin_INCLUDE_DIRS}
+	)
+endif(BUILD_ROS)
+
 ###############################################################################
 #
 # PUTSLAM tinyXML2 library
 #
 ###############################################################################
 
-add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.h ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.cpp)
+if(BUILD_ROS)
+	rosbuild_add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.h ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.cpp)
+else()
+	add_library(tinyxml2 SHARED ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.h ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/tinyXML/tinyxml2.cpp)
+endif(BUILD_ROS)
 
 ###############################################################################
 #
@@ -166,7 +201,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         file(GLOB DEFS_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Defs/*.h"
         )
-        ADD_LIBRARY(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
+        if(BUILD_ROS)
+        	rosbuild_add_library(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
+				else()        
+					add_library(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
+				endif(BUILD_ROS)
         set_target_properties(PUTSLAM_DEFS PROPERTIES LINKER_LANGUAGE CXX)
 # 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
@@ -187,7 +226,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
             "${CMAKE_SOURCE_DIR}/include/Utilities/*.h"
         )
 
-        ADD_LIBRARY(Utilities STATIC ${UTILITIES_SOURCES} ${UTILITIES_HEADERS})
+        if(BUILD_ROS)
+        	rosbuild_add_library(Utilities STATIC ${UTILITIES_SOURCES} ${UTILITIES_HEADERS})
+				else()        
+					add_library(Utilities STATIC ${UTILITIES_SOURCES} ${UTILITIES_HEADERS})
+				endif(BUILD_ROS)
         INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRACKER_HEADERS} DESTINATION include/putslam/Utilities/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
@@ -215,6 +258,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
             "${CMAKE_SOURCE_DIR}/src/Grabber/templateGrabber.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/xtionGrabber.cpp"
+						if(BUILD_ROS)
+							"${CMAKE_SOURCE_DIR}/src/Grabber/ROSGrabber.cpp"
+						endif(BUILD_ROS)
         )
         file(GLOB GRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
@@ -227,10 +273,17 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
             "${CMAKE_SOURCE_DIR}/include/Grabber/templateGrabber.h"
             "${CMAKE_SOURCE_DIR}/include/Grabber/xtionGrabber.h"
+						if(BUILD_ROS)
+	            "${CMAKE_SOURCE_DIR}/include/Grabber/ROSGrabber.h"
+						endif(BUILD_ROS)
         )
-
-        ADD_LIBRARY(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
-        TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS})
+        if(BUILD_ROS)
+	        rosbuild_add_library(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
+	        TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS} ${catkin_LIBRARIES})
+				else()
+	        add_library(Grabber STATIC ${GRABBER_SOURCES} ${GRABBER_HEADERS})
+	        TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS})
+				endif(BUILD_ROS)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
             TARGET_LINK_LIBRARIES(Grabber OpenNI2 ${OpenCV_LIBS} flycapture-c flycapture)
         endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
@@ -252,8 +305,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
         file(GLOB TRACKER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Tracker/*.h"
         )
-
-        ADD_LIBRARY(Tracker STATIC ${TRACKER_SOURCES} ${TRACKER_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(Tracker STATIC ${TRACKER_SOURCES} ${TRACKER_HEADERS})
+				else()
+        	add_library(Tracker STATIC ${TRACKER_SOURCES} ${TRACKER_HEADERS})
+				endif(BUILD_ROS)
         INSTALL(TARGETS Tracker RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRACKER_HEADERS} DESTINATION include/putslam/Tracker/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
@@ -272,7 +328,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
             "${CMAKE_SOURCE_DIR}/include/TransformEst/*.h"
         )
 
-        ADD_LIBRARY(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+        if(BUILD_ROS)
+        	rosbuild_add_library(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+        else()
+        	add_library(TransformEst STATIC ${TRANSFORM_ESTIMATOR_SOURCES} ${TRANSFORM_ESTIMATOR_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(TransformEst RGBD)
         INSTALL(TARGETS TransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${TRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
@@ -311,8 +371,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
         file(GLOB LDB_HEADERS
             "${CMAKE_SOURCE_DIR}/include/LDB/*.h"
         )
-
-        ADD_LIBRARY(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
+				else()        
+        	add_library(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
+				endif(BUILD_ROS)
         INSTALL(TARGETS LDB RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LDB_HEADERS} DESTINATION include/putslam/LDB/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
@@ -330,8 +393,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
         file(GLOB RGBD_HEADERS
             "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
         )
-
-        ADD_LIBRARY(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
+				else()
+        	add_library(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
+				endif(BUILD_ROS)
         INSTALL(TARGETS RGBD RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${RGBD_HEADERS} DESTINATION include/putslam/RGBD/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
@@ -350,8 +416,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         file(GLOB MATCHER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Matcher/*.h"
         )
-
-        ADD_LIBRARY(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
+				else()
+        	add_library(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(Matcher ${OpenCV_LIBS} LDB RGBD TransformEst)
         INSTALL(TARGETS Matcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
@@ -370,8 +439,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
         file(GLOB MOTIONMODDEL_HEADERS
             "${CMAKE_SOURCE_DIR}/include/MotionModel/*.h"
         )
-
-        ADD_LIBRARY(MotionModel STATIC ${MOTIONMODDEL_SOURCES} ${MOTIONMODDEL_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(MotionModel STATIC ${MOTIONMODDEL_SOURCES} ${MOTIONMODDEL_HEADERS})
+				else()
+        	add_library(MotionModel STATIC ${MOTIONMODDEL_SOURCES} ${MOTIONMODDEL_HEADERS})
+				endif(BUILD_ROS)
       	INSTALL(TARGETS MotionModel RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MOTIONMODDEL_HEADERS} DESTINATION include/putslam/MotionModel/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
@@ -389,8 +461,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         file(GLOB POSE_GRAPH_HEADERS
             "${CMAKE_SOURCE_DIR}/include/PoseGraph/*.h"
         )
-
-        ADD_LIBRARY(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
+				else()
+        	add_library(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(PoseGraph csparse g2o_types_slam2d g2o_types_slam3d g2o_csparse_extension g2o_stuff g2o_core g2o_solver_csparse)
         INSTALL(TARGETS PoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${POSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
@@ -410,8 +485,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
         file(GLOB VISUALPLACERECOGNITION_HEADERS
             "${CMAKE_SOURCE_DIR}/include/VisualPlaceRecognition/*.h"
         )
-
-        ADD_LIBRARY(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
+				if(BUILD_ROS)
+	        rosbuild_add_library(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
+				else()
+	        add_library(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(VisualPlaceRecognition RGBD ${OpenCV_LIBS})
         INSTALL(TARGETS VisualPlaceRecognition RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${VISUALPLACERECOGNITION_HEADERS} DESTINATION include/putslam/VisualPlaceRecognition/)
@@ -432,8 +510,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
         file(GLOB LOOPCLOSURE_HEADERS
             "${CMAKE_SOURCE_DIR}/include/LoopClosure/*.h"
         )
-
-        ADD_LIBRARY(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
+				if(BUILD_ROS)
+	        rosbuild_add_library(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
+				else()
+	        add_library(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(LoopClosure Utilities Matcher RGBD VisualPlaceRecognition)
         INSTALL(TARGETS LoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
@@ -453,8 +534,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
         file(GLOB MAP_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Map/*.h"
         )
-
-        ADD_LIBRARY(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
+				if(BUILD_ROS)
+        	rosbuild_add_library(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
+				else()
+        	add_library(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(Map PoseGraph Grabber Utilities Matcher TransformEst RGBD LoopClosure)
         INSTALL(TARGETS Map RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${MAP_HEADERS} DESTINATION include/putslam/Map/)
@@ -474,7 +558,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
         file(GLOB VISUALIZER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/Visualizer/*.h"
         )
-        ADD_LIBRARY(Visualizer STATIC ${VISUALIZER_SOURCES} ${VISUALIZER_HEADERS})
+        if(BUILD_ROS)
+	        rosbuild_add_library(Visualizer STATIC ${VISUALIZER_SOURCES} ${VISUALIZER_HEADERS})
+				else()
+	        add_library(Visualizer STATIC ${VISUALIZER_SOURCES} ${VISUALIZER_HEADERS})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(Visualizer tinyxml2 Map ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} QtCore QtXml QtOpenGL QtGui ${OPENGL_LIBRARY})
         INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${VISUALIZER_HEADERS} DESTINATION include/putslam/Visualizer/)
@@ -493,8 +581,13 @@ if(BUILD_PUTSLAM)
         file(GLOB LIBPUTSLAM_HEADERS
             "${CMAKE_SOURCE_DIR}/include/PUTSLAM/*.h"
         )
-        ADD_LIBRARY(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
-        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher MotionModel RGBD TransformEst Utilities ${OpenCV_LIBS})
+        if(BUILD_ROS)
+	        rosbuild_add_library(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
+	        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher MotionModel RGBD TransformEst Utilities ${OpenCV_LIBS} ${catkin_LIBRARIES})
+				else()
+	        add_library(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})
+	        TARGET_LINK_LIBRARIES(LIBPUTSLAM tinyxml2 Map Matcher MotionModel RGBD TransformEst Utilities ${OpenCV_LIBS})
+				endif(BUILD_ROS)
         INSTALL(TARGETS Utilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${LIBPUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
 endif(BUILD_PUTSLAM)
@@ -512,7 +605,11 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
         )
 
         SET(DEMO_SOURCES ./main.cpp)
-        ADD_EXECUTABLE(demo ${DEMO_SOURCES})
+        if(BUILD_ROS)
+	        rosbuild_add_executable(demo ${DEMO_SOURCES})
+				else()
+	        add_executable(demo ${DEMO_SOURCES})
+				endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(demo tinyxml2 Grabber Tracker TransformEst ${OpenCV_LIBS} PoseGraph boost_system)
         INSTALL(TARGETS demo RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
@@ -696,3 +793,24 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
         INSTALL(TARGETS demoPlayer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
+
+###############################################################################
+#
+# PUTSLAM DEMO ROS executables
+#
+###############################################################################
+
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_ROS AND BUILD_ROS)
+
+        SET(DEMO_FILES
+                ${PROJECT_ROOT}/resources/configGlobal.xml
+        )
+
+        SET(DEMO_SOURCES ./demos/demoROS.cpp)
+        rosbuild_add_executable(demoROS ${DEMO_SOURCES})
+        TARGET_LINK_LIBRARIES(demoROS tinyxml2 Grabber Map Matcher TransformEst LDB ${OpenCV_LIBS} ${catkin_LIBRARIES} PoseGraph LIBPUTSLAM boost_system)
+        INSTALL(TARGETS demoROS RUNTIME DESTINATION bin)
+        INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
+
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_ROS)
+
