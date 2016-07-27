@@ -97,10 +97,10 @@ class GlobalGraph : public Graph {
         bool optimize(int_fast32_t maxIterations, int verbose = 0, double minimalChi2Ratio = 0.99);
 
         /// Removes weak edes (with error bigger than threshold
-        bool optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose = 0);
+        bool optimizeAndPrune(double threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Removes weak edes (with error bigger than threshold
-        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose = 0);
+        bool optimizeAndPrune2(double threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Return trajectory (set of SE3 poses)
         std::vector<Mat34> getTrajectory(void) const;

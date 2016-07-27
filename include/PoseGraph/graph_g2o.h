@@ -108,10 +108,10 @@ class PoseGraphG2O : public Graph {
         bool optimize(int_fast32_t maxIterations, int verbose = 0, double minimalChi2Ratio = 0.99);
 
         /// Removes weak edes (with error bigger than threshold
-        bool optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose = 0);
+        bool optimizeAndPrune(double threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Removes weak edes (with error bigger than threshold chi2/median(chi2)
-        bool optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose = 0);
+        bool optimizeAndPrune2(double threshold, unsigned int singleIteration, int verbose = 0);
 
         /// Load Graph from g2o file
         bool loadG2O(const std::string filename);
@@ -150,7 +150,7 @@ class PoseGraphG2O : public Graph {
         void getOptimizedPoses(std::vector<VertexSE3>& poses);
 
         /// set Robust Kernel
-        void setRobustKernel(std::string name, float_type delta);
+        void setRobustKernel(std::string name, double delta);
 
         /// disable Robust Kernel
         void disableRobustKernel(void);
@@ -159,7 +159,7 @@ class PoseGraphG2O : public Graph {
         void removeWeakFeatures(int threshold);
 
         /// Prune 3D edges (measurements to features)
-        bool prune3Dedges(float_type threshold);
+        bool prune3Dedges(double threshold);
 
         /// returns measured positions and uncertainty of the feature in global coordinates
         void getMeasurements(int featureId, std::vector<Edge3D>& features, Vec3& estimation);
@@ -279,7 +279,7 @@ class PoseGraphG2O : public Graph {
         g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges);
 
         /// Find outlier using chi2_i/median(chi2)
-        g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, float_type threshold);
+        g2o::OptimizableGraph::EdgeContainer::iterator findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, double threshold);
 
         /// copy g2o optimization result to to putslam graph
         void updateEstimate(void);

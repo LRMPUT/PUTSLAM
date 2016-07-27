@@ -131,14 +131,14 @@ putslam::Vec3 RGBD::computeNormal(const cv::Mat& depthImage, int u, int v, const
     }
     putslam::Vec3 normal;
     // compute average normal
-    putslam::float_type sumX=0, sumY=0, sumZ=0;
+    double sumX=0, sumY=0, sumZ=0;
     for (auto it=normals.begin();it!=normals.end();it++){
         sumX+=(*it).x(); sumY+=(*it).y(); sumZ+=(*it).z();
     }
-    normal.x()=sumX/(putslam::float_type)normals.size();
-    normal.y()=sumY/(putslam::float_type)normals.size();
-    normal.z()=sumZ/(putslam::float_type)normals.size();
-    putslam::float_type norm = normal.vector().norm();
+    normal.x()=sumX/(double)normals.size();
+    normal.y()=sumY/(double)normals.size();
+    normal.z()=sumZ/(double)normals.size();
+    double norm = normal.vector().norm();
     normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
     return normal;
 }
@@ -150,7 +150,7 @@ putslam::Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage,
     putslam::Vec3 grad;
 	cv::Mat grayframe;
 	cv::cvtColor(rgbImage, grayframe, CV_RGB2GRAY);
-    putslam::float_type gradx; putslam::float_type grady;
+    double gradx; double grady;
     if ((u-1>0)&&(v-1>0)&&(u+1<rgbImage.cols)&&(v+1<rgbImage.rows)){
         cv::Mat patch = cv::Mat(rgbImage, cv::Rect(u-1,v-1,3,3));
         gradx = -3*patch.at<uint16_t>(0,0)-10*patch.at<uint16_t>(0,1)-3*patch.at<uint16_t>(0,2) +
@@ -161,7 +161,7 @@ putslam::Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage,
     else {
         return putslam::Vec3(1, 1, 1);
     }
-    putslam::float_type angle = atan2(grady, gradx) + (M_PI/2.0);
+    double angle = atan2(grady, gradx) + (M_PI/2.0);
     int coord1[2]={int(sqrt(2)*sin(angle)), int(sqrt(2)*cos(angle))};
     int coord2[2]={int(sqrt(2)*sin(angle+M_PI)), int(sqrt(2)*cos(angle+M_PI))};
     Eigen::Vector3f pointCenter = point2Dto3D(cv::Point2f((float)u, (float)v),depthImage, cameraMatrix, depthImageScale);
@@ -181,7 +181,7 @@ putslam::Vec3 RGBD::computeRGBGradient(const cv::Mat& rgbImage,
             grad = putslam::Vec3(coord1[0], coord1[1], 0);
         }
     }
-    putslam::float_type norm = grad.vector().norm();
+    double norm = grad.vector().norm();
     grad.x() /= norm;    grad.y() /= norm;    grad.z() /= norm;
     return grad;
 }
@@ -202,12 +202,12 @@ void RGBD::removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 
 void RGBD::removeMapFeaturesWithoutDepth(std::vector<putslam::MapFeature> &features,
 		cv::Mat depthImage, float additionalDistance,
-        std::vector<int> &frameIds, std::vector<putslam::float_type> &angles,
+        std::vector<int> &frameIds, std::vector<double> &angles,
 		double depthImageScale) {
 
     std::vector<putslam::MapFeature>::iterator featuresIter = features.begin();
 	std::vector<int>::iterator frameIdsIter = frameIds.begin();
-    std::vector<putslam::float_type>::iterator anglesIter = angles.begin();
+    std::vector<double>::iterator anglesIter = angles.begin();
 
 	for (;featuresIter!=features.end();)
     {

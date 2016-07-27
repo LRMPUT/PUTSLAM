@@ -265,7 +265,7 @@ float RANSAC::computeMatchInlierRatioEuclidean(
 		Eigen::Vector3f estimatedOldPosition = R * features[it->trainIdx] + t;
 
 		// Compute residual error and compare it to inlier threshold
-		float_type threshold = RANSACParams.inlierThresholdEuclidean;
+        double threshold = RANSACParams.inlierThresholdEuclidean;
 		if (RANSACParams.errorVersion == ADAPTIVE_ERROR)
 			threshold *= prevFeatures[it->queryIdx].z();
 		if ((estimatedOldPosition - prevFeatures[it->queryIdx]).norm()

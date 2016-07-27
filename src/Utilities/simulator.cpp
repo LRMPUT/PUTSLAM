@@ -8,7 +8,7 @@ Simulator::Simulator(void){
 }
 
 ///create environment -- room(walls,floor, ceiling)
-void Simulator::createRoom(size_t pointsNo, float_type width, float_type length, float_type height){
+void Simulator::createRoom(size_t pointsNo, double width, double length, double height){
     environment.clear();
     std::uniform_real_distribution<double> distributionWidth(-width/2.0, width/2.0);
     std::uniform_real_distribution<double> distributionLength(-length/2.0, length/2.0);
@@ -37,7 +37,7 @@ void Simulator::createRoom(size_t pointsNo, float_type width, float_type length,
 }
 
 ///create environment -- random patches
-void Simulator::createEnvironment(size_t pointsNo, float_type width, float_type length, float_type height){
+void Simulator::createEnvironment(size_t pointsNo, double width, double length, double height){
     environment.clear();
     std::uniform_real_distribution<double> distributionWidth(-width/2.0, width/2.0);
     std::uniform_real_distribution<double> distributionLength(-length/2.0, length/2.0);

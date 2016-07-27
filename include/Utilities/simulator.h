@@ -19,9 +19,9 @@ public:
     ~Simulator(){}
 
     /// create environment -- room(walls,floor, ceiling)
-    void createRoom(size_t pointsNo, float_type width, float_type length, float_type height);
+    void createRoom(size_t pointsNo, double width, double length, double height);
     /// create environment -- random patches
-    void createEnvironment(size_t pointsNo, float_type width, float_type length, float_type height);
+    void createEnvironment(size_t pointsNo, double width, double length, double height);
     /// load environment from file
     void loadEnvironment(std::string filename);
     /// run experiment and return a sequence of point clouds

@@ -185,14 +185,14 @@ bool GlobalGraph::optimize(int_fast32_t maxIterations, int verbose, double minim
 }
 
 /// Removes weak edes (with error bigger than threshold
-bool GlobalGraph::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
+bool GlobalGraph::optimizeAndPrune(double threshold, unsigned int singleIteration, int verbose){
     std::cout << threshold << singleIteration << verbose << "\n";
     throw std::runtime_error("Opt and prune not implemented\n");
 	return true;
 }
 
 /// Removes weak edes (with error bigger than threshold
-bool GlobalGraph::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
+bool GlobalGraph::optimizeAndPrune2(double threshold, unsigned int singleIteration, int verbose){
     std::cout << threshold << singleIteration << verbose << "\n";
     throw std::runtime_error("Oopt and prune not implemented\n");
 	return true;

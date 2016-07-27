@@ -54,7 +54,7 @@ void Matcher::detectInitFeatures(const SensorFrame &sensorData) {
 
 	prevDetDists.clear();
 	for(std::vector<Eigen::Vector3f>::size_type i = 0; i < prevFeatures3D.size(); ++i){
-		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
+        double dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
 									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
 									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
 
@@ -100,8 +100,8 @@ void Matcher::mergeTrackedFeatures(
 		const std::vector<Eigen::Vector3f>& features3DSandBox,
 		std::vector<cv::KeyPoint>& keyPoints,
 		const std::vector<cv::KeyPoint>& keyPointsSandBox,
-		std::vector<float_type>& detDists,
-		const std::vector<float_type>& detDistsSandBox)
+        std::vector<double>& detDists,
+        const std::vector<double>& detDistsSandBox)
 {
 
 	// Merging features - rejecting feature too close to existing ones
@@ -136,7 +136,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	std::vector<cv::Point2f> undistortedFeatures2D, distortedFeatures2D;
 	cv::Mat descriptors;
 	std::vector<cv::KeyPoint> keyPoints;
-	std::vector<float_type> detDists;
+    std::vector<double> detDists;
 	std::vector<Eigen::Vector3f> features3D;
 	std::vector<cv::DMatch> matches;
 
@@ -233,9 +233,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 						featuresSandBoxUndistorted, sensorData.depthImage,
 						matcherParameters.cameraMatrixMat, sensorData.depthImageScale);
 
-		std::vector<float_type> detDistsSandbox;
+        std::vector<double> detDistsSandbox;
 		for(std::vector<Eigen::Vector3f>::size_type i = 0; i < features3DSandbox.size(); ++i){
-			float_type dist = std::sqrt(features3DSandbox[i][0]*features3DSandbox[i][0] +
+            double dist = std::sqrt(features3DSandbox[i][0]*features3DSandbox[i][0] +
 										features3DSandbox[i][1]*features3DSandbox[i][1] +
 										features3DSandbox[i][2]*features3DSandbox[i][2]);
 
@@ -289,11 +289,11 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 		//Compute predicted scale
 		for(std::vector<cv::KeyPoint>::size_type i = 0; i < descKeyPoints.size(); ++i){
 			int detLevel = descKeyPoints[i].octave;
-			float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
-			float_type curDist = std::sqrt(features3D[i][0]*features3D[i][0] +
+            double detLevelScaleFactor = pow(scaleFactor, detLevel);
+            double curDist = std::sqrt(features3D[i][0]*features3D[i][0] +
 									features3D[i][1]*features3D[i][1] +
 									features3D[i][2]*features3D[i][2]);
-			float_type curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
+            double curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
 
 			//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
 			int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
@@ -314,7 +314,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
 			std::vector<Eigen::Vector3f> tmp3D;
 			std::vector<cv::KeyPoint> tmpKeyPoints;
-			std::vector<float_type> tmpDetDists;
+            std::vector<double> tmpDetDists;
 
 			for(std::vector<int>::size_type l = 0; l < keyPointsLevel.size(); ++l){
 				for(std::vector<int>::size_type i = 0; i < keyPointsLevel[l].size(); ++i){
@@ -352,7 +352,7 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
 			std::vector<Eigen::Vector3f> tmp3D;
 			std::vector<cv::KeyPoint> tmpKeyPoints;
-			std::vector<float_type> tmpDetDists;
+            std::vector<double> tmpDetDists;
 
 			for(std::vector<cv::KeyPoint>::size_type i=0, j=0;i<keyPoints.size();i++) {
 //				std::cout << "i = " << i << ", j = " << j << std::endl;
@@ -664,7 +664,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 	prevDetDists.clear();
 	for(std::vector<Eigen::Vector3f>::size_type i = 0; i < prevFeatures3D.size(); ++i){
-		float_type dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
+        double dist = std::sqrt(prevFeatures3D[i][0]*prevFeatures3D[i][0] +
 									prevFeatures3D[i][1]*prevFeatures3D[i][1] +
 									prevFeatures3D[i][2]*prevFeatures3D[i][2]);
 
@@ -689,7 +689,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		cv::Mat currentPoseDescriptors,
 		std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
 		std::vector<cv::KeyPoint>& currentPoseKeyPoints,
-		std::vector<float_type>& currentPoseDetDists,
+        std::vector<double>& currentPoseDetDists,
 		std::vector<int> frameIds)
 {
 
@@ -714,9 +714,9 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	//Compute predicted scale
 	for(std::vector<cv::KeyPoint>::size_type i = 0; i < currentPoseKeyPoints.size(); ++i){
 		int detLevel = currentPoseKeyPoints[i].octave;
-		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
-		float_type curDist = currentPoseFeatures3D[i].norm();
-		float_type curLevelScaleFactor = detLevelScaleFactor * currentPoseDetDists[i] / curDist;
+        double detLevelScaleFactor = pow(scaleFactor, detLevel);
+        double curDist = currentPoseFeatures3D[i].norm();
+        double curLevelScaleFactor = detLevelScaleFactor * currentPoseDetDists[i] / curDist;
 
 		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
 		int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
@@ -757,12 +757,12 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 
 		//Compute predicted scale
 		int& detLevel = it->descriptors[mapFeatureClosestFrameId].octave;
-		float_type detLevelScaleFactor = pow(scaleFactor, detLevel);
-		float_type& detDist = it->descriptors[mapFeatureClosestFrameId].detDist;
-		float_type curDist = std::sqrt(it->position.vector()[0]*it->position.vector()[0] +
+        double detLevelScaleFactor = pow(scaleFactor, detLevel);
+        double& detDist = it->descriptors[mapFeatureClosestFrameId].detDist;
+        double curDist = std::sqrt(it->position.vector()[0]*it->position.vector()[0] +
 										it->position.vector()[1]*it->position.vector()[1] +
 										it->position.vector()[2]*it->position.vector()[2]);
-		float_type curLevelScaleFactor = detLevelScaleFactor * detDist / curDist;
+        double curLevelScaleFactor = detLevelScaleFactor * detDist / curDist;
 		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
 		int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
 		curLevel = std::max(0, curLevel);
@@ -887,7 +887,7 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 //			cv::Mat currentPoseDescriptors,
 //			std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
 //			std::vector<cv::KeyPoint>& currentPoseKeyPoints,
-//			std::vector<float_type>& currentPoseDetDists,
+//			std::vector<double>& currentPoseDetDists,
 //			std::vector<int> frameIds)
 
 	std::cout << "Called matchFeatureLoopClosure! Sizes: "
@@ -992,7 +992,7 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 		std::vector<cv::Point2f>& undistortedFeatures2D,
 		std::vector<Eigen::Vector3f> &features3D,
 		std::vector<cv::KeyPoint>& keyPoints,
-		std::vector<float_type>& detDists,
+        std::vector<double>& detDists,
 		std::vector<cv::DMatch> &matches)
 {
 
@@ -1057,7 +1057,7 @@ std::set<int> Matcher::removeTooCloseFeatures(std::vector<cv::Point2f>& distorte
 	count = 0;
 	detDists.erase(
 			std::remove_if(detDists.begin(), detDists.end(),
-					[&](const float_type & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
+                    [&](const double & /*o*/) {return featuresToRemove.find(count++) != featuresToRemove.end();}),
 			detDists.end());
 
 
@@ -1208,9 +1208,9 @@ Matcher::featureSet Matcher::getFeatures() {
 //				sensorFrames[i].depthImageScale);
 //
 //		//Compute distance at which feature was detected
-//		std::vector<float_type> detDists(features3D[i].size());
+//		std::vector<double> detDists(features3D[i].size());
 //		for(std::vector<Eigen::Vector3f>::size_type j = 0; j < features3D[i].size(); ++j){
-//			float_type dist = std::sqrt(features3D[i][j][0]*features3D[i][j][0] +
+//			double dist = std::sqrt(features3D[i][j][0]*features3D[i][j][0] +
 //										features3D[i][j][1]*features3D[i][j][1] +
 //										features3D[i][j][2]*features3D[i][j][2]);
 //			detDists[j] = dist;

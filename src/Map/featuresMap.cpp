@@ -139,8 +139,8 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
 		}
         else if ( config.optimizationErrorType == Config::OptimizationErrorType::REPROJECTION) {
 			//std::cout<<"Edge 3DReproj -- Reprojection error" << std::endl;
-			//Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
-        	Edge3DReproj e(it->u, it->v, Eigen::Matrix<float_type, 2, 2>::Identity(), poseId, featureIdNo);
+            //Edge3DReproj e(it->u, it->v, Eigen::Matrix<double, 2, 2>::Identity(), camTrajSize - 1, featureIdNo);
+            Edge3DReproj e(it->u, it->v, Eigen::Matrix<double, 2, 2>::Identity(), poseId, featureIdNo);
         	poseGraph->addEdge3DReproj(e);
 		}
         else{
@@ -165,7 +165,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
 }
 
 /// add new pose of the camera, returns id of the new pose
-int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image, cv::Mat depthImage) {
+int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, double timestamp, cv::Mat image, cv::Mat depthImage) {
     int trajSize = (int)camTrajectory.size();
 
     //add camera pose to the map
@@ -404,7 +404,7 @@ Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 
 /// get all visible features and reduce results
 std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
-        const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold) {
+        const Mat34& cameraPose, int graphDepthThreshold, double distanceThreshold) {
     std::vector<int> neighborsIds;
     //we don't have to use graph since SE3 vertex have nly one following vertex (all vertices create camera trajectory)
     //poseGraph->findNearestNeighbors(camTrajectory.size()-1, graphDepthThreshold, neighborsIds);
@@ -418,7 +418,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
     // Euclidean distance threshold
     for (std::vector<int>::iterator it = neighborsIds.begin();it!=neighborsIds.end();){
         Mat34 sensorPose = getSensorPose(*it);
-        float_type dist = pow(cameraPose(0,3)-sensorPose(0,3),2.0) + pow(cameraPose(1,3)-sensorPose(1,3),2.0) + pow(cameraPose(2,3)-sensorPose(2,3),2.0);
+        double dist = pow(cameraPose(0,3)-sensorPose(0,3),2.0) + pow(cameraPose(1,3)-sensorPose(1,3),2.0) + pow(cameraPose(2,3)-sensorPose(2,3),2.0);
        // std::cout << "id: " << *it <<  " dist: " << dist << " thresh " << distanceThreshold << "\n";
         if (dist>distanceThreshold){
          //   std::cout << "erase\n";
@@ -511,7 +511,7 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
 }
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle){
+void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<double>& angles, double maxAngle){
     Mat34 currentCameraPose = getSensorPose();
     imageIds.resize(features.size(),-1);
     angles.resize(features.size());
@@ -520,7 +520,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
             Mat34 featureGlob(Vec3(features[i].position.x(), features[i].position.y(), features[i].position.z())*Quaternion(1,0,0,0));
             Mat34 featureInCamCurr = featureGlob.inverse()*currentCameraPose;
             Eigen::Vector3f featureViewCurr((float)featureInCamCurr(0,2), (float)featureInCamCurr(1,2), (float)featureInCamCurr(2,2));
-            float_type minRot=10; int idMin=-1;
+            double minRot=10; int idMin=-1;
             //find the smallest angle between two views (max dot product)
             imageIds[i]=-1;
             for (size_t j=0; j<features[i].posesIds.size();j++){
@@ -528,7 +528,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
                 Mat34 camPose = getSensorPose(features[i].posesIds[j]);
                 Mat34 featureInCam = featureGlob.inverse()*camPose;
                 Eigen::Vector3f featureView((float)featureInCam(0,2), (float)featureInCam(1,2), (float)featureInCam(2,2));
-                float_type angle = acos(featureView.dot(featureViewCurr)/(featureView.norm()*featureViewCurr.norm()));
+                double angle = acos(featureView.dot(featureViewCurr)/(featureView.norm()*featureViewCurr.norm()));
                 if (fabs(angle)<minRot){
                     minRot = angle;
                     idMin = (int)j;
@@ -543,7 +543,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
 }
 
 /// removes features which are too far from current camera pose (distant in graph)
-void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold, float_type distanceThreshold){
+void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold, double distanceThreshold){
     std::vector<int> neighborsIds;
     //we don't have to use graph since SE3 vertex have nly one following vertex (all vertices create camera trajectory)
     //poseGraph->findNearestNeighbors(camTrajectory.size()-1, graphDepthThreshold, neighborsIds);
@@ -558,7 +558,7 @@ void FeaturesMap::removeDistantFeatures(std::vector<MapFeature>& mapFeatures, in
     // Euclidean distance threshold
     for (std::vector<int>::iterator it = neighborsIds.begin();it!=neighborsIds.end();){
         Mat34 sensorPose = getSensorPose(*it);
-        float_type dist = pow(currPose(0,3)-sensorPose(0,3),2.0) + pow(currPose(1,3)-sensorPose(1,3),2.0) + pow(currPose(2,3)-sensorPose(2,3),2.0);
+        double dist = pow(currPose(0,3)-sensorPose(0,3),2.0) + pow(currPose(1,3)-sensorPose(1,3),2.0) + pow(currPose(2,3)-sensorPose(2,3),2.0);
         if (dist>distanceThreshold){
             it = neighborsIds.erase(it);
         }
@@ -614,7 +614,7 @@ int FeaturesMap::getPoseCounter() {
 
 /// start optimization thread
 void FeaturesMap::startOptimizationThread(unsigned int iterNo, int verbose,
-		std::string RobustKernelName, float_type kernelDelta) {
+        std::string RobustKernelName, double kernelDelta) {
 	optimizationThr.reset(
 			new std::thread(&FeaturesMap::optimize, this, iterNo, verbose,
 					RobustKernelName, kernelDelta));
@@ -694,7 +694,7 @@ void FeaturesMap::manage(int verbose){
         for (std::map<int,MapFeature>::iterator itFeature1 = featuresMapManagement.begin(); itFeature1!=featuresMapManagement.end(); itFeature1++){
             for (std::map<int,MapFeature>::iterator itFeature2 = itFeature1; itFeature2!=featuresMapManagement.end(); itFeature2++){
                 if (itFeature1->first!=itFeature2->first){
-                    float_type dist = sqrt(pow(itFeature1->second.position.x()-itFeature2->second.position.x(),2.0) + pow(itFeature1->second.position.y()-itFeature2->second.position.y(),2.0) + pow(itFeature1->second.position.z()-itFeature2->second.position.z(),2.0));
+                    double dist = sqrt(pow(itFeature1->second.position.x()-itFeature2->second.position.x(),2.0) + pow(itFeature1->second.position.y()-itFeature2->second.position.y(),2.0) + pow(itFeature1->second.position.z()-itFeature2->second.position.z(),2.0));
                     if (dist<config.distThreshold)
                     {
                         std::cout << "features " << itFeature1->second.id << " and " << itFeature2->second.id << " are too close\n";
@@ -870,7 +870,7 @@ void FeaturesMap::setStoreImages(bool storeImages){
 
 /// optimization thread
 void FeaturesMap::optimize(unsigned int iterNo, int verbose,
-		std::string RobustKernelName, float_type kernelDelta) {
+        std::string RobustKernelName, double kernelDelta) {
 	// graph optimization
 	continueOpt = true;
 
@@ -1259,7 +1259,7 @@ void FeaturesMap::save2file(std::string mapFilename,
 }
 
 /// computes std and mean from float vector
-void FeaturesMap::computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max){
+void FeaturesMap::computeMeanStd(const std::vector<double>& v, double& mean, double& std, double& max){
     double sum = std::accumulate(v.begin(), v.end(), 0.0);
     mean = sum / (double)v.size();
     max=-10;
@@ -1316,10 +1316,10 @@ void FeaturesMap::plotFeaturesOnImage(std::string filename, unsigned int frameId
 void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameData){
     std::ofstream file(filenamePlot);
     file << "close all;\nclear all;\nhold on;\n";
-    //std::vector<float_type> meanX, meanY, meanZ;
-    std::vector<float_type> meanDist, stdevDist;
-    std::vector<float_type> maxDist;
-    std::vector<float_type> measurementsNo;
+    //std::vector<double> meanX, meanY, meanZ;
+    std::vector<double> meanDist, stdevDist;
+    std::vector<double> maxDist;
+    std::vector<double> measurementsNo;
     for (int i=FEATURES_START_ID;i<(int)featureIdNo;i++){
         std::vector<Edge3D> features;
         Vec3 estimation;
@@ -1331,24 +1331,24 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
             file << *it << "(" << tmpFeature.imageCoordinates[*it].u << "," << tmpFeature.imageCoordinates[*it].v << "), ";
         }
         file << "\n";
-        std::vector<float_type> dist4estim;
-        measurementsNo.push_back((float_type)features.size());
+        std::vector<double> dist4estim;
+        measurementsNo.push_back((double)features.size());
         if (features.size()>0){ //how come?
             //std::cout << "dist:\n";
-            float_type sumPos[3]={0,0,0};
+            double sumPos[3]={0,0,0};
             // compute the center of mass
             for (int j=0;j<(int)features.size();j++){
                 sumPos[0]+=features[j].trans.x(); sumPos[1]+=features[j].trans.y(); sumPos[2]+=features[j].trans.z();
             }
-            estimation.x()=sumPos[0]/(float_type)features.size(); estimation.y()=sumPos[1]/(float_type)features.size(); estimation.z()=sumPos[2]/(float_type)features.size();
+            estimation.x()=sumPos[0]/(double)features.size(); estimation.y()=sumPos[1]/(double)features.size(); estimation.z()=sumPos[2]/(double)features.size();
             file << "plot3(" << estimation.x() << "," << estimation.y() << "," << estimation.z() << ",'ro');\n";
             for (int j=0;j<(int)features.size();j++){
-                float_type dist = sqrt(pow(features[j].trans.x()-estimation.x(),2.0)+pow(features[j].trans.y()-estimation.y(),2.0)+pow(features[j].trans.z()-estimation.z(),2.0));
+                double dist = sqrt(pow(features[j].trans.x()-estimation.x(),2.0)+pow(features[j].trans.y()-estimation.y(),2.0)+pow(features[j].trans.z()-estimation.z(),2.0));
                 //std::cout << dist << ", ";
                 dist4estim.push_back(dist);
                 file << "plot3(" << features[j].trans.x() << "," << features[j].trans.y() << "," << features[j].trans.z() << ",'bx');\n";
             }
-            float_type mean, std, max;
+            double mean, std, max;
             computeMeanStd(dist4estim, mean, std, max); meanDist.push_back(mean); stdevDist.push_back(std); maxDist.push_back(max);
 //            if (max>0.2){
 //                std::cout << "dist:\n";
@@ -1374,29 +1374,29 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
         }
     }
     ///move along trajectory and compute projection of features
-    std::vector<float_type> meanDistU; std::vector<float_type> meanDistV;
-    std::vector<float_type> maxDistU; std::vector<float_type> maxDistV;
+    std::vector<double> meanDistU; std::vector<double> meanDistV;
+    std::vector<double> maxDistU; std::vector<double> maxDistV;
     int iterFrame=0;
     for (auto it = camTrajectory.begin(); it!=camTrajectory.end();it++){
-        float_type meanU = 0; float_type meanV = 0;
-        float_type maxU = 0; float_type maxV = 0;
+        double meanU = 0; double meanV = 0;
+        double maxU = 0; double maxV = 0;
         int featuresNo = 0;
         for (auto itFeat=camTrajectory[iterFrame].featuresIds.begin();itFeat!=camTrajectory[iterFrame].featuresIds.end();itFeat++){
             std::vector<Edge3D> features;
             Vec3 estimation;
             ((PoseGraphG2O*)poseGraph)->getMeasurements(*itFeat, features, estimation);
             // compute the center of mass
-            float_type sumPos[3]={0,0,0};
+            double sumPos[3]={0,0,0};
             for (int j=0;j<(int)features.size();j++){
                 sumPos[0]+=features[j].trans.x(); sumPos[1]+=features[j].trans.y(); sumPos[2]+=features[j].trans.z();
             }
-            estimation.x()=sumPos[0]/(float_type)features.size(); estimation.y()=sumPos[1]/(float_type)features.size(); estimation.z()=sumPos[2]/(float_type)features.size();
+            estimation.x()=sumPos[0]/(double)features.size(); estimation.y()=sumPos[1]/(double)features.size(); estimation.z()=sumPos[2]/(double)features.size();
             //estimation pose in camera frame
             Mat34 feature(Quaternion(1,0,0,0)*estimation);
             Mat34 featInCam = camTrajectory[iterFrame].pose.inverse()*feature;
             Eigen::Vector3d featCam = sensorModel.inverseModel(featInCam(0,3), featInCam(1,3), featInCam(2,3));
-            float_type meanFeatU = 0; float_type meanFeatV = 0;
-            float_type maxFeatU = -10; float_type maxFeatV = -10;
+            double meanFeatU = 0; double meanFeatV = 0;
+            double maxFeatU = -10; double maxFeatV = -10;
             if (featCam(0)>0&&featCam(1)>1){/// for all measurements of the feature
                 int measNo=0;
                 for (int j=0;j<(int)features.size();j++){
@@ -1404,8 +1404,8 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
                     Mat34 featLocalInCam = camTrajectory[iterFrame].pose.inverse()*featureLocal;
                     Eigen::Vector3d featLocalCam = sensorModel.inverseModel(featLocalInCam(0,3), featLocalInCam(1,3), featLocalInCam(2,3));
                     if (featLocalCam(0)>0&&featLocalCam(1)>1){
-                        float_type distU = fabs(featLocalCam(0)-featCam(0));
-                        float_type distV = fabs(featLocalCam(1)-featCam(1));
+                        double distU = fabs(featLocalCam(0)-featCam(0));
+                        double distV = fabs(featLocalCam(1)-featCam(1));
                         meanFeatU+=distU; meanFeatV+=distV;
                         if (distU>maxFeatU) maxFeatU = distU;
                         if (distV>maxFeatV) maxFeatV = distV;
@@ -1427,7 +1427,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
     file.close();
     std::ofstream fileData(filenameData);
     fileData << "\nclear all;\n";
-    float_type mean, std, max;
+    double mean, std, max;
     computeMeanStd(measurementsNo, mean, std, max);
     fileData << "featuresNo = " << featureIdNo - FEATURES_START_ID << "\n";
     fileData << "meanMeasurementsNo = " << mean << "\n";
@@ -1489,7 +1489,7 @@ void FeaturesMap::plotFeatures(std::string filenamePlot, std::string filenameDat
 }
 
 /// set Robust Kernel
-void FeaturesMap::setRobustKernel(std::string name, float_type delta) {
+void FeaturesMap::setRobustKernel(std::string name, double delta) {
 	((PoseGraphG2O*) poseGraph)->setRobustKernel(name, delta);
 }
 

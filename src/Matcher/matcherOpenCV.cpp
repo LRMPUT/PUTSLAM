@@ -211,8 +211,8 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 		std::vector<cv::Point2f> &features,
 		std::vector<cv::KeyPoint>& prevKeyPoints,
 		std::vector<cv::KeyPoint>& keyPoints,
-		std::vector<float_type>& prevDetDists,
-		std::vector<float_type>& detDists) {
+        std::vector<double>& prevDetDists,
+        std::vector<double>& detDists) {
 
 	// Some needed variables
 	std::vector<uchar> status;
@@ -269,7 +269,7 @@ std::vector<cv::DMatch> MatcherOpenCV::performTracking(cv::Mat prevImg,
 	std::vector<cv::DMatch> matches;
 	std::vector<cv::Point2f>::iterator itFeatures = features.begin();
 	std::vector<cv::KeyPoint>::iterator itKeyPoints = keyPoints.begin();
-	std::vector<float_type>::iterator itDetDists = detDists.begin();
+    std::vector<double>::iterator itDetDists = detDists.begin();
 	std::vector<uchar>::iterator it = status.begin();
 	for (; it != status.end(); ++it, i++) {
 

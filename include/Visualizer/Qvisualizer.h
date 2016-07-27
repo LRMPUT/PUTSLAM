@@ -282,7 +282,7 @@ private:
     GLuint createCloudList(const std::pair<int,PointCloud>& pointCloud);
 
     /// Draw ellipsoid
-    void drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const;
+    void drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, double fA, double fB, double fC) const;
 
     /// Draw ellipsoid
     void drawEllipsoid(const Vec3& pos, const Mat33& covariance) const;

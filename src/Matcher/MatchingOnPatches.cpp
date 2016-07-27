@@ -12,7 +12,7 @@ MatchingOnPatches::MatchingOnPatches(parameters _parameters) {
 }
 
 std::vector<double> MatchingOnPatches::computePatch(cv::Mat img,
-		putslam::float_type x, putslam::float_type y) {
+        double x, double y) {
 	std::vector<double> patch;
 
 	// Assert grayscale
@@ -50,8 +50,8 @@ std::vector<double> MatchingOnPatches::computePatch(cv::Mat img,
 	return patch;
 }
 
-void MatchingOnPatches::computeGradient(cv::Mat img, putslam::float_type x,
-		putslam::float_type y, Eigen::Matrix3f &InvHessian,
+void MatchingOnPatches::computeGradient(cv::Mat img, double x,
+        double y, Eigen::Matrix3f &InvHessian,
 		std::vector<float> &gradientX, std::vector<float> &gradientY) {
 
 	// Assert grayscale
@@ -100,7 +100,7 @@ void MatchingOnPatches::computeGradient(cv::Mat img, putslam::float_type x,
 
 bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 		std::vector<double> oldPatch, cv::Mat newImg,
-		putslam::float_type &newX, putslam::float_type &newY,
+        double &newX, double &newY,
 		std::vector<float> gradientX, std::vector<float> gradientY,
 		Eigen::Matrix3f &InvHessian) {
 
@@ -116,7 +116,7 @@ bool MatchingOnPatches::optimizeLocation(cv::Mat oldImg,
 	assertGrayscale(oldImg);
 	assertGrayscale(newImg);
 
-	putslam::float_type startingX = newX, startingY = newY;
+    double startingX = newX, startingY = newY;
 	// Iterations of Gauss-Newton
 	double mean = 0;
 	for (int iter = 0; iter < params.maxIter; iter++) {

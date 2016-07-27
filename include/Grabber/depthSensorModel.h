@@ -17,27 +17,27 @@ using namespace putslam;
 class DepthSensorModel {
   public:
     /// Construction
-    DepthSensorModel() {};
+    DepthSensorModel() {}
 
     /// Construction
     DepthSensorModel(std::string configFile);
 
-    void getPoint(float_type u, float_type v, float_type depth, Eigen::Vector3d& point3D) const;
+    void getPoint(double u, double v, double depth, Eigen::Vector3d& point3D) const;
 
     /// inverse model of the sensor
-    Eigen::Vector3d inverseModel(float_type x, float_type y, float_type z) const;
+    Eigen::Vector3d inverseModel(double x, double y, double z) const;
 
     /// u,v [px], depth [m]
-    void computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov);
+    void computeCov(uint_fast16_t u, uint_fast16_t v, double depth, Mat33& cov);
 
     /// point xyz in camera frame
     void computeCov(Eigen::Vector3f point, Mat33& cov);
 
     /// compute information matrix
-    Mat33 informationMatrix(float_type x, float_type y, float_type z);
+    Mat33 informationMatrix(double x, double y, double z);
 
     /// compute information matrix using image coordinates
-    Mat33 informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z);
+    Mat33 informationMatrixFromImageCoordinates(double u, double v, double z);
 
     /// Create point cloud from current RGB and depth image
     void convert2cloud(const cv::Mat& color, const cv::Mat& depth, PointCloud& cloud);
@@ -126,15 +126,15 @@ class DepthSensorModel {
         }
         public:
         	int verbose;
-            float_type focalLength[2];
-            float_type focalAxis[2];
-            float_type varU, varV;// variance u,v
-            float_type distVarCoefs[4];
+            double focalLength[2];
+            double focalAxis[2];
+            double varU, varV;// variance u,v
+            double distVarCoefs[4];
             int imageSize[2];//[sizeU, sizeV]
             Mat34 pose; // kinect pose in robot's coordination frame
-            float_type scaleUncertaintyNormal;
-            float_type scaleUncertaintyGradient;
-            float_type depthImageScale;
+            double scaleUncertaintyNormal;
+            double scaleUncertaintyGradient;
+            double depthImageScale;
     };
 
     Config config;

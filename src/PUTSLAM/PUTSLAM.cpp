@@ -607,7 +607,7 @@ Eigen::Matrix4f PUTSLAM::getPoseIncrementFromMap(int frameCounter) {
 }
 
 std::vector<MapFeature> PUTSLAM::getAndFilterFeaturesFromMap(SensorFrame &currentSensorFrame, Mat34 cameraPose,std::vector<int> &frameIds,
-std::vector<float_type> &angles ) {
+std::vector<double> &angles ) {
 
 	Stopwatch<> tmp;
 	tmp.start();
@@ -726,7 +726,7 @@ void PUTSLAM::startProcessing() {
 				// Get and filter the visible features
 				// Find the ids of frames for which feature observations have the most similar angle
 				std::vector<int> frameIds;
-				std::vector<float_type> angles;
+                std::vector<double> angles;
 				mapFeatures = getAndFilterFeaturesFromMap(currentSensorFrame, cameraPose, frameIds, angles);
 
 
@@ -907,7 +907,7 @@ void PUTSLAM::startProcessing() {
 
 void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 		std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
-		std::vector<float_type> &angles) {
+        std::vector<double> &angles) {
 	auto mapFeaturesIter = mapFeatures.begin();
 	auto frameIdsIter = frameIds.begin();
 	auto anglesIter = angles.begin();
@@ -1030,7 +1030,7 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 	file.close();
 }
 
-void PUTSLAM::saveFPS(float_type fps) {
+void PUTSLAM::saveFPS(double fps) {
 	ofstream fileFPS;
 	fileFPS.open("fps.res");
 	fileFPS << fps;

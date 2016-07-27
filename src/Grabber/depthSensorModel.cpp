@@ -10,13 +10,13 @@ DepthSensorModel::DepthSensorModel(std::string configFile) : config(configFile){
             0, 0, 0;
 }
 
-void DepthSensorModel::getPoint(float_type u, float_type v, float_type depth, Eigen::Vector3d& point3D) const{
+void DepthSensorModel::getPoint(double u, double v, double depth, Eigen::Vector3d& point3D) const{
     Eigen::Vector3d point((double)u,(double)v, 1.0);
     point3D = depth*PHCPModel*point;
 }
 
-Eigen::Vector3d DepthSensorModel::inverseModel(float_type x, float_type y,
-		float_type z) const {
+Eigen::Vector3d DepthSensorModel::inverseModel(double x, double y,
+        double z) const {
     Eigen::Vector3d point(((config.focalLength[0]*x)/z)+config.focalAxis[0], ((config.focalLength[1]*y)/z)+config.focalAxis[1], z);
     if (point(0)<0||point(0)>config.imageSize[0]||point(1)<0||point(1)>config.imageSize[1]||z<0.8||z>6.0){
         point(0) = -1; point(1) = -1; point(2) = -1;
@@ -25,8 +25,8 @@ Eigen::Vector3d DepthSensorModel::inverseModel(float_type x, float_type y,
 }
 
 /// u,v [px], depth [m]
-void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, float_type depth, Mat33& cov) {
-    //float_type dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
+void DepthSensorModel::computeCov(uint_fast16_t u, uint_fast16_t v, double depth, Mat33& cov) {
+    //double dispDer = config.k3 * 1/(config.k2*pow(cos((disparity/config.k2) + config.k1),2.0));
     Mat33 J;
     J << depth/config.focalLength[0], 0.0, (((double)u/config.focalLength[0])-(config.focalAxis[0]/config.focalLength[0])),
          0.0, depth/config.focalLength[1], (((double)v/config.focalLength[1])-(config.focalAxis[1]/config.focalLength[1])),
@@ -45,14 +45,14 @@ void DepthSensorModel::computeCov(Eigen::Vector3f point, Mat33& cov){
 }
 
 /// compute information matrix
-Mat33 DepthSensorModel::informationMatrix(float_type x, float_type y, float_type z){
+Mat33 DepthSensorModel::informationMatrix(double x, double y, double z){
     Mat33 info;
 	Eigen::Vector3d cam3D = inverseModel(x, y, z);
 	computeCov((unsigned long int)cam3D(0), (unsigned long int)cam3D(1), cam3D(2), info);
     return info.inverse();
 }
 
-Mat33 DepthSensorModel::informationMatrixFromImageCoordinates(float_type u, float_type v, float_type z) {
+Mat33 DepthSensorModel::informationMatrixFromImageCoordinates(double u, double v, double z) {
     Mat33 cov;
     computeCov((unsigned long int)u, (unsigned long int)v, z, cov);
     return cov.inverse();
@@ -96,7 +96,7 @@ Mat33 DepthSensorModel::uncertinatyFromRGBGradient(const Vec3& grad){
 
 /// normalize vector
 void DepthSensorModel::normalizeVector(Vec3& normal) const {
-    float_type norm = normal.vector().norm();
+    double norm = normal.vector().norm();
     normal.x() /= norm;    normal.y() /= norm;    normal.z() /= norm;
 }
 

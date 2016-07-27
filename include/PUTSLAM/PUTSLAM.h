@@ -144,10 +144,10 @@ private:
 	// Remove features that we do not have a good observation angle
 	void removeMapFeaturesWithoutGoodObservationAngle(
 			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
-			std::vector<float_type> &angles);
+            std::vector<double> &angles);
 	std::vector<MapFeature> getAndFilterFeaturesFromMap(
 			SensorFrame &currentSensorFrame, Mat34 cameraPose,
-			std::vector<int> &frameIds, std::vector<float_type> &angles);
+            std::vector<int> &frameIds, std::vector<double> &angles);
 
 	bool removeCloseFeatures(std::vector<RGBDFeature> &existingFeatures,
 			Eigen::Vector3f feature3D, cv::Point2f feature2D, double minEuclideanDistanceOfFeatures, double minImageDistanceOfFeatures);
@@ -156,7 +156,7 @@ private:
 
 	// At finish
 	void saveLogs();
-	void saveFPS(float_type fps);
+    void saveFPS(double fps);
 	void evaluateResults(std::string basePath, std::string datasetName);
 	void saveStatistics();
 

@@ -24,20 +24,17 @@
 /// putslam name space
 namespace putslam {
 
-/// putslam default floating point
-typedef double float_type;
-
 /// 3 element vector class
-typedef Eigen::Translation<float_type, 3> Vec3;
+typedef Eigen::Translation<double, 3> Vec3;
 
 /// Matrix representation of SO(3) group of rotations
-typedef Eigen::Matrix<float_type, 3, 3> Mat33;
+typedef Eigen::Matrix<double, 3, 3> Mat33;
 
 /// Information Matrix of SE(3) transformation
-typedef Eigen::Matrix<float_type, 6, 6> Mat66;
+typedef Eigen::Matrix<double, 6, 6> Mat66;
 
 /// Quaternion representation of SO(3) group of rotations
-typedef Eigen::Quaternion<float_type> Quaternion;
+typedef Eigen::Quaternion<double> Quaternion;
 
 /// Homogeneous representation of SE(3) rigid body transformations
 typedef Eigen::Transform<double, 3, Eigen::Affine> Mat34;
@@ -46,7 +43,7 @@ typedef Eigen::Transform<double, 3, Eigen::Affine> Mat34;
 class Mat44: public Mat34 {
 public:
 	/// rotation
-	float_type scale;
+    double scale;
 
 	/// Default constructor sets the default configuration
 	inline Mat44() :
@@ -57,7 +54,7 @@ public:
 /// 3D point representation
 class Point3D{
 public:
-    float_type x,y,z,r,g,b,a;
+    double x,y,z,r,g,b,a;
 };
 
 /// 3D point cloud representation
@@ -82,7 +79,7 @@ public:
 	PointCloud cloud;
 
 	/// timestamp
-	float_type timestamp;
+    double timestamp;
 
 	/// readCounter
 	int readId;
@@ -100,14 +97,14 @@ public:
 	typedef std::vector<ImageFeature> Seq;
 
 	/// 2D feature location
-    float_type u;
-    float_type v;
+    double u;
+    double v;
 
 	/// Image patch
 	cv::Mat patch;
 
 	/// Depth
-	float_type depth;
+    double depth;
 
 	/// Default constructor
 	inline ImageFeature() :
@@ -115,7 +112,7 @@ public:
 	}
 
     /// Overloaded constructor
-    inline ImageFeature(float_type _u, float_type _v, float_type _depth) :
+    inline ImageFeature(double _u, double _v, double _depth) :
             u(_u), v(_v), depth(_depth) {
     }
 };
@@ -141,17 +138,16 @@ public:
     int octave;
 
     /// distance to the feature at the time it was described
-    float_type detDist;
+    double detDist;
 
 	/// Constructor
 	ExtendedDescriptor(unsigned int _poseId, cv::Point2f _point2D,
 			cv::Point2f _point2DUndist, Vec3 _point3D, cv::Mat _descriptor,
-			int _octave, float_type _detDist) :
+            int _octave, double _detDist) :
 			poseId(_poseId), point2D(_point2D), point2DUndist(_point2DUndist), point3D(
 					_point3D), descriptor(_descriptor), octave(_octave), detDist(
 					_detDist) {
-	}
-	;
+    }
 };
 
 class RGBDFeature {
@@ -163,10 +159,10 @@ public:
 	std::vector<ExtendedDescriptor> descriptors;
 
 	/// feature location on the rgb image
-	float_type u;
+    double u;
 
 	/// feature location on the rgb image
-	float_type v;
+    double v;
 
 	/// normal vector
 	Vec3 normal;
@@ -177,7 +173,7 @@ public:
 	RGBDFeature(void) {
     }
 
-	RGBDFeature(const Vec3 _position, float_type _u, float_type _v,
+    RGBDFeature(const Vec3 _position, double _u, double _v,
 			const std::vector<ExtendedDescriptor> _descriptors) :
 			position(_position), descriptors(_descriptors), u(_u), v(_v) {
 
@@ -200,22 +196,22 @@ public:
 
 	/// Constructor
 	MapFeature() {
-    };
+    }
 
 	/// Constructor
-	MapFeature(unsigned int _id, float_type u, float_type  v,
+    MapFeature(unsigned int _id, double u, double  v,
 			const Vec3 _position, std::vector<unsigned int> _posesIds,
             std::vector<ExtendedDescriptor> _descriptors,
             std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
                     _posesIds), imageCoordinates(_imageCoordinates) {
 		lifeValue = 100000;
-    };
+    }
 
 	/// Constructor
 	MapFeature(unsigned int _id) :
 			id(_id) {
-    };
+    }
 };
 
 /// Key Point
@@ -231,7 +227,7 @@ public:
 	ImageFeature imageFeature;
 
 	/// Keypoint id
-	uint_fast32_t keypointId;
+    unsigned int keypointId;
 
 	/// Default constructor
 	inline KeyPoint() {
@@ -270,10 +266,10 @@ public:
 	unsigned int id;
 
 	/// Node connected by the edge
-	uint_fast32_t toVertexId;
+    unsigned int toVertexId;
 
 	/// Node connected by the edge
-	uint_fast32_t fromVertexId;
+    unsigned int fromVertexId;
 
 	/// Default constructor
 	inline Edge() {
@@ -285,8 +281,8 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline Edge(Type _type, uint_fast32_t _fromVertexId,
-			uint_fast32_t _toVertexId) :
+    inline Edge(Type _type, unsigned int _fromVertexId,
+            unsigned int _toVertexId) :
 			type(_type), toVertexId(_toVertexId), fromVertexId(_fromVertexId) {
 	}
 
@@ -312,7 +308,7 @@ public:
 
 	/// Overloaded constructor
 	inline Edge3D(const Vec3 _trans, const Mat33 _info,
-			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+            unsigned int _fromVertexId, unsigned int _toVertexId) :
 			Edge(EDGE_3D, _fromVertexId, _toVertexId), trans(_trans), info(
 					_info) {
 	}
@@ -328,7 +324,7 @@ public:
 	double u, v;
 
 	/// Information matrix
-	Eigen::Matrix<float_type, 2, 2> info;
+    Eigen::Matrix<double, 2, 2> info;
 
 	/// Default constructor
 	inline Edge3DReproj() :
@@ -336,8 +332,8 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline Edge3DReproj(double _u, double _v, const Eigen::Matrix<float_type, 2, 2> _info,
-			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+    inline Edge3DReproj(double _u, double _v, const Eigen::Matrix<double, 2, 2> _info,
+            unsigned int _fromVertexId, unsigned int _toVertexId) :
 			Edge(EDGE_3D_REPROJ, _fromVertexId, _toVertexId), u(_u), v(_v), info(
 					_info) {
 	}
@@ -353,7 +349,7 @@ public:
 	Eigen::Vector2d trans;
 
 	/// rotation between nodes
-	float_type theta;
+    double theta;
 
 	/// Information matrix
 	Mat33 info;
@@ -364,8 +360,8 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline EdgeSE2(Eigen::Vector2d _trans, float_type _theta, Mat33 _info,
-			uint_fast32_t _fromVertexId, uint_fast32_t _toVertexId) :
+    inline EdgeSE2(Eigen::Vector2d _trans, double _theta, Mat33 _info,
+            unsigned int _fromVertexId, unsigned int _toVertexId) :
 			Edge(EDGE_SE2, _fromVertexId, _toVertexId), trans(_trans), theta(
 					_theta), info(_info) {
 	}
@@ -389,8 +385,8 @@ public:
 	}
 
 	/// Overloaded constructor
-    inline EdgeSE3(Mat34 _trans, Mat66 _info, uint_fast32_t _fromVertexId,
-			uint_fast32_t _toVertexId) :
+    inline EdgeSE3(Mat34 _trans, Mat66 _info, unsigned int _fromVertexId,
+            unsigned int _toVertexId) :
 			Edge(EDGE_SE3, _fromVertexId, _toVertexId), trans(_trans), info(
 					_info) {
 	}
@@ -415,22 +411,22 @@ public:
 	Type type;
 
 	/// Vertex / node id
-	uint_fast32_t vertexId;
+    unsigned int vertexId;
 
 	/// timestamp
-	float_type timestamp;
+    double timestamp;
 
 	/// Default constructor
 	inline Vertex() {
 	}
 
 	/// Overloaded constructor
-	inline Vertex(Type _type, uint_fast32_t _vertexId) :
+    inline Vertex(Type _type, unsigned int _vertexId) :
 			type(_type), vertexId(_vertexId), timestamp(0.0) {
 	}
 
 	/// Overloaded constructor
-	inline Vertex(Type _type, uint_fast32_t _vertexId, float_type _timestamp) :
+    inline Vertex(Type _type, unsigned int _vertexId, double _timestamp) :
 			type(_type), vertexId(_vertexId), timestamp(_timestamp) {
 	}
 };
@@ -449,7 +445,7 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline Vertex3D(uint_fast32_t _vertexId, const Vec3 _pos) :
+    inline Vertex3D(unsigned int _vertexId, const Vec3 _pos) :
 			Vertex(VERTEX3D, _vertexId), keypoint(_pos) {
 	}
 };
@@ -463,7 +459,7 @@ public:
 	Eigen::Vector2d pos;
 
 	/// orientation
-	float_type theta;
+    double theta;
 
 	/// Default constructor
 	inline VertexSE2(void) :
@@ -471,8 +467,8 @@ public:
 	}
 
 	/// Overloaded constructor
-	inline VertexSE2(uint_fast32_t _vertexId, Eigen::Vector2d _pos,
-			float_type _rot) :
+    inline VertexSE2(unsigned int _vertexId, Eigen::Vector2d _pos,
+            double _rot) :
 			Vertex(VERTEXSE2, _vertexId), pos(_pos), theta(_rot) {
 	}
 };
@@ -502,12 +498,12 @@ public:
 	}
 
 	/// Overloaded constructor
-    inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose) :
+    inline VertexSE3(unsigned int _vertexId, const Mat34 _pose) :
             Vertex(VERTEXSE3, _vertexId), pose(_pose), isKeyframe(false) {
 	}
 
 	/// Overloaded constructor
-    inline VertexSE3(uint_fast32_t _vertexId, const Mat34 _pose, float_type timestamp) :
+    inline VertexSE3(unsigned int _vertexId, const Mat34 _pose, double timestamp) :
             Vertex(VERTEXSE3, _vertexId, timestamp), pose(_pose), isKeyframe(false) {
 	}
 };

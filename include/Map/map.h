@@ -43,16 +43,16 @@ public:
 			const Mat34& cameraPose) = 0;
     /// get all visible features and reduce results
     virtual std::vector<MapFeature> getVisibleFeatures(
-            const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold) = 0;
+            const Mat34& cameraPose, int graphDepthThreshold, double distanceThreshold) = 0;
 
     /// get all covisible features using covisibility graph
     virtual std::vector<MapFeature> getCovisibleFeatures(void) = 0;
 
     /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-    virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14) = 0;
+    virtual void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<double>& angles, double maxAngle = 3.14) = 0;
 
     /// removes features which are too far from current camera pose (distant in graph)
-    virtual void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0) = 0;
+    virtual void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, double distanceThreshold = 0) = 0;
 
 	/// Add NEW features and a NEW camera pose (initial guess) to the map
 	/// Position of features in relation to camera pose
@@ -68,7 +68,7 @@ public:
 			Mat34 transformation) = 0;
 
 	/// add new pose of the camera, returns id of the new pose
-    virtual int addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat()) = 0;
+    virtual int addNewPose(const Mat34& cameraPoseChange, double timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat()) = 0;
 
 	/// Get all features
 	virtual std::vector<MapFeature> getAllFeatures(void) = 0;
@@ -86,7 +86,7 @@ public:
 	virtual DepthSensorModel getDepthSensorModel() = 0;
 
 	/// start optimization thread
-    virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0) = 0;
+    virtual void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", double kernelDelta = 0) = 0;
 
     /// start map management thread
     virtual void startMapManagerThread(int verbose = 0) = 0;
@@ -112,7 +112,7 @@ public:
     virtual void save2file(std::string mapFilename, std::string graphFilename) = 0;
 
     /// set Robust Kernel
-    virtual void setRobustKernel(std::string name, float_type delta) = 0;
+    virtual void setRobustKernel(std::string name, double delta) = 0;
 
     /// disable Robust Kernel
     virtual void disableRobustKernel(void) = 0;

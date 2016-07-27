@@ -364,7 +364,7 @@ bool PoseGraphG2O::addEdgeG2O(uint_fast32_t id, uint_fast32_t fromId, uint_fast3
 }
 
 /// set Robust Kernel
-void PoseGraphG2O::setRobustKernel(std::string name, float_type delta){
+void PoseGraphG2O::setRobustKernel(std::string name, double delta){
     for (g2o::SparseOptimizer::EdgeSet::iterator it = optimizer.edges().begin(); it != optimizer.edges().end(); ++it) {
         g2o::SparseOptimizer::Edge* e = dynamic_cast<g2o::SparseOptimizer::Edge*>(*it);
         g2o::AbstractRobustKernelCreator* creatorRK = g2o::RobustKernelFactory::instance()->creator(name);
@@ -547,14 +547,14 @@ bool PoseGraphG2O::addEdge(EdgeSE2& e){
 //    if (findVertex(e.fromVertexId)==graph.vertices.end()){// to-vertex does not exist
 //        std::cout << "Warning: vertex SE2 from " << e.fromVertexId << "  does not exist. adding new vertex...\n";
 //        mtxGraph.unlock();
-//        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+//        Eigen::Vector2d pos(0.0, 0.0); double rot(0);
 //        addVertexSE2(putslam::VertexSE2(e.fromVertexId, pos, rot));
 //        mtxGraph.lock();
 //    }
 //    if (findVertex(e.toVertexId)==graph.vertices.end()){// to vertex does not exist
 //        std::cout << "Warning: vertex SE2 to " << e.toVertexId << " does not exist. adding new vertex...\n";
 //        mtxGraph.unlock();
-//        Eigen::Vector2d pos(0.0, 0.0); float_type rot(0);
+//        Eigen::Vector2d pos(0.0, 0.0); double rot(0);
 //        addVertexSE2(putslam::VertexSE2(e.toVertexId, pos, rot));
 //        mtxGraph.lock();
 //    }
@@ -700,7 +700,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             std::istringstream is(line);
             std::string lineType;
             //std::cout << line << "\n";
-            float_type pos[3], rot[4];
+            double pos[3], rot[4];
             is >> lineType;
             if (lineType == "PARAMS_SE3OFFSET"){
                 cameraOffset = new g2o::ParameterSE3Offset;
@@ -734,7 +734,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             }
             else if (lineType == "VERTEX_SE2"){
                 unsigned int id;
-                float_type theta;
+                double theta;
                 is >> id >> pos[0] >> pos[1] >> theta;
                 Eigen::Vector2d position(pos[0], pos[1]);
                 VertexSE2 vertex(id, position, theta);
@@ -743,7 +743,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             }
             else if (lineType == "EDGE_SE3:QUAT"){
                 unsigned int to, from;
-                float_type info[21];
+                double info[21];
                 is >> from >> to >> pos[0] >> pos[1] >> pos[2] >> rot[0] >> rot[1] >> rot[2] >> rot[3];
                 for (int i=0;i<21;i++) is >> info[i];
                 Vec3 position(pos[0], pos[1], pos[2]); Eigen::Quaternion<double> qrot(rot[3], rot[0], rot[1], rot[2]);
@@ -761,7 +761,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             }
             else if (lineType == "EDGE_SE3_TRACKXYZ"){
                 unsigned int to, from, sensorFrame;
-                float_type info[6];
+                double info[6];
                 is >> from >> to >> sensorFrame >> pos[0] >> pos[1] >> pos[2];
                 for (int i=0;i<6;i++) is >> info[i];
                 Vec3 position(pos[0], pos[1], pos[2]);
@@ -775,7 +775,7 @@ bool PoseGraphG2O::loadG2O(const std::string filename){
             }
             else if (lineType == "EDGE_SE2"){
                 unsigned int to, from;
-                float_type info[6], theta;
+                double info[6], theta;
                 is >> from >> to >> pos[0] >> pos[1] >> theta;
                 for (int i=0;i<6;i++) is >> info[i];
                 Eigen::Vector2d position(pos[0], pos[1]);
@@ -837,12 +837,12 @@ bool PoseGraphG2O::importRGBDSLAM(const std::string filename){
     if (file.is_open()){ // open file
         std::string line;
         clear();
-        uint_fast32_t vertexId = 0;
+        unsigned int vertexId = 0;
         putslam::VertexSE3 vertexPrev;
         while ( getline (file,line) ) { // load each line
             std::istringstream is(line);
-            float_type timestamp = 0;
-            float_type pos[3], rot[4];
+            double timestamp = 0;
+            double pos[3], rot[4];
             is >> timestamp >> pos[0] >> pos[1] >> pos[2] >> rot[1] >> rot[2] >> rot[3] >> rot[0];
             Quaternion rot1(rot[0], rot[1], rot[2], rot[3]);
             Mat34 pose(rot1.matrix()); pose(0,3) = pos[0]; pose(1,3) = pos[1]; pose(2,3) = pos[2];
@@ -1175,7 +1175,7 @@ void PoseGraphG2O::anchorVertices(void){
 
 /// Find outlier using chi2
 g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges){
-    float_type maxChi2=-1e10;
+    double maxChi2=-1e10;
     g2o::OptimizableGraph::EdgeContainer::iterator outlierIt;
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
         std::vector<unsigned int>::iterator itId = std::find(edgeSet.begin(), edgeSet.end(), (*it)->id());
@@ -1188,9 +1188,9 @@ g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::ve
 }
 
 /// Find outlier using chi2_i/median(chi2)
-g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, float_type threshold){
-    std::vector<float_type> chi2values;
-    float_type maxError = -1e10;
+g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::vector<unsigned int> edgeSet, g2o::OptimizableGraph::EdgeContainer& activeEdges, double threshold){
+    std::vector<double> chi2values;
+    double maxError = -1e10;
     g2o::OptimizableGraph::EdgeContainer::iterator outlierIt = activeEdges.end();
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
         std::vector<unsigned int>::iterator itId = std::find(edgeSet.begin(), edgeSet.end(), (*it)->id());
@@ -1198,12 +1198,12 @@ g2o::OptimizableGraph::EdgeContainer::iterator PoseGraphG2O::findOutlier(std::ve
             chi2values.push_back((*it)->chi2());
         }
     }
-    std::sort (chi2values.begin(), chi2values.end(), std::greater<float_type>());
-    float_type median = chi2values[chi2values.size()/2];
+    std::sort (chi2values.begin(), chi2values.end(), std::greater<double>());
+    double median = chi2values[chi2values.size()/2];
     for (g2o::OptimizableGraph::EdgeContainer::iterator it = activeEdges.begin(); it!=activeEdges.end(); it++){
         std::vector<unsigned int>::iterator itId = std::find(edgeSet.begin(), edgeSet.end(), (*it)->id());
         if ((itId!=edgeSet.end())){
-            float_type error = (*it)->chi2()/median;
+            double error = (*it)->chi2()/median;
             if ((error>maxError)&&(error>threshold)){
                 maxError = error;
                 outlierIt = it;
@@ -1332,7 +1332,7 @@ Mat33 PoseGraphG2O::getFeatureIncrementCovariance(int vertexId){
 /**
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
-bool PoseGraphG2O::optimizeAndPrune(float_type threshold, unsigned int singleIteration, int verbose){
+bool PoseGraphG2O::optimizeAndPrune(double threshold, unsigned int singleIteration, int verbose){
     (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();
@@ -1398,7 +1398,7 @@ void PoseGraphG2O::removeWeakFeatures(int threshold){
 }
 
 /// Prune 3D edges (measurements to features)
-bool PoseGraphG2O::prune3Dedges(float_type threshold){
+bool PoseGraphG2O::prune3Dedges(double threshold){
     optimizer.computeActiveErrors();
     g2o::OptimizableGraph::EdgeContainer activeEdges = optimizer.activeEdges();
     mtxGraph.lock();
@@ -1439,7 +1439,7 @@ bool PoseGraphG2O::prune3Dedges(float_type threshold){
 /**
  * Optimizes and removes weak edes (with error bigger than threshold)
  */
-bool PoseGraphG2O::optimizeAndPrune2(float_type threshold, unsigned int singleIteration, int verbose){
+bool PoseGraphG2O::optimizeAndPrune2(double threshold, unsigned int singleIteration, int verbose){
     (verbose == 0) ? optimizer.setVerbose(false) : optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     anchorVertices();

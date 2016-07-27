@@ -62,8 +62,8 @@ public:
 			std::vector<cv::Point2f> &features,
 			std::vector<cv::KeyPoint>& prevKeyPoints,
 			std::vector<cv::KeyPoint>& keyPoints,
-			std::vector<float_type>& prevDetDists,
-			std::vector<float_type>& detDists);
+            std::vector<double>& prevDetDists,
+            std::vector<double>& detDists);
 
 //
 //        /// Returns current set of features

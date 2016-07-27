@@ -23,14 +23,14 @@ namespace putslam {
 /// Grabber interface
 class Matcher {
 
-	static constexpr float_type scaleFactor = 1.2;
+    static constexpr double scaleFactor = 1.2;
 	static constexpr int nLevels = 8;
-	static constexpr float_type logScaleFactor = std::log(scaleFactor);
+    static constexpr double logScaleFactor = std::log(scaleFactor);
 
 public:
 	struct featureSet {
 		std::vector<cv::KeyPoint> feature2D;
-		std::vector<float_type> detDist;
+        std::vector<double> detDist;
 		std::vector<cv::Point2f> undistortedFeature2D, distortedFeature2D;
 		cv::Mat descriptors;
 		std::vector<Eigen::Vector3f> feature3D;
@@ -382,7 +382,7 @@ public:
 		cv::Mat distortionCoeffsMat;
 
 		/// max rotation angle between camera frames
-		float_type maxAngleBetweenFrames;
+        double maxAngleBetweenFrames;
 	};
 
 protected:
@@ -395,7 +395,7 @@ protected:
 
 	/// Information about previous keypoints + descriptors
 	std::vector<cv::KeyPoint> prevKeyPoints;
-	std::vector<float_type> prevDetDists;
+    std::vector<double> prevDetDists;
 	std::vector<cv::Point2f> prevFeaturesUndistorted, prevFeaturesDistorted;
 	cv::Mat prevDescriptors;
 	std::vector<Eigen::Vector3f> prevFeatures3D;
@@ -435,8 +435,8 @@ protected:
 			std::vector<cv::Point2f> &features,
 			std::vector<cv::KeyPoint>& prevKeyPoints,
 			std::vector<cv::KeyPoint>& keyPoints,
-			std::vector<float_type>& prevDetDists,
-			std::vector<float_type>& detDists) = 0;
+            std::vector<double>& prevDetDists,
+            std::vector<double>& detDists) = 0;
 
 private:
 	// We need to extract values in OpenCV types from classes/structures
@@ -450,7 +450,7 @@ private:
 					cv::Mat currentPoseDescriptors,
 					std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
 					std::vector<cv::KeyPoint>& currentPoseKeyPoints,
-					std::vector<float_type>& currentPoseDetDists,
+                    std::vector<double>& currentPoseDetDists,
 					std::vector<int> frameIds = std::vector<int>());
 
 
@@ -458,7 +458,7 @@ private:
 			std::vector<cv::Point2f>& undistortedFeatures2D,
 			std::vector<Eigen::Vector3f> &features3D,
 			std::vector<cv::KeyPoint>& keyPoints,
-			std::vector<float_type>& detDists,
+            std::vector<double>& detDists,
 			std::vector<cv::DMatch> &matches);
 
 	// Method used to combine old tracking features with new features
@@ -470,8 +470,8 @@ private:
 			const std::vector<Eigen::Vector3f>& features3DSandBox,
 			std::vector<cv::KeyPoint>& keyPoints,
 			const std::vector<cv::KeyPoint>& keyPointsSandBox,
-			std::vector<float_type>& detDists,
-			const std::vector<float_type>& detDistsSandBox);
+            std::vector<double>& detDists,
+            const std::vector<double>& detDistsSandBox);
 
 	void framesIds2framesIndex(std::vector<MapFeature> featureSet,
 			std::vector<int> frameIds,

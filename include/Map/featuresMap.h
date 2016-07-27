@@ -60,7 +60,7 @@ public:
     void addMeasurement(int poseFrom, int poseTo, Mat34 transformation);
 
 	/// add new pose of the camera, returns id of the new pose
-    int addNewPose(const Mat34& cameraPoseChange, float_type timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat());
+    int addNewPose(const Mat34& cameraPoseChange, double timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat());
 
 	/// Get all features
 	std::vector<MapFeature> getAllFeatures(void);
@@ -75,13 +75,13 @@ public:
     std::vector<MapFeature> getCovisibleFeatures(void);
 
     /// get all visible features and reduce results
-    std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose, int graphDepthThreshold, float_type distanceThreshold);
+    std::vector<MapFeature> getVisibleFeatures(const Mat34& cameraPose, int graphDepthThreshold, double distanceThreshold);
 
     /// removes features which are too far from current camera pose (distant in graph)
-    void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, float_type distanceThreshold = 0);
+    void removeDistantFeatures(std::vector<MapFeature>& mapFeatures, int graphDepthThreshold = 0, double distanceThreshold = 0);
 
     /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-    void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<float_type>& angles, float_type maxAngle = 3.14);
+    void findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<double>& angles, double maxAngle = 3.14);
 
 	/// get pose of the sensor (default: last pose)
     Mat34 getSensorPose(int poseId = -1) const;
@@ -95,7 +95,7 @@ public:
 	}
 
 	/// start optimization thread
-    void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", float_type kernelDelta = 0);
+    void startOptimizationThread(unsigned int iterNo, int verbose = 0, std::string RobustKernelName = "", double kernelDelta = 0);
 
     /// start map management thread
     void startMapManagerThread(int verbose = 0);
@@ -146,7 +146,7 @@ public:
 	}
 
     /// set Robust Kernel
-    void setRobustKernel(std::string name, float_type delta);
+    void setRobustKernel(std::string name, double delta);
 
     /// disable Robust Kernel
     void disableRobustKernel(void);
@@ -317,7 +317,7 @@ public:
             int addNoFeaturesWhenMapSizeGreaterThan;
 
             /// MapManagement: distance threshold
-            float_type distThreshold;
+            double distThreshold;
 
             /// export map to files
             bool exportMap;
@@ -506,7 +506,7 @@ private:
     bool getAndResetLoopClosureSuccesful();
 
     /// optimization method
-    void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", float_type kernelDelta = 0);
+    void optimize(unsigned int iterNo, int verbose, std::string RobustKernelName = "", double kernelDelta = 0);
 
     /// map management method
     void manage(int verbose);
@@ -530,7 +530,7 @@ private:
     void plotFeaturesOnImage(std::string filename, unsigned int frameId);
 
     /// computes std and mean from float vector
-    void computeMeanStd(const std::vector<float_type>& v, float_type& mean, float_type& std, float_type& max);
+    void computeMeanStd(const std::vector<double>& v, double& mean, double& std, double& max);
 
     /// marginalize measurements between frames
     void marginalizeMeasurements(int frameBegin, int frameEnd);

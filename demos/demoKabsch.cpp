@@ -20,9 +20,9 @@ auto startT = std::chrono::high_resolution_clock::now();
 std::default_random_engine generator;
 
 /// noise: x, y, z, qx, qy, qz
-float_type noise[6] = {0.01, 0.02, 0.03, 0.0, 0.000, 0.000};
+double noise[6] = {0.01, 0.02, 0.03, 0.0, 0.000, 0.000};
 /// x, y, z, fi, psi, theta
-float_type transformation[6] = {0.1, 0.2, -0.3, 0.0, 0.0, -0.0};
+double transformation[6] = {0.1, 0.2, -0.3, 0.0, 0.0, -0.0};
 
 Graph * graph;
 
@@ -38,7 +38,7 @@ void optimize(int iterNo){
     graph->optimize(iterNo);
 }
 
-Eigen::Quaternion<double> quatFromEuler(float_type fi, float_type psi, float_type theta){
+Eigen::Quaternion<double> quatFromEuler(double fi, double psi, double theta){
     Eigen::Quaternion<double> quat;
     Eigen::AngleAxis<double> rotX(fi, Eigen::Vector3d::UnitZ());
     Eigen::AngleAxis<double> rotY(psi, Eigen::Vector3d::UnitY());
@@ -47,7 +47,7 @@ Eigen::Quaternion<double> quatFromEuler(float_type fi, float_type psi, float_typ
     return quat;
 }
 
-void printUncertainty(Mat66& uncertainty, Mat34& trans, float_type x, float_type y, float_type z, float_type fi, float_type psi, float_type theta){
+void printUncertainty(Mat66& uncertainty, Mat34& trans, double x, double y, double z, double fi, double psi, double theta){
     std::cout << "uncertainty: \n" << uncertainty << std::endl;
     std::cout << "error x: " << fabs(trans.translation()(0)-x) << ", 3*sigma = " << 3*uncertainty(3,3);
     if (3*uncertainty(3,3) < fabs(trans.translation()(0)-x) ) std::cout << " alert!\n"; else std::cout << "\n";
@@ -116,7 +116,7 @@ void saveTrajectory(std::string filename, std::vector<Mat34> trajectory, std::st
 }
 
 void generateSetpoint(Eigen::MatrixXd& setA, size_t numPoints){
-    float_type center[3]={0.0,0.0,0.0};
+    double center[3]={0.0,0.0,0.0};
     std::uniform_real_distribution<double> distribution(-1.5,1.5);
     for (size_t i = 0; i<numPoints; i++){
         setA(i,0) = center[0] + distribution(generator);
@@ -240,14 +240,14 @@ PointCloud cloud2local(const PointCloud& cloud, Mat34& sensorPose){
 }
 
 /// compute mean squared error for the map
-float_type computeMapAccuracy(Graph* currentGraph, PointCloud& groundTruth){
-    float_type accuracy = 0;
+double computeMapAccuracy(Graph* currentGraph, PointCloud& groundTruth){
+    double accuracy = 0;
     for (unsigned int i=0;i<groundTruth.size();i++){
         Point3D point = ((PoseGraphG2O*) currentGraph)->getVertex(i+INIT_VERTEX_ID);
         if ((point.x!=-1)&&(point.y!=-1)) //if point exists in the map
             accuracy+=pow(point.x - groundTruth[i].x,2.0) + pow(point.y - groundTruth[i].y,2.0) + pow(point.z - groundTruth[i].z,2.0);
     }
-    return accuracy/float_type(groundTruth.size());
+    return accuracy/double(groundTruth.size());
 }
 
 void runExperiment(int expType, const std::vector<Mat34>& trajectory, const DepthSensorModel& sensorModel, const std::vector<PointCloud>& cloudSeq, const std::vector< std::vector<Mat33> >& uncertaintySet, const std::vector< std::vector<int> >& setIds, Simulator& simulator, TransformEst* transEst){
@@ -596,7 +596,7 @@ void runExperiment2D(int expType, const std::vector<Mat34>& trajectory, const De
     std::vector<Mat34> trajectorySensor2; initPose.matrix() = trajectory[0].matrix()*sensorModel.config.pose.matrix();
     trajectorySensor2.push_back(initPose);
     int vertexId2 = 0;
-    Eigen::Vector2d pos2(initPose(0,3), initPose(1,3)); float_type theta = 0;
+    Eigen::Vector2d pos2(initPose(0,3), initPose(1,3)); double theta = 0;
     VertexSE2 vertex2(vertexId2, pos2, theta);
     if (!graph->addVertexSE2(vertex2))
         std::cout << "error: vertex exists!\n";
@@ -930,39 +930,39 @@ void runExperimentBA(int expType, const std::vector<Mat34>& trajectory, const De
     }
 }
 
-std::vector<float_type> computeRPE(std::vector<Mat34>& trajectoryRef, std::vector<Mat34>& trajectory){
-    std::vector<float_type> rpe;
+std::vector<double> computeRPE(std::vector<Mat34>& trajectoryRef, std::vector<Mat34>& trajectory){
+    std::vector<double> rpe;
     if (trajectoryRef.size()!=trajectory.size()){
         std::cout << "RPE computation error: trajectories sizes does no match\n";
         return rpe;
     }
     for (unsigned int i=1;i<trajectoryRef.size();i++){
         Mat34 error = (trajectoryRef[i-1].inverse()*trajectoryRef[i]).inverse()*(trajectory[i-1].inverse()*trajectory[i]);
-        float_type errorVal = pow(error(0,3),2.0)+pow(error(1,3),2.0)+pow(error(2,3),2.0);
+        double errorVal = pow(error(0,3),2.0)+pow(error(1,3),2.0)+pow(error(2,3),2.0);
         rpe.push_back(errorVal);
     }
     return rpe;
 }
 
-float_type computeRMSE(std::vector<float_type>& error){
-    float_type rmse=0;
+double computeRMSE(std::vector<double>& error){
+    double rmse=0;
     for (unsigned int i=0;i<error.size();i++){
         rmse+=error[i];
     }
-    return (float_type)sqrt(rmse/(float_type)error.size());
+    return (double)sqrt(rmse/(double)error.size());
 }
 
-float_type computeMean(std::vector<float_type>& error){
-    float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
-    return sum / (float_type)error.size();
+double computeMean(std::vector<double>& error){
+    double sum = std::accumulate(error.begin(), error.end(), 0.0);
+    return sum / (double)error.size();
 }
 
-float_type computeStd(std::vector<float_type>& error){
-    float_type sum = std::accumulate(error.begin(), error.end(), 0.0);
-    float_type mean = sum / (float_type) error.size();
+double computeStd(std::vector<double>& error){
+    double sum = std::accumulate(error.begin(), error.end(), 0.0);
+    double mean = sum / (double) error.size();
 
-    float_type sq_sum = std::inner_product(error.begin(), error.end(), error.begin(), 0.0);
-    return std::sqrt(sq_sum / (float_type) error.size() - mean * mean);
+    double sq_sum = std::inner_product(error.begin(), error.end(), error.begin(), 0.0);
+    return std::sqrt(sq_sum / (double) error.size() - mean * mean);
 }
 
 int main(void)
@@ -1045,7 +1045,7 @@ int main(void)
         std::cout << "\n\n\nSingle transformation: room test\n";
         Simulator simulatorTest;
         size_t pointsNo = 50;
-        float_type roomDim[3] = {15, 15, 15};
+        double roomDim[3] = {15, 15, 15};
         //simulatorTest.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
         simulatorTest.createEnvironment(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
         savePointCloud("../../resources/KabschUncertainty/room.m", simulatorTest.getEnvironment());
@@ -1058,7 +1058,7 @@ int main(void)
         std::vector<int> setAids = simulatorTest.getCloud(initPose, sensorModel, cloudA, uncertaintyCloudA);
         savePointCloud("../../resources/cloudA.m", cloudA, uncertaintyCloudA);
 
-        float_type moveTab[6] = {0.0,0.1,0.0, 0.0,0.0,0.0};//motion in global frame
+        double moveTab[6] = {0.0,0.1,0.0, 0.0,0.0,0.0};//motion in global frame
         Eigen::Quaternion<double> quatMove = quatFromEuler(moveTab[3], moveTab[4], moveTab[5]);
         Mat34 move = quatMove*Eigen::Translation<double,3>(0,0,0);
         PointCloud cloudB; std::vector<Mat33> uncertaintyCloudB;
@@ -1109,18 +1109,18 @@ int main(void)
         //graph->plot2file(filename2);
         //std::cout << "fdf\n"; getchar();
 
-        std::vector<float_type> MSEKabsch;
-        std::vector<float_type> MSEKabsch_g2o;
-        std::vector<float_type> MSEBAnouncert;
-        std::vector<float_type> MSEBAuncert;
-        std::vector<float_type> MSEPerfectTraj;
+        std::vector<double> MSEKabsch;
+        std::vector<double> MSEKabsch_g2o;
+        std::vector<double> MSEBAnouncert;
+        std::vector<double> MSEBAuncert;
+        std::vector<double> MSEPerfectTraj;
 
         int trialsNo =100;
         for (int i=0;i<trialsNo;i++){
 
             Simulator simulator;
             //size_t pointsNo = 5000;
-            //float_type roomDim[3] = {5.5, 5.5, 5.5};
+            //double roomDim[3] = {5.5, 5.5, 5.5};
             //simulator.createRoom(pointsNo, roomDim[0], roomDim[1], roomDim[2]);
             simulator.createEnvironment(450, 15, 15, 15);
             //simulator.loadEnvironment("../../resources/cloudOffice.pcl");
@@ -1141,8 +1141,8 @@ int main(void)
             pose(0,3)=(-6.5/2.0)+1.5; pose(1,3)=(-6.5/2.0)+1.5; pose(2,3) = 0.0;
             //pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
             trajectory.push_back(pose);
-            Mat34 moveRot = quatFromEuler((M_PI/2)/float_type(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((6.5-3.0)/float_type(motions),0.0, 0.0);
+            Mat34 moveRot = quatFromEuler((M_PI/2)/double(motions_rot),0,0)*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>((6.5-3.0)/double(motions),0.0, 0.0);
             */
             /// camera in direction of the motion
             pose(0,0) = 0; pose(0,1) = 0; pose(0,2) = 1;
@@ -1151,8 +1151,8 @@ int main(void)
             pose(0,3)=(-6.5/2.0)+1.5; pose(1,3)=(-6.5/2.0)+1.5; pose(2,3) = 0.0;
             //pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
             trajectory.push_back(pose);
-            Mat34 moveRot = quatFromEuler(0,0,(M_PI/2)/float_type(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0.0, (6.5-3.0)/float_type(motions));
+            Mat34 moveRot = quatFromEuler(0,0,(M_PI/2)/double(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForward = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0.0, (6.5-3.0)/double(motions));
             for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
@@ -1194,7 +1194,7 @@ int main(void)
                         point.x = pp(0,3); point.y = pp(1,3); point.z = pp(2,3);
                         bool unique = true;
                         for (int itp=0;itp<pcloffice.size();itp++){
-                             float_type dist = sqrt(pow(point.x-pcloffice[itp].x,2.0)+pow(point.y-pcloffice[itp].y,2.0)+pow(point.z-pcloffice[itp].z,2.0));
+                             double dist = sqrt(pow(point.x-pcloffice[itp].x,2.0)+pow(point.y-pcloffice[itp].y,2.0)+pow(point.z-pcloffice[itp].z,2.0));
                              if (dist<0.35){
                                  unique = false;
                                  break;
@@ -1225,8 +1225,8 @@ int main(void)
             poseSec(0,3)=(-6.5/2.0)+1.5; poseSec(1,3)=(-6.5/2.0)+1.5; poseSec(2,3) = 0.0;
             //pose(0,3)=0; pose(1,3)=(-roomDim[1]/2.0)+1.5; pose(2,3) = -roomDim[2]/2.0;
             trajectorySec.push_back(poseSec);
-            Mat34 moveRotSec = quatFromEuler(0,0,(M_PI/2)/float_type(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
-            Mat34 moveForwardSec = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0.0, (6.5-3.0)/float_type(motions));
+            Mat34 moveRotSec = quatFromEuler(0,0,(M_PI/2)/double(motions_rot))*Eigen::Translation<double,3>(0, 0, 0);
+            Mat34 moveForwardSec = Eigen::Quaternion<double>(1,0,0,0)*Eigen::Translation<double,3>(0,0.0, (6.5-3.0)/double(motions));
             for (int j=0;j<4;j++){
                 //forward
                 for (int i=0;i<motions;i++){
@@ -1633,8 +1633,8 @@ getchar();
             filename= "../../resources/KabschUncertainty/trajectory_g2o_BAposeuncertfull" + std::to_string(i) + ".m";
             saveTrajectory(filename,trajectoryBAposeuncertfull, "y");
 */
-            /*std::array<float_type, 3> errors;
-            std::vector<float_type> errorRPE = computeRPE(trajectory,trajectory);
+            /*std::array<double, 3> errors;
+            std::vector<double> errorRPE = computeRPE(trajectory,trajectory);
             errors[0] = computeRMSE(errorRPE); errors[1] = computeMean(errorRPE); errors[2] = computeStd(errorRPE);
             std::cout << "original trajectory error: rpe.rmse " << errors[0] << ", mean " << errors[1] << ", std " << errors[2] << "\n";
 

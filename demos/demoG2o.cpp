@@ -32,7 +32,7 @@ void tracker()
     //add 3D feature
     for (int i=0;i<5000;i++){
         Vertex3D vertex6(5+i, Vec3(0.05, 1.0+i*0.05, 0.0));
-        vertex6.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex6.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexFeature(vertex6))
             std::cout << "error: vertex exists!\n";
     }
@@ -67,22 +67,22 @@ int main()
 
         //add vertices - robot poses
         VertexSE3 vertex1(0, Mat34::Identity());
-        vertex1.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex1.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex1))
             std::cout << "error: vertex exists!\n";
 
         VertexSE3 vertex2(1, Mat34(Vec3(0.0, 2.0, 0.0)*Quaternion(1, 0, 0, 0)));
-        vertex2.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex2.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex2))
             std::cout << "error: vertex exists!\n";
 
         VertexSE3 vertex3(2, Mat34(Vec3(-2.0, 2.0, 0.0) * Quaternion(1, 0, 0, 0)));
-        vertex3.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex3.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex3))
             std::cout << "error: vertex exists!\n";
 
         VertexSE3 vertex4(3, Mat34(Vec3(-2.0, 0.0, 0.0) * Quaternion(1, 0, 0, 0)));
-        vertex4.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex4.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexPose(vertex4))
             std::cout << "error: vertex exists!\n";
 
@@ -101,7 +101,7 @@ int main()
 
         //add 3D feature
         Vertex3D vertex5(4, Vec3 (0.05, 1.0, 0.0));
-        vertex5.timestamp = (float_type) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
+        vertex5.timestamp = (double) duration_cast<std::chrono::microseconds> (high_resolution_clock::now() - startT).count();
         if (!graph->addVertexFeature(vertex5))
             std::cout << "error: vertex exists!\n";
         //add edges of the graph -- measurements

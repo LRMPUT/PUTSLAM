@@ -41,16 +41,16 @@ public:
 	MatchingOnPatches(parameters _parameters);
 
 	// Computes the patch on image "img" at location (x,y)
-	std::vector<double> computePatch(cv::Mat img, putslam::float_type x,
-			putslam::float_type y);
+    std::vector<double> computePatch(cv::Mat img, double x,
+            double y);
 
 	// Method used to compute the gradient on the old image for optimization purposes. Takes:
 	// 	-	oldImg		-> old image used to compute old patch
 	// 	-	x, y		-> location around we compute the gradients and hessian
 	//	- 	gradientX, gradientY -> gradients of the patch on the old image
 	//	-	InvHessian	-> inverse of hessian of the patch on the old image
-	void computeGradient(cv::Mat img, putslam::float_type x,
-			putslam::float_type y, Eigen::Matrix3f &InvHessian,
+    void computeGradient(cv::Mat img, double x,
+            double y, Eigen::Matrix3f &InvHessian,
 			std::vector<float> &gradientX, std::vector<float> &gradientY);
 
 	// Gauss-Newton optimization used to find the new position of feature. Takes:
@@ -61,8 +61,8 @@ public:
 	//	- 	gradientX, gradientY -> precomputed gradients of the patch on the old image
 	//	-	InvHessian	-> precomputed inverse of hessian of the patch on the old image
 	bool optimizeLocation(cv::Mat oldImg, std::vector<double> oldPatch,
-			cv::Mat newImg, putslam::float_type &newX,
-			putslam::float_type &newY, std::vector<float> gradientX,
+            cv::Mat newImg, double &newX,
+            double &newY, std::vector<float> gradientX,
 			std::vector<float> gradientY, Eigen::Matrix3f &InvHessian);
 
 	// Getters

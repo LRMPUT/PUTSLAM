@@ -101,7 +101,7 @@ QGLVisualizer::~QGLVisualizer(void) {
 }
 
 /// Draw ellipsoid
-void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, float_type fA, float_type fB, float_type fC) const {
+void QGLVisualizer::drawEllipsoid(unsigned int uiStacks, unsigned int uiSlices, double fA, double fB, double fC) const {
     float tStep = (float)(M_PI) / (float)uiSlices;
     float sStep = (float)(M_PI) / (float)uiStacks;
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -125,7 +125,7 @@ void QGLVisualizer::drawEllipsoid(const Vec3& pos, const Mat33& covariance) cons
     Eigen::SelfAdjointEigenSolver<Mat33> es;
     es.compute(covariance);
     Mat33 V(es.eigenvectors());
-    float_type GLmat[16]={V(0,0), V(1,0), V(2,0), 0, V(0,1), V(1,1), V(2,1), 0, V(0,2), V(1,2), V(2,2), 0, pos.x(), pos.y(), pos.z(), 1};
+    double GLmat[16]={V(0,0), V(1,0), V(2,0), 0, V(0,1), V(1,1), V(2,1), 0, V(0,2), V(1,2), V(2,2), 0, pos.x(), pos.y(), pos.z(), 1};
     glPushMatrix();
         glMultMatrixd(GLmat);
         drawEllipsoid(10,10,sqrt(es.eigenvalues()(0))*config.ellipsoidScale, sqrt(es.eigenvalues()(1))*config.ellipsoidScale, sqrt(es.eigenvalues()(2))*config.ellipsoidScale);
@@ -212,7 +212,7 @@ void QGLVisualizer::drawPointClouds(void){
         if (camTrajectory.size()>(size_t)imagesIds[i]){
             Mat34 camPose = camTrajectory[imagesIds[i]].pose;
             mtxCamTrajectory.unlock();
-            float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
+            double GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
             glPushMatrix();
                 glMultMatrixd(GLmat);
                 glPointSize((float)config.cloudPointSize);
@@ -310,7 +310,7 @@ void QGLVisualizer::draw(){
             mtxCamTrajectory.lock();
             Mat34 camPose = camTrajectory[measurements[i].fromVertexId].pose;
             mtxCamTrajectory.unlock();
-            float_type GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
+            double GLmat[16]={camPose(0,0), camPose(1,0), camPose(2,0), camPose(3,0), camPose(0,1), camPose(1,1), camPose(2,1), camPose(3,1), camPose(0,2), camPose(1,2), camPose(2,2), camPose(3,2), camPose(0,3), camPose(1,3), camPose(2,3), camPose(3,3)};
             glPushMatrix();
                 glMultMatrixd(GLmat);
                 glPointSize((float)config.measurementSize);

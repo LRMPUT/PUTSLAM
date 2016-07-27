@@ -19,10 +19,10 @@ int main()
 	cv::cvtColor(imgNew, dstNew, CV_RGB2GRAY);
 
 	// Select random feature
-	putslam::float_type x = 64.0f, y = 312.0f;
+    double x = 64.0f, y = 312.0f;
 
 	// Distruption to point
-	putslam::float_type newX = x + (rand()%100)/50.0, newY = y + (rand()%100)/50.0;
+    double newX = x + (rand()%100)/50.0, newY = y + (rand()%100)/50.0;
 	newX = 66.0f;
 	newY = 314.0f;
 	std::cout<<"x, y = " << x << " " << y << std::endl;
