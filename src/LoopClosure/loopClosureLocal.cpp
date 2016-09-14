@@ -49,40 +49,62 @@ void LoopClosureLocal::finishLCsearchingThr(void){
 /// geometric loop closure method
 void LoopClosureLocal::updatePriorityQueue(void){
     while (continueLCsearchingThread) {
-        if (config.verbose>0){
-            std::cout << "Update priority queue: start new iteration\n";
-        }
+
         if (config.minFrameDist>=(int)cameraPoses.size()||currentFrame>=(int)cameraPoses.size()){
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
         else{
-           // Mat34 currentPose = cameraPoses[currentFrame];
+			if (config.verbose > 1) {
+				std::cout << "LoopClosureLocal - we analyze new frame\n";
+			}
 
+			// We use FABMAP to find all potentially promissing match to current frame to analyze
+			cv::Mat frame = imagesSeq.front();
+			imagesSeq.pop_front();
+            std::vector<std::pair<int, double>> candidates = vpr.get()->findAddPlace(frame, currentFrame, true);
 
-            std::vector<std::pair<int, double>> similarPlaces = vpr.get()->findAddPlace(imagesSeq[currentFrame], currentFrame, true);
+			// For each candidate (int -> id, double -> probability)
+			for (std::pair<int, double> candidate : candidates) {
 
-            for ( std::pair<int, double> place : similarPlaces)
-            {
+				// We create match
+				LCMatch element;
+				element.distance = 0;
+				element.probability = candidate.second;
 
-				if ( place.first >= 0)
-				{
-					LCElement element;
-					element.distance = 0;
-					element.probability = place.second;
+				// Convert from LC ids to putslam ids of frames
+				int indexA = frameIds[currentFrame];
+				int indexB = frameIds[candidate.first];
+				element.posesIds = std::make_pair(indexA, indexB);
 
-					int indexA = frameIds[currentFrame];
-					int indexB = frameIds[place.first];
-					element.posesIds = std::make_pair(indexA, indexB);
-					priorityQueueLC.push(element);
+				// We add to priority queue
+				priorityQueueMtx.lock();
+				priorityQueueLC.push(element);
+				priorityQueueMtx.unlock();
 
-					if (config.verbose > 0){
-						std::cout<<std::endl<<"FABMAP proposes: " << indexA << " " << indexB << " Probability: " << place.second <<std::endl;
-					}
+				if (config.verbose > 0) {
+					std::cout << "FABMAP proposes: " << indexA
+							<< " " << indexB << " Probability: "
+							<< candidate.second << " PQ size: "
+							<< priorityQueueLC.size() << std::endl;
 				}
-				else if (config.verbose > 0){
-					std::cout<<"Fabmap found nothing"<<std::endl;
-				}
+			}
+
+
+            // Keep priority size reasonable - if it is more than 100, we trim to 50
+            priorityQueueMtx.lock();
+            int size = priorityQueueLC.size();
+            if (size > 100) {
+            	std::priority_queue<LCMatch, std::vector<LCMatch>, LCMatch > trimmedPQ;
+
+            	for (int i=0;i<size - 50;i++){
+					LCMatch element = priorityQueueLC.top();
+					trimmedPQ.push(element);
+					priorityQueueLC.pop();
+            	}
+            	priorityQueueLC = trimmedPQ;
             }
+            priorityQueueMtx.unlock();
+
             currentFrame++;
         }
     }

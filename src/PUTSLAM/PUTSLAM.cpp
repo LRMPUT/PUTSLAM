@@ -665,7 +665,7 @@ void PUTSLAM::startProcessing() {
 
 	// Main loop
 	while (true) {
-		std::cout << frameCounter << " " << std::flush;
+		std::cout << std::endl << "----- Frame counter : " << frameCounter << "-----" << std::endl << std::flush;
 
 		// if loop was closed -> wait 10 seconds
 		if (map->getAndResetLoopClosureSuccesful())
@@ -728,6 +728,17 @@ void PUTSLAM::startProcessing() {
 				std::vector<int> frameIds;
                 std::vector<double> angles;
 				mapFeatures = getAndFilterFeaturesFromMap(currentSensorFrame, cameraPose, frameIds, angles);
+
+				//TODO: TEST ONLY - brakuje ciagle dodatkowych deskryptorow
+//				if (frameCounter > 120) {
+//					for (auto &f : mapFeatures) {
+//						std::cout << "Descriptor sizes: " << f.descriptors.size() << std::endl;
+//					}
+//
+//					int a;
+//					std::cin>>a;
+//				}
+
 
 
 				if (verbose > 0)
@@ -839,7 +850,6 @@ void PUTSLAM::startProcessing() {
 
 			// Getting observed features
 			Matcher::featureSet features = matcher->getFeatures();
-			std::cout<<"TEST: " << features.descriptors.rows << " " << features.undistortedFeature2D.size() << std::endl;
 
 			// Convert to mapFeatures format
 			std::vector<RGBDFeature> mapFeaturesToAdd;
@@ -1162,10 +1172,11 @@ void PUTSLAM::saveLogs() {
 
 	statisticsLogStream.close();
 
-	vector<pair<int,int>> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
+	vector<LoopClosure::LCMatch> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
 	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.log");
+	lcAnalyzedPairsStream << "id1 id2 probability" << std::endl;
 	for ( auto &p : lcAnalyzedPairsLog) {
-		lcAnalyzedPairsStream << p.first << " " << p.second << std::endl;
+		lcAnalyzedPairsStream << p.posesIds.first << " " << p.posesIds.second << " " << p.probability << std::endl;
 	}
 	lcAnalyzedPairsStream.close();
 

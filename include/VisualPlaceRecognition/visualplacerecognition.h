@@ -18,7 +18,7 @@ public:
     uint32_t tailFramesToSkip = 10;
     // minimum probability to declare successful loop closure
     // if the probability value for the query frame is below this threshold, it is added as a new, unvisited place
-    double_t minNewPlaceProb = 0.2;
+    double_t minNewPlaceProb = 0.1;
     // constructor/initializer
     VisualPlaceRecognition();
     // destructor

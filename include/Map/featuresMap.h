@@ -62,6 +62,9 @@ public:
 	/// add new pose of the camera, returns id of the new pose
     int addNewPose(const Mat34& cameraPoseChange, double timestamp, cv::Mat image = cv::Mat(), cv::Mat depthImage = cv::Mat());
 
+    /// remove features (and measurements to them) for features of provided ids
+    void removeFeatures(std::vector<int> featureIdsToRemove);
+
 	/// Get all features
 	std::vector<MapFeature> getAllFeatures(void);
 
@@ -249,7 +252,6 @@ public:
             configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
 
             visualize = false;
-
         }
         public:
             //verbose
@@ -493,14 +495,14 @@ private:
 
     /// The log of matchin ratios found in loop closure
     std::vector<double> loopClosureMatchingRatiosLog;
-    std::vector<std::pair<int, int>> loopClosureAnalyzedPairsLog;
+    std::vector<LoopClosure::LCMatch> loopClosureLog;
 
     // Was Loop Closure successful?
     bool loopClosureSuccess;
 
     /// get loopClosureMatchingRatiosLog
     std::vector<double> getLoopClosureMatchingRatiosLog();
-    std::vector<std::pair<int, int>> getLoopClosureAnalyzedPairsLog();
+    std::vector<LoopClosure::LCMatch> getLoopClosureAnalyzedPairsLog();
 
     // Was loop closure successful
     bool getAndResetLoopClosureSuccesful();

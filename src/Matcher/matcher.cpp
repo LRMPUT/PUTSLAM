@@ -79,8 +79,15 @@ double Matcher::runVO(const SensorFrame& currentSensorFrame,
 		// Tracking
 	} else if (matcherParameters.VOVersion
 			== Matcher::MatcherParameters::VO_TRACKING) {
-		return trackKLT(currentSensorFrame, estimatedTransformation,
+
+//		auto start = std::chrono::high_resolution_clock::now();
+		double x = trackKLT(currentSensorFrame, estimatedTransformation,
 				inlierMatches);
+//		auto end = std::chrono::high_resolution_clock::now();
+//		std::cout << "trackKLT = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms"<< std::endl;
+
+		return x;
+
 		// Something unrecognized
 	} else {
 		std::cout
@@ -279,11 +286,13 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 	}
 
+//	auto start = std::chrono::high_resolution_clock::now();
 	// In case we need descriptors
 	if (matcherParameters.MapMatchingVersion
 			!= MatcherParameters::MAPMATCH_PATCHES) {
 
 
+//		auto startA = std::chrono::high_resolution_clock::now();
 
 		std::vector<cv::KeyPoint> descKeyPoints = keyPoints;
 		//Compute predicted scale
@@ -333,8 +342,14 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			tmpDetDists.swap(detDists);
 		}
 
+//		auto endA = std::chrono::high_resolution_clock::now();
+//		std::cout << "\tLiczenie skal = " << std::chrono::duration_cast<std::chrono::milliseconds>(endA - startA).count() << " ms"<< std::endl;
+
 		// Computing descriptors
+//		auto startC = std::chrono::high_resolution_clock::now();
 		descriptors = describeFeatures(sensorData.rgbImage, descKeyPoints);
+//		auto endC = std::chrono::high_resolution_clock::now();
+//		std::cout << "\tDeskrypcja = " << std::chrono::duration_cast<std::chrono::milliseconds>(endC - startC).count() << " ms"<< std::endl;
 
 
 		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
@@ -378,6 +393,8 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 			tmpDetDists.swap(detDists);
 		}
 	}
+//	auto end = std::chrono::high_resolution_clock::now();
+//	std::cout << "\tDESC = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms"<< std::endl;
 
 	// Check that the sizes are ok
 	assert(
@@ -890,10 +907,10 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 //			std::vector<double>& currentPoseDetDists,
 //			std::vector<int> frameIds)
 
-	std::cout << "Called matchFeatureLoopClosure! Sizes: "
-			<< featureSets[0].size() << " " << featureSets[1].size()
-			<< " from frames: " << framesIds[0] << " " << framesIds[1]
-			<< std::endl;
+//	std::cout << "Called matchFeatureLoopClosure! Sizes: "
+//			<< featureSets[0].size() << " " << featureSets[1].size()
+//			<< " from frames: " << framesIds[0] << " " << framesIds[1]
+//			<< std::endl;
 
 	cv::Mat extractedDescriptors[2];
 	std::vector<cv::Point2f> points2D[2];
@@ -923,9 +940,9 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 		}
 	 }
 
-	std::cout << "descriptors: " << extractedDescriptors[0].rows << " " << extractedDescriptors[1].rows << std::endl;
-	std::cout << "points2D: " << points2D[0].size() << " " << points2D[1].size() << std::endl;
-	std::cout << "points3D: " << points3D[0].size() << " " << points3D[1].size() << std::endl;
+//	std::cout << "descriptors: " << extractedDescriptors[0].rows << " " << extractedDescriptors[1].rows << std::endl;
+//	std::cout << "points2D: " << points2D[0].size() << " " << points2D[1].size() << std::endl;
+//	std::cout << "points3D: " << points3D[0].size() << " " << points3D[1].size() << std::endl;
 
 	if ( points2D[0].size() < 10 || points2D[1].size() < 10)
 	{
@@ -936,8 +953,8 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 			extractedDescriptors[1]);
 
 
-	std::cout << "matchFeatureLoopClosure - we found : " << matches.size()
-			<< std::endl;
+//	std::cout << "matchFeatureLoopClosure - we found : " << matches.size()
+//			<< std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;

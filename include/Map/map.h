@@ -10,6 +10,7 @@
 #include "../Defs/putslam_defs.h"
 #include "../include/Grabber/depthSensorModel.h"
 #include "../include/Matcher/matcherOpenCV.h"
+#include "../include/LoopClosure/loopClosure.h"
 #include <string>
 #include <vector>
 
@@ -143,7 +144,7 @@ public:
     /// get loopClosureMatchingRatiosLog
     virtual std::vector<double> getLoopClosureMatchingRatiosLog() = 0;
 
-    virtual std::vector<std::pair<int, int>> getLoopClosureAnalyzedPairsLog() = 0;
+    virtual std::vector<LoopClosure::LCMatch> getLoopClosureAnalyzedPairsLog() = 0;
 
 protected:
 	/// Map type

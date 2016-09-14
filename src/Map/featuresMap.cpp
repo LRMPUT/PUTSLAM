@@ -229,6 +229,15 @@ int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, double timestamp, cv:
 	return trajSize;
 }
 
+void FeaturesMap::removeFeatures(std::vector<int> featureIdsToRemove) {
+	// TODO: DB
+
+	// Glowne zastosowanie to usuniecie cech po ich zlaczeniu wynikajacym z loop closure
+	// Istotne, aby usunac cechy o podanych id (w updateMap jest zle, bo 5-cecha w vectorze nie musi miec id 5!)
+	// Według mnie nalezy tez przeprowadzic aktualizacje dla wszystkich podzbiorow cech, a nie tylko cech dla loop closure
+
+}
+
 /// get n-th image and depth image from the sequence
 void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
     image = imageSeq.at(poseNo);
@@ -292,8 +301,10 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
             features2visualization.push_back(e);
     }
 
+    // TODO: Czy to nie powinno byc updateMap dla takze cech z frontendu?
+    // TODO: Czy teraz w ogole dodatkowe deskryptory sa dodawanie dla danej cechy?
     if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    	updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 
     ///keyframes management
     std::set<int> intersect;
@@ -720,34 +731,31 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
-    // Wait for some information in map
-    auto start = std::chrono::system_clock::now();
-    while (continueLoopClosure) {
+	// Wait for some information in map
+	auto start = std::chrono::system_clock::now();
+	while (continueLoopClosure) {
 
-        if (verbose>0){
-            std::cout << "Loop closure: start new iteration\n";
-        }
-        std::pair<int,int> candidatePoses;
-        if (localLC->getLCPair(candidatePoses)){
-        	//
-        	                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
+		// Is there any pair that we should check?
+		LoopClosure::LCMatch lcMatch;
+		if (localLC->getLCPair(lcMatch)) {
 
-            std::vector<MapFeature> featureSetA, featureSetB;
+			// We log all analyzed pairs
+			loopClosureLog.push_back(lcMatch);
+
+			int frameIds[2] =
+					{ lcMatch.posesIds.first, lcMatch.posesIds.second };
+			Eigen::Matrix4f estimatedTransformation;
+			std::vector<std::pair<int, int>> pairedFeatures;
+			std::vector<MapFeature> featureSets[2];
+			double matchingRatio = 0.0;
 
 			if (verbose > 0) {
-				std::cout << "Loop closure: pair to analyze - " << candidatePoses.first << " "
-						<< candidatePoses.second << std::endl;
+				std::cout << "Loop closure: pair to analyze - " << frameIds[0]
+						<< " " << frameIds[1] << std::endl;
 			}
 
-            //mtxCamTrajLC.lock();
-            //if (camTrajectoryLC[candidatePoses.first].featuresIds.size()==0){//no measurements
-            //    mtxCamTrajLC.unlock();
-            //}
-            Eigen::Matrix4f estimatedTransformation;
-            std::vector<std::pair<int, int>> pairedFeatures;
-
-            double matchingRatio = 0.0;
-            if (config.typeLC == 0){ // use rgb frame
+			// DEPRECATED
+			if (config.typeLC == 0) { // use rgb frame
 //                SensorFrame sensorFrames[2];
 //                // be careful: todo: lock image and depth
 //                sensorFrames[0].depthImageScale=sensorModel.config.depthImageScale;
@@ -764,21 +772,17 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 //                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
 //                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
 
-            }
+			}
 
-            // We perform loop closure on features
-            if (config.typeLC == 1){
-            	mtxCamTrajLC.lock();
+			// We perform loop closure on features
+			if (config.typeLC == 1) {
+				mtxCamTrajLC.lock();
 
-            	// Check that each frame has sufficient number of observations
-				if (((int) camTrajectoryLC[candidatePoses.first].featuresIds.size()
+				// Check that each frame has sufficient number of observations
+				if (((int) camTrajectoryLC[frameIds[0]].featuresIds.size()
 						> config.minNumberOfFeaturesLC)
-						&& ((int) camTrajectoryLC[candidatePoses.second].featuresIds.size()
+						&& ((int) camTrajectoryLC[frameIds[1]].featuresIds.size()
 								> config.minNumberOfFeaturesLC)) {
-
-					// Copy data into those structures
-					std::vector<MapFeature> featureSets[2];
-					int frameIds[2] = {candidatePoses.first, candidatePoses.second};
 
 					// Fill structures with features observed in both poses
 					for (int i = 0; i < 2; i++) {
@@ -796,67 +800,88 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 					matchingRatio = matcher->matchFeatureLoopClosure(
 							featureSets, frameIds, pairedFeatures,
 							estimatedTransformation);
-
-					// TODO: correct this
-					featureSetA = featureSets[0];
-					featureSetB = featureSets[1];
-
 				}
 				mtxCamTrajLC.unlock();
 			}
 
+			loopClosureMatchingRatiosLog.push_back(matchingRatio);
+			if (matchingRatio > config.matchingRatioThresholdLC) {
 
-
-            std::cout << "LC: ratio " << matchingRatio << " > " << config.matchingRatioThresholdLC << "\n";
-            loopClosureMatchingRatiosLog.push_back(matchingRatio);
-            if (matchingRatio>config.matchingRatioThresholdLC){
-
-            	if (verbose > 0) {
-            		std::cout << "Loop closure: config.measurementTypeLC: " << config.measurementTypeLC << "\n";
-					std::cout << "Loop closure: matched: " << candidatePoses.first << ", " << candidatePoses.second << "\n";
-					std::cout << "Loop closure: matchingRatio " << matchingRatio << "\n";
-					std::cout << "Loop closure: features sets size(): " << featureSetA.size() << ", " << featureSetB.size() << "\n";
+				if (verbose > 0) {
+//					std::cout << "Loop closure: config.measurementTypeLC: "
+//							<< config.measurementTypeLC << "\n";
+//					std::cout << "Loop closure: matched: " << frameIds[0]
+//							<< ", " << frameIds[1] << "\n";
+					std::cout << "Loop closure: matchingRatio " << matchingRatio
+							<< " > " << config.matchingRatioThresholdLC << "\n";
+//					std::cout << "Loop closure: features sets size(): "
+//							<< featureSets[0].size() << ", "
+//							<< featureSets[1].size() << "\n";
+					std::cout << "Loop closure: inlier matches size(): "
+							<< pairedFeatures.size() << "\n";
 //					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
 //					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
-            	}
-                //loopClosureSuccess = true;
+				}
+				//loopClosureSuccess = true;
 
 //                if (config.measurementTypeLC==0){//pose-pose
 //                    Mat34 trans(estimatedTransformation.cast<double>());
 //                    addMeasurement(candidatePoses.first, candidatePoses.second, trans);
 //                }
-                // Pose - feature measurements
-                if (config.measurementTypeLC==1){
+				// Pose - feature measurements
+				if (config.measurementTypeLC == 1) {
 
-                    std::vector<MapFeature> measuredFeatures;
+					std::vector<MapFeature> measuredFeatures;
+					std::vector<int> featureIdsToRemove;
 
-                    // For each matched feature
-                    for (auto& pairFeat : pairedFeatures){
+					// For each matched pair (inlier), we need to merge measurements for those features and there are two options:
+					// - merge measurements from featureA into featureB and erase feature A
+					// - otherwise
+					// We decided to also erase feature with greater id
+					for (auto& pairFeat : pairedFeatures) {
 
-                    	// Look for a feature in set 2
-                        for (auto featureB : featureSetB){
+						if (pairFeat.first < pairFeat.second) {
+							// Look for a feature in set 2
+							for (auto featureB : featureSets[1]) {
+								// If found add new Id
+								if ((int) featureB.id == pairFeat.second) {
+									MapFeature featTmp = featureB;
+									featTmp.id = pairFeat.first;
 
-                        	// If found add new Id
-                            if ((int)featureB.id == pairFeat.second){
-                                MapFeature featTmp = featureB;
-                                featTmp.id = pairFeat.first;
+									featureIdsToRemove.push_back(pairFeat.second);
 
-                                //I think it should add all of those new descriptors
-                                measuredFeatures.push_back(featTmp);
-                            }
-                        }
-                    }
-                   std::cout << "LC: measurements no " << pairedFeatures.size() << "\n";
-                   addMeasurements(measuredFeatures,candidatePoses.second);
-                }
-            }
-        }
-        else{
-            if (verbose>0)
-                std::cout << "Loop closure: priority queue is empty\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        }
-    }
+									// It should add all of those new descriptors
+									measuredFeatures.push_back(featTmp);
+								}
+							}
+						} else {
+							// Look for a feature in set 1
+							for (auto featureA : featureSets[0]) {
+								// If found add new Id
+								if ((int) featureA.id == pairFeat.first) {
+									MapFeature featTmp = featureA;
+									featTmp.id = pairFeat.second;
+
+									featureIdsToRemove.push_back(pairFeat.first);
+
+									// It should add all of those new descriptors
+									measuredFeatures.push_back(featTmp);
+								}
+							}
+
+						}
+					}
+					addMeasurements(measuredFeatures, frameIds[1]);
+					std::sort(featureIdsToRemove.begin(), featureIdsToRemove.end(), std::greater<int>());
+					removeFeatures(featureIdsToRemove);
+				}
+			}
+		} else {
+			if (verbose > 1)
+				std::cout << "Loop closure: priority queue is empty\n";
+			std::this_thread::sleep_for(std::chrono::milliseconds(200));
+		}
+	}
     if (verbose>0) {
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
         std::cout << "Loop closure finished (t = " << elapsed.count() << "ms)\n";
@@ -1557,8 +1582,8 @@ std::vector<double> FeaturesMap::getLoopClosureMatchingRatiosLog() {
 	return loopClosureMatchingRatiosLog;
 }
 
-std::vector<std::pair<int,int>> FeaturesMap::getLoopClosureAnalyzedPairsLog() {
-	return loopClosureAnalyzedPairsLog;
+std::vector<LoopClosure::LCMatch> FeaturesMap::getLoopClosureAnalyzedPairsLog() {
+	return loopClosureLog;
 }
 
 bool FeaturesMap::getAndResetLoopClosureSuccesful() {

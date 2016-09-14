@@ -95,10 +95,11 @@ std::vector<std::pair<int, double>> VisualPlaceRecognition::findAddPlace(cv::Mat
     int32_t loopID = -1;
 
 
-    // TODO: If we skip tailFramesToSkip frames, we need to rescale the probabilities
+    // If we skip tailFramesToSkip frames, we need to rescale the probabilities
     double sumOfProb = 0;
-    for ( auto& match : matches)
-    	sumOfProb += match.match;
+    for(std::vector<of2::IMatch>::iterator it = matches.begin(); it != matches.end(); ++it)
+    	if(std::distance(it, matches.end()) > tailFramesToSkip )
+    		sumOfProb += it->match;
 
 
     for(std::vector<of2::IMatch>::iterator it = matches.begin(); it != matches.end(); ++it)

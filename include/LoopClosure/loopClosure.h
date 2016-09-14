@@ -12,6 +12,7 @@
 #include <queue>
 #include <thread>
 #include <iostream>
+#include <mutex>
 
 namespace putslam {
 
@@ -27,7 +28,7 @@ public:
         LC_FABMAP
 	};
 
-    class LCElement{
+    class LCMatch{
     public:
         /// matched poses
         std::pair<int,int> posesIds;
@@ -41,7 +42,7 @@ public:
         /// Fabmap probability
         double probability;
 
-        bool operator() (const LCElement& elementA, const LCElement& elementB) const {
+        bool operator() (const LCMatch& elementA, const LCMatch& elementB) const {
         	 if (elementA.probability > elementB.probability)
                 return true;
             else
@@ -69,13 +70,18 @@ public:
     }
 
     /// get candidate poses for LC (false -- no candidates)
-    virtual bool getLCPair(std::pair<int,int>& candidates) {
-        if (priorityQueueLC.size()>0){
-            LCElement element = priorityQueueLC.top();
-            candidates = element.posesIds;
-            priorityQueueLC.pop();
-            return true;
-        }
+    virtual bool getLCPair(LCMatch &lcMatch) {
+
+    	if(priorityQueueMtx.try_lock())
+    	{
+			if (priorityQueueLC.size()>0){
+				lcMatch = priorityQueueLC.top();
+				priorityQueueLC.pop();
+				priorityQueueMtx.unlock();
+				return true;
+			}
+			priorityQueueMtx.unlock();
+    	}
         return false;
     }
 
@@ -102,7 +108,8 @@ protected:
     std::deque<int> frameIds;
 
     /// loop closure priority queue
-    std::priority_queue<LCElement, std::vector<LCElement>, LCElement > priorityQueueLC;
+    std::mutex priorityQueueMtx;
+    std::priority_queue<LCMatch, std::vector<LCMatch>, LCMatch > priorityQueueLC;
 };
 }
 
