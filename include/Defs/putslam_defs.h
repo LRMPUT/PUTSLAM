@@ -120,10 +120,10 @@ public:
 class ExtendedDescriptor {
 public:
 	/// set of descriptors
-	typedef std::vector<ExtendedDescriptor> Seq;
+	//typedef std::vector<ExtendedDescriptor> Seq;
 
 	/// id of the the camera pose (vertex in the graph)
-	unsigned int poseId;
+	//unsigned int poseId;
 
     /// feature location on the poseId-th rgb image
     cv::Point2f point2D, point2DUndist;
@@ -141,12 +141,12 @@ public:
     double detDist;
 
 	/// Constructor
-	ExtendedDescriptor(unsigned int _poseId, cv::Point2f _point2D,
-			cv::Point2f _point2DUndist, Vec3 _point3D, cv::Mat _descriptor,
-            int _octave, double _detDist) :
-			poseId(_poseId), point2D(_point2D), point2DUndist(_point2DUndist), point3D(
-					_point3D), descriptor(_descriptor), octave(_octave), detDist(
-					_detDist) {
+	ExtendedDescriptor() {
+	}
+	ExtendedDescriptor(cv::Point2f _point2D, cv::Point2f _point2DUndist,
+			Vec3 _point3D, cv::Mat _descriptor, int _octave, double _detDist) :
+			point2D(_point2D), point2DUndist(_point2DUndist), point3D(_point3D), descriptor(
+					_descriptor), octave(_octave), detDist(_detDist) {
     }
 };
 
@@ -155,8 +155,9 @@ public:
 	/// Position of the feature (temporal or in global CS)
 	Vec3 position;
 
-	/// set of descriptors
-	std::vector<ExtendedDescriptor> descriptors;
+	/// set of descriptors, std::map<poseId, computedDescriptor>
+	std::map<unsigned int, ExtendedDescriptor> descriptors;
+//	std::vector<ExtendedDescriptor> descriptors;
 
 	/// feature location on the rgb image
     double u;
@@ -174,7 +175,7 @@ public:
     }
 
     RGBDFeature(const Vec3 _position, double _u, double _v,
-			const std::vector<ExtendedDescriptor> _descriptors) :
+			const std::map<unsigned int, ExtendedDescriptor> _descriptors) :
 			position(_position), descriptors(_descriptors), u(_u), v(_v) {
 
     }
@@ -201,7 +202,7 @@ public:
 	/// Constructor
     MapFeature(unsigned int _id, double u, double  v,
 			const Vec3 _position, std::vector<unsigned int> _posesIds,
-            std::vector<ExtendedDescriptor> _descriptors,
+			std::map<unsigned int, ExtendedDescriptor> _descriptors,
             std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
                     _posesIds), imageCoordinates(_imageCoordinates) {

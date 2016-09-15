@@ -537,7 +537,7 @@ cv::Mat Matcher::extractMapDescriptors(std::vector<MapFeature> mapFeatures) {
 	cv::Mat mapDescriptors;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it) {
-		mapDescriptors.push_back(it->descriptors[0].descriptor);
+		mapDescriptors.push_back(it->descriptors.begin()->second.descriptor);
 	}
 	return mapDescriptors;
 }
@@ -601,14 +601,14 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		mapFeature.posesIds.push_back(sensorPoseId);
 
 
-		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-				prevFeaturesDistorted[currentPoseId],
+		ExtendedDescriptor featureExtendedDescriptor(prevFeaturesDistorted[currentPoseId],
 				prevFeaturesUndistorted[currentPoseId],
 				Vec3(prevFeatures3D[currentPoseId].cast<double>()),
 				prevDescriptors.row(currentPoseId),
 				prevKeyPoints[currentPoseId].octave,
 				prevDetDists[currentPoseId]);
-		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+
+		mapFeature.descriptors[sensorPoseId] = featureExtendedDescriptor;
 
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
@@ -617,22 +617,22 @@ double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	return RANSAC::pointInlierRatio(inlierMatches, matches);
 }
 
-void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
-		std::vector<int> frameIds, std::vector<int> &closestFrameIndex) {
-	int j = 0;
-	for (std::vector<MapFeature>::iterator it = featureSet.begin();
-			it != featureSet.end(); ++it, ++j) {
-		// Find the closest view in a map for a feature
-		if (frameIds.size() > 0) {
-			for (std::vector<ExtendedDescriptor>::size_type k = 0; k < it->descriptors.size(); k++) {
-				if (frameIds[j] == (int)it->descriptors[k].poseId) {
-					closestFrameIndex[j] = (int)k;
-					break;
-				}
-			}
-		}
-	}
-}
+//void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
+//		std::vector<int> frameIds, std::vector<int> &closestFrameIndex) {
+//	int j = 0;
+//	for (std::vector<MapFeature>::iterator it = featureSet.begin();
+//			it != featureSet.end(); ++it, ++j) {
+//		// Find the closest view in a map for a feature
+//		if (frameIds.size() > 0) {
+//			for (std::vector<ExtendedDescriptor>::size_type k = 0; k < it->descriptors.size(); k++) {
+//				if (frameIds[j] == (int)it->descriptors[k].poseId) {
+//					closestFrameIndex[j] = (int)k;
+//					break;
+//				}
+//			}
+//		}
+//	}
+//}
 
 
 
@@ -641,7 +641,7 @@ void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, bool newDetection,
-		std::vector<int> /*frameIds*/) {
+		std::vector<int> frameIds) {
 
 	if (!newDetection)
 		return matchXYZ(mapFeatures,
@@ -651,7 +651,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 						prevDescriptors,
 						prevFeatures3D,
 						prevKeyPoints,
-						prevDetDists);
+						prevDetDists,
+						frameIds);
 
 	// Detect salient features
 	prevKeyPoints = detectFeatures(prevRgbImage);
@@ -696,7 +697,8 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			prevDescriptors,
 			prevFeatures3D,
 			prevKeyPoints,
-			prevDetDists);
+			prevDetDists,
+			frameIds);
 }
 
 // Guided matching
@@ -756,26 +758,25 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
 			extractMapFeaturesPositions(mapFeatures);
 
+	std::cout << "COMPARE SIZES: " << mapFeatures.size() << " " << frameIds.size() << std::endl;
+
 	// For all features in the map
 	int j = 0, perfectMatchCounter = 0;
 	for (std::vector<MapFeature>::iterator it = mapFeatures.begin();
 			it != mapFeatures.end(); ++it, ++j) {
 
+
 		// Find the closest view in a map for a feature
-		int mapFeatureClosestFrameId = 0;
-		if (frameIds.size() > 0) {
-			for (unsigned int k = 0; k < it->descriptors.size(); k++) {
-				if (frameIds[j] == (int)it->descriptors[k].poseId) {
-					mapFeatureClosestFrameId = k;
-					break;
-				}
-			}
-		}
+		ExtendedDescriptor extDesc;
+		if (frameIds.size() > 0)
+			extDesc = it->descriptors[frameIds[j]];
+		else
+			extDesc = it->descriptors.begin()->second;
 
 		//Compute predicted scale
-		int& detLevel = it->descriptors[mapFeatureClosestFrameId].octave;
+		int& detLevel = extDesc.octave;
         double detLevelScaleFactor = pow(scaleFactor, detLevel);
-        double& detDist = it->descriptors[mapFeatureClosestFrameId].detDist;
+        double& detDist = extDesc.detDist;
         double curDist = std::sqrt(it->position.vector()[0]*it->position.vector()[0] +
 										it->position.vector()[1]*it->position.vector()[1] +
 										it->position.vector()[2]*it->position.vector()[2]);
@@ -810,7 +811,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		for (std::vector<int>::size_type i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
-			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
+			cv::Mat x = (extDesc.descriptor
 					- currentPoseDescriptors.row(id));
 			float value = (float)norm(x, normType);
 			if (value < bestVal || bestId == -1) {
@@ -828,7 +829,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		for (std::vector<int>::size_type i = 0; i < possibleMatchId.size(); i++) {
 			int id = possibleMatchId[i];
 
-			cv::Mat x = (it->descriptors[mapFeatureClosestFrameId].descriptor
+			cv::Mat x = (extDesc.descriptor
 					- currentPoseDescriptors.row(id));
 			float value = (float)norm(x, normType);
 			if (matchingXYZacceptRatioOfBestMatch * value <= bestVal) {
@@ -876,13 +877,12 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 				currentPoseFeatures3D[currentPoseId].cast<double>());
 		mapFeature.posesIds.push_back(sensorPoseId);
 
-		ExtendedDescriptor featureExtendedDescriptor(sensorPoseId,
-				prevFeaturesUndistorted[currentPoseId],
+		ExtendedDescriptor featureExtendedDescriptor(prevFeaturesUndistorted[currentPoseId],
 				prevFeaturesDistorted[currentPoseId], mapFeature.position,
 				currentPoseDescriptors.row(currentPoseId),
 				currentPoseKeyPoints[currentPoseId].octave,
 				currentPoseDetDists[currentPoseId]);
-		mapFeature.descriptors.push_back(featureExtendedDescriptor);
+		mapFeature.descriptors[sensorPoseId]=featureExtendedDescriptor;
 
 		// Add the measurement
 		foundInlierMapFeatures.push_back(mapFeature);
@@ -924,21 +924,17 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 
 			// We look for the descriptor and u,v from a position we currently analyze
 			// TODO: it is assumed that extended descriptor is saved from every pose that feature was observed from
-			for (auto & extDescriptor : feature.descriptors) {
-				if ((int)extDescriptor.poseId == currentFrameId) {
-					points2D[i].push_back(extDescriptor.point2DUndist);
-					points3D[i].push_back(
-							Eigen::Vector3f((float) extDescriptor.point3D.x(),
-									(float) extDescriptor.point3D.y(),
-									(float) extDescriptor.point3D.z()));
-					feature.u = extDescriptor.point2DUndist.x;
-					feature.v = extDescriptor.point2DUndist.y;
-					extractedDescriptors[i].push_back(extDescriptor.descriptor);
-				}
-			}
+			ExtendedDescriptor &ext = feature.descriptors[currentFrameId];
+			points2D[i].push_back(ext.point2DUndist);
+			points3D[i].push_back(
+					Eigen::Vector3f((float) ext.point3D.x(),
+							(float) ext.point3D.y(), (float) ext.point3D.z()));
+			feature.u = ext.point2DUndist.x;
+			feature.v = ext.point2DUndist.y;
+			extractedDescriptors[i].push_back(ext.descriptor);
 
 		}
-	 }
+	}
 
 //	std::cout << "descriptors: " << extractedDescriptors[0].rows << " " << extractedDescriptors[1].rows << std::endl;
 //	std::cout << "points2D: " << points2D[0].size() << " " << points2D[1].size() << std::endl;

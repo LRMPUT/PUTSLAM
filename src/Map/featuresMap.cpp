@@ -168,11 +168,15 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
 int FeaturesMap::addNewPose(const Mat34& cameraPoseChange, double timestamp, cv::Mat image, cv::Mat depthImage) {
     int trajSize = (int)camTrajectory.size();
 
-    //add camera pose to the map
-    if (config.keepCameraFrames){
-        imageSeq.insert(std::make_pair(trajSize,image));
-        depthSeq.insert(std::make_pair(trajSize,depthImage));
+    // When keepCameraFrames:
+    // - true 	- we store all images in map
+    // - false 	- we store only the images from new pose for LC purposes
+    if (!config.keepCameraFrames){
+        imageSeq.clear();
+        depthSeq.clear();
     }
+    imageSeq.insert(std::make_pair(trajSize,image));
+    depthSeq.insert(std::make_pair(trajSize,depthImage));
 
     Mat34 cameraPose(cameraPoseChange);
 	if (trajSize == 0) {
@@ -233,16 +237,18 @@ void FeaturesMap::removeFeatures(std::vector<int> featureIdsToRemove) {
 	// TODO: DB
 
 	// Glowne zastosowanie to usuniecie cech po ich zlaczeniu wynikajacym z loop closure
-	// Istotne, aby usunac cechy o podanych id (w updateMap jest zle, bo 5-cecha w vectorze nie musi miec id 5!)
-	// Według mnie nalezy tez przeprowadzic aktualizacje dla wszystkich podzbiorow cech, a nie tylko cech dla loop closure
+	// Istotne, aby usunac cechy o podanych id
+	// Według mnie nalezy tez przeprowadzic aktualizacje dla wszystkich podzbiorow cech oraz optymlizacji, a nie tylko cech dla loop closure
 
 }
 
 /// get n-th image and depth image from the sequence
 void FeaturesMap::getImages(int poseNo, cv::Mat& image, cv::Mat& depthImage){
-    image = imageSeq.at(poseNo);
-    depthImage = depthSeq.at(poseNo);
-    //check if poseNo is keyframe!!!
+	if (config.keepCameraFrames){
+	  image = imageSeq.at(poseNo);
+	  depthImage = depthSeq.at(poseNo);
+	}
+	//check if poseNo is keyframe!!!
 }
 
 /// add measurements (features measured from the last camera pose)
@@ -264,6 +270,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
 		Mat33 info(Mat33::Identity());
 
 		// We add new descriptor and new measurement for a feature in loop closure
+		// TODO: zrobic to samo dla bufferFeaturesFrontend
 		if (continueLoopClosure) {
 			bufferMapLoopClosure.mtxBuffer.lock();
 			int mapFeatureId = it->id;
@@ -284,14 +291,18 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
             }
         }
 
+
+        // TODO: To konsekwentnie powinno dziac sie przez updateMap
         mtxMapFrontend.lock();
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
         featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
+        for (auto &desc : it->descriptors)
+        	featuresMapFrontend[it->id].descriptors[desc.first] = desc.second;
         featuresMapFrontend[it->id].lifeValue += 2 ;
         mtxMapFrontend.unlock();
 
         mtxMapLoopClosure.lock();
-        featuresMapLoopClosure[it->id].posesIds.push_back(_poseId);
+        featuresMapLoopClosure[it->id].posesIds.push_back(_poseId); // TODO: what about descriptors? We will use original desc anyway
         featuresMapLoopClosure[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
         mtxMapLoopClosure.unlock();
 
@@ -302,7 +313,8 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
     }
 
     // TODO: Czy to nie powinno byc updateMap dla takze cech z frontendu?
-    // TODO: Czy teraz w ogole dodatkowe deskryptory sa dodawanie dla danej cechy?
+    // TODO: Czy teraz w ogole dodatkowe deskryptory sa dodawanie dla danej cechy? Nie sa
+    // TODO: To w ogole moze duplikowac wpisy powyzej
     if (continueLoopClosure)
     	updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 
@@ -324,6 +336,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
             lastKeyframeId = (int) camTrajectory.size()-1;
             //std::cout << "\n lastKeyframeId " << lastKeyframeId << "\n";
             mtxCamTraj.unlock();
+
             if (continueLoopClosure){
                 localLC->addPose(this->getSensorPose(lastKeyframeId),imageSeq.at(lastKeyframeId), lastKeyframeId);
             }
@@ -395,6 +408,8 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
                     [&featuresSet](const std::map<int,MapFeature>::value_type& p)
                     { featuresSet.push_back(p.second); });
 	mtxMapFrontend.unlock();
+
+	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu?
 	//try to update the map
 	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     if (continueManagement)
@@ -417,7 +432,7 @@ Vec3 FeaturesMap::getFeaturePosition(unsigned int id) const {
 std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
         const Mat34& cameraPose, int graphDepthThreshold, double distanceThreshold) {
     std::vector<int> neighborsIds;
-    //we don't have to use graph since SE3 vertex have nly one following vertex (all vertices create camera trajectory)
+    //we don't have to use graph since SE3 vertex have only one following vertex (all vertices create camera trajectory)
     //poseGraph->findNearestNeighbors(camTrajectory.size()-1, graphDepthThreshold, neighborsIds);
     for (int i=(int)camTrajectory.size()-1;i>=0;i--){
         if (i>=int(camTrajectory.size()-graphDepthThreshold)||graphDepthThreshold==-1)
@@ -426,14 +441,17 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
             break;
     }
     distanceThreshold = pow(distanceThreshold,2.0);
+
     // Euclidean distance threshold
     for (std::vector<int>::iterator it = neighborsIds.begin();it!=neighborsIds.end();){
         Mat34 sensorPose = getSensorPose(*it);
         double dist = pow(cameraPose(0,3)-sensorPose(0,3),2.0) + pow(cameraPose(1,3)-sensorPose(1,3),2.0) + pow(cameraPose(2,3)-sensorPose(2,3),2.0);
        // std::cout << "id: " << *it <<  " dist: " << dist << " thresh " << distanceThreshold << "\n";
         if (dist>distanceThreshold){
-         //   std::cout << "erase\n";
-            it = neighborsIds.erase(it);
+          //   std::cout << "erase\n";
+          //  it = neighborsIds.erase(it);
+        	std::iter_swap(it, std::prev(neighborsIds.end()));
+        	neighborsIds.pop_back();
         }
         else
             it++;
@@ -522,6 +540,7 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
 }
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
+/// TODO: Think if we shouldn't additionally use the vector from image origin to feature as it may greatly change current comparison
 void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<double>& angles, double maxAngle){
     Mat34 currentCameraPose = getSensorPose();
     imageIds.resize(features.size(),-1);
@@ -542,7 +561,7 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
                 double angle = acos(featureView.dot(featureViewCurr)/(featureView.norm()*featureViewCurr.norm()));
                 if (fabs(angle)<minRot){
                     minRot = angle;
-                    idMin = (int)j;
+                    idMin = (int)features[i].posesIds[j];
                     angles[i] = fabs(angle);
                 }
             }
@@ -638,8 +657,6 @@ void FeaturesMap::startMapManagerThread(int verbose){
 
 /// start loop closure thread
 void FeaturesMap::startLoopClosureThread(int verbose, Matcher* matcher){
-    if (!config.keepCameraFrames)
-        throw std::runtime_error(std::string("Camera frames are not used (keepCameraFrames==false). LC is not available.\nModify config files.\n"));
     localLC->startLCsearchingThread();
     loopClosureThr.reset(new std::thread(&FeaturesMap::loopClosure, this, verbose, matcher));
 }
@@ -725,6 +742,7 @@ void FeaturesMap::manage(int verbose){
 void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 	  // graph optimization
     continueLoopClosure = true;
+
     // Wait for some information in map
     while (continueLoopClosure && featuresMapLoopClosure.size()==0) {
         std::cout << "wait\n";
@@ -739,9 +757,8 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 		LoopClosure::LCMatch lcMatch;
 		if (localLC->getLCPair(lcMatch)) {
 
-			// We log all analyzed pairs
-			loopClosureLog.push_back(lcMatch);
 
+			// Variables to store data and resultss
 			int frameIds[2] =
 					{ lcMatch.posesIds.first, lcMatch.posesIds.second };
 			Eigen::Matrix4f estimatedTransformation;
@@ -749,132 +766,102 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 			std::vector<MapFeature> featureSets[2];
 			double matchingRatio = 0.0;
 
+			// Information about current analysis
 			if (verbose > 0) {
 				std::cout << "Loop closure: pair to analyze - " << frameIds[0]
 						<< " " << frameIds[1] << std::endl;
 			}
 
-			// DEPRECATED
-			if (config.typeLC == 0) { // use rgb frame
-//                SensorFrame sensorFrames[2];
-//                // be careful: todo: lock image and depth
-//                sensorFrames[0].depthImageScale=sensorModel.config.depthImageScale;
-//                sensorFrames[1].depthImageScale=sensorModel.config.depthImageScale;
-//                getImages(candidatePoses.first, sensorFrames[0].rgbImage, sensorFrames[0].depthImage);
-//                getImages(candidatePoses.second, sensorFrames[1].rgbImage, sensorFrames[1].depthImage);
-//                matchingRatio = matcher->matchPose2Pose(sensorFrames, estimatedTransformation);
-//
-//
-//
-//                loopClosureMatchingRatiosLog.push_back(matchingRatio);
-//                loopClosureAnalyzedPairsLog.push_back(candidatePoses);
-//
-//                std::cout << "Loop closure: matchingRatio: " << matchingRatio << ", between frames: " << candidatePoses.first << "->" << candidatePoses.second << "\n";
-//                std::cout << "Loop closure: paired features " << pairedFeatures.size() << "\n";
-
-			}
-
 			// We perform loop closure on features
-			if (config.typeLC == 1) {
-				mtxCamTrajLC.lock();
+			mtxCamTrajLC.lock();
 
-				// Check that each frame has sufficient number of observations
-				if (((int) camTrajectoryLC[frameIds[0]].featuresIds.size()
-						> config.minNumberOfFeaturesLC)
-						&& ((int) camTrajectoryLC[frameIds[1]].featuresIds.size()
-								> config.minNumberOfFeaturesLC)) {
+			// Check that each frame has sufficient number of observations
+			if (((int) camTrajectoryLC[frameIds[0]].featuresIds.size()
+					> config.minNumberOfFeaturesLC)
+					&& ((int) camTrajectoryLC[frameIds[1]].featuresIds.size()
+							> config.minNumberOfFeaturesLC)) {
 
-					// Fill structures with features observed in both poses
-					for (int i = 0; i < 2; i++) {
-						int & currentFrameId = frameIds[i];
+				// Fill structures with features observed in both poses
+				for (int i = 0; i < 2; i++) {
+					int & currentFrameId = frameIds[i];
 
-						for (auto & featureId : camTrajectoryLC[currentFrameId].featuresIds) {
-							mtxMapLoopClosure.lock();
-							featureSets[i].push_back(
-									featuresMapLoopClosure[featureId]);
-							mtxMapLoopClosure.unlock();
-						}
+					for (auto & featureId : camTrajectoryLC[currentFrameId].featuresIds) {
+						mtxMapLoopClosure.lock();
+						featureSets[i].push_back(
+								featuresMapLoopClosure[featureId]);
+						mtxMapLoopClosure.unlock();
 					}
-
-					// Call loop closure matching
-					matchingRatio = matcher->matchFeatureLoopClosure(
-							featureSets, frameIds, pairedFeatures,
-							estimatedTransformation);
 				}
-				mtxCamTrajLC.unlock();
+
+				// Call loop closure matching
+				matchingRatio = matcher->matchFeatureLoopClosure(featureSets,
+						frameIds, pairedFeatures, estimatedTransformation);
 			}
 
+			mtxCamTrajLC.unlock();
+
+			// We log all analyzed pairs
+			lcMatch.matchingRatio = matchingRatio;
+			loopClosureLog.push_back(lcMatch);
 			loopClosureMatchingRatiosLog.push_back(matchingRatio);
+
+			// If geometric matching confirmed a loop closure
 			if (matchingRatio > config.matchingRatioThresholdLC) {
+				loopClosureSuccess = true;
 
 				if (verbose > 0) {
-//					std::cout << "Loop closure: config.measurementTypeLC: "
-//							<< config.measurementTypeLC << "\n";
-//					std::cout << "Loop closure: matched: " << frameIds[0]
-//							<< ", " << frameIds[1] << "\n";
 					std::cout << "Loop closure: matchingRatio " << matchingRatio
 							<< " > " << config.matchingRatioThresholdLC << "\n";
-//					std::cout << "Loop closure: features sets size(): "
-//							<< featureSets[0].size() << ", "
-//							<< featureSets[1].size() << "\n";
 					std::cout << "Loop closure: inlier matches size(): "
 							<< pairedFeatures.size() << "\n";
-//					std::cout << "Loop closure: estimated transformation: \n" << estimatedTransformation << "\n";
-//					std::cout << "Loop closure: graph transformation: \n" << (camTrajectoryLC[candidatePoses.first].pose.inverse()*camTrajectoryLC[candidatePoses.second].pose).matrix() << "\n";
 				}
-				//loopClosureSuccess = true;
-
-//                if (config.measurementTypeLC==0){//pose-pose
-//                    Mat34 trans(estimatedTransformation.cast<double>());
-//                    addMeasurement(candidatePoses.first, candidatePoses.second, trans);
-//                }
 				// Pose - feature measurements
-				if (config.measurementTypeLC == 1) {
 
-					std::vector<MapFeature> measuredFeatures;
-					std::vector<int> featureIdsToRemove;
+				std::vector<MapFeature> measuredFeatures;
+				std::vector<int> featureIdsToRemove;
 
-					// For each matched pair (inlier), we need to merge measurements for those features and there are two options:
-					// - merge measurements from featureA into featureB and erase feature A
-					// - otherwise
-					// We decided to also erase feature with greater id
-					for (auto& pairFeat : pairedFeatures) {
+				// For each matched pair (inlier), we need to merge measurements for those features and there are two options:
+				// - merge measurements from featureA into featureB and erase feature A
+				// - otherwise
+				// We decided to also erase feature with greater id
+				for (auto& pairFeat : pairedFeatures) {
 
-						if (pairFeat.first < pairFeat.second) {
-							// Look for a feature in set 2
-							for (auto featureB : featureSets[1]) {
-								// If found add new Id
-								if ((int) featureB.id == pairFeat.second) {
-									MapFeature featTmp = featureB;
-									featTmp.id = pairFeat.first;
+					if (pairFeat.first < pairFeat.second) {
+						// Look for a feature in set 2
+						for (auto featureB : featureSets[1]) {
+							// If found add new Id
+							if ((int) featureB.id == pairFeat.second) {
+								MapFeature featTmp = featureB;
+								featTmp.id = pairFeat.first;
 
-									featureIdsToRemove.push_back(pairFeat.second);
+								featureIdsToRemove.push_back(pairFeat.second);
 
-									// It should add all of those new descriptors
-									measuredFeatures.push_back(featTmp);
-								}
+								// It should add all of those new descriptors
+								measuredFeatures.push_back(featTmp);
 							}
-						} else {
-							// Look for a feature in set 1
-							for (auto featureA : featureSets[0]) {
-								// If found add new Id
-								if ((int) featureA.id == pairFeat.first) {
-									MapFeature featTmp = featureA;
-									featTmp.id = pairFeat.second;
-
-									featureIdsToRemove.push_back(pairFeat.first);
-
-									// It should add all of those new descriptors
-									measuredFeatures.push_back(featTmp);
-								}
-							}
-
 						}
+					} else {
+						// Look for a feature in set 1
+						for (auto featureA : featureSets[0]) {
+							// If found add new Id
+							if ((int) featureA.id == pairFeat.first) {
+								MapFeature featTmp = featureA;
+								featTmp.id = pairFeat.second;
+
+								featureIdsToRemove.push_back(pairFeat.first);
+
+								// It should add all of those new descriptors
+								measuredFeatures.push_back(featTmp);
+							}
+						}
+
 					}
-					addMeasurements(measuredFeatures, frameIds[1]);
-					std::sort(featureIdsToRemove.begin(), featureIdsToRemove.end(), std::greater<int>());
-					removeFeatures(featureIdsToRemove);
 				}
+				addMeasurements(measuredFeatures, frameIds[1]);
+				std::sort(featureIdsToRemove.begin(), featureIdsToRemove.end(),
+						std::greater<int>());
+				removeFeatures(featureIdsToRemove);
+
 			}
 		} else {
 			if (verbose > 1)
@@ -1137,7 +1124,7 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
 }
 
 /// Update map
-void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
+bool FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
 	if (mutex.try_lock()) {    //try to lock graph
 		modifier.mtxBuffer.lock();
 		if (modifier.addFeatures()) {
@@ -1150,28 +1137,25 @@ void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 			}
             modifier.features2update.clear();
 		}
-		// TODO: MN: It duplicates the code above?
-//        if (modifier.updateFeatures()) {
-//            for (auto feature : modifier.features2update) {
-//                updateFeature(featuresMap, feature.second);
-//            }
-//            modifier.features2update.clear();
-//        }
         if (modifier.removeFeatures()) {
             for (auto feature : modifier.removeIds) {
                 featuresMap.erase(feature);
             }
-            // TODO: MN: not needed?
-//             modifier.features2update.clear();
+            modifier.removeIds.clear();
         }
 		modifier.mtxBuffer.unlock();
 		mutex.unlock();
+
+		return true;
 	}
+	return false;
 }
 
 /// Update feature
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {
-    featuresMap[newFeature.id].position = newFeature.position;
+
+	// Update position - used after optimization TODO: We shouldn't update position when adding descriptors
+	featuresMap[newFeature.id].position = newFeature.position;
 
     // The measurement contains new extended descriptor and we add to the feature information
 	if (featuresMap.count(newFeature.id) > 0
@@ -1180,21 +1164,8 @@ void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeatur
 		// Analyze the one of the new descriptors
 		for (auto & descToAdd : newFeature.descriptors)
 		{
-
-			// Check if potentially new descriptor is not already in the descriptor set
-			bool shouldWeAdd = true;
-			for (auto &existingDesc :  featuresMap[newFeature.id].descriptors) {
-
-				if (existingDesc.poseId == descToAdd.poseId)
-				{
-					shouldWeAdd = false;
-					break;
-				}
-			}
-
-			if (shouldWeAdd) {
-				featuresMap[newFeature.id].descriptors.push_back(descToAdd);
-			}
+			// This adds new descriptor if there is not descriptor with provided key
+			featuresMap[newFeature.id].descriptors[descToAdd.first] = descToAdd.second;
 		}
 
 	}

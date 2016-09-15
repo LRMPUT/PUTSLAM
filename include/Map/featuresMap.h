@@ -246,9 +246,7 @@ public:
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("searchPairsTypeLC", &searchPairsTypeLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("waitUntilFinishedLC", &waitUntilFinishedLC);
             model->FirstChildElement( "loopClosure" )->QueryIntAttribute("minNumberOfFeaturesLC", &minNumberOfFeaturesLC);
-            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("measurementTypeLC", &measurementTypeLC);
             model->FirstChildElement( "loopClosure" )->QueryDoubleAttribute("matchingRatioThresholdLC", &matchingRatioThresholdLC);
-            model->FirstChildElement( "loopClosure" )->QueryIntAttribute("typeLC", &typeLC);
             configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
 
             visualize = false;
@@ -351,14 +349,8 @@ public:
             /// minimal number of features to check LC
             int minNumberOfFeaturesLC;
 
-            /// type of measurement added to the graph
-            int measurementTypeLC;
-
             /// LoopClosure: matchingRatioThreshold
             double matchingRatioThresholdLC;
-
-            /// type LC
-            int typeLC;
 
             /// method which pairs poses
             int searchPairsTypeLC;
@@ -517,7 +509,7 @@ private:
     void loopClosure(int verbose, Matcher* matcher);
 
     /// Update map
-    void updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
+    bool updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
 
     /// Update feature
     void updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature);

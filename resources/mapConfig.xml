@@ -43,7 +43,7 @@
     <mapCompression compressMap="true" covisibilityKeyframes="0.9" marginalizationThr="0.3" minFramesNo="30" maxFramesNo="250"/>
 
     <!--Get features from map using Euclidean criterion-->
-    <EuclideanCriterion useEuclideanCrit="false" imagePlaneDistance="0.75" depthDist="1.5" maxAngle="0.5" maxRadius="5.0"/>
+    <EuclideanCriterion useEuclideanCrit="false" imagePlaneDistance="0.75" depthDist="1.5" maxAngle="0.75" maxRadius="5.0"/>
     
 <!--    Export map to m-file:
     filenameMap - map file
@@ -57,16 +57,13 @@
     <mapManager distThreshold="0.01"/>
 <!--    Map visualization options:
 	  frameNo2updatePointCloud - send point cloud to visualizer every i-th frame
-	  measurementTypeLC - type of measurement added to the graph: 
-			      0 - pose-pose
-			      1 - pose-features
     -->
     <visualization frameNo2updatePointCloud="60"/>
-    <!--typeLC:		0 - use images (obsolete and not working)
-			1 - use map features
+    <!--
+
       waitUntilFinishedLC  -  search for LC after frontend stops [s]
       searchPairsTypeLC 0 - local geometric distance
 			1 - FABMAP
     -->  
-    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.4" measurementTypeLC="1" typeLC="1"/>
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.4"/>
 </MapConfig>

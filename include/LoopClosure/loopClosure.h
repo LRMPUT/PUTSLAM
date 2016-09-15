@@ -42,8 +42,11 @@ public:
         /// Fabmap probability
         double probability;
 
+        /// Geometric matching ratio
+        double matchingRatio;
+
         bool operator() (const LCMatch& elementA, const LCMatch& elementB) const {
-        	 if (elementA.probability > elementB.probability)
+        	 if (elementA.probability < elementB.probability)
                 return true;
             else
                 return false;

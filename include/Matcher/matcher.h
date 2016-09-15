@@ -473,9 +473,9 @@ private:
             std::vector<double>& detDists,
             const std::vector<double>& detDistsSandBox);
 
-	void framesIds2framesIndex(std::vector<MapFeature> featureSet,
-			std::vector<int> frameIds,
-			std::vector<int> &closestFrameIndex);
+//	void framesIds2framesIndex(std::vector<MapFeature> featureSet,
+//			std::vector<int> frameIds,
+//			std::vector<int> &closestFrameIndex);
 };
 }
 ;

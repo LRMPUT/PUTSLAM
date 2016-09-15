@@ -150,8 +150,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 				}
 
 
-				ExtendedDescriptor desc(cameraPoseId,
-						features.distortedFeature2D[j],
+				ExtendedDescriptor desc(features.distortedFeature2D[j],
 						features.undistortedFeature2D[j],
 						Vec3(features.feature3D[j].x(), features.feature3D[j].y(), features.feature3D[j].z()),
 						descMat,
@@ -159,7 +158,7 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 						features.detDist[j]);
 
 				// In further processing we expect more descriptors
-				std::vector<ExtendedDescriptor> extDescriptors { desc };
+				std::map<unsigned int, ExtendedDescriptor> extDescriptors { {cameraPoseId, desc} };
 
 				// Convert translation
 				Eigen::Translation<double, 3> featurePosition(
@@ -667,9 +666,9 @@ void PUTSLAM::startProcessing() {
 	while (true) {
 		std::cout << std::endl << "----- Frame counter : " << frameCounter << "-----" << std::endl << std::flush;
 
-		// if loop was closed -> wait 10 seconds
-		if (map->getAndResetLoopClosureSuccesful())
-			usleep(10000000);
+//		// if loop was closed -> wait 10 seconds
+//		if (map->getAndResetLoopClosureSuccesful())
+//			usleep(10000000);
 
 
 		// Get the frame to processing
@@ -728,17 +727,6 @@ void PUTSLAM::startProcessing() {
 				std::vector<int> frameIds;
                 std::vector<double> angles;
 				mapFeatures = getAndFilterFeaturesFromMap(currentSensorFrame, cameraPose, frameIds, angles);
-
-				//TODO: TEST ONLY - brakuje ciagle dodatkowych deskryptorow
-//				if (frameCounter > 120) {
-//					for (auto &f : mapFeatures) {
-//						std::cout << "Descriptor sizes: " << f.descriptors.size() << std::endl;
-//					}
-//
-//					int a;
-//					std::cin>>a;
-//				}
-
 
 
 				if (verbose > 0)
@@ -1174,9 +1162,9 @@ void PUTSLAM::saveLogs() {
 
 	vector<LoopClosure::LCMatch> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
 	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.log");
-	lcAnalyzedPairsStream << "id1 id2 probability" << std::endl;
+	lcAnalyzedPairsStream << "id1 id2 probability matchingRatio" << std::endl;
 	for ( auto &p : lcAnalyzedPairsLog) {
-		lcAnalyzedPairsStream << p.posesIds.first << " " << p.posesIds.second << " " << p.probability << std::endl;
+		lcAnalyzedPairsStream << p.posesIds.first << " " << p.posesIds.second << " " << p.probability << " " << p.matchingRatio << std::endl;
 	}
 	lcAnalyzedPairsStream.close();
 
