@@ -11,11 +11,9 @@ PUTSLAM::PUTSLAM() {
 
 	// Reading robot starting pose
 	VOPoseEstimate = grabber->getStartingSensorPose();
-	VoMapPose = VOPoseEstimate;
 
 	// File to save trajectory
 	trajectoryFreiburgStream.open("VO_trajectory.res");
-	trajectoryVOMapStream.open("VOMap_trajectory.res");
 	trajectoryMotionModelStream.open("MotionModel_trajectory.res");
 	drawImages = false;
 	visualize = false;
@@ -749,23 +747,12 @@ void PUTSLAM::startProcessing() {
 				MapMatchingRansacInlierRatioLog.push_back(
 						mapMatchingInlierRatio);
 
-				// TESTING VO with map corrections
-				VoMapPose = VoMapPose * poseIncrement
-						* mapEstimatedTransformation;
-
 				if (verbose > 0)
 					std::cout << "Measurement to features in graph size : "
 							<< measurementList.size() << std::endl;
 
-				// Compare VO and VOMap estimate -> decide whether to add measurements to map
-				float distanceDiff = mapEstimatedTransformation.block<3, 1>(0,
-						3).norm();
-//				std::cout << "Difference between VO and Map : " << distanceDiff
-//						<< " meters" << std::endl;
 
 				tmp.start();
-
-
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back((int)measurementList.size());
 				if ((int)measurementList.size()
@@ -858,9 +845,6 @@ void PUTSLAM::startProcessing() {
 		saveTrajectoryFreiburgFormat(VOPoseEstimate, trajectoryFreiburgStream,
 				currentSensorFrame.timestamp);
 
-		saveTrajectoryFreiburgFormat(VoMapPose, trajectoryVOMapStream,
-				currentSensorFrame.timestamp);
-
 		mapSize.push_back(map->getNumberOfFeatures());
 
 		frameCounter++;
@@ -938,7 +922,6 @@ std::cout << "save2file\n";
 
 	// Close trajectory stream
 	trajectoryFreiburgStream.close();
-	trajectoryVOMapStream.close();
 	trajectoryMotionModelStream.close();
 
 	// Run statistics

@@ -47,11 +47,9 @@ class PUTSLAM {
 	Matcher * matcher, *loopClosureMatcher;
 
 	ofstream trajectoryFreiburgStream;
-	ofstream trajectoryVOMapStream;
 	ofstream trajectoryMotionModelStream;
 
 	Eigen::Matrix4f VOPoseEstimate;
-	Eigen::Matrix4f VoMapPose;
 
 	/// visualization options
 	bool visualize;bool drawImages;
