@@ -547,16 +547,6 @@ void PUTSLAM::loadConfigs() {
 		cout << "Loop closure current matcher: " << matcher->getName()
 				<< std::endl;
 	}
-
-	if (matcher->matcherParameters.MapMatchingVersion
-			== Matcher::MatcherParameters::MAPMATCH_PATCHES
-			|| matcher->matcherParameters.MapMatchingVersion
-					== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS_PATCHES) {
-		if (!keepCameraFrames)
-			throw std::runtime_error(
-					std::string(
-							"Camera frames are not used (keepCameraFrames==false). Matching with patches is not available.\nModify config files.\n"));
-	}
 }
 
 Eigen::Matrix4f PUTSLAM::runVO(SensorFrame &currentSensorFrame, std::vector<cv::DMatch> &inlierMatches) {
@@ -747,28 +737,12 @@ void PUTSLAM::startProcessing() {
 
 				Stopwatch<> tmp;
 				tmp.start();
-				if (matcher->matcherParameters.MapMatchingVersion
-						== Matcher::MatcherParameters::MAPMATCH_DESCRIPTORS) {
 
-					mapMatchingInlierRatio = matcher->Matcher::match(
-							mapFeatures, cameraPoseId, measurementList,
-							mapEstimatedTransformation);
-
-				}
 				// Map matching based on descriptors, but in a sphere around feature with set radius
-				else if (matcher->matcherParameters.MapMatchingVersion
-						== Matcher::MatcherParameters::MAPMATCH_XYZ_DESCRIPTORS) {
-
-					bool newDetection = false;
-					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(
-							mapFeatures, cameraPoseId, measurementList,
-							mapEstimatedTransformation, newDetection, frameIds);
-
-				} else {
-					std::cout
-							<< "Unrecognized map matching version -- double check matcherOpenCVParameters.xml"
-							<< std::endl;
-				}
+				bool newDetection = false;
+				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures,
+						cameraPoseId, measurementList,
+						mapEstimatedTransformation, newDetection, frameIds);
 				tmp.stop();
 				timeMeasurement.mapMatchingTimes.push_back((long int)tmp.elapsed());
 

@@ -135,13 +135,6 @@ public:
 			Eigen::Matrix4f &estimatedTransformation,
 			std::vector<cv::DMatch> &foundInlierMatches);
 
-	/// Run the match with map
-	double match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-			std::vector<MapFeature> &foundInlierMapFeatures,
-			Eigen::Matrix4f &estimatedTransformation);
-
-
-
 	/// Run the match with map considering feature map location
 	/// More like guided-matching
 	double matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
@@ -185,12 +178,6 @@ public:
 		enum VOVERSION {
 			VO_MATCHING, VO_TRACKING
 		};
-		enum MAPMATCHINGVERSION {
-			MAPMATCH_DESCRIPTORS,
-			MAPMATCH_XYZ_DESCRIPTORS,
-			MAPMATCH_PATCHES,
-			MAPMATCH_XYZ_DESCRIPTORS_PATCHES
-		};
 
 		MatcherParameters() {
 			cameraMatrixMat = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -211,11 +198,6 @@ public:
 			// Matcher
 			params->QueryIntAttribute("verbose", &verbose);
 			params->QueryIntAttribute("VOVersion", &VOVersion);
-			params->QueryIntAttribute("MapMatchingVersion",
-                    &MapMatchingVersion);
-
-//			std::cout<<"VOVersion: " << VOVersion << std::endl;
-//			std::cout<<"MapMatchingVersion: " << MapMatchingVersion << std::endl;
 
 			// RANSAC
 			params->FirstChildElement("RANSAC")->QueryIntAttribute("verbose",
@@ -373,7 +355,7 @@ public:
 
 		}
 	public:
-        int verbose, VOVersion, MapMatchingVersion;
+        int verbose, VOVersion;
 		RANSAC::parameters RANSACParams;
 		Matcher::parameters OpenCVParams;
 		MatchingOnPatches::parameters PatchesParams;

@@ -33,11 +33,7 @@ void Matcher::detectInitFeatures(const SensorFrame &sensorData) {
 		showFeatures(sensorData.rgbImage, prevKeyPoints);
 
 	// Describe salient features if needed
-	if (matcherParameters.VOVersion == MatcherParameters::VO_MATCHING
-			|| matcherParameters.MapMatchingVersion
-					!= MatcherParameters::MAPMATCH_PATCHES) {
-		prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeyPoints);
-	}
+	prevDescriptors = describeFeatures(sensorData.rgbImage, prevKeyPoints);
 
 	// Extract 2D points from keypoints
 	cv::KeyPoint::convert(prevKeyPoints,prevFeaturesDistorted);
@@ -277,83 +273,74 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 
 		// Remove features based on 2D and 3D distance
 		if (matcherParameters.OpenCVParams.removeTooCloseFeatures > 0)
-			removeTooCloseFeatures(distortedFeatures2D,
-									undistortedFeatures2D,
-									features3D,
-									keyPoints,
-									detDists,
-									matches);
+			removeTooCloseFeatures(distortedFeatures2D, undistortedFeatures2D,
+					features3D, keyPoints, detDists, matches);
 
 	}
 
-//	auto start = std::chrono::high_resolution_clock::now();
-	// In case we need descriptors
-	if (matcherParameters.MapMatchingVersion
-			!= MatcherParameters::MAPMATCH_PATCHES) {
+	std::vector<cv::KeyPoint> descKeyPoints = keyPoints;
+	//Compute predicted scale
+	for (std::vector<cv::KeyPoint>::size_type i = 0; i < descKeyPoints.size();
+			++i) {
+		int detLevel = descKeyPoints[i].octave;
+		double detLevelScaleFactor = pow(scaleFactor, detLevel);
+		double curDist = std::sqrt(
+				features3D[i][0] * features3D[i][0]
+						+ features3D[i][1] * features3D[i][1]
+						+ features3D[i][2] * features3D[i][2]);
+		double curLevelScaleFactor = detLevelScaleFactor * detDists[i]
+				/ curDist;
 
-
-//		auto startA = std::chrono::high_resolution_clock::now();
-
-		std::vector<cv::KeyPoint> descKeyPoints = keyPoints;
-		//Compute predicted scale
-		for(std::vector<cv::KeyPoint>::size_type i = 0; i < descKeyPoints.size(); ++i){
-			int detLevel = descKeyPoints[i].octave;
-            double detLevelScaleFactor = pow(scaleFactor, detLevel);
-            double curDist = std::sqrt(features3D[i][0]*features3D[i][0] +
-									features3D[i][1]*features3D[i][1] +
-									features3D[i][2]*features3D[i][2]);
-            double curLevelScaleFactor = detLevelScaleFactor * detDists[i] / curDist;
-
-			//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
-			int curLevel = (int)std::ceil(std::log(curLevelScaleFactor) / logScaleFactor);
-			curLevel = std::max(0, curLevel);
-			curLevel = std::min(nLevels - 1, curLevel);
-			descKeyPoints[i].octave = curLevel;
+		//To compute log_{scaleFactor}(curLevelScaleFactor) = log_{e}{curLevelScaleFactor} / log_{e}(scaleFactor)
+		int curLevel = (int) std::ceil(
+				std::log(curLevelScaleFactor) / logScaleFactor);
+		curLevel = std::max(0, curLevel);
+		curLevel = std::min(nLevels - 1, curLevel);
+		descKeyPoints[i].octave = curLevel;
 //			descKeyPoints[i].octave = 0;
+	}
+	{
+		//TODO opencv's ORB::compute sorts keyPoints according to octave,
+		// to prevent this we sort it earlier and maintain correct order in all structures
+		std::vector<std::vector<std::pair<int, int>>>keyPointsLevel(nLevels);
+		for(std::vector<cv::KeyPoint>::size_type i = 0; i < keyPoints.size(); ++i) {
+			//use current level
+			int level = descKeyPoints[i].octave;
+			keyPointsLevel[level].emplace_back(level, i);
 		}
-		{
-			//TODO opencv's ORB::compute sorts keyPoints according to octave,
-			// to prevent this we sort it earlier and maintain correct order in all structures
-			std::vector<std::vector<std::pair<int, int>>> keyPointsLevel(nLevels);
-			for(std::vector<cv::KeyPoint>::size_type i = 0; i < keyPoints.size(); ++i){
-				//use current level
-				int level = descKeyPoints[i].octave;
-				keyPointsLevel[level].emplace_back(level, i);
-			}
-			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
-			std::vector<Eigen::Vector3f> tmp3D;
-			std::vector<cv::KeyPoint> tmpKeyPoints;
-            std::vector<double> tmpDetDists;
+		std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
+		std::vector<Eigen::Vector3f> tmp3D;
+		std::vector<cv::KeyPoint> tmpKeyPoints;
+		std::vector<double> tmpDetDists;
 
-			for(std::vector<int>::size_type l = 0; l < keyPointsLevel.size(); ++l){
-				for(std::vector<int>::size_type i = 0; i < keyPointsLevel[l].size(); ++i){
-					tmpDistorted.push_back(distortedFeatures2D[keyPointsLevel[l][i].second]);
-					tmpUndistorted.push_back(undistortedFeatures2D[keyPointsLevel[l][i].second]);
-					tmp3D.push_back(features3D[keyPointsLevel[l][i].second]);
-					tmpKeyPoints.push_back(keyPoints[keyPointsLevel[l][i].second]);
-					tmpDetDists.push_back(detDists[keyPointsLevel[l][i].second]);
-				}
+		for(std::vector<int>::size_type l = 0; l < keyPointsLevel.size(); ++l) {
+			for(std::vector<int>::size_type i = 0; i < keyPointsLevel[l].size(); ++i) {
+				tmpDistorted.push_back(distortedFeatures2D[keyPointsLevel[l][i].second]);
+				tmpUndistorted.push_back(undistortedFeatures2D[keyPointsLevel[l][i].second]);
+				tmp3D.push_back(features3D[keyPointsLevel[l][i].second]);
+				tmpKeyPoints.push_back(keyPoints[keyPointsLevel[l][i].second]);
+				tmpDetDists.push_back(detDists[keyPointsLevel[l][i].second]);
 			}
-
-			tmpDistorted.swap(distortedFeatures2D);
-			tmpUndistorted.swap(undistortedFeatures2D);
-			tmp3D.swap(features3D);
-			tmpKeyPoints.swap(keyPoints);
-			tmpDetDists.swap(detDists);
 		}
+
+		tmpDistorted.swap(distortedFeatures2D);
+		tmpUndistorted.swap(undistortedFeatures2D);
+		tmp3D.swap(features3D);
+		tmpKeyPoints.swap(keyPoints);
+		tmpDetDists.swap(detDists);
+	}
 
 //		auto endA = std::chrono::high_resolution_clock::now();
 //		std::cout << "\tLiczenie skal = " << std::chrono::duration_cast<std::chrono::milliseconds>(endA - startA).count() << " ms"<< std::endl;
 
-		// Computing descriptors
+	// Computing descriptors
 //		auto startC = std::chrono::high_resolution_clock::now();
-		descriptors = describeFeatures(sensorData.rgbImage, descKeyPoints);
+	descriptors = describeFeatures(sensorData.rgbImage, descKeyPoints);
 //		auto endC = std::chrono::high_resolution_clock::now();
 //		std::cout << "\tDeskrypcja = " << std::chrono::duration_cast<std::chrono::milliseconds>(endC - startC).count() << " ms"<< std::endl;
 
-
-		// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
-		if (descKeyPoints.size() != keyPoints.size()) {
+	// Some unlucky case --> couldn't describe a feature, so we need to remove it and recompute 3D positions
+	if (descKeyPoints.size() != keyPoints.size()) {
 
 //			std::cout << "descKeyPoints.size() = " << descKeyPoints.size() << std::endl;
 //			std::cout << "undistortedFeatures2D.size() = " << undistortedFeatures2D.size() << std::endl;
@@ -364,35 +351,35 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 //					"\t" << keyPoints[i].pt << "(" << keyPoints[i].octave << ")" << std::endl;
 //			}
 
-			std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
-			std::vector<Eigen::Vector3f> tmp3D;
-			std::vector<cv::KeyPoint> tmpKeyPoints;
-            std::vector<double> tmpDetDists;
+		std::vector<cv::Point2f> tmpDistorted, tmpUndistorted;
+		std::vector<Eigen::Vector3f> tmp3D;
+		std::vector<cv::KeyPoint> tmpKeyPoints;
+		std::vector<double> tmpDetDists;
 
-			for(std::vector<cv::KeyPoint>::size_type i=0, j=0;i<keyPoints.size();i++) {
+		for (std::vector<cv::KeyPoint>::size_type i = 0, j = 0;
+				i < keyPoints.size(); i++) {
 //				std::cout << "i = " << i << ", j = " << j << std::endl;
-				if ( j == descKeyPoints.size())
-					break;
+			if (j == descKeyPoints.size())
+				break;
 //				std::cout << "keyPoints[i].pt = " << keyPoints[i].pt << std::endl;
 //				std::cout << "descKeyPoints[j].pt = " << descKeyPoints[j].pt << std::endl;
-				if (cv::norm(keyPoints[i].pt - descKeyPoints[j].pt) < 0.0001)
-				{
+			if (cv::norm(keyPoints[i].pt - descKeyPoints[j].pt) < 0.0001) {
 //					std::cout << "match" << std::endl;
-					tmpDistorted.push_back(distortedFeatures2D[i]);
-					tmpUndistorted.push_back(undistortedFeatures2D[i]);
-					tmp3D.push_back(features3D[i]);
-					tmpKeyPoints.push_back(keyPoints[i]);
-					tmpDetDists.push_back(detDists[i]);
-					j++;
-				}
+				tmpDistorted.push_back(distortedFeatures2D[i]);
+				tmpUndistorted.push_back(undistortedFeatures2D[i]);
+				tmp3D.push_back(features3D[i]);
+				tmpKeyPoints.push_back(keyPoints[i]);
+				tmpDetDists.push_back(detDists[i]);
+				j++;
 			}
-			tmpDistorted.swap(distortedFeatures2D);
-			tmpUndistorted.swap(undistortedFeatures2D);
-			tmp3D.swap(features3D);
-			tmpKeyPoints.swap(keyPoints);
-			tmpDetDists.swap(detDists);
 		}
+		tmpDistorted.swap(distortedFeatures2D);
+		tmpUndistorted.swap(undistortedFeatures2D);
+		tmp3D.swap(features3D);
+		tmpKeyPoints.swap(keyPoints);
+		tmpDetDists.swap(detDists);
 	}
+
 //	auto end = std::chrono::high_resolution_clock::now();
 //	std::cout << "\tDESC = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms"<< std::endl;
 
@@ -403,13 +390,9 @@ double Matcher::trackKLT(const SensorFrame& sensorData,
 	assert(
 			("TrackKLT: 2D and 3D sizes at the end: features3d", distortedFeatures2D.size()
 					== features3D.size()));
-	if (matcherParameters.MapMatchingVersion
-				!= MatcherParameters::MAPMATCH_PATCHES)
-	{
-		assert(
+	assert(
 				("TrackKLT: 2D and 3D sizes at the end: descriptors", distortedFeatures2D.size()
 						== descriptors.rows));
-	}
 	assert(
 			("TrackKLT: 2D and 3D sizes at the end: keyPoints", distortedFeatures2D.size()
 					== keyPoints.size()));
@@ -554,88 +537,6 @@ std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(
 	return mapFeaturePositions3D;
 }
 
-double Matcher::match(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-		std::vector<MapFeature> &foundInlierMapFeatures,
-		Eigen::Matrix4f &estimatedTransformation) {
-	// The current pose descriptors are renamed to make it less confusing
-	cv::Mat currentPoseDescriptors(prevDescriptors);
-
-	// We need to extract descriptors and positions from vector<class> to independent vectors to use OpenCV functions
-	cv::Mat mapDescriptors = extractMapDescriptors(mapFeatures);
-	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
-			extractMapFeaturesPositions(mapFeatures);
-
-	// Perform matching
-	std::vector<cv::DMatch> matches = performMatching(mapDescriptors,
-			prevDescriptors);
-
-	// No matches -> impossible to estimate transformation
-	if (matches.size() <= 0)
-		return -1.0;
-
-	// Choosing version of RANSAC
-	std::vector<cv::DMatch> inlierMatches;
-	matcherParameters.RANSACParams.errorVersion =
-			matcherParameters.RANSACParams.errorVersionMap;
-
-	// Creating and estimating transformation
-	RANSAC ransac(matcherParameters.RANSACParams,
-			matcherParameters.cameraMatrixMat);
-	estimatedTransformation = ransac.estimateTransformation(
-			mapFeaturePositions3D, prevFeatures3D, matches, inlierMatches);
-
-	// for all inliers, convert them to map-compatible format
-	foundInlierMapFeatures.clear();
-	for (std::vector<cv::DMatch>::iterator it = inlierMatches.begin();
-			it != inlierMatches.end(); ++it) {
-		int mapId = it->queryIdx, currentPoseId = it->trainIdx;
-
-		MapFeature mapFeature;
-		mapFeature.id = mapFeatures[mapId].id;
-
-		mapFeature.u = prevFeaturesUndistorted[currentPoseId].x;
-		mapFeature.v = prevFeaturesUndistorted[currentPoseId].y;
-
-		mapFeature.position = Vec3(
-				prevFeatures3D[currentPoseId].cast<double>());
-		mapFeature.posesIds.push_back(sensorPoseId);
-
-
-		ExtendedDescriptor featureExtendedDescriptor(prevFeaturesDistorted[currentPoseId],
-				prevFeaturesUndistorted[currentPoseId],
-				Vec3(prevFeatures3D[currentPoseId].cast<double>()),
-				prevDescriptors.row(currentPoseId),
-				prevKeyPoints[currentPoseId].octave,
-				prevDetDists[currentPoseId]);
-
-		mapFeature.descriptors[sensorPoseId] = featureExtendedDescriptor;
-
-		// Add the measurement
-		foundInlierMapFeatures.push_back(mapFeature);
-	}
-
-	return RANSAC::pointInlierRatio(inlierMatches, matches);
-}
-
-//void Matcher::framesIds2framesIndex(std::vector<MapFeature> featureSet,
-//		std::vector<int> frameIds, std::vector<int> &closestFrameIndex) {
-//	int j = 0;
-//	for (std::vector<MapFeature>::iterator it = featureSet.begin();
-//			it != featureSet.end(); ++it, ++j) {
-//		// Find the closest view in a map for a feature
-//		if (frameIds.size() > 0) {
-//			for (std::vector<ExtendedDescriptor>::size_type k = 0; k < it->descriptors.size(); k++) {
-//				if (frameIds[j] == (int)it->descriptors[k].poseId) {
-//					closestFrameIndex[j] = (int)k;
-//					break;
-//				}
-//			}
-//		}
-//	}
-//}
-
-
-
 
 // Guided matching for detected keypoints to mapFeatures
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
@@ -757,8 +658,6 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	// We need to extract positions from vector<class> to independent vectors to use OpenCV functions
 	std::vector<Eigen::Vector3f> mapFeaturePositions3D =
 			extractMapFeaturesPositions(mapFeatures);
-
-	std::cout << "COMPARE SIZES: " << mapFeatures.size() << " " << frameIds.size() << std::endl;
 
 	// For all features in the map
 	int j = 0, perfectMatchCounter = 0;
@@ -897,21 +796,6 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,
 		Eigen::Matrix4f &estimatedTransformation){
 
-
-//	double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
-//			std::vector<MapFeature> &foundInlierMapFeatures,
-//			Eigen::Matrix4f &estimatedTransformation,
-//			cv::Mat currentPoseDescriptors,
-//			std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
-//			std::vector<cv::KeyPoint>& currentPoseKeyPoints,
-//			std::vector<double>& currentPoseDetDists,
-//			std::vector<int> frameIds)
-
-//	std::cout << "Called matchFeatureLoopClosure! Sizes: "
-//			<< featureSets[0].size() << " " << featureSets[1].size()
-//			<< " from frames: " << framesIds[0] << " " << framesIds[1]
-//			<< std::endl;
-
 	cv::Mat extractedDescriptors[2];
 	std::vector<cv::Point2f> points2D[2];
 	std::vector<Eigen::Vector3f> points3D[2];
@@ -923,8 +807,8 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 		for (auto& feature : analyzedSet) {
 
 			// We look for the descriptor and u,v from a position we currently analyze
-			// TODO: it is assumed that extended descriptor is saved from every pose that feature was observed from
 			ExtendedDescriptor &ext = feature.descriptors[currentFrameId];
+
 			points2D[i].push_back(ext.point2DUndist);
 			points3D[i].push_back(
 					Eigen::Vector3f((float) ext.point3D.x(),
@@ -936,10 +820,7 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 		}
 	}
 
-//	std::cout << "descriptors: " << extractedDescriptors[0].rows << " " << extractedDescriptors[1].rows << std::endl;
-//	std::cout << "points2D: " << points2D[0].size() << " " << points2D[1].size() << std::endl;
-//	std::cout << "points3D: " << points3D[0].size() << " " << points3D[1].size() << std::endl;
-
+	// Sanity check - it should have been already checked
 	if ( points2D[0].size() < 10 || points2D[1].size() < 10)
 	{
 		std::cout<<"Too few features :(" << std::endl;
@@ -947,10 +828,6 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 	}
 	std::vector<cv::DMatch> matches = performMatching(extractedDescriptors[0],
 			extractedDescriptors[1]);
-
-
-//	std::cout << "matchFeatureLoopClosure - we found : " << matches.size()
-//			<< std::endl;
 
 	if (matches.size() <= 0)
 		return -1.0;
@@ -979,7 +856,6 @@ double Matcher::matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], 
 
 
 /// Helper methods:
-
 void Matcher::showFeatures(cv::Mat rgbImage,
 		std::vector<cv::KeyPoint> featuresToShow) {
 	cv::Mat imageToShow;

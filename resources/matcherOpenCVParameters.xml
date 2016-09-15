@@ -6,13 +6,8 @@
 			
 	VOVersion :	0 -> matching
 			1 -> tracking
-
-	MapMatchingVersion :	0 -> descriptors
-				1 -> XYZ + descriptors
-				2 -> patches
-				3 -> XYZ + descriptors + patches
 -->
-<Matcher verbose="0" VOVersion="1" MapMatchingVersion="1">
+<Matcher verbose="0" VOVersion="1">
     <!-- RANSAC settings
 	 	verbose : 	0 -> no debug
 	 				1 -> print final result
