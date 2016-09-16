@@ -11,8 +11,9 @@ LoopClosureLocal::LoopClosureLocal(void) : LoopClosure("Local Loop Closure", LC_
 
 /// Construction
 LoopClosureLocal::LoopClosureLocal(std::string configFilename) : LoopClosure("Local Loop Closure", LC_LOCAL), config(configFilename) {
-    currentFrame = config.minFrameDist;
-    vpr.reset(new VisualPlaceRecognition());
+    currentFrame = 0;
+
+    vpr.reset(new VisualPlaceRecognition(config.minFeatures, config.tailFramesToSkip, config.minNewPlaceProb));
 }
 
 /// Destruction
@@ -28,10 +29,10 @@ LoopClosureLocal::Config::Config(std::string configFilename){
         std::cout << "unable to load Local Loop Closure config file.\n";
     tinyxml2::XMLElement * model = config.FirstChildElement( "LoopClosure" );
     model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
-    model->FirstChildElement( "parameters" )->QueryIntAttribute("minFrameDist", &minFrameDist);
-    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("distThreshold", &distThreshold);
-    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("rotThreshold", &rotThreshold);
-    model->FirstChildElement( "parameters" )->QueryBoolAttribute("useImages", &useImages);
+    model->FirstChildElement( "parameters" )->QueryIntAttribute("minFeatures", &minFeatures);
+    model->FirstChildElement( "parameters" )->QueryIntAttribute("tailFramesToSkip", &tailFramesToSkip);
+    model->FirstChildElement( "parameters" )->QueryDoubleAttribute("minNewPlaceProb", &minNewPlaceProb);
+    model->FirstChildElement( "parameters" )->QueryIntAttribute("maxPQSize", &maxPQSize);
 }
 
 /// start loop closure thread (thread updates priority queue)
@@ -50,7 +51,12 @@ void LoopClosureLocal::finishLCsearchingThr(void){
 void LoopClosureLocal::updatePriorityQueue(void){
     while (continueLCsearchingThread) {
 
-        if (config.minFrameDist>=(int)cameraPoses.size()||currentFrame>=(int)cameraPoses.size()){
+    	imageDataMtx.lock();
+    	size_t imagesSeqSize = imagesSeq.size();
+    	imageDataMtx.unlock();
+
+
+        if (imagesSeqSize == 0){
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
         else{
@@ -59,8 +65,11 @@ void LoopClosureLocal::updatePriorityQueue(void){
 			}
 
 			// We use FABMAP to find all potentially promissing match to current frame to analyze
+			imageDataMtx.lock();
 			cv::Mat frame = imagesSeq.front();
 			imagesSeq.pop_front();
+			imageDataMtx.unlock();
+
             std::vector<std::pair<int, double>> candidates = vpr.get()->findAddPlace(frame, currentFrame, true);
 
 			// For each candidate (int -> id, double -> probability)
@@ -68,12 +77,13 @@ void LoopClosureLocal::updatePriorityQueue(void){
 
 				// We create match
 				LCMatch element;
-				element.distance = 0;
 				element.probability = candidate.second;
 
 				// Convert from LC ids to putslam ids of frames
+				imageDataMtx.lock();
 				int indexA = frameIds[currentFrame];
 				int indexB = frameIds[candidate.first];
+				imageDataMtx.unlock();
 				element.posesIds = std::make_pair(indexA, indexB);
 
 				// We add to priority queue
@@ -91,23 +101,27 @@ void LoopClosureLocal::updatePriorityQueue(void){
 
 
             // Keep priority size reasonable - if it is more than 100, we trim to 50
-            priorityQueueMtx.lock();
-            int size = priorityQueueLC.size();
-            if (size > 100) {
-            	std::priority_queue<LCMatch, std::vector<LCMatch>, LCMatch > trimmedPQ;
-
-            	for (int i=0;i<size - 50;i++){
-					LCMatch element = priorityQueueLC.top();
-					trimmedPQ.push(element);
-					priorityQueueLC.pop();
-            	}
-            	priorityQueueLC = trimmedPQ;
-            }
-            priorityQueueMtx.unlock();
+			checkAndTrimPQSize();
 
             currentFrame++;
         }
     }
+}
+
+void LoopClosureLocal::checkAndTrimPQSize() {
+	priorityQueueMtx.lock();
+	size_t size = priorityQueueLC.size();
+	if (size > config.maxPQSize) {
+		std::priority_queue<LCMatch, std::vector<LCMatch>, LCMatch> trimmedPQ;
+
+		for (uint i = 0; i < config.maxPQSize / 2; i++) {
+			LCMatch element = priorityQueueLC.top();
+			trimmedPQ.push(element);
+			priorityQueueLC.pop();
+		}
+		priorityQueueLC = trimmedPQ;
+	}
+	priorityQueueMtx.unlock();
 }
 
 putslam::LoopClosure* putslam::createLoopClosureLocal(void) {

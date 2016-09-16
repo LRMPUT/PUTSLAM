@@ -29,10 +29,10 @@
 		addPoseToPoseEdges="false" 
 		minMeasurementsToAddPoseToFeatureEdge="15" 
 		addFeaturesWhenMapSizeLessThan="250" 
-		addFeaturesWhenMeasurementSizeLessThan="150" 
+		addFeaturesWhenMeasurementSizeLessThan="100" 
 		maxOnceFeatureAdd="200" 
-		minEuclideanDistanceOfFeatures="0.01" 
-		minImageDistanceOfFeatures="2" 
+		minEuclideanDistanceOfFeatures="0.03" 
+		minImageDistanceOfFeatures="4" 
 		addNoFeaturesWhenMapSizeGreaterThan="2500" 
 		inlierThresholdEuclidean="0.03"
 		optimizationErrorType="0"/>

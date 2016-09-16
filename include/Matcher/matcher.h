@@ -141,7 +141,8 @@ public:
 			std::vector<MapFeature> &foundInlierMapFeatures,
 			Eigen::Matrix4f &estimatedTransformation,
 			bool newDetection,
-			std::vector<int> frameIds = std::vector<int>());
+			std::vector<int> frameIds = std::vector<int>(),
+			int computationNumber = 1);
 
 	// Matching performed when loop closure is performed on features
 	double matchFeatureLoopClosure(std::vector<MapFeature> featureSets[2], int framesIds[2], std::vector<std::pair<int, int>> &pairedFeatures,
@@ -433,7 +434,8 @@ private:
 					std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
 					std::vector<cv::KeyPoint>& currentPoseKeyPoints,
                     std::vector<double>& currentPoseDetDists,
-					std::vector<int> frameIds = std::vector<int>());
+					std::vector<int> frameIds = std::vector<int>(),
+					int computationNumber = 1);
 
 
 	std::set<int> removeTooCloseFeatures(std::vector<cv::Point2f>& distortedFeatures2D,

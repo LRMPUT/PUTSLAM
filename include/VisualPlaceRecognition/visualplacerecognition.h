@@ -13,14 +13,14 @@ class VisualPlaceRecognition
 public:
 
     // minimum number of features that have to be found in an image to proceed
-    uint32_t minFeatures = 100;
+    uint32_t minFeatures;
     // how many tail frames to skip
-    uint32_t tailFramesToSkip = 10;
+    uint32_t tailFramesToSkip;
     // minimum probability to declare successful loop closure
     // if the probability value for the query frame is below this threshold, it is added as a new, unvisited place
-    double_t minNewPlaceProb = 0.1;
+    double_t minNewPlaceProb;
     // constructor/initializer
-    VisualPlaceRecognition();
+    VisualPlaceRecognition(uint32_t minFeatures, uint32_t tailFramesToSkip, double_t minNewPlaceProb);
     // destructor
     ~VisualPlaceRecognition();
     // find most similar place, return pairs of Ids and probabilities (if prob is above threshold), add new point (forced or based on criteria)

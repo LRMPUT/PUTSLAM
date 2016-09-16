@@ -51,17 +51,17 @@ public:
             //verbose
             int verbose;
 
-            /// LC min distance between frames
-            int minFrameDist;
+            ///
+            int minFeatures;
 
-            /// LoopClosure: distance threshold
-            double distThreshold;
+            ///
+            int tailFramesToSkip;
 
-            /// LoopClosure: distance threshold
-            double rotThreshold;
+            ///
+            double minNewPlaceProb;
 
-            /// use images to close the loop
-            bool useImages;
+            ///
+            int maxPQSize;
     };
 
 private:
@@ -79,6 +79,9 @@ private:
 
     /// geometric loop closure method
     void updatePriorityQueue(void);
+
+    ///
+    void checkAndTrimPQSize();
 
     /// current frame
     int currentFrame;

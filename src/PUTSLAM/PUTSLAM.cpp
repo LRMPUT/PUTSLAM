@@ -738,9 +738,20 @@ void PUTSLAM::startProcessing() {
 
 				// Map matching based on descriptors, but in a sphere around feature with set radius
 				bool newDetection = false;
+				int tryCounter = 1;
 				mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures,
 						cameraPoseId, measurementList,
 						mapEstimatedTransformation, newDetection, frameIds);
+				while (mapMatchingInlierRatio < 0.1 && tryCounter < 10)
+				{
+					tryCounter++;
+					mapMatchingInlierRatio = matcher->Matcher::matchXYZ(mapFeatures,
+											cameraPoseId, measurementList,
+											mapEstimatedTransformation, newDetection, frameIds, tryCounter);
+					std::cout<<"Repeated matching: " << mapMatchingInlierRatio << std::endl;
+				}
+
+
 				tmp.stop();
 				timeMeasurement.mapMatchingTimes.push_back((long int)tmp.elapsed());
 

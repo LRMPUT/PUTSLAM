@@ -542,7 +542,7 @@ std::vector<Eigen::Vector3f> Matcher::extractMapFeaturesPositions(
 double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<MapFeature> &foundInlierMapFeatures,
 		Eigen::Matrix4f &estimatedTransformation, bool newDetection,
-		std::vector<int> frameIds) {
+		std::vector<int> frameIds, int computationNumber) {
 
 	if (!newDetection)
 		return matchXYZ(mapFeatures,
@@ -553,7 +553,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 						prevFeatures3D,
 						prevKeyPoints,
 						prevDetDists,
-						frameIds);
+						frameIds, computationNumber);
 
 	// Detect salient features
 	prevKeyPoints = detectFeatures(prevRgbImage);
@@ -599,7 +599,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 			prevFeatures3D,
 			prevKeyPoints,
 			prevDetDists,
-			frameIds);
+			frameIds, computationNumber);
 }
 
 // Guided matching
@@ -610,11 +610,17 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 		std::vector<Eigen::Vector3f> &currentPoseFeatures3D,
 		std::vector<cv::KeyPoint>& currentPoseKeyPoints,
         std::vector<double>& currentPoseDetDists,
-		std::vector<int> frameIds)
+		std::vector<int> frameIds,
+		int computationNumber)
 {
 
 	double matchingXYZSphereRadius = matcherParameters.OpenCVParams.matchingXYZSphereRadius;
 	double matchingXYZacceptRatioOfBestMatch = matcherParameters.OpenCVParams.matchingXYZacceptRatioOfBestMatch;
+	if (computationNumber > 1) {
+		matchingXYZSphereRadius += 0.02 * (computationNumber - 1);
+		matchingXYZSphereRadius = std::max(0.1, matchingXYZSphereRadius- 0.05 *(computationNumber - 1));
+	}
+
 
 	int normType = cv::NORM_HAMMING;
 	if (matcherParameters.OpenCVParams.descriptor == "SURF"

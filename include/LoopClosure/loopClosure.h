@@ -67,9 +67,12 @@ public:
 
     /// add new pose
     virtual void addPose(const Mat34& cameraPose, cv::Mat& imageRGB, int frameId) {
+
+    	imageDataMtx.lock();
         imagesSeq.push_back(imageRGB);
         cameraPoses.push_back(cameraPose);
         frameIds.push_back(frameId);
+        imageDataMtx.unlock();
     }
 
     /// get candidate poses for LC (false -- no candidates)
@@ -100,6 +103,9 @@ protected:
 
     /// LC name
 	const std::string name;
+
+	/// mutex to protect imagesSeq, cameraPoses and frameIds
+	std::mutex imageDataMtx;
 
     /// poses (random access, not continous storage)
     std::deque<Mat34> cameraPoses;

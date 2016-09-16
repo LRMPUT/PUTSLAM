@@ -1,13 +1,14 @@
 #include "../include/VisualPlaceRecognition/visualplacerecognition.h"
 #include "../include/VisualPlaceRecognition/put_ofm.h"
 
-VisualPlaceRecognition::VisualPlaceRecognition()
+VisualPlaceRecognition::VisualPlaceRecognition(uint32_t _minFeatures, uint32_t _tailFramesToSkip, double_t _minNewPlaceProb)
 {
+	minFeatures = _minFeatures;
+	tailFramesToSkip = _tailFramesToSkip;
+	minNewPlaceProb = _minNewPlaceProb;
 
     std::string settfilename = "../../resources/VisualPlaceRecognition/settings.yml";
     std::string vocabfilename = "../../resources/VisualPlaceRecognition/vocabulary.yml";
-
-
 
     cv::FileStorage fs;
     fs.open(settfilename, cv::FileStorage::READ);
