@@ -630,7 +630,8 @@ std::vector<double> &angles ) {
 //			currentSensorFrame.depthImage, additionalDistance,
 //			frameIds, angles, depthImageScale);
 
-	showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
+	if (verbose > 0)
+		showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
 
 	// Check some asserts
 //				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()
