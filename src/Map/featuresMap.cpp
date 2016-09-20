@@ -151,11 +151,7 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
     }
 
     //try to update the map
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
 
     emptyMap = false;
     if (config.visualize){
@@ -239,7 +235,20 @@ void FeaturesMap::removeFeatures(std::vector<int> featureIdsToRemove) {
 	// Glowne zastosowanie to usuniecie cech po ich zlaczeniu wynikajacym z loop closure
 	// Istotne, aby usunac cechy o podanych id
 	// Według mnie nalezy tez przeprowadzic aktualizacje dla wszystkich podzbiorow cech oraz optymlizacji, a nie tylko cech dla loop closure
-
+    bufferMapFrontend.mtxBuffer.lock();
+    bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
+    bufferMapFrontend.mtxBuffer.unlock();
+    bufferMapManagement.mtxBuffer.lock();
+    bufferMapManagement.removeIds.insert(bufferMapManagement.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
+    bufferMapManagement.mtxBuffer.unlock();
+    bufferMapLoopClosure.mtxBuffer.lock();
+    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
+    bufferMapLoopClosure.mtxBuffer.unlock();
+    bufferMapVisualization.mtxBuffer.lock();
+    bufferMapVisualization.removeIds.insert(bufferMapVisualization.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
+    bufferMapVisualization.mtxBuffer.unlock();
+    poseGraph->setFeatures2remove(std::set<int>(featureIdsToRemove.begin(),featureIdsToRemove.end()));
+    updateMaps();
 }
 
 /// get n-th image and depth image from the sequence
@@ -278,7 +287,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
 			bufferMapLoopClosure.mtxBuffer.unlock();
 		}
 
-
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
                 info = sensorModel.informationMatrixFromImageCoordinates(it->u, it->v, (*it).position.z());
@@ -291,20 +299,13 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
             }
         }
 
+        bufferMapFrontend.mtxBuffer.lock();
+        bufferMapFrontend.measurements2update[it->id] = std::make_pair(_poseId,*it);
+        bufferMapFrontend.mtxBuffer.unlock();
 
-        // TODO: To konsekwentnie powinno dziac sie przez updateMap
-        mtxMapFrontend.lock();
-        featuresMapFrontend[it->id].posesIds.push_back(_poseId);
-        featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
-        for (auto &desc : it->descriptors)
-        	featuresMapFrontend[it->id].descriptors[desc.first] = desc.second;
-        featuresMapFrontend[it->id].lifeValue += 2 ;
-        mtxMapFrontend.unlock();
-
-        mtxMapLoopClosure.lock();
-        featuresMapLoopClosure[it->id].posesIds.push_back(_poseId); // TODO: what about descriptors? We will use original desc anyway
-        featuresMapLoopClosure[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
-        mtxMapLoopClosure.unlock();
+        bufferMapLoopClosure.mtxBuffer.lock();
+        bufferMapLoopClosure.measurements2update[it->id] = std::make_pair(_poseId,*it);
+        bufferMapLoopClosure.mtxBuffer.unlock();
 
         Edge3D e((*it).position, info, _poseId, (*it).id);
         poseGraph->addEdge3D(e);
@@ -315,8 +316,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
     // TODO: Czy to nie powinno byc updateMap dla takze cech z frontendu?
     // TODO: Czy teraz w ogole dodatkowe deskryptory sa dodawanie dla danej cechy? Nie sa
     // TODO: To w ogole moze duplikowac wpisy powyzej
-    if (continueLoopClosure)
-    	updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
 
     ///keyframes management
     std::set<int> intersect;
@@ -360,6 +360,15 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
     }
     if (config.visualize)
         notify(features2visualization);
+}
+
+/// update maps (frontend, loop closure, management)
+void FeaturesMap::updateMaps(void){
+    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    if (continueManagement)
+        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+    if (continueLoopClosure)
+        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 }
 
 /// compute covisibility between current frame and previous keyframes, returns max covisibility
@@ -411,11 +420,7 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
 
 	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu?
 	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
 	return featuresSet;
 }
 
@@ -496,11 +501,7 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(const Mat34& cameraPose)
 	}
 	mtxMapFrontend.unlock();
 	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
 	return visibleFeatures;
 }
 
@@ -531,11 +532,7 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
     }
     mtxMapFrontend.unlock();
     //try to update the map
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
     return visibleFeatures;
 }
 
@@ -929,11 +926,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         }
 
 		//try to update the map
-		updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-        if (continueManagement)
-            updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-        if (continueLoopClosure)
-            updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+        updateMaps();
         if (config.edges3DPrunningThreshold>0)
             ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
 		//update camera trajectory
@@ -1000,7 +993,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 
     if (config.edges3DPrunningThreshold>0)
         ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
-    poseGraph->optimize(10, verbose);
+    poseGraph->optimize(1, verbose);
 
 	std::vector<MapFeature> optimizedFeatures;
 	((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
@@ -1030,11 +1023,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 
 //    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
 	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    updateMaps();
 	//update camera trajectory
 	std::vector<VertexSE3> optimizedPoses;
 	((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
@@ -1106,16 +1095,8 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     //std::cout << "all " << featuresAll.size() << "\n";
     //std::cout << "graph " << features2remove.size() << "\n\n\n\n\n\n\n\n\n\n\n\n";
 
-    bufferMapFrontend.mtxBuffer.lock();
-    bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),features2remove.begin(), features2remove.end());
-    bufferMapFrontend.mtxBuffer.unlock();
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement){
-        bufferMapManagement.mtxBuffer.lock();
-        bufferMapManagement.removeIds.insert(bufferMapManagement.removeIds.begin(),features2remove.begin(), features2remove.end());
-        bufferMapManagement.mtxBuffer.unlock();
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    }
+    removeFeatures(std::vector<int>(features2remove.begin(), features2remove.end()));
+    updateMaps();
 //    bufferMapLoopClosure.mtxBuffer.lock();
 //    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),features2remove.begin(), features2remove.end());
 //    bufferMapLoopClosure.mtxBuffer.unlock();
@@ -1152,23 +1133,27 @@ bool FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 }
 
 /// Update feature
-void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {
-
+void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, const MapFeature& newFeature) {
 	// Update position - used after optimization TODO: We shouldn't update position when adding descriptors
 	featuresMap[newFeature.id].position = newFeature.position;
-
     // The measurement contains new extended descriptor and we add to the feature information
-	if (featuresMap.count(newFeature.id) > 0
-			&& newFeature.descriptors.size() > 0)
-	{
+    if (featuresMap.count(newFeature.id) > 0 && newFeature.descriptors.size() > 0) {
 		// Analyze the one of the new descriptors
-		for (auto & descToAdd : newFeature.descriptors)
-		{
+        for (auto & descToAdd : newFeature.descriptors) {
 			// This adds new descriptor if there is not descriptor with provided key
 			featuresMap[newFeature.id].descriptors[descToAdd.first] = descToAdd.second;
 		}
 
 	}
+}
+
+/// Update measurements
+void FeaturesMap::updateMeasurements(std::map<int,MapFeature>& featuresMap, const std::pair<int, MapFeature>& newFeature) {
+    featuresMap[newFeature.second.id].posesIds.push_back(newFeature.first);
+    featuresMap[newFeature.second.id].imageCoordinates.insert(std::make_pair(newFeature.first,ImageFeature(newFeature.second.u, newFeature.second.v, newFeature.second.position.z())));
+    for (auto &desc : newFeature.second.descriptors)
+        featuresMap[newFeature.second.id].descriptors[desc.first] = desc.second;
+    featuresMap[newFeature.second.id].lifeValue += 2 ;
 }
 
 /// Update camera trajectory

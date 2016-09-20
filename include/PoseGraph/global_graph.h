@@ -123,6 +123,9 @@ class GlobalGraph : public Graph {
         /// unFix vertex
         void unfixVertex(int vertexId);
 
+        /// set features to remove
+        void setFeatures2remove(const std::set<int>& _features2remove);
+
 	private:
 		PoseGraph graph;	
 

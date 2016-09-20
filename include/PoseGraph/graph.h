@@ -155,6 +155,9 @@ namespace putslam {
             /// unFix vertex
             virtual void unfixVertex(int vertexId) = 0;
 
+            /// set features to remove
+            virtual void setFeatures2remove(const std::set<int>& _features2remove) = 0;
+
             /// Virtual descrutor
             virtual ~Graph() {}
 

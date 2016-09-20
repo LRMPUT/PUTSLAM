@@ -531,8 +531,11 @@ public:
 
 class MapModifier{
 public:
-    /// Features to update
+    /// Features to update <featureId, feature>
     std::map<int,MapFeature> features2update;
+
+    /// Features measurements update <featureId, <poseId, feature>>
+    std::map<int,std::pair<int, MapFeature>> measurements2update;
 
     /// Features to remove
     std::vector<int> removeIds;
@@ -547,15 +550,17 @@ public:
     std::vector<VertexSE3> poses2add;
 
     /// Update features?
-    inline bool updateFeatures() const { return (features2update.size()>0) ?  true : false;};
-    /// Remove feaures?
-    inline bool removeFeatures() const { return (removeIds.size()>0) ?  true : false;};
-    /// add features?
-    inline bool addFeatures() const { return (features2add.size()>0) ?  true : false;};
-    /// add poses?
-    inline bool addPoses() const { return (poses2add.size()>0) ?  true : false;};
+    inline bool updateFeatures() const { return (features2update.size()>0) ?  true : false;}
     /// Update features?
-    inline bool updatePoses() const { return (poses2update.size()>0) ?  true : false;};
+    inline bool updateMeasurements() const { return (measurements2update.size()>0) ?  true : false;}
+    /// Remove feaures?
+    inline bool removeFeatures() const { return (removeIds.size()>0) ?  true : false;}
+    /// add features?
+    inline bool addFeatures() const { return (features2add.size()>0) ?  true : false;}
+    /// add poses?
+    inline bool addPoses() const { return (poses2add.size()>0) ?  true : false;}
+    /// Update features?
+    inline bool updatePoses() const { return (poses2update.size()>0) ?  true : false;}
 
     /// mutex to lock access
     std::recursive_mutex mtxBuffer;

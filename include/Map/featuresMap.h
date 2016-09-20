@@ -512,7 +512,13 @@ private:
     bool updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
 
     /// Update feature
-    void updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature);
+    void updateFeature(std::map<int,MapFeature>& featuresMap, const MapFeature& newFeature);
+
+    /// Update measurements
+    void updateMeasurements(std::map<int,MapFeature>& featuresMap, const std::pair<int,MapFeature>& newFeature);
+
+    /// update maps (frontend, loop closure, management)
+    void updateMaps(void);
 
     /// Update camera trajectory
     void updateCamTrajectory(std::vector<VertexSE3>& poses2update);
