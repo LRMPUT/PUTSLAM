@@ -438,10 +438,10 @@ private:
     std::atomic<bool> continueLoopClosure;
 
     ///camera trajectory
-    std::vector<VertexSE3> camTrajectoryLC;
+    //std::vector<VertexSE3> camTrajectoryLC;
 
     /// mutex for camera trajectory
-    std::mutex mtxCamTrajLC;
+    //std::mutex mtxCamTrajLC;
 
 	/// Number of features
 	unsigned int featureIdNo;
