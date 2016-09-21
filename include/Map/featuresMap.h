@@ -437,12 +437,6 @@ private:
     /// loop closure thread flag
     std::atomic<bool> continueLoopClosure;
 
-    ///camera trajectory
-    //std::vector<VertexSE3> camTrajectoryLC;
-
-    /// mutex for camera trajectory
-    //std::mutex mtxCamTrajLC;
-
 	/// Number of features
 	unsigned int featureIdNo;
 
@@ -461,12 +455,6 @@ private:
     /// mutex for critical section - map management
     std::recursive_mutex mtxMapManagement;
 
-    ///Set of features (map for the loop closure thread)
-    std::map<int,MapFeature> featuresMapLoopClosure;
-
-    /// mutex for critical section - bufferTrajectoryLC
-    std::recursive_mutex mtxMapLoopClosure;
-
     /// Map frontend -- buffer
     MapModifier bufferMapFrontend;
 
@@ -475,9 +463,6 @@ private:
 
     /// Map management -- buffer
     MapModifier bufferMapManagement;
-
-    /// Loop closure -- buffer
-    MapModifier bufferMapLoopClosure;
 
     /// Last optimized pose
     int lastOptimizedPose;

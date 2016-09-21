@@ -94,13 +94,6 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
                             poseIds, (*it).descriptors, imageCoordinates);
             bufferMapManagement.mtxBuffer.unlock();
         }
-        if (continueLoopClosure){
-            bufferMapLoopClosure.mtxBuffer.lock();
-            bufferMapLoopClosure.features2add[featureIdNo] =
-                    MapFeature(featureIdNo, it->u, it->v, featurePositionInGlobal,
-                            poseIds, (*it).descriptors, imageCoordinates);
-            bufferMapLoopClosure.mtxBuffer.unlock();
-        }
         if (config.visualize){
             bufferMapVisualization.mtxBuffer.lock();
             bufferMapVisualization.features2add[featureIdNo] =
@@ -232,9 +225,6 @@ void FeaturesMap::removeFeatures(std::vector<int> featureIdsToRemove) {
     bufferMapManagement.mtxBuffer.lock();
     bufferMapManagement.removeIds.insert(bufferMapManagement.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
     bufferMapManagement.mtxBuffer.unlock();
-    bufferMapLoopClosure.mtxBuffer.lock();
-    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
-    bufferMapLoopClosure.mtxBuffer.unlock();
     bufferMapVisualization.mtxBuffer.lock();
     bufferMapVisualization.removeIds.insert(bufferMapVisualization.removeIds.begin(),featureIdsToRemove.begin(), featureIdsToRemove.end());
     bufferMapVisualization.mtxBuffer.unlock();
@@ -265,13 +255,13 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
 		Mat33 info(Mat33::Identity());
 
 		// We add new descriptor and new measurement for a feature in loop closure
-		// TODO: zrobic to samo dla bufferFeaturesFrontend
-		if (continueLoopClosure) {
-			bufferMapLoopClosure.mtxBuffer.lock();
+        // TODO: zrobic to samo dla bufferFeaturesFrontend (tu nie jestem pewien czy zastapienie tego przez 'measurements2update' wystarczy)
+        /*if (continueLoopClosure) {
+            bufferMapLoopClosure.mtxBuffer.lock();
 			int mapFeatureId = it->id;
-			bufferMapLoopClosure.features2update[mapFeatureId] = *it;
-			bufferMapLoopClosure.mtxBuffer.unlock();
-		}
+            bufferMapLoopClosure.features2update[mapFeatureId] = *it;
+            bufferMapLoopClosure.mtxBuffer.unlock();
+        }*/
 
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
@@ -288,10 +278,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         bufferMapFrontend.mtxBuffer.lock();
         bufferMapFrontend.measurements2update[it->id] = std::make_pair(_poseId,*it);
         bufferMapFrontend.mtxBuffer.unlock();
-
-        bufferMapLoopClosure.mtxBuffer.lock();
-        bufferMapLoopClosure.measurements2update[it->id] = std::make_pair(_poseId,*it);
-        bufferMapLoopClosure.mtxBuffer.unlock();
 
         Edge3D e((*it).position, info, _poseId, (*it).id);
         poseGraph->addEdge3D(e);
@@ -355,8 +341,6 @@ void FeaturesMap::updateMaps(void){
     updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     if (continueManagement)
         updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 }
 
 /// compute covisibility between current frame and previous keyframes, returns max covisibility
@@ -738,9 +722,15 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
     continueLoopClosure = true;
 
     // Wait for some information in map
-    while (continueLoopClosure && featuresMapLoopClosure.size()==0) {
+    mtxMapFrontend.lock();
+    size_t mapSize = featuresMapFrontend.size();
+    mtxMapFrontend.unlock();
+    while (continueLoopClosure && mapSize==0) {
         std::cout << "wait\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        mtxMapFrontend.lock();
+        mapSize = featuresMapFrontend.size();
+        mtxMapFrontend.unlock();
     }
 
 	// Wait for some information in map
@@ -780,10 +770,10 @@ void FeaturesMap::loopClosure(int verbose, Matcher* matcher){
 					int & currentFrameId = frameIds[i];
 
                     for (auto & featureId : camTrajectory[currentFrameId].featuresIds) {
-                        mtxMapLoopClosure.lock();
+                        mtxMapFrontend.lock();
                         featureSets[i].push_back(
-                                featuresMapLoopClosure[featureId]);
-                        mtxMapLoopClosure.unlock();
+                                featuresMapFrontend[featureId]);
+                        mtxMapFrontend.unlock();
 					}
 				}
 
@@ -915,12 +905,6 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
                 bufferMapVisualization.features2update[it->id] = *it;
             bufferMapVisualization.mtxBuffer.unlock();
         }
-        if (continueLoopClosure){
-            bufferMapLoopClosure.mtxBuffer.lock(); // update management buffer
-            for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
-                bufferMapLoopClosure.features2update[it->id] = *it;
-            bufferMapLoopClosure.mtxBuffer.unlock();
-        }
 
 		//try to update the map
         updateMaps();
@@ -937,12 +921,6 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
                 bufferMapVisualization.poses2update.push_back(*it);
             bufferMapVisualization.mtxBuffer.unlock();
         }
-        /*if (continueLoopClosure){
-            bufferMapLoopClosure.mtxBuffer.lock(); // update visualization buffer
-            for (auto it = optimizedPoses.begin(); it!=optimizedPoses.end();it++)
-                bufferMapLoopClosure.poses2update.push_back(*it);
-            bufferMapLoopClosure.mtxBuffer.unlock();
-        }*/
 
         if (config.fixVertices)
             ((PoseGraphG2O*)poseGraph)->fixOptimizedVertices();
@@ -1012,12 +990,6 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
         for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
             bufferMapManagement.features2update[it->id] = *it;
         bufferMapManagement.mtxBuffer.unlock();
-    }
-    if (continueLoopClosure){
-        bufferMapLoopClosure.mtxBuffer.lock(); // update LC buffer
-        for (auto it = optimizedFeatures.begin(); it!=optimizedFeatures.end();it++)
-            bufferMapLoopClosure.features2update[it->id] = *it;
-        bufferMapLoopClosure.mtxBuffer.unlock();
     }
     if (config.visualize){
         bufferMapVisualization.mtxBuffer.lock(); // update visualization buffer
@@ -1111,10 +1083,6 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
 
     removeFeatures(std::vector<int>(features2remove.begin(), features2remove.end()));
     updateMaps();
-//    bufferMapLoopClosure.mtxBuffer.lock();
-//    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),features2remove.begin(), features2remove.end());
-//    bufferMapLoopClosure.mtxBuffer.unlock();
-//    updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
     poseGraph->marginalize(keyframes, features2remove);
 }
 
@@ -1132,6 +1100,12 @@ bool FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 			}
             modifier.features2update.clear();
 		}
+        if (modifier.updateMeasurements()) {
+            for (auto feature : modifier.measurements2update) {
+                updateMeasurements(featuresMap, feature.second);
+            }
+            modifier.features2update.clear();
+        }
         if (modifier.removeFeatures()) {
             for (auto feature : modifier.removeIds) {
                 featuresMap.erase(feature);
@@ -1157,7 +1131,6 @@ void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, const Map
 			// This adds new descriptor if there is not descriptor with provided key
 			featuresMap[newFeature.id].descriptors[descToAdd.first] = descToAdd.second;
 		}
-
 	}
 }
 
@@ -1208,7 +1181,7 @@ void FeaturesMap::save2file(std::string mapFilename,
         std::string graphFilename) {
     poseGraph->save2file(graphFilename);
     std::ofstream file(mapFilename);
-	mtxMapFrontend.lock();
+    mtxMapFrontend.lock();
 	file << "#Legend:\n";
 	file << "#Pose pose_id pose(0,0) pose(1,0) ... pose(2,3)\n";
 	file
