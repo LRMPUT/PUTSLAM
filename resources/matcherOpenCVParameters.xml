@@ -7,7 +7,7 @@
 	VOVersion :	0 -> matching
 			1 -> tracking
 -->
-<Matcher verbose="0" VOVersion="1">
+<Matcher verbose="0" VOVersion="0">
     <!-- RANSAC settings
 	 	verbose : 	0 -> no debug
 	 				1 -> print final result
@@ -68,8 +68,8 @@
 	minimalReprojDistanceNewTrackingFeatures="3" 
 	minimalEuclidDistanceNewTrackingFeatures="0.01"
 	DBScanEps="1"
-	matchingXYZSphereRadius = "0.08"
-	matchingXYZacceptRatioOfBestMatch = "0.75"
+	matchingXYZSphereRadius = "0.12"
+	matchingXYZacceptRatioOfBestMatch = "0.55"
 	trackingErrorType = "0"
 	trackingErrorThreshold = "25.0"
 	trackingMinEigThreshold = "0.00"
