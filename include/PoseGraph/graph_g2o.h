@@ -176,6 +176,9 @@ class PoseGraphG2O : public Graph {
         /// unFix vertex
         void unfixVertex(int vertexId);
 
+        /// set features to remove
+        void setFeatures2remove(const std::set<int>& _features2remove);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
@@ -207,6 +210,9 @@ class PoseGraphG2O : public Graph {
         std::mutex mtxOptPoses;
         /// current inverse of hessian
         Eigen::MatrixXd HessianInv;
+        /// features to remove
+        std::set<int> features2remove;
+
 
         /// Removes a vertex from the graph. Returns true on success
         PoseGraph::VertexSet::iterator removeVertex(unsigned int id);

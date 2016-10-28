@@ -618,7 +618,7 @@ double Matcher::matchXYZ(std::vector<MapFeature> mapFeatures, int sensorPoseId,
 	double matchingXYZacceptRatioOfBestMatch = matcherParameters.OpenCVParams.matchingXYZacceptRatioOfBestMatch;
 	if (computationNumber > 1) {
 		matchingXYZSphereRadius += 0.02 * (computationNumber - 1);
-		matchingXYZSphereRadius = std::max(0.1, matchingXYZSphereRadius- 0.05 *(computationNumber - 1));
+		matchingXYZacceptRatioOfBestMatch = std::max(0.1, matchingXYZacceptRatioOfBestMatch - 0.05 *(computationNumber - 1));
 	}
 
 

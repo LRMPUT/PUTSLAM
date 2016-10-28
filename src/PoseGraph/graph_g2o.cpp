@@ -910,7 +910,11 @@ bool PoseGraphG2O::optimize(int_fast32_t maxIterations, int verbose, double mini
     newOptimizedVertices.insert(newVertices.begin(), newVertices.end());
     newVertices.clear();
 
-
+    /// delete features
+    for (const auto& featureId : features2remove){
+        removeVertex(featureId);
+    }
+    features2remove.clear();
     // Unlock the graph
     mtxGraph.unlock();
 
@@ -1395,6 +1399,12 @@ void PoseGraphG2O::removeWeakFeatures(int threshold){
             }
         }
     }
+}
+
+/// set features to remove
+void PoseGraphG2O::setFeatures2remove(const std::set<int>& _features2remove){
+    for (const auto& featureId : _features2remove)
+        features2remove.insert(featureId);
 }
 
 /// Prune 3D edges (measurements to features)

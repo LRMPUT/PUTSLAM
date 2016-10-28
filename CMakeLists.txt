@@ -5,7 +5,7 @@ option(BUILD_ROS "Build with ROS" OFF)
 mark_as_advanced(BUILD_ROS)
 
 if(BUILD_ROS)
-	include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+        include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 	rosbuild_init()
 	add_definitions(-DBUILD_WITH_ROS)
 	SET(ROS_BUILD_TYPE Release)

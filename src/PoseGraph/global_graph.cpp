@@ -233,3 +233,9 @@ void GlobalGraph::unfixVertex(int vertexId){
     std::cout << vertexId << "\n";
     throw std::runtime_error("unifix vertex not implemented\n");
 }
+
+/// set features to remove
+void GlobalGraph::setFeatures2remove(const std::set<int>& _features2remove){
+    std::cout << _features2remove.size() << "\n";
+    throw std::runtime_error("setFeatures2remove not implemented\n");
+}

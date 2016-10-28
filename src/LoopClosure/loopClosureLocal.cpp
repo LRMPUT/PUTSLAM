@@ -26,7 +26,7 @@ LoopClosureLocal::Config::Config(std::string configFilename){
     config.LoadFile(filename.c_str());
 
     if (config.ErrorID())
-        std::cout << "unable to load Local Loop Closure config file.\n";
+        std::cout << "unable to load Local Loop Closure config file.\n" << filename << std::endl;
     tinyxml2::XMLElement * model = config.FirstChildElement( "LoopClosure" );
     model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
     model->FirstChildElement( "parameters" )->QueryIntAttribute("minFeatures", &minFeatures);
