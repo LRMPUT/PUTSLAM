@@ -41,6 +41,7 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
 	// set that map is currently empty
 	emptyMap = true;
 	loopClosureSuccess = false;
+	updateMapSuccess = true;
 }
 
 
@@ -150,12 +151,12 @@ void FeaturesMap::addFeatures(const std::vector<RGBDFeature>& features, int pose
 		featureIdNo++;
     }
 
-    //try to update the map
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    // try to update the map
+	updateMapSuccess = updateMapTryLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+        updateMapTryLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
     if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+        updateMapTryLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 
     emptyMap = false;
     if (config.visualize){
@@ -292,7 +293,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         }
 
 
-        // TODO: To konsekwentnie powinno dziac sie przez updateMap
+        // TODO: To konsekwentnie powinno dziac sie przez updateMap, bo teraz jest blokujace!
         mtxMapFrontend.lock();
         featuresMapFrontend[it->id].posesIds.push_back(_poseId);
         featuresMapFrontend[it->id].imageCoordinates.insert(std::make_pair(_poseId,ImageFeature(it->u, it->v, it->position.z())));
@@ -316,7 +317,7 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
     // TODO: Czy teraz w ogole dodatkowe deskryptory sa dodawanie dla danej cechy? Nie sa
     // TODO: To w ogole moze duplikowac wpisy powyzej
     if (continueLoopClosure)
-    	updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+    	updateMapTryLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 
     ///keyframes management
     std::set<int> intersect;
@@ -401,6 +402,14 @@ void FeaturesMap::addMeasurement(int poseFrom, int poseTo, Mat34 transformation)
 
 /// Get all features
 std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
+	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu? Jesli w ogole to przed get Features
+	// Version right now is that if we failed to update then we have to do it right now
+	if (!updateMapSuccess)
+		updateMapSuccess = updateMapLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+	//    if (continueManagement)
+	//        updateMapLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+	//    if (continueLoopClosure)
+	//        updateMapLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 	mtxMapFrontend.lock();
     std::vector<MapFeature> featuresSet;
     featuresSet.reserve(featuresMapFrontend.size());
@@ -409,13 +418,6 @@ std::vector<MapFeature> FeaturesMap::getAllFeatures(void) {
                     { featuresSet.push_back(p.second); });
 	mtxMapFrontend.unlock();
 
-	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu?
-	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 	return featuresSet;
 }
 
@@ -480,6 +482,15 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(
 
 /// get all visible features
 std::vector<MapFeature> FeaturesMap::getVisibleFeatures(const Mat34& cameraPose) {
+	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu? Jesli w ogole to przed get Features
+	// Version right now is that if we failed to update then we have to do it right now
+	if (!updateMapSuccess)
+		updateMapSuccess = updateMapLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+	//    if (continueManagement)
+	//        updateMapTryLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+	//    if (continueLoopClosure)
+	//        updateMapTryLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+
 	std::vector<MapFeature> visibleFeatures;
 	mtxMapFrontend.lock();
     for (std::map<int,MapFeature>::iterator it = featuresMapFrontend.begin();
@@ -495,17 +506,21 @@ std::vector<MapFeature> FeaturesMap::getVisibleFeatures(const Mat34& cameraPose)
 		}
 	}
 	mtxMapFrontend.unlock();
-	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+
 	return visibleFeatures;
 }
 
 /// get all covisible features using covisibility graph
 std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
+	// TODO: Czy takie operacje powinny miec miejsce w watku frontendu? Jesli w ogole to przed get Features
+	// Version right now is that if we failed to update then we have to do it right now
+	if (!updateMapSuccess)
+		updateMapSuccess = updateMapLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+	//    if (continueManagement)
+	//        updateMapTryLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+	//    if (continueLoopClosure)
+	//        updateMapTryLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+
     std::vector<MapFeature> visibleFeatures;
     std::set<int> verticesIds;
     //std::cout << "get neighbours " << lastKeyframeId << "\n";
@@ -530,17 +545,12 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
         visibleFeatures.push_back(featuresMapFrontend.at(featureId));
     }
     mtxMapFrontend.unlock();
-    //try to update the map
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
-    if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
-    if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+
     return visibleFeatures;
 }
 
 /// find nearest id of the image frame taking into acount the current angle of view and the view from the history
-/// TODO: Think if we shouldn't additionally use the vector from image origin to feature as it may greatly change current comparison
+/// TODO: Think if we may have to think about additionally using the vector from image origin to feature as it may greatly change current comparison
 void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std::vector<int>& imageIds, std::vector<double>& angles, double maxAngle){
     Mat34 currentCameraPose = getSensorPose();
     imageIds.resize(features.size(),-1);
@@ -928,14 +938,15 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
             bufferMapLoopClosure.mtxBuffer.unlock();
         }
 
-		//try to update the map
-		updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+        // TODO: Update after optimization is crucial. I believe that we need to force the update even it means waiting
+        updateMapSuccess = updateMapLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
         if (continueManagement)
-            updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+            updateMapLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
         if (continueLoopClosure)
-            updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+            updateMapLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
         if (config.edges3DPrunningThreshold>0)
             ((PoseGraphG2O*) poseGraph)->prune3Dedges(config.edges3DPrunningThreshold);//pruning
+
 		//update camera trajectory
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
@@ -1030,11 +1041,12 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 
 //    std::cout<<"features 2 update2 " << bufferMapFrontend.features2update.size() <<"\n";
 	//try to update the map
-	updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    // TODO: We just have to update, so lock
+	updateMapLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     if (continueManagement)
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+        updateMapLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
     if (continueLoopClosure)
-        updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+        updateMapLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
 	//update camera trajectory
 	std::vector<VertexSE3> optimizedPoses;
 	((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
@@ -1109,47 +1121,60 @@ void FeaturesMap::marginalizeMeasurements(int frameBegin, int frameEnd){
     bufferMapFrontend.mtxBuffer.lock();
     bufferMapFrontend.removeIds.insert(bufferMapFrontend.removeIds.begin(),features2remove.begin(), features2remove.end());
     bufferMapFrontend.mtxBuffer.unlock();
-    updateMap(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
+    updateMapSuccess = updateMapTryLock(bufferMapFrontend, featuresMapFrontend, mtxMapFrontend);
     if (continueManagement){
         bufferMapManagement.mtxBuffer.lock();
         bufferMapManagement.removeIds.insert(bufferMapManagement.removeIds.begin(),features2remove.begin(), features2remove.end());
         bufferMapManagement.mtxBuffer.unlock();
-        updateMap(bufferMapManagement, featuresMapManagement, mtxMapManagement);
+        updateMapTryLock(bufferMapManagement, featuresMapManagement, mtxMapManagement);
     }
 //    bufferMapLoopClosure.mtxBuffer.lock();
 //    bufferMapLoopClosure.removeIds.insert(bufferMapLoopClosure.removeIds.begin(),features2remove.begin(), features2remove.end());
 //    bufferMapLoopClosure.mtxBuffer.unlock();
-//    updateMap(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
+//    updateMapTryLock(bufferMapLoopClosure, featuresMapLoopClosure, mtxMapLoopClosure);
     poseGraph->marginalize(keyframes, features2remove);
 }
 
 /// Update map
-bool FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
+bool FeaturesMap::updateMapTryLock(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
 	if (mutex.try_lock()) {    //try to lock graph
-		modifier.mtxBuffer.lock();
-		if (modifier.addFeatures()) {
-            featuresMap.insert(modifier.features2add.begin(), modifier.features2add.end());
-            modifier.features2add.clear();
-		}
-		if (modifier.updateFeatures()) {
-            for (auto feature : modifier.features2update) {
-                updateFeature(featuresMap, feature.second);
-			}
-            modifier.features2update.clear();
-		}
-        if (modifier.removeFeatures()) {
-            for (auto feature : modifier.removeIds) {
-                featuresMap.erase(feature);
-            }
-            modifier.removeIds.clear();
-        }
-		modifier.mtxBuffer.unlock();
+		updateMap(modifier,featuresMap);
 		mutex.unlock();
-
 		return true;
 	}
 	return false;
 }
+
+/// Update map
+bool FeaturesMap::updateMapLock(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex) {
+	mutex.lock();
+	updateMap(modifier,featuresMap);
+	mutex.unlock();
+	return true;
+}
+
+void FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap) {
+	modifier.mtxBuffer.lock();
+	if (modifier.addFeatures()) {
+		featuresMap.insert(modifier.features2add.begin(),
+				modifier.features2add.end());
+		modifier.features2add.clear();
+	}
+	if (modifier.updateFeatures()) {
+		for (auto feature : modifier.features2update) {
+			updateFeature(featuresMap, feature.second);
+		}
+		modifier.features2update.clear();
+	}
+	if (modifier.removeFeatures()) {
+		for (auto feature : modifier.removeIds) {
+			featuresMap.erase(feature);
+		}
+		modifier.removeIds.clear();
+	}
+	modifier.mtxBuffer.unlock();
+}
+
 
 /// Update feature
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature) {

@@ -482,6 +482,9 @@ private:
     /// Last optimized pose
     int lastOptimizedPose;
 
+    /// UpdateMapSuccess
+    int updateMapSuccess;
+
     /// loop closure priority queue management
     LoopClosure* localLC;
 
@@ -509,7 +512,9 @@ private:
     void loopClosure(int verbose, Matcher* matcher);
 
     /// Update map
-    bool updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
+    void updateMap(MapModifier& modifier, std::map<int,MapFeature>& featuresMap);
+    bool updateMapTryLock(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
+    bool updateMapLock(MapModifier& modifier, std::map<int,MapFeature>& featuresMap, std::recursive_mutex& mutex);
 
     /// Update feature
     void updateFeature(std::map<int,MapFeature>& featuresMap, MapFeature& newFeature);
