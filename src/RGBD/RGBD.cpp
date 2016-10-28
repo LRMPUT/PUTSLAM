@@ -229,6 +229,28 @@ void RGBD::removeMapFeaturesWithoutDepth(std::vector<putslam::MapFeature> &featu
 	}
 }
 
+void RGBD::removeFarMapFeatures(std::vector<putslam::MapFeature> &features,
+		double maxZ, std::vector<int> &frameIds, std::vector<double> &angles) {
+
+    std::vector<putslam::MapFeature>::iterator featuresIter = features.begin();
+	std::vector<int>::iterator frameIdsIter = frameIds.begin();
+    std::vector<double>::iterator anglesIter = angles.begin();
+
+	for (;featuresIter!=features.end();)
+    {
+		if (featuresIter->position.z() > maxZ) {
+			featuresIter = features.erase(featuresIter);
+			frameIdsIter = frameIds.erase(frameIdsIter);
+			anglesIter = angles.erase(anglesIter);
+		}
+        else {
+			++featuresIter;
+			++frameIdsIter;
+			++anglesIter;
+		}
+	}
+}
+
 std::vector<cv::Point2f> RGBD::removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
 		cv::Mat distCoeffs) {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- freiburg1_360 -->
+<Model>
+	<focalLength fu="577.909902598822" fv="578.956855327044"/>
+	<focalAxis Cu="340.907579237762" Cv="232.734058441144"/>
+	<rgbDistortion k1="0.0486279113332955" k2="-0.0951512632624127" p1="0.00127675673508002" p2="0.00617865970117833" k3="0.0"/>
+	<imageSize sizeU="640" sizeV="480"/>
+
+<!-- Uncertainty models -->
+<!--   Park Model -->
+	<variance sigmaU="1.1046" sigmaV="0.64160"/>
+	<varianceDepth c3="0.567602" c2="0.888951" c1="0.418786" c0="0.964182"/>
+<!-- Normal-based model -->
+	<normalModel scaleUncertaintyNormal="0.8"/>
+<!-- Gradient-based model -->
+	<gradientModel scaleUncertaintyGradient="0.8"/>
+
+</Model>
+
+<datasetPath base=".." datasetName="ctu_clawar_1" depthImageScale="5000"/>
+s

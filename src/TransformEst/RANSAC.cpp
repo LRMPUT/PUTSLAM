@@ -55,11 +55,7 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	if (RANSACParams.verbose > 0)
 			std::cout << "RANSAC: original matches.size() = " << matches.size() << std::endl;
 
-	// The set of matches is too small to make any sense
-	if ((int)matches.size() < RANSACParams.minimalNumberOfMatches) {
-		bestInlierMatches.clear();
-		return Eigen::Matrix4f::Identity();
-	}
+
 
 	// We assume identity and 0% inliers
 	Eigen::Matrix4f bestTransformationModel = Eigen::Matrix4f::Identity();
@@ -69,14 +65,19 @@ Eigen::Matrix4f RANSAC::estimateTransformation(
 	matches.erase(
 			std::remove_if(matches.begin(), matches.end(),
 					[&](const cv::DMatch & m) {
-				int prevId = m.queryIdx, id = m.trainIdx;
-				if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
+						int prevId = m.queryIdx, id = m.trainIdx;
+						if (prevFeatures[prevId].hasNaN() || features[id].hasNaN()
 								|| prevFeatures[prevId][2] < 0.1 || prevFeatures[prevId][2] > 6
 								|| features[id][2] < 0.1 || features[id][2] > 6)
-					return true;
-				return false;
-			}),
-			matches.end());
+						return true;
+						return false;
+					}), matches.end());
+
+	// The set of matches is too small to make any sense
+	if ((int) matches.size() < RANSACParams.minimalNumberOfMatches) {
+		bestInlierMatches.clear();
+		return Eigen::Matrix4f::Identity();
+	}
 
 
 	if (RANSACParams.verbose > 0)

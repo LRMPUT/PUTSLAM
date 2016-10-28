@@ -75,6 +75,7 @@ class ROSGrabber : public Grabber {
 	int imageDepthScale;
 	int iterate;
 	int maxProcessFrames;
+	int lastReadId;
 
 };
 

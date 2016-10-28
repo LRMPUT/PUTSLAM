@@ -33,6 +33,8 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
 				std::make_pair(0, 0)), sensorModel(sensorConfig), featureIdNo(
 				FEATURES_START_ID), lastOptimizedPose(0) {
 
+	std::cout << "FeaturesMap" << std::endl;
+
 	poseGraph = createPoseGraphG2O();
 	if (config.searchPairsTypeLC == 0)
 		localLC = createLoopClosureLocal(config.configFilenameLC);
@@ -512,7 +514,14 @@ std::vector<MapFeature> FeaturesMap::getCovisibleFeatures(void) {
     //std::cout << "\n";
     mtxMapFrontend.lock();
     for (auto featureId : featuresIds){
-        visibleFeatures.push_back(featuresMapFrontend.at(featureId));
+
+    	auto featPointer = featuresMapFrontend.find(featureId);
+    	if ( featPointer != featuresMapFrontend.end() && featPointer->second.lifeValue > 0) {
+    		visibleFeatures.push_back(featPointer->second);
+    		featPointer->second.lifeValue--;
+    	}
+
+//    	else
     }
     mtxMapFrontend.unlock();
     //try to update the map
@@ -1148,7 +1157,7 @@ void FeaturesMap::updateMeasurements(std::map<int,MapFeature>& featuresMap, cons
     featuresMap[newFeature.second.id].imageCoordinates.insert(std::make_pair(newFeature.first,ImageFeature(newFeature.second.u, newFeature.second.v, newFeature.second.position.z())));
     for (auto &desc : newFeature.second.descriptors)
         featuresMap[newFeature.second.id].descriptors[desc.first] = desc.second;
-    featuresMap[newFeature.second.id].lifeValue += 2 ;
+    featuresMap[newFeature.second.id].lifeValue += 5 ;
 }
 
 /// Update camera trajectory

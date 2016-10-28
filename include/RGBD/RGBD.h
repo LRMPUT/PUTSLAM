@@ -60,6 +60,10 @@ void removeFeaturesWithoutDepth(std::vector<cv::KeyPoint> &features,
 void removeMapFeaturesWithoutDepth(std::vector<putslam::MapFeature> &features,
         cv::Mat depthImage, float additionalDistance, std::vector<int> &frameIds, std::vector<double> &angles, double depthImageScale);
 
+void removeFarMapFeatures(std::vector<putslam::MapFeature> &features,
+		double maxZ, std::vector<int> &frameIds, std::vector<double> &angles);
+
+
 std::vector<cv::Point2f> removeImageDistortion(
 		std::vector<cv::KeyPoint>& features, cv::Mat cameraMatrix,
 		cv::Mat distCoeffs);

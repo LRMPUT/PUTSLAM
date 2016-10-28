@@ -33,7 +33,7 @@
 		maxOnceFeatureAdd="200" 
 		minEuclideanDistanceOfFeatures="0.03" 
 		minImageDistanceOfFeatures="4" 
-		addNoFeaturesWhenMapSizeGreaterThan="2500" 
+		addNoFeaturesWhenMapSizeGreaterThan="1000" 
 		inlierThresholdEuclidean="0.03"
 		optimizationErrorType="0"/>
 

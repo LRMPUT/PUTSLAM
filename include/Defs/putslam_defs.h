@@ -206,7 +206,7 @@ public:
             std::map<unsigned int, ImageFeature> _imageCoordinates) :
 			RGBDFeature(_position, u, v, _descriptors), id(_id), posesIds(
                     _posesIds), imageCoordinates(_imageCoordinates) {
-		lifeValue = 100000;
+		lifeValue = 10;
     }
 
 	/// Constructor

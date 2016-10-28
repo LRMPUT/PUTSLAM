@@ -28,8 +28,10 @@
 		- messor_3.xml
 		MIT:
 		- mit_stata_12-04-06-11-15-29.xml
+		CTU:
+		- CTU_CLAWAR_1.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/icl_office_room_traj2_loop.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/CTU_CLAWAR_1.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information

@@ -190,6 +190,7 @@ public:
             if (config.ErrorID())
                 std::cout << "unable to load Map config file.\n";
 
+            std::cout << "Config()" << std::endl;
 
             tinyxml2::XMLElement * model = config.FirstChildElement( "MapConfig" );
             model->FirstChildElement( "parameters" )->QueryIntAttribute("verbose", &verbose);
@@ -250,6 +251,8 @@ public:
             configFilenameLC = model->FirstChildElement( "loopClosure" )->Attribute("configFilenameLC");
 
             visualize = false;
+
+            std::cout <<"Config() - end" << std::endl;
         }
         public:
             //verbose

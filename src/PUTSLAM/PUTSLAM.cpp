@@ -630,6 +630,9 @@ std::vector<double> &angles ) {
 //			currentSensorFrame.depthImage, additionalDistance,
 //			frameIds, angles, depthImageScale);
 
+	// Lets remove features that we cannot match due to max distance of Kinect/Asus
+	RGBD::removeFarMapFeatures(mapFeatures, 5.0, frameIds, angles);
+
 	if (verbose > 0)
 		showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
 
