@@ -506,6 +506,9 @@ private:
     /// Update feature
     void updateFeature(std::map<int,MapFeature>& featuresMap, const MapFeature& newFeature);
 
+    /// Returns translation vector from feature to LCS based on poseId and feature global position
+    Eigen::Vector3d getFeatureVectorInLCS(int poseId, Mat34 featureInGCS);
+
     /// Update measurements
     void updateMeasurements(std::map<int,MapFeature>& featuresMap, const std::pair<int,MapFeature>& newFeature);
 

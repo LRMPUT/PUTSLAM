@@ -720,6 +720,8 @@ void PUTSLAM::startProcessing() {
                 std::vector<double> angles;
 				mapFeatures = getAndFilterFeaturesFromMap(currentSensorFrame, cameraPose, frameIds, angles);
 
+				// Save size of map features
+				visibleMapFeaturesLog.push_back(mapFeatures.size());
 
 				if (verbose > 0)
 					std::cout << "Returned visible map feature size: "
@@ -1110,6 +1112,26 @@ void PUTSLAM::saveLogs() {
 			<< endl;
 	statisticsLogStream << "plt.legend() " << endl;
 	statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << endl;
+
+	// Visible map features
+	statisticsLogStream << "visibleMapFeatures = np.array([";
+	for (unsigned long int a = 0; a < visibleMapFeaturesLog.size(); a++) {
+		statisticsLogStream << visibleMapFeaturesLog[a] << ", ";
+	}
+	statisticsLogStream << "]);" << std::endl;
+
+	statisticsLogStream << "fig = plt.figure()" << endl;
+	statisticsLogStream
+			<< "plt.plot(visibleMapFeatures)"
+			<< endl;
+	statisticsLogStream
+			<< "fig.suptitle('Number of visible features from map', fontsize=20)"
+			<< endl;
+	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+	statisticsLogStream << "plt.ylabel('Feature number', fontsize=16)"
+			<< endl;
+	statisticsLogStream << "plt.legend() " << endl;
+	statisticsLogStream << "plt.savefig('visibleMapFeatures.png')" << endl;
 
 
 	// LC matches

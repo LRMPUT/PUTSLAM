@@ -258,14 +258,6 @@ void FeaturesMap::addMeasurements(const std::vector<MapFeature>& features, int p
         //add measurement
 		Mat33 info(Mat33::Identity());
 
-		// We add new descriptor and new measurement for a feature in loop closure
-        // TODO: zrobic to samo dla bufferFeaturesFrontend (tu nie jestem pewien czy zastapienie tego przez 'measurements2update' wystarczy)
-        /*if (continueLoopClosure) {
-            bufferMapLoopClosure.mtxBuffer.lock();
-			int mapFeatureId = it->id;
-            bufferMapLoopClosure.features2update[mapFeatureId] = *it;
-            bufferMapLoopClosure.mtxBuffer.unlock();
-        }*/
 
         if (config.useUncertainty){
             if (config.uncertaintyModel==0){
@@ -541,17 +533,23 @@ void FeaturesMap::findNearestFrame(const std::vector<MapFeature>& features, std:
             Mat34 featureInCamCurr = featureGlob.inverse()*currentCameraPose;
             Eigen::Vector3f featureViewCurr((float)featureInCamCurr(0,2), (float)featureInCamCurr(1,2), (float)featureInCamCurr(2,2));
             double minRot=10; int idMin=-1;
+
+
             //find the smallest angle between two views (max dot product)
             imageIds[i]=-1;
-            for (size_t j=0; j<features[i].posesIds.size();j++){
-                //compute position of feature in the camera pose
-                Mat34 camPose = getSensorPose(features[i].posesIds[j]);
+
+            for (auto it = features[i].descriptors.begin(); it!= features[i].descriptors.end(); ++it)
+            {
+            	int poseId = it->first;
+
+            	//compute position of feature in the camera pose
+            	Mat34 camPose = getSensorPose(poseId);
                 Mat34 featureInCam = featureGlob.inverse()*camPose;
                 Eigen::Vector3f featureView((float)featureInCam(0,2), (float)featureInCam(1,2), (float)featureInCam(2,2));
                 double angle = acos(featureView.dot(featureViewCurr)/(featureView.norm()*featureViewCurr.norm()));
                 if (fabs(angle)<minRot){
                     minRot = angle;
-                    idMin = (int)features[i].posesIds[j];
+                    idMin =  poseId;
                     angles[i] = fabs(angle);
                 }
             }
@@ -1141,22 +1139,72 @@ bool FeaturesMap::updateMap(MapModifier& modifier, std::map<int,MapFeature>& fea
 void FeaturesMap::updateFeature(std::map<int,MapFeature>& featuresMap, const MapFeature& newFeature) {
 	// Update position - used after optimization TODO: We shouldn't update position when adding descriptors
 	featuresMap[newFeature.id].position = newFeature.position;
-    // The measurement contains new extended descriptor and we add to the feature information
-    if (featuresMap.count(newFeature.id) > 0 && newFeature.descriptors.size() > 0) {
-		// Analyze the one of the new descriptors
-        for (auto & descToAdd : newFeature.descriptors) {
-			// This adds new descriptor if there is not descriptor with provided key
-			featuresMap[newFeature.id].descriptors[descToAdd.first] = descToAdd.second;
-		}
-	}
+//    // The measurement contains new extended descriptor and we add to the feature information
+//    if (featuresMap.count(newFeature.id) > 0 && newFeature.descriptors.size() > 0) {
+//		// Analyze the one of the new descriptors
+//        for (auto & descToAdd : newFeature.descriptors) {
+//			// This adds new descriptor if there is not descriptor with provided key
+//			featuresMap[newFeature.id].descriptors[descToAdd.first] = descToAdd.second;
+//		}
+//	}
+}
+
+Eigen::Vector3d FeaturesMap::getFeatureVectorInLCS(int poseId, Mat34 featureInGCS) {
+
+	// Getting camera pose in GCS
+	Mat34 camPoseNew = getSensorPose(poseId);
+
+	// Computing feature pose in LCS
+	Mat34 featureInCamNew = featureInGCS.inverse() * camPoseNew;
+
+	// Getting feature translation vector in LCS
+	Eigen::Vector3d featureViewNew(featureInCamNew(0, 2), featureInCamNew(1, 2),
+			featureInCamNew(2, 2));
+
+	return featureViewNew;
 }
 
 /// Update measurements
 void FeaturesMap::updateMeasurements(std::map<int,MapFeature>& featuresMap, const std::pair<int, MapFeature>& newFeature) {
     featuresMap[newFeature.second.id].posesIds.push_back(newFeature.first);
     featuresMap[newFeature.second.id].imageCoordinates.insert(std::make_pair(newFeature.first,ImageFeature(newFeature.second.u, newFeature.second.v, newFeature.second.position.z())));
-    for (auto &desc : newFeature.second.descriptors)
-        featuresMap[newFeature.second.id].descriptors[desc.first] = desc.second;
+
+
+    // Feature position in global coordinate system
+    Mat34 featureInGCS(featuresMap[newFeature.second.id].position*Quaternion(1,0,0,0));
+
+    // For all new possible descriptors
+    for (auto &desc : newFeature.second.descriptors) {
+
+    	// Lets assume that we will add new descriptor
+    	bool shouldWeAddDescriptor = true;
+
+    	// Getting the vector for new feature
+    	Eigen::Vector3d featureViewNew = getFeatureVectorInLCS(desc.first, featureInGCS);
+
+    	for (auto &existingDesc : featuresMap[newFeature.second.id].descriptors){
+
+    		// Getting the vector for already existing descriptors
+    		Eigen::Vector3d featureView = getFeatureVectorInLCS(existingDesc.first, featureInGCS);
+
+			// Computing the angle between vectors
+			double angle = acos(
+					featureView.dot(featureViewNew)
+							/ (featureView.norm() * featureViewNew.norm()));
+			double angleDeg = angle * M_PI / 180;
+
+			// If it is less than 30 deg, we do not add new descriptor
+			if (angleDeg < 30) {
+				shouldWeAddDescriptor = false;
+				break;
+			}
+    	}
+
+    	if (shouldWeAddDescriptor)
+    		featuresMap[newFeature.second.id].descriptors[desc.first] = desc.second;
+    }
+
+
     featuresMap[newFeature.second.id].lifeValue += 5 ;
 }
 

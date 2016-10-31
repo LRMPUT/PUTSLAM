@@ -74,7 +74,7 @@ class PUTSLAM {
 	std::unique_ptr<octomap::ColorOcTree> octomapTree;
 
 	// Save some statistics to analyze
-	std::vector<int> measurementToMapSizeLog, VOFeaturesSizeLog;
+	std::vector<int> measurementToMapSizeLog, VOFeaturesSizeLog, visibleMapFeaturesLog;
 	std::vector<double> VORansacInlierRatioLog;
 	std::vector<double> MapMatchingRansacInlierRatioLog, mapSize;
 	std::vector<std::pair<double, double>> patchesErrorLogs;
