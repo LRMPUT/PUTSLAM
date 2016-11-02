@@ -24,6 +24,7 @@ FeaturesMap::FeaturesMap(void) :
 		FEATURES_START_ID), lastOptimizedPose(0) {
 
 	poseGraph = createPoseGraphG2O();
+    continueLoopClosure = false;
 }
 
 /// Construction
@@ -44,6 +45,7 @@ FeaturesMap::FeaturesMap(std::string configMap, std::string sensorConfig) :
 	emptyMap = true;
 	loopClosureSuccess = false;
 	updateMapSuccess = true;
+    continueLoopClosure = false;
 }
 
 

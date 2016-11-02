@@ -101,7 +101,7 @@ public:
     double v;
 
 	/// Image patch
-	cv::Mat patch;
+    //cv::Mat patch;
 
 	/// Depth
     double depth;
