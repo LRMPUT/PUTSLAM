@@ -1,3 +1,4 @@
+#define BUILD_WITH_ROS
 #ifdef BUILD_WITH_ROS
 
 // Undeprecate CRT functions
@@ -26,6 +27,7 @@ ROSGrabber::ROSGrabber(void) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFF
 	sync.registerCallback(boost::bind(&ROSGrabber::callback, this, _1, _2));
 	iterate = 1;
 	lastReadId = -1;
+	usedTimestamps.open("timestamps.txt");
 }
 
 ROSGrabber::ROSGrabber(ros::NodeHandle nh) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFFER), imageRGB_sub(nh, "/rgb/image_raw", 10000), imageDepth_sub(nh, "/depth/image_raw", 10000), sync(MySyncPolicy(10000), imageRGB_sub, imageDepth_sub) {
@@ -39,6 +41,7 @@ ROSGrabber::ROSGrabber(ros::NodeHandle nh) : Grabber("ROS Grabber", TYPE_PRIMESE
 	sync.registerCallback(boost::bind(&ROSGrabber::callback, this, _1, _2));
 	iterate = 1;
 	lastReadId = -1;
+	usedTimestamps.open("timestamps.txt");
 }
 
 void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sensor_msgs::ImageConstPtr& imageDepth)
@@ -48,31 +51,53 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 	{
 		cv_RGB_ptr = cv_bridge::toCvCopy(imageRGB, sensor_msgs::image_encodings::BGR8);
 		if(imageDepth->encoding == "16UC1")
-		cv_Depth_ptr = cv_bridge::toCvCopy(imageDepth, sensor_msgs::image_encodings::TYPE_16UC1);
+			cv_Depth_ptr = cv_bridge::toCvCopy(imageDepth, sensor_msgs::image_encodings::TYPE_16UC1);
 		else if(imageDepth->encoding == "32FC1")
-		cv_Depth_ptr = cv_bridge::toCvCopy(imageDepth, sensor_msgs::image_encodings::TYPE_32FC1);
+			cv_Depth_ptr = cv_bridge::toCvCopy(imageDepth, sensor_msgs::image_encodings::TYPE_32FC1);
+
 	}
 	catch (cv_bridge::Exception& e)
 	{
 		ROS_ERROR("cv_bridge exception: %s", e.what());
 		return;
 	}
-	double ns = imageRGB->header.stamp.nsec;
-	while(ns>1) {
-		ns = ns/10;
-	}
+
+
+	//double ns = imageRGB->header.stamp.nsec;
+//	while(ns>1) {
+//		ns = ns/10;
+//	}
 	try
 	{
 		mtx.lock();
 		this->sensorFrame.readId = iterate;
-		iterate++;
-		this->sensorFrame.timestamp = ((double)imageRGB->header.stamp.sec) + ns;
+		this->sensorFrame.timestamp = iterate;// + ns;
 		this->sensorFrame.depthImageScale = imageDepthScale;
 		this->sensorFrame.rgbImage = cv_RGB_ptr->image;
 		this->sensorFrame.depthImage = cv_Depth_ptr->image;
+		iterate++;
+
+		if(imageDepth->encoding == "32FC1") {
+			cv::Mat tmp;
+			this->sensorFrame.depthImage.convertTo(tmp, CV_16UC1, 5000.0);
+			this->sensorFrame.depthImage = tmp;
+		}
+
+		this->sensorFrame.depthImage.setTo(0, this->sensorFrame.depthImage != this->sensorFrame.depthImage);
 
 		if (mode==MODE_BUFFER) {
 			sensorFrames.push(sensorFrame);
+
+			usedTimestamps << imageRGB->header.stamp.sec << ".";
+
+			std::stringstream line;
+			line << std::setfill('0') << std::setw(9) << imageRGB->header.stamp.nsec;
+			usedTimestamps << line.str().substr(0,6) << " " ;
+
+			usedTimestamps << imageDepth->header.stamp.sec << ".";
+			line.str("");
+			line << std::setfill('0') << std::setw(9) << imageDepth->header.stamp.nsec;
+			usedTimestamps << line.str().substr(0,6) << std::endl;
 		}
 		mtx.unlock();
 	}
@@ -123,7 +148,7 @@ void ROSGrabber::calibrate(void) {
 }
 
 ROSGrabber::~ROSGrabber(void) {
-
+	usedTimestamps.close();
 }
 
 int ROSGrabber::grabberClose() {

@@ -13,6 +13,7 @@
 #include "grabber.h"
 #include "depthSensorModel.h"
 #include <stddef.h>
+#include <fstream>
 
 //using namespace sensor_msgs;
 using namespace message_filters;
@@ -76,6 +77,8 @@ class ROSGrabber : public Grabber {
 	int iterate;
 	int maxProcessFrames;
 	int lastReadId;
+
+	std::ofstream usedTimestamps;
 
 };
 
