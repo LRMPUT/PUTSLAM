@@ -1,4 +1,4 @@
-#define BUILD_WITH_ROS
+//#define BUILD_WITH_ROS
 #ifdef BUILD_WITH_ROS
 
 // Undeprecate CRT functions
