@@ -685,6 +685,9 @@ void PUTSLAM::startProcessing() {
 		if (frameCounter == 0) {
 			processFirstFrame(currentSensorFrame, cameraPoseId);
 
+//			std::cout << currentSensorFrame.depthImage.row(320) << std::endl;
+//			std::cin >>addFeatureToMap;
+
 			addFeatureToMap = true;
 		}
 		// The next pose in the sequence
