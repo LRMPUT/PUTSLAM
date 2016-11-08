@@ -61,7 +61,7 @@ bool FileGrabber::grab(void) {
 	for (int i = 0; (i < parameters.playEveryNth) || parameters.realTime ; i++) {
 
 		// Increment file number
-		fileNo++;
+        fileNo++;
 
 		// We save the position of last line in case we need to go back by one line
 		previousLinePlace = (int) timestampFile.tellg();
@@ -123,7 +123,7 @@ bool FileGrabber::grab(void) {
 	tmpSensorFrame.timestamp = timestamp;
 
 	// RGB
-	std::ostringstream oss;
+    std::ostringstream oss;
 	oss <<  std::setfill('0') << std::setw(5) << fileNo;
 	if (parameters.verbosePlayParameters > 0)
 		std::cout << "Loading file: " << "rgb_" + oss.str() << ".png" << std::endl;
