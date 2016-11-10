@@ -2,9 +2,9 @@
 
 <!-- freiburg1_360 -->
 <Model>
-	<focalLength fu="525.0" fv="525.0"/>
-	<focalAxis Cu="319.5" Cv="239.5"/>
-	<rgbDistortion k1="0.0" k2="0.0" p1="0.0" p2="0.0" k3="0.0"/>
+	<focalLength fu="537.58330" fv="537.08866"/>
+	<focalAxis Cu="314.54942" Cv="238.36211"/>
+	<rgbDistortion k1="0.04168" k2="-0.13675" p1="0.00063" p2="0.00124" k3="0.0"/>
 	<imageSize sizeU="640" sizeV="480"/>
 
 <!-- Uncertainty models -->
