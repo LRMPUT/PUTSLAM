@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../include/PUTSLAM/PUTSLAM.h"
+#include "../include/putslam/PUTSLAM/PUTSLAM.h"
 
 int main() {
 

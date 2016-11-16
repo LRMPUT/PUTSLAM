@@ -1,5 +1,5 @@
 #include "Defs/opencv.h"
-#include <../include/VisualPlaceRecognition/openfabmap.hpp>
+#include <../../include/putslam/VisualPlaceRecognition/openfabmap.hpp>
 #include <fstream>
 
 #define OPENCV2P4

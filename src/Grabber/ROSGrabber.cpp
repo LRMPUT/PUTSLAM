@@ -6,7 +6,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include "../../include/Grabber/ROSGrabber.h"
+#include "../../include/putslam/Grabber/ROSGrabber.h"
 
 #include <memory>
 #include <stdexcept>

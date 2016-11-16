@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/VisualPlaceRecognition/inference.hpp"
+#include "../../include/putslam/VisualPlaceRecognition/inference.hpp"
 
 namespace of2 {
 

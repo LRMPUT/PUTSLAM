@@ -4,10 +4,10 @@
  * \author Dominik Belter
  */
 
-#include "../include/Map/featuresMap.h"
-#include "../include/PoseGraph/graph.h"
-#include "../include/Grabber/xtionGrabber.h"
-#include "../include/TransformEst/g2oEst.h"
+#include "../../include/putslam/Map/featuresMap.h"
+#include "../../include/putslam/PoseGraph/graph.h"
+#include "../../include/putslam/Grabber/xtionGrabber.h"
+#include "../../include/putslam/TransformEst/g2oEst.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>

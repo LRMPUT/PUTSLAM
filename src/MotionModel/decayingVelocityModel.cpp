@@ -1,4 +1,4 @@
-#include "../include/MotionModel/decayingVelocityModel.h"
+#include "../../include/putslam/MotionModel/decayingVelocityModel.h"
 
 DecayingVelocityModel::DecayingVelocityModel(double _Q, double _R, double _decayingRate) {
 	this->Q = Eigen::Matrix<double, 13, 13>::Identity() * _Q;

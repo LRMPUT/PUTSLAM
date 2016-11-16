@@ -37,8 +37,8 @@ endif(BUILD_ROS)
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Settings
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include")
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/Defs")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/putslam")
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/putslam/Defs")
 
 # core libraries
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" ON)
@@ -199,7 +199,7 @@ endif(BUILD_ROS)
 
 if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         file(GLOB DEFS_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Defs/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Defs/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(PUTSLAM_DEFS STATIC ${DEFS_HEADERS})
@@ -208,7 +208,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
         endif(BUILD_ROS)
         set_target_properties(PUTSLAM_DEFS PROPERTIES LINKER_LANGUAGE CXX)
 # 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/Defs/)
+        INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/putslam/Defs/)
 
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
@@ -223,7 +223,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
             "${CMAKE_SOURCE_DIR}/src/Utilities/*.cpp"
         )
         file(GLOB UTILITIES_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Utilities/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Utilities/*.h"
         )
 
         if(BUILD_ROS)
@@ -263,18 +263,18 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             endif(BUILD_ROS)
         )
         file(GLOB GRABBER_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Grabber/grabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/calibration.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/depthSensorModel.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/kinectGrabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/fileGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/grabber.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/calibration.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/depthSensorModel.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/kinectGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-                "${CMAKE_SOURCE_DIR}/include/Grabber/ptgreyGrabber.h"
+                "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/ptgreyGrabber.h"
             #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
-            "${CMAKE_SOURCE_DIR}/include/Grabber/templateGrabber.h"
-            "${CMAKE_SOURCE_DIR}/include/Grabber/xtionGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/templateGrabber.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/xtionGrabber.h"
             if(BUILD_ROS)
-	            "${CMAKE_SOURCE_DIR}/include/Grabber/ROSGrabber.h"
+                    "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/ROSGrabber.h"
             endif(BUILD_ROS)
         )
         if(BUILD_ROS)
@@ -303,7 +303,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
             "${CMAKE_SOURCE_DIR}/src/Tracker/*.cpp"
         )
         file(GLOB TRACKER_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Tracker/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Tracker/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(Tracker STATIC ${TRACKER_SOURCES} ${TRACKER_HEADERS})
@@ -325,7 +325,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
             "${CMAKE_SOURCE_DIR}/src/TransformEst/*.cpp"
         )
         file(GLOB TRANSFORM_ESTIMATOR_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/TransformEst/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/TransformEst/*.h"
         )
 
         if(BUILD_ROS)
@@ -349,7 +349,7 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 #            "${CMAKE_SOURCE_DIR}/src/USAC/*.cpp"
 #        )
 #        file(GLOB USAC_HEADERS
-#            "${CMAKE_SOURCE_DIR}/include/USAC/*.h"
+#            "${CMAKE_SOURCE_DIR}/include/putslam/USAC/*.h"
 #        )
 #
 #        ADD_LIBRARY(USAC STATIC ${USAC_SOURCES} ${USAC_HEADERS})
@@ -369,7 +369,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
             "${CMAKE_SOURCE_DIR}/src/LDB/*.cpp"
         )
         file(GLOB LDB_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/LDB/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/LDB/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(LDB STATIC ${LDB_SOURCES} ${LDB_HEADERS})
@@ -391,7 +391,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
             "${CMAKE_SOURCE_DIR}/src/RGBD/*.cpp"
         )
         file(GLOB RGBD_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/RGBD/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/RGBD/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(RGBD STATIC ${RGBD_SOURCES} ${RGBD_HEADERS})
@@ -414,7 +414,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
             "${CMAKE_SOURCE_DIR}/src/Matcher/*.cpp"
         )
         file(GLOB MATCHER_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Matcher/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Matcher/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(Matcher STATIC ${MATCHER_SOURCES} ${MATCHER_HEADERS})
@@ -437,7 +437,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
             "${CMAKE_SOURCE_DIR}/src/MotionModel/*.cpp"
         )
         file(GLOB MOTIONMODDEL_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/MotionModel/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/MotionModel/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(MotionModel STATIC ${MOTIONMODDEL_SOURCES} ${MOTIONMODDEL_HEADERS})
@@ -459,7 +459,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
             "${CMAKE_SOURCE_DIR}/src/PoseGraph/*.cpp"
         )
         file(GLOB POSE_GRAPH_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/PoseGraph/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/PoseGraph/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(PoseGraph STATIC ${POSE_GRAPH_SOURCES} ${POSE_GRAPH_HEADERS})
@@ -483,7 +483,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
             "${CMAKE_SOURCE_DIR}/src/VisualPlaceRecognition/*.cpp"
         )
         file(GLOB VISUALPLACERECOGNITION_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/VisualPlaceRecognition/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/VisualPlaceRecognition/*.h"
         )
         if(BUILD_ROS)
 	        rosbuild_add_library(VisualPlaceRecognition STATIC ${VISUALPLACERECOGNITION_SOURCES} ${VISUALPLACERECOGNITION_HEADERS})
@@ -508,7 +508,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
             "${CMAKE_SOURCE_DIR}/src/LoopClosure/*.cpp"
         )
         file(GLOB LOOPCLOSURE_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/LoopClosure/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/LoopClosure/*.h"
         )
         if(BUILD_ROS)
 	        rosbuild_add_library(LoopClosure STATIC ${LOOPCLOSURE_SOURCES} ${LOOPCLOSURE_HEADERS})
@@ -532,7 +532,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
             "${CMAKE_SOURCE_DIR}/src/Map/*.cpp"
         )
         file(GLOB MAP_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Map/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Map/*.h"
         )
         if(BUILD_ROS)
         	rosbuild_add_library(Map STATIC ${MAP_SOURCES} ${MAP_HEADERS})
@@ -556,7 +556,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
             "${CMAKE_SOURCE_DIR}/src/Visualizer/*.cpp"
         )
         file(GLOB VISUALIZER_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/Visualizer/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/Visualizer/*.h"
         )
         if(BUILD_ROS)
 	        rosbuild_add_library(Visualizer STATIC ${VISUALIZER_SOURCES} ${VISUALIZER_HEADERS})
@@ -579,7 +579,7 @@ if(BUILD_PUTSLAM)
             "${CMAKE_SOURCE_DIR}/src/PUTSLAM/*.cpp"
         )
         file(GLOB LIBPUTSLAM_HEADERS
-            "${CMAKE_SOURCE_DIR}/include/PUTSLAM/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/PUTSLAM/*.h"
         )
         if(BUILD_ROS)
 	        rosbuild_add_library(LIBPUTSLAM STATIC ${LIBPUTSLAM_SOURCES} ${LIBPUTSLAM_HEADERS})

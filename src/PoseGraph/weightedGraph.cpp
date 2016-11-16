@@ -4,7 +4,7 @@
  * \author Dominik Belter
  */
 
-#include "../include/PoseGraph/weightedGraph.h"
+#include "../../include/putslam/PoseGraph/weightedGraph.h"
 #include <iostream>
 
 using namespace putslam;

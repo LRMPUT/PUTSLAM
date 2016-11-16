@@ -4,7 +4,7 @@
  * \author Dominik Belter
  */
 
-#include "../include/PoseGraph/graph_g2o.h"
+#include "../../include/putslam/PoseGraph/graph_g2o.h"
 #include <stdexcept>
 #include <chrono>
 

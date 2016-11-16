@@ -38,7 +38,7 @@
 #include <set>
 #include <vector>
 
-#include "../../include/LDB/ldb.h"
+#include "../../include/putslam/LDB/ldb.h"
 
 using namespace std;
 using namespace cv;

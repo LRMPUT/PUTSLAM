@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <chrono>
 #include <thread>
-#include "../../include/Grabber/kinectGrabber.h"
+#include "../../include/putslam/Grabber/kinectGrabber.h"
 
 using namespace putslam;
 

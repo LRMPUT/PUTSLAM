@@ -4,7 +4,7 @@
  * \author Michal Nowicki
  *
  */
-#include "../include/Matcher/dbscan.h"
+#include "../../include/putslam/Matcher/dbscan.h"
 
 #include <iostream>
 

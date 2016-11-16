@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "include/Defs/putslam_defs.h"
+#include "include/putslam/Defs/putslam_defs.h"
 #include "Grabber/depthSensorModel.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
@@ -10,8 +10,8 @@
 #include <ctime>
 #include <ratio>
 #include <chrono>
-#include "include/Grabber/kinectGrabber.h"
-#include "include/Grabber/xtionGrabber.h"
+#include "include/putslam/Grabber/kinectGrabber.h"
+#include "include/putslam/Grabber/xtionGrabber.h"
 
 using namespace std;
 

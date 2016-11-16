@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "../include/Defs/putslam_defs.h"
+#include "../include/putslam/Defs/putslam_defs.h"
 #include "Tracker/trackerKLT.h"
 #include "Utilities/simulator.h"
 #include "TransformEst/kabschEst.h"
@@ -10,7 +10,7 @@
 #include "PoseGraph/graph_g2o.h"
 #include <cmath>
 #include "Defs/eigen3.h"
-#include "../include/Grabber/kinectGrabber.h"
+#include "../include/putslam/Grabber/kinectGrabber.h"
 
 using namespace std;
 

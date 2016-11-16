@@ -4,9 +4,9 @@
  * \author Michal Nowicki
  *
  */
-#include "../include/TransformEst/RANSAC.h"
-#include "../include/TransformEst/g2oEst.h"
-#include "../include/RGBD/RGBD.h"
+#include "../../include/putslam/TransformEst/RANSAC.h"
+#include "../../include/putslam/TransformEst/g2oEst.h"
+#include "../../include/putslam/RGBD/RGBD.h"
 
 RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
 //RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {

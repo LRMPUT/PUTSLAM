@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/VisualPlaceRecognition/chowliutree.hpp"
+#include "../../include/putslam/VisualPlaceRecognition/chowliutree.hpp"
 
 #include <iostream>
 #include <map>

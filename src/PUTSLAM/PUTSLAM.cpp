@@ -1,7 +1,7 @@
-#include "../include/PUTSLAM/PUTSLAM.h"
-#include "../include/Utilities/simulator.h"
-#include "../include/Utilities/stopwatch.h"
-#include "../include/MotionModel/decayingVelocityModel.h"
+#include "../../include/putslam/PUTSLAM/PUTSLAM.h"
+#include "../../include/putslam/Utilities/simulator.h"
+#include "../../include/putslam/Utilities/stopwatch.h"
+#include "../../include/putslam/MotionModel/decayingVelocityModel.h"
 
 #include <assert.h>
 

@@ -1,5 +1,5 @@
-#include "../include/VisualPlaceRecognition/visualplacerecognition.h"
-#include "../include/VisualPlaceRecognition/put_ofm.h"
+#include "../../include/putslam/VisualPlaceRecognition/visualplacerecognition.h"
+#include "../../include/putslam/VisualPlaceRecognition/put_ofm.h"
 
 VisualPlaceRecognition::VisualPlaceRecognition(uint32_t _minFeatures, uint32_t _tailFramesToSkip, double_t _minNewPlaceProb)
 {
