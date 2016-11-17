@@ -24,6 +24,16 @@ PUTSLAM::PUTSLAM() {
 #endif
 }
 
+void PUTSLAM::computeMask(const Mat34 cameraPose, cv::Mat& mask)
+{
+    std::cout<<"Compute Mask function"<<endl<<mask<<endl;
+}
+
+void PUTSLAM::updateFrame(cv::Mat RGBD, cv::Mat depthImg)
+{
+    std::cout<<"Update Frame function"<<endl<<RGBD<<endl<<depthImg<<endl;
+}
+
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
 		std::vector<MapFeature>& mapFeatures) {
 

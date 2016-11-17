@@ -108,6 +108,12 @@ public:
 
 	/// set drawing options
 	void setDrawOptions(bool _draw, bool _drawImages);
+
+    ///Attach visualizer
+    void computeMask(const Mat34 cameraPose, cv::Mat& mask);
+
+    /// update the Cloud
+    void updateFrame(cv::Mat RGBD, cv::Mat depthImg);
 	
 #ifdef BUILD_WITH_ROS	
 	/////////////////////////////////////////////////////////////////////////////ROS
