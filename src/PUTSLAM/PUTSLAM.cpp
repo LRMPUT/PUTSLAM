@@ -345,6 +345,7 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 		if (drawImages) {
 			cv::imshow("PUTSLAM RGB frame", currentSensorFrame.rgbImage);
 			cv::imshow("PUTSLAM Depth frame", currentSensorFrame.depthImage);
+			cv::waitKey(5000);
 		}
 		if (trajIt == 0) {
 			// cameraPose as Eigen::Transform
@@ -691,12 +692,14 @@ void PUTSLAM::startProcessing() {
 		// Variable to store map features
 		std::vector<MapFeature> mapFeatures;
 
+//		std::cout << currentSensorFrame.depthImage.row(320) << std::endl;
+//		std::cin >>addFeatureToMap;
+
 		// The beginning of the sequence
 		if (frameCounter == 0) {
 			processFirstFrame(currentSensorFrame, cameraPoseId);
 
-//			std::cout << currentSensorFrame.depthImage.row(320) << std::endl;
-//			std::cin >>addFeatureToMap;
+
 
 			addFeatureToMap = true;
 		}

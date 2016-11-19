@@ -17,7 +17,7 @@
 #include "PoseGraph/global_graph.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../../include/putslam/Grabber/fileGrabber.h"
-#include "../../include/putslam/Grabber/fileGrabber.h"
+//#include "../../include/putslam/Grabber/fileGrabber.h"
 #include "../../include/putslam/Grabber/kinectGrabber.h"
 #include "../../include/putslam/Grabber/xtionGrabber.h"
 #include "../../include/putslam/Matcher/matcherOpenCV.h"
@@ -32,7 +32,7 @@
 #include <tf/tf.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
-#include "../include/Grabber/ROSGrabber.h"
+#include "../../include/putslam/Grabber/ROSGrabber.h"
 #endif
 
 using namespace std;

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- freiburg1_360 -->
+<Model>
+	<focalLength fu="543.892883300781" fv="544.604553222656"/>
+	<focalAxis Cu="304.817027906509" Cv="225.006737677215"/>
+	<rgbDistortion k1="0.0491971689238464" k2="-0.109904731730457" p1="-0.00523482839140862" p2="-0.00543808927202697" k3="0.0"/>
+	<imageSize sizeU="640" sizeV="480"/>
+
+<!-- Uncertainty models -->
+<!--   Park Model -->
+	<variance sigmaU="1.1046" sigmaV="0.64160"/>
+	<varianceDepth c3="0.567602" c2="0.888951" c1="0.418786" c0="0.964182"/>
+<!-- Normal-based model -->
+	<normalModel scaleUncertaintyNormal="0.8"/>
+<!-- Gradient-based model -->
+	<gradientModel scaleUncertaintyGradient="0.8"/>
+
+</Model>
+
+<datasetPath base=".." datasetName="ctu_iros_1" depthImageScale="5000"/>
+s

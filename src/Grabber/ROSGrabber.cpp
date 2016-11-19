@@ -50,6 +50,7 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 	try
 	{
 		cv_RGB_ptr = cv_bridge::toCvCopy(imageRGB, sensor_msgs::image_encodings::BGR8);
+		//std::cout << imageDepth->encoding << std::endl;
 		if(imageDepth->encoding == "16UC1")
 			cv_Depth_ptr = cv_bridge::toCvCopy(imageDepth, sensor_msgs::image_encodings::TYPE_16UC1);
 		else if(imageDepth->encoding == "32FC1")
@@ -63,7 +64,7 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 	}
 
 
-	//double ns = imageRGB->header.stamp.nsec;
+	double ns = imageRGB->header.stamp.nsec, sec = imageRGB->header.stamp.sec;
 //	while(ns>1) {
 //		ns = ns/10;
 //	}
@@ -71,11 +72,16 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 	{
 		mtx.lock();
 		this->sensorFrame.readId = iterate;
-		this->sensorFrame.timestamp = iterate;// + ns;
+		this->sensorFrame.timestamp = sec + ns/pow(10,9);// + ns, iterate;
 		this->sensorFrame.depthImageScale = imageDepthScale;
 		this->sensorFrame.rgbImage = cv_RGB_ptr->image;
 		this->sensorFrame.depthImage = cv_Depth_ptr->image;
 		iterate++;
+
+//		std::cout<<this->sensorFrame.depthImage<<std::endl;
+//		double min, max;
+//		cv::minMaxLoc(this->sensorFrame.depthImage, &min, &max);
+//		std::cout<<"NEW!!! MIN : " << min << " MAX : " << max << std::endl;
 
 		if(imageDepth->encoding == "32FC1") {
 			cv::Mat tmp;
@@ -84,6 +90,8 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 		}
 
 		this->sensorFrame.depthImage.setTo(0, this->sensorFrame.depthImage != this->sensorFrame.depthImage);
+
+
 
 		if (mode==MODE_BUFFER) {
 			sensorFrames.push(sensorFrame);
