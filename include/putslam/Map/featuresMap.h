@@ -20,7 +20,7 @@
 #include <deque>
 #include <queue>
 
-#define FEATURES_START_ID 10000
+#define FEATURES_START_ID 100000
 
 namespace putslam {
 /// create a single Map
