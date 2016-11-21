@@ -41,7 +41,7 @@
 	octomapFileToSave - name of the file to save octomap
 	octomapOffline  - turns on/off processing the octomap before SLAM based on "reconstruction.res"
   -->
-  <PUTSLAM verbose="1" keepCameraFrames="false" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
+  <PUTSLAM verbose="0" keepCameraFrames="false" onlyVO="0" octomap="0" octomapResolution="0.02" octomapCloudStepSize="20" octomapFileToSave="putslamOctomap.ot" octomapOffline="0"/>
   
 	
 

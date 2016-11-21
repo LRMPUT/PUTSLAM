@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../include/PUTSLAM/PUTSLAM.h"
+#include "../include/putslam/PUTSLAM/PUTSLAM.h"
 
 int main(int argc, char** argv) { ////////////////////////////////////////////////////////////ROS
 	ros::init(argc, argv, "demoROS"); ///////////////////////////////////////////////////////////////////////ROS

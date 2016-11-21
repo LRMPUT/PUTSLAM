@@ -32,9 +32,9 @@
 		addFeaturesWhenMeasurementSizeLessThan="100" 
 		maxOnceFeatureAdd="200" 
 		minEuclideanDistanceOfFeatures="0.03" 
-		minImageDistanceOfFeatures="4" 
-		addNoFeaturesWhenMapSizeGreaterThan="750" 
-		inlierThresholdEuclidean="0.03"
+		minImageDistanceOfFeatures="2" 
+		addNoFeaturesWhenMapSizeGreaterThan="1000" 
+		inlierThresholdEuclidean="0.02"
 		optimizationErrorType="0"/>
 
   <!--mapCompression:
