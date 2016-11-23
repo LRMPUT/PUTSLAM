@@ -713,6 +713,11 @@ void PUTSLAM::startProcessing() {
 			std::vector<cv::DMatch> inlierMatches;
 			Eigen::Matrix4f poseIncrement = runVO(currentSensorFrame, inlierMatches);
 
+			double translationVO = sqrt(pow(poseIncrement(0,3),2) + pow(poseIncrement(1,3),2) + pow(poseIncrement(2,3),2));
+			if (translationVO > 0.1)
+				poseIncrement = Eigen::Matrix4f::Identity();
+
+
 			VOPoseEstimate = VOPoseEstimate * poseIncrement;
 
 			if (!onlyVO) {
