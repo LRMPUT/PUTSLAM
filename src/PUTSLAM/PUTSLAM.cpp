@@ -399,8 +399,11 @@ void PUTSLAM::readingSomeParameters() {
             ((FeaturesMap*) map)->getMinImageDistanceOfFeatures();
     addNoFeaturesWhenMapSizeGreaterThan =
             ((FeaturesMap*) map)->getAddNoFeaturesWhenMapSizeGreaterThan();
-	minMeasurementsToAddPoseToFeatureEdge =
+    maxMeasurementsToAddPoseToPoseEdge = ((FeaturesMap*) map)->getMaxMeasurementsToAddPoseToPoseEdge();
+
+    minMeasurementsToAddPoseToFeatureEdge =
 			((FeaturesMap*) map)->getMinMeasurementsToAddPoseToFeatureEdge();
+
 	addPoseToPoseEdges = ((FeaturesMap*) map)->getAddPoseToPoseEdges();
 
 	depthImageScale = ((FileGrabber*) grabber)->parameters.depthImageScale;
@@ -791,6 +794,17 @@ void PUTSLAM::startProcessing() {
 
 
 				tmp.start();
+
+				// Add pose-pose constrain
+				if ((int) measurementList.size() < maxMeasurementsToAddPoseToPoseEdge)
+				{
+					Mat34 cameraPoseIncrement = Mat34(
+							poseIncrement.cast<double>());
+					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
+							cameraPoseIncrement);
+				}
+
+
 				// Add pose-feature constrain
 				measurementToMapSizeLog.push_back((int)measurementList.size());
 				if ((int)measurementList.size()
@@ -806,12 +820,7 @@ void PUTSLAM::startProcessing() {
 					}
 					map->addMeasurements(measurementList);
 				}
-				else {
-					Mat34 cameraPoseIncrement = Mat34(
-							poseIncrement.cast<double>());
-					map->addMeasurement(cameraPoseId - 1, cameraPoseId,
-							cameraPoseIncrement);
-				}
+
 
 				tmp.stop();
 				timeMeasurement.mapAddMeasurementTimes.push_back((long int)tmp.elapsed());

@@ -144,6 +144,9 @@ public:
 	int getMinMeasurementsToAddPoseToFeatureEdge() {
 		return config.minMeasurementsToAddPoseToFeatureEdge;
 	}
+	int getMaxMeasurementsToAddPoseToPoseEdge() {
+		return config.maxMeasurementsToAddPoseToPoseEdge;
+	}
 	bool getAddPoseToPoseEdges() {
 		return config.addPoseToPoseEdges;
 	}
@@ -198,6 +201,7 @@ public:
             model->FirstChildElement( "parameters" )->QueryIntAttribute("uncertaintyModel", &uncertaintyModel);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("fixVertices", &fixVertices);
             model->FirstChildElement( "parameters" )->QueryBoolAttribute("addPoseToPoseEdges", &addPoseToPoseEdges);
+            model->FirstChildElement( "parameters" )->QueryIntAttribute("maxMeasurementsToAddPoseToPoseEdge", &maxMeasurementsToAddPoseToPoseEdge);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("minMeasurementsToAddPoseToFeatureEdge", &minMeasurementsToAddPoseToFeatureEdge);
             model->FirstChildElement( "parameters" )->QueryIntAttribute("weakFeatureThr", &weakFeatureThr);
             model->FirstChildElement( "parameters" )->QueryDoubleAttribute("edges3DPrunningThreshold", &edges3DPrunningThreshold);
@@ -299,6 +303,9 @@ public:
 
             // true/false whether add pose-pose constrains from VO
             bool addPoseToPoseEdges;
+
+            //
+            int maxMeasurementsToAddPoseToPoseEdge;
 
             // minimal number of consistent pose-(feature in map) observations to add those links
             int minMeasurementsToAddPoseToFeatureEdge;
