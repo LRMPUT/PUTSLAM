@@ -39,6 +39,7 @@ ROSGrabber::ROSGrabber(ros::NodeHandle nh) : Grabber("ROS Grabber", TYPE_PRIMESE
 		std::cout << "Unable to load ROS Grabber config file: ROSModel.xml \n";
 	config.FirstChildElement("parameters")->QueryIntAttribute("imageDepthScale", &imageDepthScale);
 	config.FirstChildElement("parameters")->QueryIntAttribute("maxProcessFrames", &maxProcessFrames);
+	config.FirstChildElement("parameters")->QueryIntAttribute("processingFrameStep", &processingFrameStep);
 	sync.registerCallback(boost::bind(&ROSGrabber::callback, this, _1, _2));
 	iterate = 1;
 	lastReadId = -1;
