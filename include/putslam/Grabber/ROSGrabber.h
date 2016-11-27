@@ -76,6 +76,7 @@ class ROSGrabber : public Grabber {
 	int imageDepthScale;
 	int iterate;
 	int maxProcessFrames;
+	int processingFrameStep;
 	int lastReadId;
 
 	std::ofstream usedTimestamps;

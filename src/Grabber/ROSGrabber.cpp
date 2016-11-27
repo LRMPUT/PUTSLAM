@@ -24,6 +24,7 @@ ROSGrabber::ROSGrabber(void) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFF
 		std::cout << "Unable to load ROS Grabber config file: ROSModel.xml \n";
 	config.FirstChildElement("parameters")->QueryIntAttribute("imageDepthScale", &imageDepthScale);
 	config.FirstChildElement("parameters")->QueryIntAttribute("maxProcessFrames", &maxProcessFrames);
+	config.FirstChildElement("parameters")->QueryIntAttribute("processingFrameStep", &processingFrameStep);
 	sync.registerCallback(boost::bind(&ROSGrabber::callback, this, _1, _2));
 	iterate = 1;
 	lastReadId = -1;
@@ -70,44 +71,50 @@ void ROSGrabber::callback(const sensor_msgs::ImageConstPtr& imageRGB, const sens
 //	}
 	try
 	{
-		mtx.lock();
-		this->sensorFrame.readId = iterate;
-		this->sensorFrame.timestamp = sec + ns/pow(10,9);// + ns, iterate;
-		this->sensorFrame.depthImageScale = imageDepthScale;
-		this->sensorFrame.rgbImage = cv_RGB_ptr->image;
-		this->sensorFrame.depthImage = cv_Depth_ptr->image;
 		iterate++;
 
-//		std::cout<<this->sensorFrame.depthImage<<std::endl;
-//		double min, max;
-//		cv::minMaxLoc(this->sensorFrame.depthImage, &min, &max);
-//		std::cout<<"NEW!!! MIN : " << min << " MAX : " << max << std::endl;
+		if ( iterate % processingFrameStep == 0)
+		{
+			mtx.lock();
+			this->sensorFrame.readId = iterate;
+			this->sensorFrame.timestamp = sec + ns/pow(10,9);// + ns, iterate;
+			this->sensorFrame.depthImageScale = imageDepthScale;
+			this->sensorFrame.rgbImage = cv_RGB_ptr->image;
+			this->sensorFrame.depthImage = cv_Depth_ptr->image;
 
-		if(imageDepth->encoding == "32FC1") {
-			cv::Mat tmp;
-			this->sensorFrame.depthImage.convertTo(tmp, CV_16UC1, 5000.0);
-			this->sensorFrame.depthImage = tmp;
+
+
+//			std::cout<<this->sensorFrame.depthImage<<std::endl;
+//			double min, max;
+//			cv::minMaxLoc(this->sensorFrame.depthImage, &min, &max);
+//			std::cout<<"NEW!!! MIN : " << min << " MAX : " << max << std::endl;
+
+			if(imageDepth->encoding == "32FC1") {
+				cv::Mat tmp;
+				this->sensorFrame.depthImage.convertTo(tmp, CV_16UC1, 5000.0);
+				this->sensorFrame.depthImage = tmp;
+			}
+
+			this->sensorFrame.depthImage.setTo(0, this->sensorFrame.depthImage != this->sensorFrame.depthImage);
+
+
+
+			if (mode==MODE_BUFFER) {
+				sensorFrames.push(sensorFrame);
+
+				usedTimestamps << imageRGB->header.stamp.sec << ".";
+
+				std::stringstream line;
+				line << std::setfill('0') << std::setw(9) << imageRGB->header.stamp.nsec;
+				usedTimestamps << line.str().substr(0,6) << " " ;
+
+				usedTimestamps << imageDepth->header.stamp.sec << ".";
+				line.str("");
+				line << std::setfill('0') << std::setw(9) << imageDepth->header.stamp.nsec;
+				usedTimestamps << line.str().substr(0,6) << std::endl;
+			}
+			mtx.unlock();
 		}
-
-		this->sensorFrame.depthImage.setTo(0, this->sensorFrame.depthImage != this->sensorFrame.depthImage);
-
-
-
-		if (mode==MODE_BUFFER) {
-			sensorFrames.push(sensorFrame);
-
-			usedTimestamps << imageRGB->header.stamp.sec << ".";
-
-			std::stringstream line;
-			line << std::setfill('0') << std::setw(9) << imageRGB->header.stamp.nsec;
-			usedTimestamps << line.str().substr(0,6) << " " ;
-
-			usedTimestamps << imageDepth->header.stamp.sec << ".";
-			line.str("");
-			line << std::setfill('0') << std::setw(9) << imageDepth->header.stamp.nsec;
-			usedTimestamps << line.str().substr(0,6) << std::endl;
-		}
-		mtx.unlock();
 	}
 	catch (cv::Exception& e)
 	{
