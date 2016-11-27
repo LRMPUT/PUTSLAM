@@ -132,7 +132,7 @@ const PointCloud& ROSGrabber::getCloud(void) const {
 }
 
 bool ROSGrabber::grab(void) {
-	if(lastReadId == -1 || lastReadId < maxProcessFrames)
+	if(lastReadId == -1 || lastReadId + processingFrameStep < maxProcessFrames)
 		return true;
  	return false;
 }
