@@ -12,18 +12,18 @@
 #include <octomap/octomap.h>
 #include <octomap/ColorOcTree.h>
 
-#include "../../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
-#include "../../include/putslam/Grabber/fileGrabber.h"
-//#include "../../include/putslam/Grabber/fileGrabber.h"
-#include "../../include/putslam/Grabber/kinectGrabber.h"
-#include "../../include/putslam/Grabber/xtionGrabber.h"
-#include "../../include/putslam/Matcher/matcherOpenCV.h"
-#include "../../include/putslam/Map/featuresMap.h"
-#include "../../include/putslam/RGBD/RGBD.h"
-#include "../../include/putslam/Visualizer/Qvisualizer.h"
+#include "Grabber/fileGrabber.h"
+//#include "Grabber/fileGrabber.h"
+#include "Grabber/kinectGrabber.h"
+#include "Grabber/xtionGrabber.h"
+#include "Matcher/matcherOpenCV.h"
+#include "Map/featuresMap.h"
+#include "RGBD/RGBD.h"
+#include "Visualizer/Qvisualizer.h"
 
 #include "TimeMeasurement.h"
 
@@ -110,12 +110,13 @@ public:
 	/// set drawing options
 	void setDrawOptions(bool _draw, bool _drawImages);
 
-    ///Attach visualizer
-    void computeMask(const Mat34 cameraPose, cv::Mat& mask);
+    /// Current Pose
+    void getCurrentPose(Mat34& camPose);
 
-    /// update the Cloud
-    void updateFrame(cv::Mat RGBD, cv::Mat depthImg);
+    /// Current Frame
+    void getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg);
 	
+    cv::Mat RGBDimg, depthImgimg;
 #ifdef BUILD_WITH_ROS	
 	/////////////////////////////////////////////////////////////////////////////ROS
 	void setWorkWithROS();

@@ -4,7 +4,7 @@
  * \author Dominik Belter
  */
 
-#include "../../include/putslam/PoseGraph/global_graph.h"
+#include "PoseGraph/global_graph.h"
 #include <memory>
 #include <stdexcept>
 #include <chrono>

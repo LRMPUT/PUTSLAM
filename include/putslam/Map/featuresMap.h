@@ -10,11 +10,11 @@
 #include "map.h"
 #include "../PoseGraph/graph_g2o.h"
 #include "../PoseGraph/weightedGraph.h"
-#include "../../include/putslam/Utilities/observer.h"
-#include "../../include/putslam/Utilities/stopwatch.h"
+#include "Utilities/observer.h"
+#include "Utilities/stopwatch.h"
 #include <memory>
 #include <atomic>
-#include "../../include/putslam/Grabber/depthSensorModel.h"
+#include "Grabber/depthSensorModel.h"
 #include "LoopClosure/loopClosureLocal.h"
 #include <iostream>
 #include <deque>

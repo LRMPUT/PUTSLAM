@@ -1,7 +1,7 @@
-#include "../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
-#include "../include/putslam/Visualizer/Qvisualizer.h"
-#include "../include/putslam/PUTSLAM/PUTSLAM.h"
+#include "Visualizer/Qvisualizer.h"
+#include "PUTSLAM/PUTSLAM.h"
 #include <GL/glut.h>
 #include <qapplication.h>
 #include <iostream>

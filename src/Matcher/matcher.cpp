@@ -5,8 +5,8 @@
  *
  */
 
-#include "../../include/putslam/Matcher/matcher.h"
-#include "../../include/putslam/Matcher/dbscan.h"
+#include "Matcher/matcher.h"
+#include "Matcher/dbscan.h"
 
 #include <chrono>
 #include <assert.h>

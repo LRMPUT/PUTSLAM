@@ -8,9 +8,9 @@
 #define _MAP_H_
 
 #include "../Defs/putslam_defs.h"
-#include "../../include/putslam/Grabber/depthSensorModel.h"
-#include "../../include/putslam/Matcher/matcherOpenCV.h"
-#include "../../include/putslam/LoopClosure/loopClosure.h"
+#include "Grabber/depthSensorModel.h"
+#include "Matcher/matcherOpenCV.h"
+#include "LoopClosure/loopClosure.h"
 #include <string>
 #include <vector>
 

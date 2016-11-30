@@ -7,7 +7,7 @@
 #ifndef _GRABBER_H_
 #define _GRABBER_H_
 
-#include "../putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "calibration.h"
 #include "depthSensorModel.h"
 #include <iostream>

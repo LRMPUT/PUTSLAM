@@ -7,7 +7,7 @@
 #ifndef _GRAPH_H_
 #define _GRAPH_H_
 
-#include "../Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include <string>
 #include <vector>
 #include <thread>

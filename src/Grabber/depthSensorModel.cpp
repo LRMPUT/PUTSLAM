@@ -1,4 +1,4 @@
-#include "../../include/putslam/Grabber/depthSensorModel.h"
+#include "Grabber/depthSensorModel.h"
 
 /// Construction
 DepthSensorModel::DepthSensorModel(std::string configFile) : config(configFile){

@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../../include/putslam/VisualPlaceRecognition/msckd.h"
+#include "VisualPlaceRecognition/msckd.h"
 #include <algorithm>
 #include <list>
 

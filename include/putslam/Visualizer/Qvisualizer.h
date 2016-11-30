@@ -8,9 +8,9 @@
 #define QVISUALIZER_H_INCLUDED
 
 #include "../Defs/putslam_defs.h"
-#include "../../include/putslam/Utilities/observer.h"
+#include "Utilities/observer.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
-#include "../../include/putslam/Grabber/depthSensorModel.h"
+#include "Grabber/depthSensorModel.h"
 #include <QGLViewer/qglviewer.h>
 #include <iostream>
 

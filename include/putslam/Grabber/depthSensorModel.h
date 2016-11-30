@@ -7,7 +7,7 @@
 #ifndef DEPTH_SENSOR_MODEL_H_INCLUDED
 #define DEPTH_SENSOR_MODEL_H_INCLUDED
 
-#include "../putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include <iostream>
 #include <memory>

@@ -7,7 +7,7 @@
 #ifndef _TRACKER_H_
 #define _TRACKER_H_
 
-#include "../Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include <string>
 #include <vector>
 

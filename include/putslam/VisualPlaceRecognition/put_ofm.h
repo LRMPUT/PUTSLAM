@@ -1,6 +1,6 @@
 #include "Defs/opencv.h"
 //#include <opencv2/opencv.hpp>
-#include <../../include/putslam/VisualPlaceRecognition/openfabmap.hpp>
+#include <VisualPlaceRecognition/openfabmap.hpp>
 
 
 of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings);

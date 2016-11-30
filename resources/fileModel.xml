@@ -32,7 +32,7 @@
 		- CTU_CLAWAR_1.xml
 		- CTU_IROS.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/CTU_IROS.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/freiburg1_desk.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information

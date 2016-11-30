@@ -6,7 +6,7 @@
 #define OPENFABMAP_VISUALPLACERECOGNITION_H
 
 #include "Defs/opencv.h"
-#include <../../include/putslam/VisualPlaceRecognition/openfabmap.hpp>
+#include <VisualPlaceRecognition/openfabmap.hpp>
 
 class VisualPlaceRecognition
 {

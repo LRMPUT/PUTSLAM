@@ -6,7 +6,7 @@
 #include "Defs/eigen3.h"
 #include <chrono>
 
-#include "../include/putslam/Matcher/MatchingOnPatches.h"
+#include "Matcher/MatchingOnPatches.h"
 
 
 int main()

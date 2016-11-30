@@ -4,7 +4,7 @@
  * \author Michal Nowicki
  *
  */
-#include "../../include/putslam/Matcher/matcherOpenCV.h"
+#include "Matcher/matcherOpenCV.h"
 
 #include <memory>
 #include <stdexcept>

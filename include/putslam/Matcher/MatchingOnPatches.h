@@ -7,7 +7,7 @@
 #include <vector>
 #include "Defs/eigen3.h"
 
-#include "../Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 
 class MatchingOnPatches {
 

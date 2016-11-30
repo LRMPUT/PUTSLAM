@@ -2,7 +2,7 @@
 #ifndef OBSERVER_H_
 #define OBSERVER_H_
 
-#include "../../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include <vector>
 #include <list>
 

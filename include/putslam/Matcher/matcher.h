@@ -14,7 +14,7 @@
 #include <vector>
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "../TransformEst/RANSAC.h"
-#include "../../include/putslam/RGBD/RGBD.h"
+#include "RGBD/RGBD.h"
 
 #include "MatchingOnPatches.h"
 #include "chrono"

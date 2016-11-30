@@ -26,8 +26,7 @@
 #include "Defs/eigen3.h"
 
 // Out types
-#include "../../include/putslam/Defs/putslam_defs.h"
-//#include "../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 //#include "../include/Map/featuresMap.h"
 
 namespace RGBD {

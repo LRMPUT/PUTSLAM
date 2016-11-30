@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "Grabber/depthSensorModel.h"
 #include "PoseGraph/graph_g2o.h"
 #include "PoseGraph/global_graph.h"
@@ -8,7 +8,7 @@
 #include "../3rdParty/tinyXML/tinyxml2.h"
 #include <cmath>
 #include <atomic>
-#include "../include/putslam/Grabber/kinectGrabber.h"
+#include "Grabber/kinectGrabber.h"
 
 using namespace std;
 

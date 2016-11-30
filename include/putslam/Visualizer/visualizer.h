@@ -7,7 +7,7 @@
 #ifndef _VISUALIZER_H_
 #define _VISUALIZER_H_
 
-#include "../Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include <string>
 #include <vector>
 

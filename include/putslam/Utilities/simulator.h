@@ -6,8 +6,8 @@
 
 #include <iostream>
 #include <vector>
-#include "../Defs/putslam_defs.h"
-#include "../Grabber/depthSensorModel.h"
+#include "Defs/putslam_defs.h"
+#include "Grabber/depthSensorModel.h"
 
 using namespace putslam;
 

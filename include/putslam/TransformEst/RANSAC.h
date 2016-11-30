@@ -8,7 +8,7 @@
 #ifndef _RANSAC_H_
 #define _RANSAC_H_
 
-#include "../../include/putslam/Grabber/depthSensorModel.h"
+#include "Grabber/depthSensorModel.h"
 #include <iostream>
 #include <vector>
 #include "opencv/cv.h"

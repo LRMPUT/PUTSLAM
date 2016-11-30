@@ -1,7 +1,7 @@
 #ifndef _MOTIONMODEL_
 #define _MOTIONMODEL_
 
-#include "../Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 
 class MotionModel
 {

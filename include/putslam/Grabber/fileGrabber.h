@@ -9,7 +9,7 @@
 
 #include "grabber.h"
 #include "depthSensorModel.h"
-#include "../../include/putslam/Grabber/grabber.h"
+#include "Grabber/grabber.h"
 #include "Defs/opencv.h"
 #include <iostream>
 #include <chrono>

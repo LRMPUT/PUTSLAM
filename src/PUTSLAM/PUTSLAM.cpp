@@ -1,7 +1,7 @@
-#include "../../include/putslam/PUTSLAM/PUTSLAM.h"
-#include "../../include/putslam/Utilities/simulator.h"
-#include "../../include/putslam/Utilities/stopwatch.h"
-#include "../../include/putslam/MotionModel/decayingVelocityModel.h"
+#include "PUTSLAM/PUTSLAM.h"
+#include "Utilities/simulator.h"
+#include "Utilities/stopwatch.h"
+#include "MotionModel/decayingVelocityModel.h"
 
 #include <assert.h>
 
@@ -22,16 +22,6 @@ PUTSLAM::PUTSLAM() {
 		//////////////////////////////////////////////////////////////////////ROS
 		workWithROS = false;
 #endif
-}
-
-void PUTSLAM::computeMask(const Mat34 cameraPose, cv::Mat& mask)
-{
-    std::cout<<"Compute Mask function"<<endl<<mask<<endl;
-}
-
-void PUTSLAM::updateFrame(cv::Mat RGBD, cv::Mat depthImg)
-{
-    std::cout<<"Update Frame function"<<endl<<RGBD<<endl<<depthImg<<endl;
 }
 
 void PUTSLAM::moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
@@ -188,6 +178,23 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 
 /// PUBLIC
 
+/// Current Pose
+void PUTSLAM::getCurrentPose(Mat34& camPose)
+{
+    //Stopwatch<> tmp;
+    //tmp.start();
+    camPose = map->getSensorPose();
+    //tmp.stop();
+    //timeMeasurement.mapGetSensorPoseTimes.push_back((long int)tmp.elapsed());
+}
+
+///Current Frame
+void PUTSLAM::getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg)
+{
+    RGBD=RGBDimg;
+    depthImg=depthImgimg;
+}
+
 ///Attach visualizer
 void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer) {
 	((FeaturesMap*) map)->attach(visualizer);
@@ -342,6 +349,9 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 			break;
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
+        RGBDimg=currentSensorFrame.rgbImage;
+        depthImgimg=currentSensorFrame.depthImage;
+
 		if (drawImages) {
 			cv::imshow("PUTSLAM RGB frame", currentSensorFrame.rgbImage);
 			cv::imshow("PUTSLAM Depth frame", currentSensorFrame.depthImage);
@@ -354,6 +364,7 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 			// Add new position to the map
 			map->addNewPose(cameraPose, currentSensorFrame.timestamp,
 					currentSensorFrame.rgbImage, currentSensorFrame.depthImage);
+
 		} else {
 			Eigen::Matrix4f transformation;
 

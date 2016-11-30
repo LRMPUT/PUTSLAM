@@ -1,4 +1,4 @@
-#include "../../include/putslam/Visualizer/Qvisualizer.h"
+#include "Visualizer/Qvisualizer.h"
 #include "Defs/eigen3.h"
 #include <memory>
 #include <cmath>

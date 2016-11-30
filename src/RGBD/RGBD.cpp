@@ -4,7 +4,7 @@
  * \author Michal Nowicki
  *
  */
-#include "../../include/putslam/RGBD/RGBD.h"
+#include "RGBD/RGBD.h"
 #include <fstream>
 
 int RGBD::roundSize(double x, int size) {

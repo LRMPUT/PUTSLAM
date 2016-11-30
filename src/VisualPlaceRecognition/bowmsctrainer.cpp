@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../../include/putslam/VisualPlaceRecognition/bowmsctrainer.hpp"
+#include "VisualPlaceRecognition/bowmsctrainer.hpp"
 
 #include <iostream>
 #include <vector>

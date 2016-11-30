@@ -1,4 +1,4 @@
-#include "../../include/putslam/LoopClosure/loopClosureLocal.h"
+#include "LoopClosure/loopClosureLocal.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 
 using namespace putslam;

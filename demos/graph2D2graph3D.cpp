@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "../include/putslam/Defs/putslam_defs.h"
+#include "Defs/putslam_defs.h"
 #include "PoseGraph/graph_g2o.h"
 #include "Utilities/CLParser.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"

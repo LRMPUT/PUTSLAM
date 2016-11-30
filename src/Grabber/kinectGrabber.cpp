@@ -1,4 +1,4 @@
-#include "../../include/putslam/Grabber/kinectGrabber.h"
+#include "Grabber/kinectGrabber.h"
 
 #include <memory>
 #include <stdexcept>

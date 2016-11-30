@@ -1,7 +1,7 @@
 #ifndef _DECAYING_VELOCITY_MODEL_
 #define _DECAYING_VELOCITY_MODEL_
 
-#include "../../include/putslam/MotionModel/motionModel.h"
+#include "MotionModel/motionModel.h"
 
 class DecayingVelocityModel : public MotionModel
 {

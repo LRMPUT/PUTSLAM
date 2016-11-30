@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../../include/putslam/VisualPlaceRecognition/fabmap.hpp"
+#include "VisualPlaceRecognition/fabmap.hpp"
 
 /*
     Calculate the sum of two log likelihoods

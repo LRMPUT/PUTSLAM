@@ -1,4 +1,4 @@
-#include "../../include/putslam/Grabber/ptgreyGrabber.h"
+#include "Grabber/ptgreyGrabber.h"
 
 #include <memory>
 #include <stdexcept>
