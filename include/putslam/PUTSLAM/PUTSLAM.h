@@ -8,6 +8,7 @@
 #include <ratio>
 #include <chrono>
 #include <fstream>
+#include <mutex>
 
 #include <octomap/octomap.h>
 #include <octomap/ColorOcTree.h>
@@ -32,7 +33,7 @@
 #include <tf/tf.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
-#include "../../include/putslam/Grabber/ROSGrabber.h"
+#include "Grabber/ROSGrabber.h"
 #endif
 
 using namespace std;
@@ -116,7 +117,6 @@ public:
     /// Current Frame
     void getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg);
 	
-    cv::Mat RGBDimg, depthImgimg;
 #ifdef BUILD_WITH_ROS	
 	/////////////////////////////////////////////////////////////////////////////ROS
 	void setWorkWithROS();
@@ -124,6 +124,8 @@ public:
 #endif
 
 private:
+    std::mutex getFrameEvent;
+    cv::Mat RGBDimg, depthImgimg;
 	// At beggining
 	void loadConfigs();
 	void readingSomeParameters();

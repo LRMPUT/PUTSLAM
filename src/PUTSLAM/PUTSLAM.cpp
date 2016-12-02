@@ -3,6 +3,7 @@
 #include "Utilities/stopwatch.h"
 #include "MotionModel/decayingVelocityModel.h"
 
+
 #include <assert.h>
 
 PUTSLAM::PUTSLAM() {
@@ -181,18 +182,16 @@ int PUTSLAM::chooseFeaturesToAddToMap(const Matcher::featureSet& features,
 /// Current Pose
 void PUTSLAM::getCurrentPose(Mat34& camPose)
 {
-    //Stopwatch<> tmp;
-    //tmp.start();
     camPose = map->getSensorPose();
-    //tmp.stop();
-    //timeMeasurement.mapGetSensorPoseTimes.push_back((long int)tmp.elapsed());
 }
 
 ///Current Frame
 void PUTSLAM::getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg)
 {
+    getFrameEvent.lock();
     RGBD=RGBDimg;
     depthImg=depthImgimg;
+    getFrameEvent.unlock();
 }
 
 ///Attach visualizer
@@ -349,9 +348,11 @@ void PUTSLAM::startPlaying(std::string trajectoryFilename, int delayPlay) {
 			break;
 		SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
+
+        getFrameEvent.lock();
         RGBDimg=currentSensorFrame.rgbImage;
         depthImgimg=currentSensorFrame.depthImage;
-
+        getFrameEvent.unlock();
 		if (drawImages) {
 			cv::imshow("PUTSLAM RGB frame", currentSensorFrame.rgbImage);
 			cv::imshow("PUTSLAM Depth frame", currentSensorFrame.depthImage);
