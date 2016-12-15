@@ -207,7 +207,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
                 add_library(PutslamDEFS STATIC ${DEFS_HEADERS})
         endif(BUILD_ROS)
         set_target_properties(PutslamDEFS PROPERTIES LINKER_LANGUAGE CXX)
-# 	INSTALL(TARGETS PUTSLAMDefs RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(TARGETS PutslamDEFS RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${DEFS_HEADERS} DESTINATION include/putslam/Defs/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_DEFS)
 
@@ -228,10 +228,11 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
         if(BUILD_ROS)
                 rosbuild_add_library(PutslamUtilities STATIC ${PutslamUTILITIES_SOURCES} ${PutslamUTILITIES_HEADERS})
         else()
-                add_library(PutslamUtilities STATIC ${PutslamUTILITIES_SOURCES} ${PutslamTILITIES_HEADERS})
+                add_library(PutslamUtilities STATIC ${PutslamUTILITIES_SOURCES} ${PutslamUTILITIES_HEADERS})
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamUtilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamUtilities_HEADERS} DESTINATION include/putslam/Utilities/)
+        INSTALL(FILES ${PutslamUtilities_SOURCES} DESTINATION src/Utilities/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
 
 ###############################################################################
@@ -289,6 +290,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(INSTALL "${CMAKE_SOURCE_DIR}/3rdParty/OpenNI2/Lib/" DESTINATION bin)
         INSTALL(TARGETS PutslamGrabber RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamGRABBER_HEADERS}  DESTINATION include/putslam/Grabber/)
+        INSTALL(FILES ${PutslamGRABBER_SOURCES}  DESTINATION src/Grabber/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
 
 ###############################################################################
@@ -311,6 +313,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamTracker RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamTRACKER_HEADERS} DESTINATION include/putslam/Tracker/)
+        INSTALL(FILES ${PutslamTRACKER_SOURCES}  DESTINATION src/Tracker/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRACKER)
 
 ###############################################################################
@@ -335,6 +338,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
         TARGET_LINK_LIBRARIES(PutslamTransformEst PutslamRGBD)
         INSTALL(TARGETS PutslamTransformEst RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamTRANSFORM_ESTIMATOR_HEADERS} DESTINATION include/putslam/TransformEst/)
+        INSTALL(FILES ${PutslamTRANSFORM_ESTIMATOR_SOURCES}  DESTINATION src/TransformEst/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 
 ###############################################################################
@@ -355,6 +359,7 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_TRANSFORM_ESTIMATOR)
 #        TARGET_LINK_LIBRARIES(PutslamUSAC PutslamRGBD)
 #        INSTALL(TARGETS PutslamUSAC RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
 #        INSTALL(FILES ${PutslamUSAC_HEADERS} DESTINATION include/putslam/USAC/)
+#        INSTALL(FILES ${PutslamUSAC_SOURCES} DESTINATION src/USAC/)
 #endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_USAC)
 
 ###############################################################################
@@ -377,6 +382,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamLDB RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamLDB_HEADERS} DESTINATION include/putslam/LDB/)
+        INSTALL(FILES ${PutslamLDB_SOURCES}  DESTINATION src/LDB/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LDB)
 
 ###############################################################################
@@ -399,6 +405,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamRGBD RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamRGBD_HEADERS} DESTINATION include/putslam/RGBD/)
+        INSTALL(FILES ${PutslamRGBD_SOURCES} DESTINATION src/RGBD/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_RGBD)
 
 
@@ -423,6 +430,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
         TARGET_LINK_LIBRARIES(PutslamMatcher ${OpenCV_LIBS} PutslamLDB PutslamRGBD PutslamTransformEst)
         INSTALL(TARGETS PutslamMatcher RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamMATCHER_HEADERS} DESTINATION include/putslam/Matcher/)
+        INSTALL(FILES ${PutslamMATCHER_SOURCES} DESTINATION src/Matcher/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MATCHER)
 
 ###############################################################################
@@ -445,6 +453,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamMotionModel RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamMOTIONMODDEL_HEADERS} DESTINATION include/putslam/MotionModel/)
+        INSTALL(FILES ${PutslamMOTIONMODDEL_SOURCES} DESTINATION src/MotionModel/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MOTIONMODEL)
 
 ###############################################################################
@@ -468,6 +477,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
         TARGET_LINK_LIBRARIES(PutslamPoseGraph csparse g2o_types_slam2d g2o_types_slam3d g2o_csparse_extension g2o_stuff g2o_core g2o_solver_csparse)
         INSTALL(TARGETS PutslamPoseGraph RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamPOSE_GRAPH_HEADERS} DESTINATION include/putslam/PoseGraph/)
+        INSTALL(FILES ${PutslamPOSE_GRAPH_SOURCES} DESTINATION src/PoseGraph/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_POSE_GRAPH)
 
 
@@ -483,6 +493,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
         )
         file(GLOB PutslamVISUALPLACERECOGNITION_HEADERS
             "${CMAKE_SOURCE_DIR}/include/putslam/VisualPlaceRecognition/*.h"
+            "${CMAKE_SOURCE_DIR}/include/putslam/VisualPlaceRecognition/*.hpp"
         )
         if(BUILD_ROS)
                 rosbuild_add_library(PutslamVisualPlaceRecognition STATIC ${PutslamVISUALPLACERECOGNITION_SOURCES} ${PutslamVISUALPLACERECOGNITION_HEADERS})
@@ -492,6 +503,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
         TARGET_LINK_LIBRARIES(PutslamVisualPlaceRecognition PutslamRGBD ${OpenCV_LIBS})
         INSTALL(TARGETS PutslamVisualPlaceRecognition RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamVISUALPLACERECOGNITION_HEADERS} DESTINATION include/putslam/VisualPlaceRecognition/)
+        INSTALL(FILES ${PutslamVISUALPLACERECOGNITION_SOURCES} DESTINATION src/VisualPlaceRecognition/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALPLACERECOGNITION)
 
 
@@ -517,6 +529,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
         TARGET_LINK_LIBRARIES(PutslamLoopClosure PutslamUtilities PutslamMatcher PutslamRGBD PutslamVisualPlaceRecognition)
         INSTALL(TARGETS PutslamLoopClosure RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamLOOPCLOSURE_HEADERS} DESTINATION include/putslam/LoopClosure/)
+        INSTALL(FILES ${PutslamLOOPCLOSURE_SOURCES} DESTINATION src/LoopClosure/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_LOOPCLOSURE)
 
 
@@ -541,6 +554,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
         TARGET_LINK_LIBRARIES(PutslamMap PutslamPoseGraph PutslamGrabber PutslamUtilities PutslamMatcher PutslamTransformEst PutslamRGBD PutslamLoopClosure)
         INSTALL(TARGETS PutslamMap RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamMAP_HEADERS} DESTINATION include/putslam/Map/)
+        INSTALL(FILES ${PutslamMAP_SOURCES} DESTINATION src/Map/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_MAP)
 
 
@@ -563,8 +577,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
                 add_library(PutslamVisualizer STATIC ${PutslamVISUALIZER_SOURCES} ${PutslamVISUALIZER_HEADERS})
         endif(BUILD_ROS)
         TARGET_LINK_LIBRARIES(PutslamVisualizer tinyxml2 PutslamMap ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} QtCore QtXml QtOpenGL QtGui ${OPENGL_LIBRARY})
-        INSTALL(TARGETS PutslamUtilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(TARGETS PutslamVisualizer RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
         INSTALL(FILES ${PutslamVISUALIZER_HEADERS} DESTINATION include/putslam/Visualizer/)
+        INSTALL(FILES ${PutslamVISUALIZER_SOURCES} DESTINATION src/Visualizer/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
 
 ###############################################################################
@@ -574,21 +589,22 @@ endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_VISUALIZER)
 ###############################################################################
 
 if(BUILD_PUTSLAM)
-        file(GLOB PutslamLIBPUTSLAM_SOURCES
+        file(GLOB PUTSLAM_SOURCES
             "${CMAKE_SOURCE_DIR}/src/PUTSLAM/*.cpp"
         )
-        file(GLOB PutslamLIBPUTSLAM_HEADERS
+        file(GLOB PUTSLAM_HEADERS
             "${CMAKE_SOURCE_DIR}/include/putslam/PUTSLAM/*.h"
         )
         if(BUILD_ROS)
-                rosbuild_add_library(PutslamLIBPUTSLAM STATIC ${PutslamLIBPUTSLAM_SOURCES} ${PutslamLIBPUTSLAM_HEADERS})
-                TARGET_LINK_LIBRARIES(PutslamLIBPUTSLAM tinyxml2 PutslamMap PutslamMatcher PutslamMotionModel PutslamRGBD PutslamTransformEst PutslamUtilities ${OpenCV_LIBS} ${catkin_LIBRARIES})
+                rosbuild_add_library(PUTSLAM STATIC ${PUTSLAM_SOURCES} ${PUTSLAM_HEADERS})
+                TARGET_LINK_LIBRARIES(PUTSLAM tinyxml2 PutslamMap PutslamMatcher PutslamMotionModel PutslamRGBD PutslamTransformEst PutslamUtilities ${OpenCV_LIBS} ${catkin_LIBRARIES})
         else()
-                add_library(PutslamLIBPUTSLAM STATIC ${PutslamLIBPUTSLAM_SOURCES} ${PutslamLIBPUTSLAM_HEADERS})
-                TARGET_LINK_LIBRARIES(PutslamLIBPUTSLAM tinyxml2 PutslamMap PutslamMatcher PutslamMotionModel PutslamRGBD PutslamTransformEst PutslamUtilities ${OpenCV_LIBS})
+                add_library(PUTSLAM STATIC ${PUTSLAM_SOURCES} ${PUTSLAM_HEADERS})
+                TARGET_LINK_LIBRARIES(PUTSLAM tinyxml2 PutslamMap PutslamMatcher PutslamMotionModel PutslamRGBD PutslamTransformEst PutslamUtilities ${OpenCV_LIBS})
         endif(BUILD_ROS)
-        INSTALL(TARGETS PutslamUtilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${PutslamLIBPUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
+        INSTALL(TARGETS PUTSLAM RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
+        INSTALL(FILES ${PUTSLAM_HEADERS} DESTINATION include/putslam/PUTSLAM/)
+        INSTALL(FILES ${PUTSLAM_SOURCES} DESTINATION src/PUTSLAM/)
 endif(BUILD_PUTSLAM)
 
 ###############################################################################
@@ -630,7 +646,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(DEMO_SOURCES ./demos/demoMatching.cpp)
         ADD_EXECUTABLE(demoMatching ${DEMO_SOURCES})
-        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 PutslamGrabber PutslamMap PutslamMatcher PutslamTransformEst PutslamLDB ${OpenCV_LIBS} PutslamPoseGraph PutslamLIBPUTSLAM boost_system)
+        TARGET_LINK_LIBRARIES(demoMatching tinyxml2 PutslamGrabber PutslamMap PutslamMatcher PutslamTransformEst PutslamLDB ${OpenCV_LIBS} PutslamPoseGraph PUTSLAM boost_system)
         INSTALL(TARGETS demoMatching RUNTIME DESTINATION bin)
         INSTALL(FILES ${DEMO_FILES} DESTINATION bin)
 
@@ -772,7 +788,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
         ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
 #        add_dependencies(demoVisualizer PutslamMap)
-        TARGET_LINK_LIBRARIES(demoVisualizer PutslamVisualizer tinyxml2 PutslamMap PutslamLIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
+        TARGET_LINK_LIBRARIES(demoVisualizer PutslamVisualizer tinyxml2 PutslamMap PUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
@@ -788,7 +804,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
         SET(DEMO_SOURCES ./demos/demoPlayer.cpp)
         ADD_EXECUTABLE(demoPlayer ${DEMO_SOURCES})
 #        add_dependencies(demoVisualizer PutslamMap)
-        TARGET_LINK_LIBRARIES(demoPlayer PutslamVisualizer tinyxml2 PutslamMap PutslamLIBPUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
+        TARGET_LINK_LIBRARIES(demoPlayer PutslamVisualizer tinyxml2 PutslamMap PUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoPlayer RUNTIME DESTINATION bin)
 
 endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
