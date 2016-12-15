@@ -262,7 +262,7 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
                  "${CMAKE_SOURCE_DIR}/src/Grabber/ROSGrabber.cpp"
             endif(BUILD_ROS)
         )
-        file(GLOB PustlamGRABBER_HEADERS
+        file(GLOB PutslamGRABBER_HEADERS
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/depthSensorModel.h"
