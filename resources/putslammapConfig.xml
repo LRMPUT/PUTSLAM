@@ -72,5 +72,5 @@
       searchPairsTypeLC 0 - local geometric distance
 			1 - FABMAP
     -->  
-    <loopClosure searchPairsTypeLC="0" configFilenameLC="localLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.4"/>
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="putslamlocalLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.4"/>
 </MapConfig>
