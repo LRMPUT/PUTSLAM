@@ -4,29 +4,29 @@
     <!-- <name>Kinect</name> 
     <calibrationFile>KinectModel.xml</calibrationFile>-->
     
-  <name>File</name>
-    <calibrationFile>fileModel.xml</calibrationFile>
+    <name>File</name>
+    <calibrationFile>putslamfileModel.xml</calibrationFile>
     
 <!--      <name>Xtion</name>  -->
-<!--      <calibrationFile>XtionModel.xml</calibrationFile>  -->
+<!--      <calibrationFile>putslamXtionModel.xml</calibrationFile>  -->
 	<!-- <name>Ptgrey</name> -->
-	<!-- <calibrationFile>PtgreyModel.xml</calibrationFile> -->
+	<!-- <calibrationFile>putslamPtgreyModel.xml</calibrationFile> -->
   </Grabber>
   
   <Matcher>
   	<name>OpenCV</name>
-  	<parametersFile>matcherOpenCVParameters.xml</parametersFile>
-	<parametersFileLC>matcherOpenCVParametersLC.xml</parametersFileLC>
+  	<parametersFile>putslammatcherOpenCVParameters.xml</parametersFile>
+	<parametersFileLC>putslammatcherOpenCVParametersLC.xml</parametersFileLC>
   </Matcher>
   
   <Map>
   	<name>FeaturesMap</name>
-  	<parametersFile>mapConfig.xml</parametersFile>
+  	<parametersFile>putslammapConfig.xml</parametersFile>
   </Map>
   
   <Visualizer>
   	<name>Visualizer</name>
-  	<parametersFile>visualizerConfig.xml</parametersFile>
+  	<parametersFile>putslamvisualizerConfig.xml</parametersFile>
   </Visualizer>
 
   <!--

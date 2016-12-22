@@ -9,7 +9,7 @@
 #include "RGBD/RGBD.h"
 
 RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) {
-//RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("fileModel.xml") {
+//RANSAC::RANSAC(RANSAC::parameters _RANSACParameters, cv::Mat _cameraMatrix) : sensorModel("putslamfileModel.xml") {
 	srand((unsigned int)time((time_t)0));
 
 	cameraMatrix = _cameraMatrix;

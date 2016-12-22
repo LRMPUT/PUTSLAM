@@ -451,7 +451,7 @@ void PUTSLAM::initialization() {
 
 void PUTSLAM::loadConfigs() {
 	tinyxml2::XMLDocument config;
-	config.LoadFile("../../resources/configGlobal.xml");
+    config.LoadFile("../../resources/putslamconfigGlobal.xml");
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
 

@@ -87,7 +87,7 @@ double Matcher::runVO(const SensorFrame& currentSensorFrame,
 		// Something unrecognized
 	} else {
 		std::cout
-				<< "Unrecognized VO choice -> double check matcherOpenCVParameters.xml"
+                << "Unrecognized VO choice -> double check putslammatcherOpenCVParameters.xml"
 				<< std::endl;
 		return 0.0;
 	}

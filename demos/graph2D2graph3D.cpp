@@ -19,7 +19,7 @@ int main(int argc, char * argv[])
 
         // load graph
         /*tinyxml2::XMLDocument config;
-        config.LoadFile("../../resources/configGlobal.xml");
+        config.LoadFile("../../resources/putslamconfigGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());

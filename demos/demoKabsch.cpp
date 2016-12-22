@@ -972,7 +972,7 @@ int main(void)
         using namespace std::chrono;
 
         tinyxml2::XMLDocument config;
-        config.LoadFile("../../resources/configGlobal.xml");
+        config.LoadFile("../../resources/putslamconfigGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Grabber" )->FirstChildElement( "calibrationFile" )->GetText());

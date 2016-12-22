@@ -635,7 +635,7 @@ endif(BUILD_PUTSLAM)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(FILES
-                ${DEMO_FILES} /resources/configGlobal.xml
+                ${DEMO_FILES} /resources/putslamconfigGlobal.xml
         )
 
         SET(DEMO_SOURCES ./main.cpp)
@@ -660,7 +660,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
 
         SET(DEMO_SOURCES ./demos/demoMatching.cpp)
@@ -681,7 +681,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_BASIC)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
 
         SET(DEMO_SOURCES ./demos/demoG2o.cpp)
@@ -701,7 +701,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
 
         ADD_EXECUTABLE(demoPruning ${DEMO_SOURCES})
@@ -720,7 +720,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_G2O)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
         SET(DEMO_SOURCES ./demos/demoGrabber.cpp)
@@ -740,7 +740,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_GRABBER)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_KABSCH)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
         SET(DEMO_SOURCES ./demos/demoKabsch.cpp)
@@ -837,7 +837,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_PLAYER)
 if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_ROS AND BUILD_ROS)
 
         SET(FILES
-                ${DEMO_FILES}/resources/configGlobal.xml
+                ${DEMO_FILES}/resources/putslamconfigGlobal.xml
         )
 
         SET(DEMO_SOURCES ./demos/demoROS.cpp)
