@@ -6,12 +6,11 @@
 #include <thread>
 
 using namespace putslam;
-
 /// A single instance of Kinect grabber
 KinectGrabber::Ptr grabberK;
 
 KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, MODE_BUFFER) {
-
+std::cout<<"Konstruktor\n";
 }
 
 const std::string& KinectGrabber::getName() const {
@@ -29,6 +28,7 @@ bool KinectGrabber::grab(void) {
 	cloud.push_back(point);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     return true;
+
 }
 
 /// run grabber thread

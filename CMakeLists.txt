@@ -280,9 +280,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/depthSensorModel.h"
-#if(BUILD_KINECT)
+#
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/kinectGrabber.h"
-#endif(BUILD_KINECT)
+#
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/ptgreyGrabber.h"
@@ -299,6 +299,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         else()
                 add_library(PutslamGrabber STATIC ${PutslamGRABBER_SOURCES} ${PutslamGRABBER_HEADERS})
                 TARGET_LINK_LIBRARIES(PutslamGrabber OpenNI2 ${OpenCV_LIBS})
+                if(BUILD_KINECT)
+                    TARGET_LINK_LIBRARIES(PutslamGrabber freenect)
+                endif(BUILD_KINECT)
         endif(BUILD_ROS)
         if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
             TARGET_LINK_LIBRARIES(PutslamGrabber OpenNI2 ${OpenCV_LIBS} flycapture-c flycapture)
