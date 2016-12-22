@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 option(BUILD_ROS "Build with ROS" OFF)
 mark_as_advanced(BUILD_ROS)
 
+option(BUILD_KINECT "Build with Kinect" OFF)
+mark_as_advanced(BUILD_KINECT)
+
 if(BUILD_ROS)
         include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 	rosbuild_init()
@@ -33,13 +36,20 @@ if(BUILD_ROS)
 	)
 endif(BUILD_ROS)
 
+if(BUILD_KINECT)
+    find_package(Threads REQUIRED)
+    find_package(libfreenect REQUIRED)
+endif(BUILD_KINECT)
+
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Settings
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/putslam")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/putslam/Defs")
-
+if(BUILD_KINECT)
+    include_directories("/usr/include/libusb-1.0")
+endif(BUILD_KINECT)
 # core libraries
 option(BUILD_PUTSLAM "Build PUT SLAM libraries" ON)
 option(BUILD_PUTSLAM_DEFS "Build PUTSLAM Defs library" ON)
@@ -179,6 +189,7 @@ if(BUILD_ROS)
 	)
 endif(BUILD_ROS)
 
+
 ###############################################################################
 #
 # PUTSLAM tinyXML2 library
@@ -250,7 +261,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
         file(GLOB PutslamGRABBER_SOURCES
             "${CMAKE_SOURCE_DIR}/src/Grabber/calibration.cpp"
             "${CMAKE_SOURCE_DIR}/src/Grabber/depthSensorModel.cpp"
+#if(BUILD_KINECT)
             "${CMAKE_SOURCE_DIR}/src/Grabber/kinectGrabber.cpp"
+#endif(BUILD_KINECT)
             "${CMAKE_SOURCE_DIR}/src/Grabber/fileGrabber.cpp"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/src/Grabber/ptgreyGrabber.cpp"
@@ -265,7 +278,9 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER)
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/grabber.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/calibration.h"
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/depthSensorModel.h"
+#if(BUILD_KINECT)
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/kinectGrabber.h"
+#endif(BUILD_KINECT)
             "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/fileGrabber.h"
             #if(BUILD_PUTSLAM AND BUILD_PUTSLAM_GRABBER AND BUILD_PUTSLAM_GRABBER_PTGREY)
                 "${CMAKE_SOURCE_DIR}/include/putslam/Grabber/ptgreyGrabber.h"

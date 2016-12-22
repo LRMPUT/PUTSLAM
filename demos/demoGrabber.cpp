@@ -9,6 +9,9 @@
 #include "Grabber/kinectGrabber.h"
 #include "Grabber/ptgreyGrabber.h"
 #include "Grabber/xtionGrabber.h"
+#ifdef BUILD_KINECT
+#include <libfreenect/libfreenect.hpp>
+#endif
 
 using namespace std;
 

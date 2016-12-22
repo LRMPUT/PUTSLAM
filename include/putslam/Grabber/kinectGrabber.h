@@ -12,7 +12,9 @@
 #include "depthSensorModel.h"
 #include <iostream>
 #include <memory>
-
+#ifdef BUILD_KINECT
+#include <libfreenect/libfreenect.hpp>
+#endif
 namespace putslam {
 	/// create a single grabber (Kinect)
 	Grabber* createGrabberKinect(void);
