@@ -39,6 +39,7 @@ endif(BUILD_ROS)
 if(BUILD_KINECT)
     find_package(Threads REQUIRED)
     find_package(libfreenect REQUIRED)
+    add_definitions(-DBUILD_KINECT)
 endif(BUILD_KINECT)
 
 # Folders
