@@ -24,7 +24,7 @@ int main()
         cv::namedWindow( "RGB View", 1 );
 
         tinyxml2::XMLDocument config;
-        config.LoadFile("../../resources/configGlobal.xml");
+        config.LoadFile("../../resources/putslamconfigGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());

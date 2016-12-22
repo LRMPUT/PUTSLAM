@@ -19,9 +19,9 @@ ROSGrabber::Ptr grabberROS;
 //"/camera/rgb/image_color"   "/camera/depth/image"
 ROSGrabber::ROSGrabber(void) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFFER), imageRGB_sub(nh, "/rgb/image_raw", 10000), imageDepth_sub(nh, "/depth/image_raw", 10000), sync(MySyncPolicy(10000), imageRGB_sub, imageDepth_sub) {
 	tinyxml2::XMLDocument config;
-	config.LoadFile("../../resources/ROSModel.xml");
+    config.LoadFile("../../resources/putslamROSModel.xml");
 	if (config.ErrorID())
-		std::cout << "Unable to load ROS Grabber config file: ROSModel.xml \n";
+        std::cout << "Unable to load ROS Grabber config file: putslamROSModel.xml \n";
 	config.FirstChildElement("parameters")->QueryIntAttribute("imageDepthScale", &imageDepthScale);
 	config.FirstChildElement("parameters")->QueryIntAttribute("maxProcessFrames", &maxProcessFrames);
 	config.FirstChildElement("parameters")->QueryIntAttribute("processingFrameStep", &processingFrameStep);
@@ -34,9 +34,9 @@ ROSGrabber::ROSGrabber(void) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFF
 ROSGrabber::ROSGrabber(ros::NodeHandle nh) : Grabber("ROS Grabber", TYPE_PRIMESENSE, MODE_BUFFER), imageRGB_sub(nh, "/rgb/image_raw", 10000), imageDepth_sub(nh, "/depth/image_raw", 10000), sync(MySyncPolicy(10000), imageRGB_sub, imageDepth_sub) {
 	this->nh = nh;
 	tinyxml2::XMLDocument config;
-	config.LoadFile("../../resources/ROSModel.xml");
+    config.LoadFile("../../resources/putslamROSModel.xml");
 	if (config.ErrorID())
-		std::cout << "Unable to load ROS Grabber config file: ROSModel.xml \n";
+        std::cout << "Unable to load ROS Grabber config file: putslamROSModel.xml \n";
 	config.FirstChildElement("parameters")->QueryIntAttribute("imageDepthScale", &imageDepthScale);
 	config.FirstChildElement("parameters")->QueryIntAttribute("maxProcessFrames", &maxProcessFrames);
 	config.FirstChildElement("parameters")->QueryIntAttribute("processingFrameStep", &processingFrameStep);

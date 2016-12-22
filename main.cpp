@@ -43,7 +43,7 @@ int main()
         using namespace putslam;
 
         tinyxml2::XMLDocument config;
-        config.LoadFile("../../resources/configGlobal.xml");
+        config.LoadFile("../../resources/putslamconfigGlobal.xml");
         if (config.ErrorID())
             std::cout << "unable to load config file.\n";
         std::string grabberType(config.FirstChildElement( "Grabber" )->FirstChildElement( "name" )->GetText());
@@ -63,7 +63,7 @@ int main()
             grabber = createGrabberKinect();
 
         Mat33 cov;
-        DepthSensorModel KinectModel("../../resources/KinectModel.xml");
+        DepthSensorModel KinectModel("../../resources/putslamKinectModel.xml");
         KinectModel.computeCov(80, 360, 0.5837, cov);
         Eigen::Vector3d vec;
         KinectModel.getPoint((long int)377.177, (long int)112.906, 6.468, vec);
