@@ -125,7 +125,8 @@ public:
 
 private:
     std::mutex getFrameEvent;
-    cv::Mat RGBDimg, depthImgimg;
+    cv::Mat RGBDimg=cv::Mat(200,200,cv::Scalar(255));
+    cv::Mat depthImgimg=cv::Mat(200,200,cv::Scalar(255));
 	// At beggining
 	void loadConfigs();
 	void readingSomeParameters();
