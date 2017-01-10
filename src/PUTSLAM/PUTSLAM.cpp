@@ -673,6 +673,7 @@ std::vector<double> &angles ) {
 
 // Processing
 void PUTSLAM::startProcessing() {
+    getFrameEvent.lock();
 	readingSomeParameters();
 	initialization();
 
@@ -910,6 +911,11 @@ void PUTSLAM::startProcessing() {
 
 
 		lastSensorFrame = currentSensorFrame;
+
+
+        RGBDimg=currentSensorFrame.rgbImage;
+        depthImgimg=currentSensorFrame.depthImage;
+        getFrameEvent.unlock();
 	}
 	auto elapsed = std::chrono::duration_cast < std::chrono::milliseconds
 			> (std::chrono::system_clock::now() - startMainLoop);

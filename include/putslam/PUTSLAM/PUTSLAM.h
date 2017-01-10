@@ -116,6 +116,8 @@ public:
 
     /// Current Frame
     void getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg);
+
+
 	
 #ifdef BUILD_WITH_ROS	
 	/////////////////////////////////////////////////////////////////////////////ROS
@@ -123,10 +125,13 @@ public:
 	void initROSpublishers();
 #endif
 
+
+
 private:
     std::mutex getFrameEvent;
-    cv::Mat RGBDimg=cv::Mat(200,200,cv::Scalar(255));
-    cv::Mat depthImgimg=cv::Mat(200,200,cv::Scalar(255));
+    cv::Mat RGBDimg;
+    cv::Mat depthImgimg;
+
 	// At beggining
 	void loadConfigs();
 	void readingSomeParameters();
