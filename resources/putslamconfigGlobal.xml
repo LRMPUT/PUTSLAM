@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
   <!-- Sensor configuration -->
   <Grabber>
-    <!-- <name>Kinect</name> -->
-    <!-- <calibrationFile>KinectModel.xml</calibrationFile> -->
+    <!-- <name>Kinect</name> 
+    <calibrationFile>KinectModel.xml</calibrationFile>-->
     
     <name>File</name>
     <calibrationFile>putslamfileModel.xml</calibrationFile>
