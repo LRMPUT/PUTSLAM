@@ -117,57 +117,21 @@ public:
     /// Current Frame
     void getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg);
 
-<<<<<<< HEAD
 
-	
-#ifdef BUILD_WITH_ROS	
-	/////////////////////////////////////////////////////////////////////////////ROS
-	void setWorkWithROS();
-	void initROSpublishers();
-=======
+
 #ifdef BUILD_WITH_ROS
     /////////////////////////////////////////////////////////////////////////////ROS
     void setWorkWithROS();
     void initROSpublishers();
->>>>>>> 7ebf85df33dfc42015a43c868f303e63742e2092
 #endif
 
 
 
 private:
     std::mutex getFrameEvent;
-<<<<<<< HEAD
     cv::Mat RGBDimg;
     cv::Mat depthImgimg;
 
-	// At beggining
-	void loadConfigs();
-	void readingSomeParameters();
-	void initialization();
-
-	// Processing
-	void processFirstFrame(SensorFrame &currentSensorFrame, int &cameraPoseId);
-
-	Eigen::Matrix4f runVO(SensorFrame &currentSensorFrame,
-			std::vector<cv::DMatch> &inlierMatches);
-	void addPoseToMap(SensorFrame &currentSensorFrame,
-			Eigen::Matrix4f &poseIncrement, int &cameraPoseId);
-	Mat34 getMapPoseEstimate();
-	Eigen::Matrix4f getPoseIncrementFromMap(int frameCounter);
-
-	void moveMapFeaturesToLocalCordinateSystem(const Mat34& cameraPose,
-			std::vector<MapFeature>& mapFeatures);
-	int chooseFeaturesToAddToMap(const Matcher::featureSet& features,
-			int addedCounter, int maxOnceFeatureAdd,
-			const std::vector<MapFeature>& mapFeatures,
-			float minEuclideanDistanceOfFeatures,
-			float minImageDistanceOfFeatures, int cameraPoseId,
-			std::vector<RGBDFeature>& mapFeaturesToAdd);
-	// Remove features that we do not have a good observation angle
-	void removeMapFeaturesWithoutGoodObservationAngle(
-			std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
-=======
-    cv::Mat RGBDimg, depthImgimg;
     // At beggining
     void loadConfigs();
     void readingSomeParameters();
@@ -194,7 +158,6 @@ private:
     // Remove features that we do not have a good observation angle
     void removeMapFeaturesWithoutGoodObservationAngle(
             std::vector<MapFeature> &mapFeatures, std::vector<int> &frameIds,
->>>>>>> 7ebf85df33dfc42015a43c868f303e63742e2092
             std::vector<double> &angles);
     std::vector<MapFeature> getAndFilterFeaturesFromMap(
             SensorFrame &currentSensorFrame, Mat34 cameraPose,
