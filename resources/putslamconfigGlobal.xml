@@ -7,6 +7,8 @@
     <name>File</name>
     <calibrationFile>putslamfileModel.xml</calibrationFile>
     
+<!--    <name>Kinect</name> -->
+<!--    <calibrationFile>putslamKinectModel.xml</calibrationFile>  -->
 <!--      <name>Xtion</name>  -->
 <!--      <calibrationFile>putslamXtionModel.xml</calibrationFile>  -->
 	<!-- <name>Ptgrey</name> -->

@@ -450,7 +450,7 @@ void PUTSLAM::initialization() {
 }
 
 void PUTSLAM::loadConfigs() {
-	tinyxml2::XMLDocument config;
+    tinyxml2::XMLDocument config;
     config.LoadFile("../../resources/putslamconfigGlobal.xml");
 	if (config.ErrorID())
 		std::cout << "unable to load config file.\n";
@@ -475,7 +475,7 @@ void PUTSLAM::loadConfigs() {
 
 	// Thread settings
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute("verbose",
-			&verbose);
+            &verbose);
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute(
 			"optimizationThreadVersion", &optimizationThreadVersion);
 	config.FirstChildElement("ThreadSettings")->QueryIntAttribute(
@@ -506,8 +506,8 @@ void PUTSLAM::loadConfigs() {
 
 	if (verbose > 0) {
 		std::cout << "Creating features map" << std::endl;
-	}
-	map = createFeaturesMap(configFileMap, configFileGrabber);
+    }
+    map = createFeaturesMap(configFileMap, configFileGrabber);
 	map->setStoreImages(keepCameraFrames);
 
 	if (verbose > 0) {
@@ -526,11 +526,11 @@ void PUTSLAM::loadConfigs() {
 				<< std::endl;
 	}
 
-	if (grabberType == "Kinect") {
-		grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
-	} else if (grabberType == "Xtion") {
+    if (grabberType == "Kinect") {
+        grabber = createGrabberKinect(grabberConfigFile, Grabber::MODE_BUFFER);
+    } else if (grabberType == "Xtion") {
 		grabber = createGrabberXtion(grabberConfigFile, Grabber::MODE_BUFFER);
-	}
+    }
 #ifdef BUILD_WITH_ROS
 	////////////////////////////////////////////////////////////ROS
 	else if (grabberType == "ROS") {
@@ -539,13 +539,13 @@ void PUTSLAM::loadConfigs() {
 	}
 #endif
 	/// Still do not take into account the config file
-	else if (grabberType == "File") {
+    else if (grabberType == "File") {
 		grabber = createGrabberFile(grabberConfigFile);
-	} else if (grabberType == "MesaImaging")
-		grabber = createGrabberKinect();
-	else
+    } else if (grabberType == "MesaImaging")
+        grabber = createGrabberKinect();
+    else
 		// Default
-		grabber = createGrabberKinect();
+        grabber = createGrabberKinect();
 
 	// create objects and print configuration
 	if (verbose > 0) {

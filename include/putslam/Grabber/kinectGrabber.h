@@ -127,7 +127,23 @@ class KinectGrabber : public Grabber {
         KinectGrabber(void);
 
         /// Construction
-        KinectGrabber(std::string modelFilename, Mode _model) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, _model), model(modelFilename){
+        KinectGrabber(std::string modelFilename, Mode _model) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, _model), model(modelFilename),
+        device(freenect.createDevice<MyFreenectDevice>(0)){
+            device.startVideo();
+            device.startDepth();
+            usleep(1000000);
+            cv::Mat depthMat(cv::Size(640,480),CV_16UC1);
+            device.getDepth(depthMat);
+            sensorFrame.depthImage = depthMat.clone();
+            frameNo=0;
+
+        }
+
+        ///Destruction
+        ~KinectGrabber()
+        {
+            device.stopVideo();
+            device.stopDepth();
         }
 
         /// Name of the grabber
@@ -145,12 +161,18 @@ class KinectGrabber : public Grabber {
         ///Sensor uninitialize
         virtual int grabberClose(void);
 
+        const SensorFrame& getSensorFrame(void);
+
         /// Return starting position of sensor
         Eigen::Matrix4f getStartingSensorPose();
 
     private:
+        Freenect::Freenect freenect;
+        MyFreenectDevice& device;
+
         /// Sensor model
         DepthSensorModel model;
+        int frameNo;
 
 };
 
