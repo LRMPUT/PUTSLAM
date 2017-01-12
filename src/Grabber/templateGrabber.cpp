@@ -9,9 +9,11 @@ using namespace putslam;
 /// A single instance of Kinect grabber
 KinectGrabber::Ptr grabberK;
 
-KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, MODE_BUFFER),
-device(freenect.createDevice<MyFreenectDevice>(0)){
-
+KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, MODE_BUFFER)
+#ifdef BUILD_KINECT
+,device(freenect.createDevice<MyFreenectDevice>(0))
+#endif
+{
 }
 
 const std::string& KinectGrabber::getName() const {
