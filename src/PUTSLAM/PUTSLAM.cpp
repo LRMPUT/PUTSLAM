@@ -551,12 +551,12 @@ void PUTSLAM::loadConfigs() {
 
 	// create objects and print configuration
 	if (verbose > 0) {
-		cout << "Current grabber: " << grabber->getName() << std::endl;
+        std::cout << "Current grabber: " << grabber->getName() << std::endl;
 	}
-	string matcherParameters =
+    std::string matcherParameters =
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFile")->GetText();
-	string matcherParametersLC =
+    std::string matcherParametersLC =
 			config.FirstChildElement("Matcher")->FirstChildElement(
 					"parametersFileLC")->GetText();
 
@@ -565,12 +565,12 @@ void PUTSLAM::loadConfigs() {
 	}
 	matcher = createMatcherOpenCV(matcherParameters, grabberConfigFile);
 	if (verbose > 0) {
-		cout << "Current matcher: " << matcher->getName() << std::endl;
+        std::cout << "Current matcher: " << matcher->getName() << std::endl;
 	}
 	loopClosureMatcher = createloopClosingMatcherOpenCV(matcherParametersLC,
 			grabberConfigFile);
 	if (verbose > 0) {
-		cout << "Loop closure current matcher: " << matcher->getName()
+        std::cout << "Loop closure current matcher: " << matcher->getName()
 				<< std::endl;
 	}
 }
@@ -1011,7 +1011,7 @@ void PUTSLAM::saveTrajectoryFreiburgFormat(Eigen::Matrix4f transformation,
 	estTrajectory << ossTimestamp.str() << " " << transformation(0, 3) << " "
 			<< transformation(1, 3) << " " << transformation(2, 3) << " "
 			<< Q.coeffs().x() << " " << Q.coeffs().y() << " " << Q.coeffs().z()
-			<< " " << Q.coeffs().w() << endl;
+            << " " << Q.coeffs().w() << std::endl;
 }
 
 void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
@@ -1053,17 +1053,17 @@ void PUTSLAM::saveFeaturesToFile(Matcher::featureSet features,
 }
 
 void PUTSLAM::saveFPS(double fps) {
-	ofstream fileFPS;
+    std::ofstream fileFPS;
 	fileFPS.open("fps.res");
 	fileFPS << fps;
 	fileFPS.close();
 }
 
 void PUTSLAM::saveLogs() {
-	ofstream statisticsLogStream("statistics.py");
+    std::ofstream statisticsLogStream("statistics.py");
 
-	statisticsLogStream << "import matplotlib.pyplot as plt" << endl;
-	statisticsLogStream << "import numpy as np" << endl;
+    statisticsLogStream << "import matplotlib.pyplot as plt" << std::endl;
+    statisticsLogStream << "import numpy as np" << std::endl;
 
 	statisticsLogStream << "plt.ioff()" << std::endl;
 
@@ -1074,16 +1074,16 @@ void PUTSLAM::saveLogs() {
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
 	statisticsLogStream
 			<< "plt.plot(VORansacInlierRatioLog, label='-1 means no matches before RANSAC')"
-			<< endl;
+            << std::endl;
 	statisticsLogStream
-			<< "fig.suptitle('RANSAC inlier ratio in VO', fontsize=20)" << endl;
-	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
-	statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('VORansacInlierRatio.png')" << endl;
+            << "fig.suptitle('RANSAC inlier ratio in VO', fontsize=20)" << std::endl;
+    statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
+    statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
+    statisticsLogStream << "plt.savefig('VORansacInlierRatio.png')" << std::endl;
 
 	// VOFeaturesSizeLog
 	statisticsLogStream << "VOFeaturesSizeLog = np.array([";
@@ -1092,16 +1092,16 @@ void PUTSLAM::saveLogs() {
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
 	statisticsLogStream
 			<< "plt.plot(VOFeaturesSizeLog)"
-			<< endl;
+            << std::endl;
 	statisticsLogStream
-			<< "fig.suptitle('Number of features used in VO', fontsize=20)" << endl;
-	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
-	statisticsLogStream << "plt.ylabel('Number of features', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('VOFeaturesSize.png')" << endl;
+            << "fig.suptitle('Number of features used in VO', fontsize=20)" << std::endl;
+    statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
+    statisticsLogStream << "plt.ylabel('Number of features', fontsize=16)" << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
+    statisticsLogStream << "plt.savefig('VOFeaturesSize.png')" << std::endl;
 
 
 	// mapSize
@@ -1111,16 +1111,16 @@ void PUTSLAM::saveLogs() {
 		}
 		statisticsLogStream << "]);" << std::endl;
 
-		statisticsLogStream << "fig = plt.figure()" << endl;
+        statisticsLogStream << "fig = plt.figure()" << std::endl;
 		statisticsLogStream
 				<< "plt.plot(mapSize)"
-				<< endl;
+                << std::endl;
 		statisticsLogStream
-				<< "fig.suptitle('Number of features in map', fontsize=20)" << endl;
-		statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
-		statisticsLogStream << "plt.ylabel('Features counter', fontsize=16)" << endl;
-		statisticsLogStream << "plt.legend() " << endl;
-		statisticsLogStream << "plt.savefig('mapSize.png')" << endl;
+                << "fig.suptitle('Number of features in map', fontsize=20)" << std::endl;
+        statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
+        statisticsLogStream << "plt.ylabel('Features counter', fontsize=16)" << std::endl;
+        statisticsLogStream << "plt.legend() " << std::endl;
+        statisticsLogStream << "plt.savefig('mapSize.png')" << std::endl;
 
 
 	// MapMatchingRansacInlierRatioLog
@@ -1130,18 +1130,18 @@ void PUTSLAM::saveLogs() {
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
 	statisticsLogStream
 			<< "plt.plot(MapMatchingRansacInlierRatioLog, label='-1 means no matches before RANSAC')"
-			<< endl;
+            << std::endl;
 	statisticsLogStream
 			<< "fig.suptitle('RANSAC inlier ratio in Map Matching', fontsize=20)"
-			<< endl;
-	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
-	statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
+            << std::endl;
+    statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
+    statisticsLogStream << "plt.ylabel('Inlier ratio', fontsize=16)" << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
 	statisticsLogStream << "plt.savefig('MapMatchingRansacInlierRatioLog.png')"
-			<< endl;
+            << std::endl;
 
 	// Measurement to map size
 	statisticsLogStream << "mapMeasurementSize = np.array([";
@@ -1150,18 +1150,18 @@ void PUTSLAM::saveLogs() {
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
 	statisticsLogStream
 			<< "plt.plot(mapMeasurementSize, label='-1 means no matches before RANSAC')"
-			<< endl;
+            << std::endl;
 	statisticsLogStream
 			<< "fig.suptitle('Measurement number to features in map', fontsize=20)"
-			<< endl;
-	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+            << std::endl;
+    statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
 	statisticsLogStream << "plt.ylabel('Measurement number', fontsize=16)"
-			<< endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << endl;
+            << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
+    statisticsLogStream << "plt.savefig('mapMatchinggSize.png')" << std::endl;
 
 	// Visible map features
 	statisticsLogStream << "visibleMapFeatures = np.array([";
@@ -1170,41 +1170,41 @@ void PUTSLAM::saveLogs() {
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
 	statisticsLogStream
 			<< "plt.plot(visibleMapFeatures)"
-			<< endl;
+            << std::endl;
 	statisticsLogStream
 			<< "fig.suptitle('Number of visible features from map', fontsize=20)"
-			<< endl;
-	statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << endl;
+            << std::endl;
+    statisticsLogStream << "plt.xlabel('Frame counter', fontsize=18)" << std::endl;
 	statisticsLogStream << "plt.ylabel('Feature number', fontsize=16)"
-			<< endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('visibleMapFeatures.png')" << endl;
+            << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
+    statisticsLogStream << "plt.savefig('visibleMapFeatures.png')" << std::endl;
 
 
 	// LC matches
-	vector<double> lcMatchingRatiosLog = map->getLoopClosureMatchingRatiosLog();
+    std::vector<double> lcMatchingRatiosLog = map->getLoopClosureMatchingRatiosLog();
 	statisticsLogStream << "lcMatchingRatiosLog = np.array([";
 	for (unsigned long int a = 0; a < lcMatchingRatiosLog.size(); a++) {
 		statisticsLogStream << lcMatchingRatiosLog[a] << ", ";
 	}
 	statisticsLogStream << "]);" << std::endl;
 
-	statisticsLogStream << "fig = plt.figure()" << endl;
-	statisticsLogStream << "plt.plot(lcMatchingRatiosLog)" << endl;
+    statisticsLogStream << "fig = plt.figure()" << std::endl;
+    statisticsLogStream << "plt.plot(lcMatchingRatiosLog)" << std::endl;
 	statisticsLogStream << "fig.suptitle('Matching ratio in LC', fontsize=20)"
-			<< endl;
+            << std::endl;
 	statisticsLogStream << "plt.xlabel('Compared pair no.', fontsize=18)"
-			<< endl;
-	statisticsLogStream << "plt.ylabel('Ratio', fontsize=16)" << endl;
-	statisticsLogStream << "plt.legend() " << endl;
-	statisticsLogStream << "plt.savefig('LCMatchingRatio.png')" << endl;
+            << std::endl;
+    statisticsLogStream << "plt.ylabel('Ratio', fontsize=16)" << std::endl;
+    statisticsLogStream << "plt.legend() " << std::endl;
+    statisticsLogStream << "plt.savefig('LCMatchingRatio.png')" << std::endl;
 
 	statisticsLogStream.close();
 
-	vector<LoopClosure::LCMatch> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
+    std::vector<LoopClosure::LCMatch> lcAnalyzedPairsLog = map->getLoopClosureAnalyzedPairsLog();
 	std::ofstream lcAnalyzedPairsStream("LCAnalyzedPairs.log");
 	lcAnalyzedPairsStream << "id1 id2 probability matchingRatio" << std::endl;
 	for ( auto &p : lcAnalyzedPairsLog) {
@@ -1239,14 +1239,14 @@ void PUTSLAM::evaluateResults(std::string basePath, std::string datasetName) {
 //		std::cout << "Error: " << error.code() << " - " << error.what() << '\n';
 //	}
 
-	ofstream datasetNameStream("DatasetName");
+    std::ofstream datasetNameStream("DatasetName");
 	datasetNameStream << fullPath;
 	datasetNameStream.close();
 
 }
 
 void PUTSLAM::showMapFeatures(cv::Mat rgbImage,
-		std::vector<MapFeature> mapFeatures, int wait, string windowName) {
+        std::vector<MapFeature> mapFeatures, int wait, std::string windowName) {
 	std::vector<cv::KeyPoint> mapFeatures2D(mapFeatures.size());
 	std::transform(mapFeatures.begin(), mapFeatures.end(),
 			mapFeatures2D.begin(),

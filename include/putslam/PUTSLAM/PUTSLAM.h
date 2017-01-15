@@ -38,7 +38,6 @@
 #include "Grabber/ROSGrabber.h"
 #endif
 
-using namespace std;
 using namespace putslam;
 
 /*
@@ -49,8 +48,8 @@ class PUTSLAM {
     Grabber* grabber;
     Matcher * matcher, *loopClosureMatcher;
 
-    ofstream trajectoryFreiburgStream;
-    ofstream trajectoryMotionModelStream;
+    std::ofstream trajectoryFreiburgStream;
+    std::ofstream trajectoryMotionModelStream;
 
     Eigen::Matrix4f VOPoseEstimate;
 
@@ -183,7 +182,7 @@ private:
     void saveFeaturesToFile(Matcher::featureSet features, double timestamp);
     void saveFeaturesToFile(Matcher::featureSet features,
             std::vector<cv::DMatch> inlierMatches, double timestamp);
-    void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures, int wait, string windowName="Map features");
+    void showMapFeatures(cv::Mat rgbImage, std::vector<MapFeature> mapFeatures, int wait, std::string windowName="Map features");
     void createAndSaveOctomap(double depthImageScale);
     void createAndSaveOctomapOffline(double depthImageScale);
 
