@@ -1,9 +1,11 @@
 #include "Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
-#include "Visualizer/Qvisualizer.h"
+#ifdef BUILD_PUTSLAM_VISUALIZER
+    #include "Visualizer/Qvisualizer.h"
+    #include <GL/glut.h>
+    #include <qapplication.h>
+#endif
 #include "PUTSLAM/PUTSLAM.h"
-#include <GL/glut.h>
-#include <qapplication.h>
 #include <iostream>
 #include "Defs/opencv.h"
 #include "Utilities/CLParser.h"
@@ -48,10 +50,13 @@ int main(int argc, char** argv)
             std::cout << "unable to load config file.\n";
         std::string configFile(config.FirstChildElement( "Visualizer" )->FirstChildElement( "parametersFile" )->GetText());
 
+        #ifdef BUILD_PUTSLAM_VISUALIZER
         QGLVisualizer::Config configVis(configFile);//something is wrong with QApplication when Qapplication
         //object is created. libTinyxml can read only ints from xml file
+        #endif
 
         slam.reset(new PUTSLAM);
+        #ifdef BUILD_PUTSLAM_VISUALIZER
         if (configVis.showFrames){
             cv::Mat im(480,680, CV_8UC3);
             cv::namedWindow( "PUTSLAM RGB frame", cv::WINDOW_AUTOSIZE );
@@ -76,12 +81,14 @@ int main(int argc, char** argv)
         // Make the viewer window visible on screen.
         visu.show();
         slam.get()->attachVisualizer(&visu);
-
+        #endif
         // run PUTSLAM
         std::thread tSLAM(runPUTSLAM, trajname, delay);
 
+        #ifdef BUILD_PUTSLAM_VISUALIZER
         // Run main loop.
         application.exec();
+        #endif
         tSLAM.join();
 
         return 1;

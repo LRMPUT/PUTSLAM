@@ -8,20 +8,20 @@
 
 PUTSLAM::PUTSLAM() {
 
-	loadConfigs();
+    loadConfigs();
 
 	// Reading robot starting pose
-	VOPoseEstimate = grabber->getStartingSensorPose();
+    VOPoseEstimate = grabber->getStartingSensorPose();
 
 	// File to save trajectory
 	trajectoryFreiburgStream.open("VO_trajectory.res");
 	trajectoryMotionModelStream.open("MotionModel_trajectory.res");
 	drawImages = false;
 	visualize = false;
-	map->setDrawOptions(false);
+    map->setDrawOptions(false);
 #ifdef BUILD_WITH_ROS
 		//////////////////////////////////////////////////////////////////////ROS
-		workWithROS = false;
+        workWithROS = false;
 #endif
 }
 
@@ -194,10 +194,12 @@ void PUTSLAM::getCurrentFrame(cv::Mat& RGBD, cv::Mat& depthImg)
     getFrameEvent.unlock();
 }
 
+#ifdef BUILD_PUTSLAM_VISUALIZER
 ///Attach visualizer
 void PUTSLAM::attachVisualizer(QGLVisualizer* visualizer) {
 	((FeaturesMap*) map)->attach(visualizer);
 }
+#endif
 
 void PUTSLAM::createAndSaveOctomap(double depthImageScale) {
 	int size = map->getPoseCounter();
@@ -659,8 +661,8 @@ std::vector<double> &angles ) {
 	// Lets remove features that we cannot match due to max distance of Kinect/Asus
 	RGBD::removeFarMapFeatures(mapFeatures, 5.0, frameIds, angles);
 
-	if (verbose > 0)
-		showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
+    //if (verbose > 0)
+        //showMapFeatures(currentSensorFrame.rgbImage, mapFeatures, 0, "Map Features after");
 
 	// Check some asserts
 //				assert(("PUTSLAM: mapFeatures, frameIdsand angles", mapFeatures.size()

@@ -1,9 +1,11 @@
 #include "Defs/putslam_defs.h"
 #include "../3rdParty/tinyXML/tinyxml2.h"
+#ifdef BUILD_PUTSLAM_VISUALIZER
 #include "Visualizer/Qvisualizer.h"
-#include "PUTSLAM/PUTSLAM.h"
 #include <GL/glut.h>
 #include <qapplication.h>
+#endif
+#include "PUTSLAM/PUTSLAM.h"
 #include <iostream>
 #include "Defs/opencv.h"
 

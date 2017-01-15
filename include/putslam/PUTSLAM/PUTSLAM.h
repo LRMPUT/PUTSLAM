@@ -24,7 +24,9 @@
 #include "Matcher/matcherOpenCV.h"
 #include "Map/featuresMap.h"
 #include "RGBD/RGBD.h"
+#ifdef BUILD_PUTSLAM_VISUALIZER
 #include "Visualizer/Qvisualizer.h"
+#endif
 
 #include "TimeMeasurement.h"
 
@@ -97,8 +99,10 @@ public:
 
     void startProcessing();
 
+    #ifdef BUILD_PUTSLAM_VISUALIZER
     ///Attach visualizer
     void attachVisualizer(QGLVisualizer * visualizer);
+    #endif
 
     /// get depth sensor model
     inline DepthSensorModel getDepthSensorModel() {

@@ -11,7 +11,9 @@
 #include "Utilities/observer.h"
 #include "../../3rdParty/tinyXML/tinyxml2.h"
 #include "Grabber/depthSensorModel.h"
+#ifdef BUILD_PUTSLAM_VISUALIZER
 #include <QGLViewer/qglviewer.h>
+#endif
 #include <iostream>
 
 using namespace putslam;

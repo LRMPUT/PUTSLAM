@@ -146,17 +146,20 @@ find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 add_definitions(-Wno-deprecated -DEIGEN_DONT_VECTORIZE -DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
 
-#QGLViewer library
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
-FIND_PACKAGE(OpenGL)
-include_directories(${OPENGL_INCLUDE_DIR})
-link_directories(${OPENGL_LIBRARY})
+if(BUILD_PUTSLAM_VISUALIZER)
+    add_definitions(-DBUILD_PUTSLAM_VISUALIZER)
+    #QGLViewer library
+    set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+    FIND_PACKAGE(OpenGL)
+    include_directories(${OPENGL_INCLUDE_DIR})
+    link_directories(${OPENGL_LIBRARY})
 
-#QGLViewer library
-FIND_PACKAGE(QGLViewer)
-include_directories(${QGLVIEWER_INCLUDE_DIR})
-include_directories(${QT_INCLUDES})
-link_directories(${QGLVIEWER_LIBRARY})
+    #QGLViewer library
+    FIND_PACKAGE(QGLViewer)
+    include_directories(${QGLVIEWER_INCLUDE_DIR})
+    include_directories(${QT_INCLUDES})
+    link_directories(${QGLVIEWER_LIBRARY})
+endif(BUILD_PUTSLAM_VISUALIZER)
 
 # Executable output directory
 SET(RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin${OUTPUT_DIRECTORY_POSTFIX} CACHE PATH "Executable output directory")
@@ -802,7 +805,7 @@ endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_PATCH)
 #
 ###############################################################################
 
-if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
+if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath ./")
         SET(DEMO_SOURCES ./demos/demoVisualizer.cpp)
         ADD_EXECUTABLE(demoVisualizer ${DEMO_SOURCES})
@@ -810,7 +813,7 @@ if(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
         TARGET_LINK_LIBRARIES(demoVisualizer PutslamVisualizer tinyxml2 PutslamMap PUTSLAM ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARY} glut boost_system)
         INSTALL(TARGETS demoVisualizer RUNTIME DESTINATION bin)
 
-endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_DEMO_VISUALIZER)
+endif(BUILD_PUTSLAM_DEMO AND BUILD_PUTSLAM_VISUALIZER AND BUILD_PUTSLAM_DEMO_VISUALIZER)
 
 ###############################################################################
 #
