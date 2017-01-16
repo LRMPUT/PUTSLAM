@@ -43,7 +43,7 @@ void Matcher::detectInitFeatures(const SensorFrame &sensorData) {
 			matcherParameters.cameraMatrixMat,
 			matcherParameters.distortionCoeffsMat);
 
-	// Associate depth
+    // Associate depth
 	prevFeatures3D = RGBD::keypoints2Dto3D(prevFeaturesUndistorted,
 			sensorData.depthImage, matcherParameters.cameraMatrixMat,
 			sensorData.depthImageScale);

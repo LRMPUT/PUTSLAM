@@ -23,6 +23,7 @@ KinectGrabber::KinectGrabber(void) : Grabber("Kinect Grabber", TYPE_PRIMESENSE, 
     sensorFrame.depthImage = depthMat.clone();
     frameNo=0;
     #endif
+    sensorFrame.depthImageScale = model.config.depthImageScale;
 }
 
 const std::string& KinectGrabber::getName() const {

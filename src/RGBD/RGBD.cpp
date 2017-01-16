@@ -54,7 +54,7 @@ Eigen::Vector3f RGBD::point2Dto3D(cv::Point2f feature2D,
 	// Convert it using the scaling of depth image
 	float Z = (float) (((double)depthImage.at<uint16_t>(vRounded, uRounded)) / depthImageScale);
 
-	// Compute the feature position in normalized image coordinates
+    // Compute the feature position in normalized image coordinates
 	float u = (feature2D.x - cameraMatrix.at<float>(0, 2))
 			/ cameraMatrix.at<float>(0, 0);
 	float v = (feature2D.y - cameraMatrix.at<float>(1, 2))

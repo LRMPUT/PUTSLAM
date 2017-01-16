@@ -17,7 +17,7 @@
 	<gradientModel scaleUncertaintyGradient="0.8"/>
 </Model>
 
-<datasetPath base="../../../Datasets/Kinect1vs2" datasetName="dataset3_Kinect1" depthImageScale="1"/>
+<datasetPath base="../../../Datasets/Kinect1vs2" datasetName="dataset3_Kinect1" depthImageScale="1000"/>
 
 
 <playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="500"/>
