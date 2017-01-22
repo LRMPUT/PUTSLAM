@@ -246,8 +246,8 @@ if(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
                 add_library(PutslamUtilities STATIC ${PutslamUTILITIES_SOURCES} ${PutslamUTILITIES_HEADERS})
         endif(BUILD_ROS)
         INSTALL(TARGETS PutslamUtilities RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib)
-        INSTALL(FILES ${PutslamUtilities_HEADERS} DESTINATION include/putslam/Utilities/)
-        INSTALL(FILES ${PutslamUtilities_SOURCES} DESTINATION src/Utilities/)
+        INSTALL(FILES ${PutslamUTILITIES_HEADERS} DESTINATION include/putslam/Utilities/)
+        INSTALL(FILES ${PutslamUTILITIES_SOURCES} DESTINATION src/Utilities/)
 endif(BUILD_PUTSLAM AND BUILD_PUTSLAM_UTILITIES)
 
 ###############################################################################
