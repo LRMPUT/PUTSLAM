@@ -29,6 +29,8 @@ void FileGrabber::initFileGrabber() {
 	fileNo = -1;
 	proccesingFileCounter = 0;
 
+	std::cout << "GRABBER: " << parameters.fullPath + "matched" << std::endl;
+
 	timestampFile.open(parameters.fullPath + "matched");
 }
 

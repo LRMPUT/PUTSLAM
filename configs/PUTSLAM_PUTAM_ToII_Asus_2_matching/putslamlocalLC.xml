@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Local Loop Closure configuration -->
+<LoopClosure>
+    <!--
+	rotThreshold in radians -> 90 deg -> 1.57 rad
+	-->
+    <parameters verbose="1" 
+		minFeatures="75"
+		tailFramesToSkip="15"
+		minNewPlaceProb="0.1"
+		maxPQSize="50"
+	/>
+</LoopClosure>

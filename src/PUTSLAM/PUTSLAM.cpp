@@ -697,6 +697,7 @@ void PUTSLAM::startProcessing() {
 		if (!middleOfSequence)
 			break;
 
+
         SensorFrame currentSensorFrame = grabber->getSensorFrame();
 
 		if (drawImages) {
@@ -976,8 +977,8 @@ std::cout << "save2file\n";
 	//        VertexSE3 vert(i, traj[i], i);
 	//        ((FeaturesMap*) map)->updatePose(vert, true);
 	//    }
-	if (optimizationThreadVersion != OPTTHREAD_OFF)
-		map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
+//	if (optimizationThreadVersion != OPTTHREAD_OFF)
+//		map->exportOutput("graph_trajectory.res", "optimizedGraphFile.g2o");
 
 	// Save times
 	std::cout << "Saving times" << std::endl;
