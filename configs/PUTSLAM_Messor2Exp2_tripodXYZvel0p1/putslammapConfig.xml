@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sensor configuration -->
+<MapConfig>
+    <name>FeaturesMap</name>
+    <!--
+	useUncertainty				- use uncertinty model of the camera to determine information matrix in the graph
+	uncertaintyModel			- 0 - use sensor model
+						- 1 - use normals to the surface
+						- 2 - use rgb gradients
+	weakFeatureThr				- before final optimization remove features with measuremets less than threshold (-1 disabbled)
+	edges3DPrunningThreshold		- 3D edges pruning
+	fixVertices					- fix all optimized vertices after optimization
+	addPoseToPoseEdges 			- true/false whether add pose-pose constrains from VO
+	minMeasurementsToAddPoseToFeatureEdge	- 	minimal number of consistent pose-(feature in map) observations to add those links  	
+  	addFeaturesWhenMapSizeLessThan 			-	we try to add more features if we observe less than features in current frame
+  	addFeaturesWhenMeasurementSizeLessThan 	-	we try to add more features if we have less than number of measurements in current frame
+  	maxOnceFeatureAdd						- 	we maximally add maxOnceFeatureAdd number of features from one frame
+  	minEuclideanDistanceOfFeatures			- 	we skip adding features closer than minEuclideanDistanceOfFeatures (in meters)
+  	addNoFeaturesWhenMapSizeGreaterThan		-	we skip adding because we seealready enough features
+	featuresDistribution 			- draw each detected feature in the common coordinate system
+	optimizationErrorType			- euclidean (0) or reprojection (1)
+  	-->
+    <parameters verbose="0" 
+		useUncertainty="false" 
+		weakFeatureThr="-1" 
+		uncertaintyModel="2" 
+		edges3DPrunningThreshold="-1" 
+		fixVertices="false" 
+		addPoseToPoseEdges="true" 
+    	maxMeasurementsToAddPoseToPoseEdge="50"
+		minMeasurementsToAddPoseToFeatureEdge="15" 
+		addFeaturesWhenMapSizeLessThan="350" 
+		addFeaturesWhenMeasurementSizeLessThan="100" 
+		maxOnceFeatureAdd="200" 
+		minEuclideanDistanceOfFeatures="0.03" 
+		minImageDistanceOfFeatures="2" 
+		addNoFeaturesWhenMapSizeGreaterThan="1000" 
+		inlierThresholdEuclidean="0.02"
+		optimizationErrorType="0"/>
+
+  <!--mapCompression:
+    covisibilityKeyframes   - create next keyframe when covisibility drops below 'covisibilityKeyframes'
+    marginalizationThr      - if covisibility smaller than 'marginCovisibThr' then marginalize graph (features which are not connected to the keyframes are removed from the map and from the graph)
+    minFramesNo             - do not marginalize if distance between current and previous keyframe is smaller than minFramesNo 
+    maxFramesNo             - if keyframes no is higher than maxFramesNo perform full marginalization (features are fixed)-->    
+    <mapCompression compressMap="true" covisibilityKeyframes="0.9" marginalizationThr="0.3" minFramesNo="30" maxFramesNo="250"/>
+
+    <!--Get features from map using also Euclidean criterion (additional method to get features from covisibility graph)
+    imagePlaneDistance      - distance on the xy image plane 
+    depthDist               - distance along camera axis
+    maxAngle                - max angle between camera axes
+    maxRadius               - max Euclidean distance between camera poses -->
+    <EuclideanCriterion useEuclideanCrit="false" imagePlaneDistance="0.75" depthDist="1.5" maxAngle="0.75" maxRadius="5.0"/>
+    
+<!--    Export map to m-file:
+    filenameMap - map file
+    filenameData - statistics for the map-->
+    <mapOutput exportMap="false" filenameMap="map.m" filenameData="mapData.m"/>
+<!--    Export features exportDistribution
+	  draws features from the map in the 'frameNo' image-->
+    <featuresDistribution exportDistribution="false" frameNo="0" filenameFeatDistr="featuresImage.m"/>
+<!--     Map management thread - options:
+	  distThreshold - alert when two diferent features are closer than threshold -->
+    <mapManager distThreshold="0.01"/>
+<!--    Map visualization options:
+	  frameNo2updatePointCloud - send point cloud to visualizer every i-th frame
+    -->
+    <visualization frameNo2updatePointCloud="60"/>
+    <!--
+
+      waitUntilFinishedLC  -  search for LC after frontend stops [s]
+      searchPairsTypeLC 0 - local geometric distance
+			1 - FABMAP
+    -->  
+    <loopClosure searchPairsTypeLC="0" configFilenameLC="putslamlocalLC.xml" waitUntilFinishedLC="1" minNumberOfFeaturesLC="35" matchingRatioThresholdLC="0.4"/>
+</MapConfig>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- File Model-->
+<!--	
+	verbose :	0 - no debugging information
+			1 - print read parameters
+			2 - print read parameters & getchar
+
+	Supported files:
+		TUM Freiburg dataset:
+		- freiburg1_360.xml
+		- freiburg1_desk.xml
+		- freiburg1_desk2.xml
+		- freiburg1_room.xml
+		- freiburg2_desk.xml
+		- freiburg3_long_office_household.xml
+		ICL NUIM dataset:
+		- icl_office_room_traj1_loop.xml
+		- icl_office_room_traj2_loop.xml
+		- icl_office_room_traj2_loop_noise.xml
+		- icl_office_room_traj3_loop.xml
+		PUT Kin1vs2 dataset:
+		- putkk_dataset1_kinect1.xml
+		- putkk_dataset1_kinect2.xml
+		- ...
+		- putkk_dataset8_kinect1.xml
+		- putkk_dataset8_kinect2.xml
+		Messor datasets;
+		- messor_3.xml
+		MIT:
+		- mit_stata_12-04-06-11-15-29.xml
+		CTU:
+		- CTU_CLAWAR_1.xml
+		- CTU_IROS.xml
+-->
+<Model verbose="0" datasetFile="datasetConfig/messor2_mockupExp2_tripodXYZvel1p0.xml"/>
+
+<!-- Parameters defining the way the data is played from files:
+  	verbose :	0 - no debugging information
+			1 - print read parameters
+			2 - print read parameters & getchar
+
+	playEveryNthFrame 	-> only every Nth frame is used in motion estimation
+  	realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
+ 	maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
+<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="500000"/>
+
+<pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"/>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CTU_IROS2 -> 15700 -->
+<!-- CTU_IROS3 -> 4581 -->
+<parameters imageDepthScale="5000" maxProcessFrames="4581" processingFrameStep="5"/> 
+

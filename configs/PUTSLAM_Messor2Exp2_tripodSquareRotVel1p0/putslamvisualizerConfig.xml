@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!-- Visualizer configuration -->
+  <VisualizerConfig>
+  	<name>QGLVisualizer</name>
+	<background red="0.2" green="0.2" blue="0.2" alpha="1.0"></background>
+	<trajectory drawTrajectory="true" red="1.0" green="0.0" blue="0.0" alpha="1.0" width="2.5"></trajectory>
+	<trajectoryPoints drawTrajectoryPoints="true" red="0.0" green="0.0" blue="0.3" alpha="1.0" size="0.00001" accuracy="20"></trajectoryPoints>
+	<features drawFeatures="true" red="0.0" green="0.8" blue="0.0" alpha="1.0" size="0.015" smoothness="20"></features>
+	<pose2feature drawLinks="true" red="0.0" green="0.0" blue="0.8" alpha="0.1" width="0.5"></pose2feature>
+	<pointCloud drawPointClouds="true" cloudPointSize="5"></pointCloud>
+	<camera flyingCamera="false"></camera>
+<!-- 	draw measurement for selected features (featureIDMin,featureIDMax) -->
+	<measurements drawMeasurements="false" red="0.9" green="0.0" blue="0.0" alpha="1.0" size="3" featureIDMin="10000" featureIDMax="10030" drawEllipsoids="false" ellipsoidRed="0.9" ellipsoidGreen="0.0" ellipsoidBlue="0.0" ellipsoidAlpha="1.0" ellipsoidScale="0.1"></measurements>
+	<opencv showFrames="false"></opencv>
+  </VisualizerConfig>
