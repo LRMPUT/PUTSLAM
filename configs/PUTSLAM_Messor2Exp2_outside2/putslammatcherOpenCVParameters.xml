@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MatcherOpenCV parameters 
+	verbose :	0 -> no debug
+			2 -> show matches
+			3 -> show matches + show detected features
+			
+	VOVersion :	0 -> matching
+			1 -> tracking
+-->
+<Matcher verbose="0" VOVersion="0">
+    <!-- RANSAC settings
+	 	verbose : 	0 -> no debug
+	 				1 -> print final result
+	 				2 -> print every iteration
+		errorVersionVO :	0 -> Euclidean error
+	 				1 -> Reprojection error 
+					2 -> Euclidean and Reprojection error
+		errorVersionMap :	0 -> Euclidean error
+	 				1 -> Reprojection error 
+					2 -> Euclidean and Reprojection error
+					3 -> Mahalanobis distance
+					4 -> Adaptive Euclidean error
+	 	inlierThresholdEuclidean : maximal Euclidean error of inlier in RANSAC (in meters)
+	 	inlierThresholdReprojection : maximal reprojection error of inlier in RANSAC (in pixels)
+	 	minimalInlierRatioThreshold : minimal ratio of inliers to assume that estimated best model is correct (values: from 0 to 1)
+		minimalNumberOfMatches : minimal number of matches to even start RANSAC procedure (sensible values from 15 and up)
+	 	usedPairs : numbers of pairs used to create model in RANSAC iteration
+	 -->
+    <RANSAC 	verbose="0" 
+		errorVersionVO="0" 
+		errorVersionMap="0" 
+		inlierThresholdEuclidean="0.04" 
+		inlierThresholdReprojection="2.0" 
+		inlierThresholdMahalanobis="0.0002" 
+		minimalInlierRatioThreshold="0.2" 
+		minimalNumberOfMatches="15" 
+		usedPairs="3"/>
+    <!-- Matching settings
+    	detector : 	 FAST, ORB, SURF, SIFT
+    	descriptor :	 ORB, SURF, SIFT
+    		
+    	Recommended configurations: ORB-ORB, SURF-SURF, SIFT-SIFT
+    		
+    	Used norms in matching:  Hamming (ORB, LDB), L2 (SURF, SIFT)
+    		
+    	TODO: LDB didn't compile due to LDB issues
+     
+		gridRows : 	number of grids in the image row
+    	gridCols : 	number of grids in the image cols     
+    
+		TODO: Create description for tracking parameters    
+    	-	useInitialFlow, winSize, maxLevels, maxIter, eps
+
+	trackingErrorType:	0 -> default, L1 of patches 
+				1 -> eigen value of a 2x2 normal matrix of optical flow equations 
+	
+	trackingErrorThreshold:		if the tracking exceeds this error - we remove the feature. The error is defined depending on other parameter:
+					- (typical values range from 0 to 8) - as an average pixel difference of corresponding patches (default) 
+					- (typical values range from 0 to 1.5) - as a threshold for minimal eigenvalue of spatial gradient matrix (eigenvalue of 2-order derivative in both directions)
+	trackingMinEigThreshold:	works only with trackingErrorType = 0, checking if the eigenvalue is greater than the minimal eigenvalue during the tracking
+	
+
+    -->
+    <MatcherOpenCV detector="ORB" descriptor="ORB" gridRows="1" gridCols="1" useInitialFlow="0" winSize="7" maxLevels="3" maxIter="30" eps="0.01" 
+
+	minimalTrackedFeatures="150" 
+	maximalTrackedFeatures="500"
+	minimalReprojDistanceNewTrackingFeatures="3" 
+	minimalEuclidDistanceNewTrackingFeatures="0.01"
+	DBScanEps="1"
+	matchingXYZSphereRadius = "0.12"
+	matchingXYZacceptRatioOfBestMatch = "0.55"
+	trackingErrorType = "0"
+	trackingErrorThreshold = "25.0"
+	trackingMinEigThreshold = "0.00"
+
+	removeTooCloseFeatures = "0"
+/>
+    <!-- Matching using patche 
+    
+		TODO: DESCRIPTION!!!    
+    -->
+    <MatchingOnPatches verbose="0" warping="1" patchSize="13" maxIterationCount="50" minSqrtError="0.04"/>
+    <Parameters maxAngleBetweenFrames="0.3"/>
+</Matcher>
