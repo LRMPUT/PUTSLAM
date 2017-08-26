@@ -1033,7 +1033,7 @@ void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
         if (ignoreTrans)
             ignoreTrans=false;
         else {
-            Mat34 trans = prevVertex.pose* vert.pose;
+            Mat34 trans = prevVertex.pose.inverse()* vert.pose;
             double dist = sqrt(pow(trans(0,3),2.0)+pow(trans(1,3),2.0)+pow(trans(2,3),2.0));
             if (dist<0.05)
                 ignoreTrans = false;
