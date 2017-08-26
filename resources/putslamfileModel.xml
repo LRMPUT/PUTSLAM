@@ -32,7 +32,7 @@
 		- CTU_CLAWAR_1.xml
 		- CTU_IROS.xml
 -->
-<Model verbose="0" datasetFile="datasetConfig/freiburg1_desk.xml"/>
+<Model verbose="0" datasetFile="datasetConfig/messor2_mockupExp2_tripodSquareRotVel0p35.xml"/>
 
 <!-- Parameters defining the way the data is played from files:
   	verbose :	0 - no debugging information
@@ -42,6 +42,6 @@
 	playEveryNthFrame 	-> only every Nth frame is used in motion estimation
   	realTime 			-> overrides 'playEveryNthFrame' and simulates real-time operation by skipping frames
  	maxNumberOfFrames	-> stop processing after maxNumberOfFrames, -1 to turn off -->
-<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="500"/>
+<playParameters verbose="0" playEveryNthFrame="1" realTime="0" maxNumberOfFrames="500000"/>
 
 <pose x="0.0" y="0.0" z="0.0" qw="1" qx="0" qy="0" qz="0"/>

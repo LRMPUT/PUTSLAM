@@ -953,7 +953,7 @@ void PUTSLAM::removeMapFeaturesWithoutGoodObservationAngle(
 
 void PUTSLAM::saveStatistics() {
 std::cout << "save2file\n";
-	map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
+	//map->save2file("createdMapFile.map", "preOptimizedGraphFile.g2o");
 
 	// Wait for management thread to finish
 	if (mapManagmentThreadVersion == MAPTHREAD_ON)

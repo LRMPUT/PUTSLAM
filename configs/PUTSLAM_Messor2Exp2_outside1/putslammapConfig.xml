@@ -33,7 +33,7 @@
 		addFeaturesWhenMeasurementSizeLessThan="100" 
 		maxOnceFeatureAdd="200" 
 		minEuclideanDistanceOfFeatures="0.03" 
-		minImageDistanceOfFeatures="2" 
+		minImageDistanceOfFeatures="1" 
 		addNoFeaturesWhenMapSizeGreaterThan="1000" 
 		inlierThresholdEuclidean="0.02"
 		optimizationErrorType="0"/>

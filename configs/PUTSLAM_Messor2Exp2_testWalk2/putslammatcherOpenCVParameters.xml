@@ -29,7 +29,7 @@
     <RANSAC 	verbose="0" 
 		errorVersionVO="0" 
 		errorVersionMap="0" 
-		inlierThresholdEuclidean="0.04" 
+		inlierThresholdEuclidean="0.05" 
 		inlierThresholdReprojection="2.0" 
 		inlierThresholdMahalanobis="0.0002" 
 		minimalInlierRatioThreshold="0.2" 

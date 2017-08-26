@@ -670,7 +670,7 @@ void FeaturesMap::exportOutput(std::string trajectoryFilename,
     poseGraph->save2file(graphFilename);
     if (config.exportMap){
         std::cout << "save map to file TEST\n";
-        plotFeatures(config.filenameMap,config.filenameData);
+//        plotFeatures(config.filenameMap,config.filenameData);
         std::cout << "save map to file end\n";
     }
     if (config.exportDistribution){
