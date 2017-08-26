@@ -899,7 +899,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		} else
 			disableRobustKernel();
         poseGraph->optimize(iterNo, verbose);
-        ((PoseGraphG2O*) poseGraph)->checkTrajectory(odoMeasurements);
+        //((PoseGraphG2O*) poseGraph)->checkTrajectory(odoMeasurements);
 		std::vector<MapFeature> optimizedFeatures;
         ((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
 
