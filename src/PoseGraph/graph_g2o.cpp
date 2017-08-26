@@ -1025,7 +1025,15 @@ void PoseGraphG2O::getOptimizedPoses(std::vector<VertexSE3>& poses){
 /// check trajector
 void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
     std::vector<VertexSE3> camPoses;
-    getOptimizedPoses(camPoses);
+
+    mtxOptPoses.lock();
+    for (std::map<int,Mat34>::iterator it = optimizedPoses.begin(); it!=optimizedPoses.end(); ++it){
+        VertexSE3 pose;
+        pose.vertexId = it->first; pose.pose = it->second;
+        camPoses.push_back(pose);
+    }
+    mtxOptPoses.unlock();
+
     bool ignoreTrans(true);
     VertexSE3 prevVertex;
     size_t camPoseNo=0;
@@ -1039,12 +1047,17 @@ void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
                 ignoreTrans = false;
             else{// remove measurements to features and add measurement from odometry
                 // erase edges related to the SE3 vertex
+//                if (vert.vertexId-prevVertex.vertexId==1){
                 std::cout << "erase " << vert.vertexId << "\n";
                 eraseMeasurements(vert.vertexId);
-                EdgeSE3 e(odoMeasurements[vert.vertexId], Mat66::Identity(), prevVertex.vertexId, vert.vertexId);
+                EdgeSE3 e(odoMeasurements[vert.vertexId], Mat66::Identity(), vert.vertexId-1, vert.vertexId);
                 std::cout << "add edge " << prevVertex.vertexId << "->" << vert.vertexId << "\n";
                 addEdgeSE3(e);
                 std::cout << "added1\n";
+//                }
+//                else {
+//                    "problem: " << prevVertex.vertexId << "->" << vert.vertexId << "\n";
+//                }
                 if (camPoseNo<camPoses.size()-1){//add odometry measurements to the next cam pose
                     EdgeSE3 e(odoMeasurements[vert.vertexId+1], Mat66::Identity(), vert.vertexId, vert.vertexId+1);
                     std::cout << "add edge " << vert.vertexId << "->" << vert.vertexId+1 << "\n";
