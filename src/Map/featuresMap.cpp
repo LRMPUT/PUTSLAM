@@ -899,6 +899,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		} else
 			disableRobustKernel();
         poseGraph->optimize(iterNo, verbose);
+        ((PoseGraphG2O*) poseGraph)->checkTrajectory(odoMeasurements);
 		std::vector<MapFeature> optimizedFeatures;
         ((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
 
@@ -928,7 +929,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
 		updateCamTrajectory(optimizedPoses);
-        cleanCamTrajectory();
+        //cleanCamTrajectory();
 
         if (config.visualize){
             bufferMapVisualization.mtxBuffer.lock(); // update visualization buffer
