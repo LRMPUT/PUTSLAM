@@ -1022,61 +1022,6 @@ void PoseGraphG2O::getOptimizedPoses(std::vector<VertexSE3>& poses){
     mtxOptPoses.unlock();
 }
 
-/// check trajector
-void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
-    std::vector<VertexSE3> camPoses;
-
-    mtxOptPoses.lock();
-    for (std::map<int,Mat34>::iterator it = optimizedPoses.begin(); it!=optimizedPoses.end(); ++it){
-        VertexSE3 pose;
-        pose.vertexId = it->first; pose.pose = it->second;
-        camPoses.push_back(pose);
-    }
-    mtxOptPoses.unlock();
-
-    bool ignoreTrans(true);
-    VertexSE3 prevVertex;
-    size_t camPoseNo=0;
-    for (auto vert : camPoses){
-        if (ignoreTrans)
-            ignoreTrans=false;
-        else {
-            if (vert.vertexId-prevVertex.vertexId==1){
-                Mat34 trans = prevVertex.pose.inverse()* vert.pose;
-                double dist = sqrt(pow(trans(0,3),2.0)+pow(trans(1,3),2.0)+pow(trans(2,3),2.0));
-                if (dist<0.05)
-                    ignoreTrans = false;
-                else{// remove measurements to features and add measurement from odometry
-                    // erase edges related to the SE3 vertex
-    //                if (vert.vertexId-prevVertex.vertexId==1){
-                    std::cout << "erase " << vert.vertexId << "\n";
-                    eraseMeasurements(vert.vertexId);
-                    EdgeSE3 e(odoMeasurements[vert.vertexId], Mat66::Identity(), vert.vertexId-1, vert.vertexId);
-                    std::cout << "add edge " << vert.vertexId-1 << "->" << vert.vertexId << "\n";
-                    addEdgeSE3(e);
-                    std::cout << "added1\n";
-    //                }
-    //                else {
-    //                    "problem: " << prevVertex.vertexId << "->" << vert.vertexId << "\n";
-    //                }
-                    if (camPoseNo<camPoses.size()-1){//add odometry measurements to the next cam pose
-                        EdgeSE3 e(odoMeasurements[vert.vertexId+1], Mat66::Identity(), vert.vertexId, vert.vertexId+1);
-                        std::cout << "add edge " << vert.vertexId << "->" << vert.vertexId+1 << "\n";
-                        addEdgeSE3(e);
-                        std::cout << "added2\n";
-                    }
-                    ignoreTrans = true;
-                }
-            }
-            else{
-                ignoreTrans = false;
-            }
-        }
-        camPoseNo++;
-        prevVertex = vert;
-    }
-}
-
 /// returns measured positions and uncertainty of the feature in global coordinates
 void PoseGraphG2O::getMeasurements(int featureId, std::vector<Edge3D>& features, Vec3& estimation){
     PoseGraph::VertexSet::iterator vertIt = findVertex(featureId);

@@ -899,7 +899,6 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		} else
 			disableRobustKernel();
         poseGraph->optimize(iterNo, verbose);
-        ((PoseGraphG2O*) poseGraph)->checkTrajectory(odoMeasurements);
 		std::vector<MapFeature> optimizedFeatures;
         ((PoseGraphG2O*) poseGraph)->getOptimizedFeatures(optimizedFeatures);
 
@@ -929,6 +928,7 @@ void FeaturesMap::optimize(unsigned int iterNo, int verbose,
 		std::vector<VertexSE3> optimizedPoses;
 		((PoseGraphG2O*) poseGraph)->getOptimizedPoses(optimizedPoses);
 		updateCamTrajectory(optimizedPoses);
+        cleanCamTrajectory();
 
         if (config.visualize){
             bufferMapVisualization.mtxBuffer.lock(); // update visualization buffer
@@ -1217,6 +1217,55 @@ void FeaturesMap::updateCamTrajectory(std::vector<VertexSE3>& poses2update) {
 			it != poses2update.end(); it++) {
 		updatePose(*it);
 	}
+}
+
+/// Clean camera trajectory
+void FeaturesMap::cleanCamTrajectory(void) {
+    mtxCamTraj.lock();
+
+    bool ignoreTrans(true);
+    VertexSE3 prevVertex;
+    size_t camPoseNo=0;
+    for (auto vert : camTrajectory){
+        if (ignoreTrans)
+            ignoreTrans=false;
+        else {
+            if (vert.vertexId-prevVertex.vertexId==1){
+                Mat34 trans = prevVertex.pose.inverse()* vert.pose;
+                double dist = sqrt(pow(trans(0,3),2.0)+pow(trans(1,3),2.0)+pow(trans(2,3),2.0));
+                if (dist<0.05)
+                    ignoreTrans = false;
+                else{// remove measurements to features and add measurement from odometry
+                    // erase edges related to the SE3 vertex
+    //                if (vert.vertexId-prevVertex.vertexId==1){
+                    std::cout << "erase " << vert.vertexId << "\n";
+                    ((PoseGraphG2O*)poseGraph)->eraseMeasurements(vert.vertexId);
+                    EdgeSE3 e(odoMeasurements[vert.vertexId], Mat66::Identity(), vert.vertexId-1, vert.vertexId);
+                    std::cout << "add edge " << vert.vertexId-1 << "->" << vert.vertexId << "\n";
+                    ((PoseGraphG2O*)poseGraph)->addEdgeSE3(e);
+                    std::cout << "added1\n";
+    //                }
+    //                else {
+    //                    "problem: " << prevVertex.vertexId << "->" << vert.vertexId << "\n";
+    //                }
+                    if (camPoseNo<camTrajectory.size()-1){//add odometry measurements to the next cam pose
+                        EdgeSE3 e(odoMeasurements[vert.vertexId+1], Mat66::Identity(), vert.vertexId, vert.vertexId+1);
+                        std::cout << "add edge " << vert.vertexId << "->" << vert.vertexId+1 << "\n";
+                        ((PoseGraphG2O*)poseGraph)->addEdgeSE3(e);
+                        std::cout << "added2\n";
+                    }
+                    ignoreTrans = true;
+                }
+            }
+            else{
+                ignoreTrans = false;
+            }
+        }
+        camPoseNo++;
+        prevVertex = vert;
+    }
+
+    mtxCamTraj.unlock();
 }
 
 /// Update pose

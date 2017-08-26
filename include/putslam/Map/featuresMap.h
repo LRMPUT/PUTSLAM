@@ -551,6 +551,9 @@ private:
 
     /// save optimization time
     void saveOptimizationTime(std::list<std::pair<double,double>>& optimizationTime, std::string filename);
+
+    /// Clean camera trajectory
+    void cleanCamTrajectory(void);
 };
 
 #endif // FEATURES_MAP_H_INCLUDED

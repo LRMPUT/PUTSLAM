@@ -179,8 +179,8 @@ class PoseGraphG2O : public Graph {
         /// set features to remove
         void setFeatures2remove(const std::set<int>& _features2remove);
 
-        /// check trajectory
-        void checkTrajectory(const std::vector<Mat34>& odoMeasurements);
+        /// erase edges related to the SE3 vertex
+        void eraseMeasurements(int poseId);
 
     private:
         /// Pose graph
@@ -307,9 +307,6 @@ class PoseGraphG2O : public Graph {
 
         /// Get Hessian
         void getHessian(Eigen::MatrixXd& hessian, const g2o::OptimizableGraph::VertexContainer& vertices);
-
-        /// erase edges related to the SE3 vertex
-        void eraseMeasurements(int poseId);
 };
 
 #endif // GRAPH_G2O_H_INCLUDED
