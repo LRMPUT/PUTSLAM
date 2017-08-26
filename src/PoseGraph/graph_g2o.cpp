@@ -1036,7 +1036,7 @@ void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
             Mat34 trans = prevVertex.pose* vert.pose;
             double dist = sqrt(pow(trans(0,3),2.0)+pow(trans(1,3),2.0)+pow(trans(2,3),2.0));
             if (dist<0.05)
-                ignoreTrans = true;
+                ignoreTrans = false;
             else{// remove measurements to features and add measurement from odometry
                 // erase edges related to the SE3 vertex
                 std::cout << "erase " << vert.vertexId << "\n";
@@ -1051,6 +1051,7 @@ void PoseGraphG2O::checkTrajectory(const std::vector<Mat34>& odoMeasurements){
                     addEdgeSE3(e);
                     std::cout << "added2\n";
                 }
+                ignoreTrans = true;
             }
         }
         camPoseNo++;
