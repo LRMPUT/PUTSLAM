@@ -43,7 +43,7 @@
     marginalizationThr      - if covisibility smaller than 'marginCovisibThr' then marginalize graph (features which are not connected to the keyframes are removed from the map and from the graph)
     minFramesNo             - do not marginalize if distance between current and previous keyframe is smaller than minFramesNo 
     maxFramesNo             - if keyframes no is higher than maxFramesNo perform full marginalization (features are fixed)-->    
-    <mapCompression compressMap="true" covisibilityKeyframes="0.9" marginalizationThr="0.3" minFramesNo="30" maxFramesNo="250"/>
+    <mapCompression compressMap="false" covisibilityKeyframes="0.9" marginalizationThr="0.3" minFramesNo="30" maxFramesNo="250"/>
 
     <!--Get features from map using also Euclidean criterion (additional method to get features from covisibility graph)
     imagePlaneDistance      - distance on the xy image plane 

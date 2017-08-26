@@ -179,6 +179,9 @@ class PoseGraphG2O : public Graph {
         /// set features to remove
         void setFeatures2remove(const std::set<int>& _features2remove);
 
+        /// check trajectory
+        void checkTrajectory(const std::vector<Mat34>& odoMeasurements);
+
     private:
         /// Pose graph
         PoseGraph bufferGraph;
